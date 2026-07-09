@@ -1,0 +1,333 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Math Matrix Playground</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 15px;
+            background-color: #111111;
+            color: #ffffff;
+            font-family: system-ui, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h2 { color: #00ecff; margin: 5px 0; font-size: 24px; text-align: center; }
+        p { color: #aaaaaa; margin-bottom: 15px; text-align: center; font-size: 14px; }
+        
+        /* Bulletproof Table Architecture to prevent mobile cut-offs */
+        .matrix-table {
+            border-collapse: separate;
+            border-spacing: 8px;
+            background-color: #1a1a1a;
+            padding: 12px;
+            border-radius: 14px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+            user-select: none;
+        }
+
+        .matrix-table td {
+            width: 64px;
+            height: 64px;
+            padding: 0;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        /* Middle 3x3 Editable Input Cells */
+        .cell-input {
+            width: 64px;
+            height: 64px;
+            border: 2px solid #444444;
+            border-radius: 10px;
+            background-color: #000000;
+            color: #ffffff;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            box-sizing: border-box;
+        }
+        .cell-input:focus {
+            border-color: #00ecff;
+            outline: none;
+            box-shadow: 0 0 8px rgba(0, 236, 255, 0.5);
+        }
+
+        /* Outer Auto-Total Calculation Windows */
+        .cell-result {
+            width: 64px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #112d3e;
+            color: #00ecff;
+            border: 2px dashed #00ecff;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            box-sizing: border-box;
+        }
+
+        /* Four Corner Diagonal Sum Cells */
+        .diagonal-cell {
+            width: 64px;
+            height: 64px;
+            background-color: #2b1f3d;
+            color: #b624ff;
+            border: 2px solid #b624ff;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: bold;
+            box-sizing: border-box;
+        }
+
+        /* Controls Layout Bar */
+        .controls-row td {
+            height: 50px !important;
+        }
+
+        .btn-ctrl {
+            width: 100%;
+            height: 50px;
+            border: none;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #ffffff;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        .btn-ctrl:active { opacity: 0.8; }
+        .btn-undo { background-color: #e67e22; }
+        .btn-redo { background-color: #2980b9; }
+        .btn-clear { background-color: #c0392b; }
+
+        /* Live Timer Module Display */
+        .timer-display {
+            height: 50px;
+            background-color: #27ae60;
+            color: #ffffff;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 15px;
+            border: 2px solid #2ecc71;
+            box-sizing: border-box;
+        }
+        .timer-label { font-size: 9px; text-transform: uppercase; opacity: 0.8; }
+    </style>
+</head>
+<body>
+
+    <h2>Math Matrix Playground</h2>
+    <p>Fill the center 3x3 grid. Every outer cell tracks your matching totals!</p>
+
+    <table class="matrix-table">
+        <tr>
+            <td><div class="diagonal-cell" id="diag_top_left">27</div></td>
+            <td><div class="cell-result" id="sum_c1_top">27</div></td>
+            <td><div class="cell-result" id="sum_c2_top">27</div></td>
+            <td><div class="cell-result" id="sum_c3_top">27</div></td>
+            <td><div class="diagonal-cell" id="diag_top_right">27</div></td>
+        </tr>
+
+        <tr>
+            <td><div class="cell-result" id="sum_r1_left">27</div></td>
+            <td><input type="number" class="cell-input" id="r1c1" value="12" oninput="handleInput();"></td>
+            <td><input type="number" class="cell-input" id="r1c2" value="5" oninput="handleInput();"></td>
+            <td><input type="number" class="cell-input" id="r1c3" value="10" oninput="handleInput();"></td>
+            <td><div class="cell-result" id="sum_r1">27</div></td>
+        </tr>
+
+        <tr>
+            <td><div class="cell-result" id="sum_r2_left">27</div></td>
+            <td><input type="number" class="cell-input" id="r2c1" value="7" oninput="handleInput();"></td>
+            <td><input type="number" class="cell-input" id="r2c2" value="9" oninput="handleInput();"></td>
+            <td><input type="number" class="cell-input" id="r2c3" value="11" oninput="handleInput();"></td>
+            <td><div class="cell-result" id="sum_r2">27</div></td>
+        </tr>
+
+        <tr>
+            <td><div class="cell-result" id="sum_r3_left">27</div></td>
+            <td><input type="number" class="cell-input" id="r3c1" value="8" oninput="handleInput();"></td>
+            <td><input type="number" class="cell-input" id="r3c2" value="13" oninput="handleInput();"></td>
+            <td><input type="number" class="cell-input" id="r3c3" value="6" oninput="handleInput();"></td>
+            <td><div class="cell-result" id="sum_r3">27</div></td>
+        </tr>
+
+        <tr>
+            <td><div class="diagonal-cell" id="diag_bot_left">27</div></td>
+            <td><div class="cell-result" id="sum_c1">27</div></td>
+            <td><div class="cell-result" id="sum_c2">27</div></td>
+            <td><div class="cell-result" id="sum_c3">27</div></td>
+            <td><div class="diagonal-cell" id="diag_bot_right">27</div></td>
+        </tr>
+
+        <tr class="controls-row">
+            <td><button class="btn-ctrl btn-undo" onclick="undo()">Undo</button></td>
+            <td><button class="btn-ctrl btn-redo" onclick="redo()">Redo</button></td>
+            <td><button class="btn-ctrl btn-clear" onclick="clearGrid()">Clear</button></td>
+            <td colspan="2">
+                <div class="timer-display">
+                    <span id="timer_clock">00:00</span>
+                    <span class="timer-label">Time Taken</span>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <script>
+        // App State Engine
+        var historyStack = [];
+        var redoStack = [];
+        var cells = ['r1c1', 'r1c2', 'r1c3', 'r2c1', 'r2c2', 'r2c3', 'r3c1', 'r3c2', 'r3c3'];
+        var secondsElapsed = 0;
+        var timerInterval = null;
+        var isTimerRunning = false;
+
+        function updateTimerDisplay() {
+            var mins = String(Math.floor(secondsElapsed / 60)).padStart(2, '0');
+            var secs = String(secondsElapsed % 60).padStart(2, '0');
+            var clockElement = document.getElementById('timer_clock');
+            if (clockElement) {
+                clockElement.innerText = mins + ":" + secs;
+            }
+        }
+
+        function startTimer() {
+            if (!isTimerRunning) {
+                isTimerRunning = true;
+                timerInterval = setInterval(function() {
+                    secondsElapsed++;
+                    updateTimerDisplay();
+                }, 1000);
+            }
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+            isTimerRunning = false;
+        }
+
+        function getMatrixState() {
+            var state = {};
+            cells.forEach(function(id) {
+                var el = document.getElementById(id);
+                state[id] = el ? el.value : "";
+            });
+            return state;
+        }
+
+        function loadMatrixState(state) {
+            cells.forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el) el.value = state[id];
+            });
+            calculateMatrix();
+        }
+
+        function calculateMatrix() {
+            function val(id) {
+                var el = document.getElementById(id);
+                return (el && el.value) ? parseInt(el.value) || 0 : 0;
+            }
+
+            var r1c1 = val('r1c1'), r1c2 = val('r1c2'), r1c3 = val('r1c3');
+            var r2c1 = val('r2c1'), r2c2 = val('r2c2'), r2c3 = val('r2c3');
+            var r3c1 = val('r3c1'), r3c2 = val('r3c2'), r3c3 = val('r3c3');
+
+            // Rows Calculations
+            var row1Total = r1c1 + r1c2 + r1c3;
+            var row2Total = r2c1 + r2c2 + r2c3;
+            var row3Total = r3c1 + r3c2 + r3c3;
+
+            document.getElementById('sum_r1').innerText = row1Total;
+            document.getElementById('sum_r1_left').innerText = row1Total;
+            document.getElementById('sum_r2').innerText = row2Total;
+            document.getElementById('sum_r2_left').innerText = row2Total;
+            document.getElementById('sum_r3').innerText = row3Total;
+            document.getElementById('sum_r3_left').innerText = row3Total;
+
+            // Columns Calculations
+            var col1Total = r1c1 + r2c1 + r3c1;
+            var col2Total = r1c2 + r2c2 + r3c2;
+            var col3Total = r1c3 + r2c3 + r3c3;
+
+            document.getElementById('sum_c1').innerText = col1Total;
+            document.getElementById('sum_c1_top').innerText = col1Total;
+            document.getElementById('sum_c2').innerText = col2Total;
+            document.getElementById('sum_c2_top').innerText = col2Total;
+            document.getElementById('sum_c3').innerText = col3Total;
+            document.getElementById('sum_c3_top').innerText = col3Total;
+
+            // Diagonals Calculations
+            var diag1 = r1c1 + r2c2 + r3c3;
+            var diag2 = r1c3 + r2c2 + r3c1;
+
+            document.getElementById('diag_top_left').innerText = diag1;
+            document.getElementById('diag_bot_right').innerText = diag1;
+            document.getElementById('diag_top_right').innerText = diag2;
+            document.getElementById('diag_bot_left').innerText = diag2;
+        }
+
+        function saveState() {
+            historyStack.push(getMatrixState());
+            redoStack = [];
+        }
+
+        function handleInput() {
+            startTimer(); 
+            saveState();
+            calculateMatrix();
+        }
+
+        function undo() {
+            if (historyStack.length > 0) {
+                startTimer();
+                redoStack.push(getMatrixState());
+                var previousState = historyStack.pop();
+                loadMatrixState(previousState);
+            }
+        }
+
+        function redo() {
+            if (redoStack.length > 0) {
+                startTimer();
+                historyStack.push(getMatrixState());
+                var nextState = redoStack.pop();
+                loadMatrixState(nextState);
+            }
+        }
+
+        function clearGrid() {
+            saveState();
+            cells.forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el) el.value = "";
+            });
+            
+            stopTimer();
+            secondsElapsed = 0;
+            updateTimerDisplay();
+            calculateMatrix();
+        }
+
+        // Initialize safely after layout completely registers
+        calculateMatrix();
+        startTimer();
+    </script>
+</body>
+</html>
