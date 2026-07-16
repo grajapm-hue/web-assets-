@@ -1,0 +1,24 @@
+{
+  "name": "MathMatrix Pro++",
+  "short_name": "MathMatrix",
+  "description": "Kids math puzzle game — build magic squares in 3x3, 4x4 and 5x5 grids.",
+  "start_url": "math3x4x5-matrix.html",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#0d0d0d",
+  "theme_color": "#0d0d0d",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230d0d0d'/><text x='50' y='68' font-size='60' text-anchor='middle'>🎲</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%230d0d0d'/><text x='50' y='62' font-size='42' text-anchor='middle'>🎲</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
