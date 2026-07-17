@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0d0d0d">
+<title>🎲MathMatrix345-15jul26  </title>
+<link rel="manifest" href="manifest-a1.json">
+<meta name="theme-color" content="#0d0d0d">
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { height:100%; width:100%; }
+  
+  /* Markor App Optimization - Fix grey background spreading */
+  @supports (display: -webkit-box) {
+    body { 
+      -webkit-appearance: none;
+      -webkit-user-select: none;
+    }
+  }
+  
+  /* Force solid backgrounds in Markor */
+  .logicBox, .instCard, .difficultyBar, .targetPill, .titleCard {
+    -webkit-box-shadow: none !important;
+    box-shadow: none !important;
+    background-clip: padding-box !important;
+    -webkit-background-clip: padding-box !important;
+  }
+  
+  body {
+    background:#000000;
+    background:rgb(0, 0, 0);
+    color:#fff;
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display:flex; flex-direction:column; align-items:center;
+    min-height:100vh; padding:12px 8px 30px;
+    overflow-x:hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Difficulty Toggle */
+  .difficultyBar {
+    display:flex; gap:12px; align-items:center; margin-bottom:16px;
+    background:#1a1a2e; padding:12px 16px; border-radius:12px;
+    border:2px solid #2f7ff0;
+  }
+  .diffLabel { font-size:14px; font-weight:700; color:#aaa; }
+  .toggleSwitch {
+    display:flex; gap:8px;
+  }
+  .toggleBtn {
+    border:2px solid #555; border-radius:8px;
+    padding:8px 16px;
+    font-size:16px; font-weight:900;
+    cursor:pointer;
+    transition:all .3s ease;
+    background:#222;
+    color:#888;
+  }
+  .toggleBtn.active {
+    background:#2f7ff0;
+    border-color:#2f9bf0;
+    color:#fff;
+  }
+  
+  /* Solved Counter */
+  .solvedCounter {
+    background:linear-gradient(135deg,#667eea,#764ba2);
+    border-radius:10px;
+    padding:10px 16px;
+    font-size:13px; font-weight:700;
+    margin-bottom:14px;
+    text-align:center;
+  }
+  .solvedCounter.unlocked {
+    background:linear-gradient(135deg,#f093fb,#f5576c);
+    animation:pulse .6s ease;
+  }
+  @keyframes pulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.05); } }
+  
+  /* Title card */
+  .titleCard {
+    background:#101820;
+    border:3px solid #2f7ff0;
+    border-radius:14px;
+    padding:10px 26px;
+    margin-bottom:14px;
+  }
+  .titleCard h1 { font-size:24px; color:#2f9bf0; font-weight:800; display:flex; align-items:center; justify-content:center; gap:8px; line-height:1; }
+  
+  /* Target pill */
+  .targetPill {
+    border-radius:14px;
+    padding:10px 26px;
+    font-size:22px; font-weight:800; color:#fff;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    line-height:1;
+    margin-bottom:14px;
+    background:linear-gradient(135deg,#c62828,#ef4444);
+    box-shadow:0 2px 10px rgba(239,68,68,.35);
+    transition:all .4s ease;
+  }
+  .targetPill.solved {
+    background:linear-gradient(135deg,#15803d,#22c55e);
+    box-shadow:0 2px 14px rgba(34,197,94,.5);
+  }
+  
+  /* Instruction card */
+  .instCard {
+    background:#1e1e1e;
+    border-left:6px solid #2f7ff0;
+    border-radius:12px;
+    padding:10px 12px;
+    font-size:13px; line-height:1.4;
+    max-width:560px;
+    margin-bottom:12px;
+  }
+  
+  
+  /* Board Container - keeps puzzle table compact */
+  .boardContainer {
+    display:inline-flex;
+    justify-content:center;
+    align-items:center;
+    padding:0;
+    margin:0 auto 30px;
+    background:transparent;
+    border-bottom:2px solid #333;
+    padding-bottom:20px;
+    width:100%;
+  }
+  
+  /* Board */
+  .board {
+    display:grid;
+    grid-gap:6px; gap:6px;
+    justify-content:center;
+    margin:0;
+    padding:0;
+    background:transparent;
+  }
+  /* 3x3 board */
+  .board.size3x3 {
+    grid-template-columns:repeat(5, 52px);
+    grid-template-rows:repeat(5, 52px);
+  }
+  /* 4x4 board */
+  .board.size4x4 {
+    grid-template-columns:repeat(6, 52px);
+    grid-template-rows:repeat(6, 52px);
+  }
+  
+  .board.size5x5 {
+    grid-template-columns:repeat(7, 40px);
+    grid-template-rows:repeat(7, 40px);
+  }
+  
+  @media (min-width:480px){
+    .board.size3x3 {
+      grid-template-columns:repeat(5, 68px);
+      grid-template-rows:repeat(5, 68px);
+      grid-gap:8px; gap:8px;
+    }
+    .board.size4x4 {
+      grid-template-columns:repeat(6, 68px);
+      grid-template-rows:repeat(6, 68px);
+      grid-gap:8px; gap:8px;
+    }
+    .board.size5x5 {
+      grid-template-columns:repeat(7, 56px);
+      grid-template-rows:repeat(7, 56px);
+      grid-gap:6px; gap:6px;
+    }
+  }
+  
+  @media (min-width:760px){
+    .board.size3x3 {
+      grid-template-columns:repeat(5, 92px);
+      grid-template-rows:repeat(5, 92px);
+    }
+    .board.size4x4 {
+      grid-template-columns:repeat(6, 92px);
+      grid-template-rows:repeat(6, 92px);
+    }
+    .board.size5x5 {
+      grid-template-columns:repeat(7, 72px);
+      grid-template-rows:repeat(7, 72px);
+    }
+  }
+  
+  .cell {
+    background:#000;
+    border:2px dashed #2aa5c9;
+    border-radius:6px;
+    color:#fff;
+    font-weight:600;
+    text-align:center;
+    padding:0;
+    outline:none;
+    transition:all .2s ease;
+  }
+  /* 3x3 cell sizes */
+  .board.size3x3 .cell { width:52px; height:52px; font-size:24px; line-height:48px; }
+  /* 4x4 cell sizes */
+  .board.size4x4 .cell { width:52px; height:52px; font-size:28px; line-height:48px; }
+  /* 5x5 cell sizes */
+  .board.size5x5 .cell { width:40px; height:40px; font-size:20px; line-height:36px; }
+  
+  @media (min-width:480px){
+    .board.size3x3 .cell { width:68px; height:68px; font-size:28px; line-height:64px; }
+    .board.size4x4 .cell { width:68px; height:68px; font-size:34px; line-height:64px; }
+    .board.size5x5 .cell { width:56px; height:56px; font-size:24px; line-height:52px; }
+  }
+  @media (min-width:760px){
+    .board.size3x3 .cell { width:92px; height:92px; font-size:32px; line-height:88px; }
+    .board.size4x4 .cell { width:92px; height:92px; font-size:40px; line-height:88px; }
+    .board.size5x5 .cell { width:72px; height:72px; font-size:30px; line-height:68px; }
+  }
+  
+  .cell:focus { border-style:solid; border-color:#22d3ee; }
+  .cell.given { color:#67e8f9; }
+  .cell.dup { border-color:#ef4444; color:#f87171; }
+  .cell.win { 
+    border-style:solid; 
+    border-color:#10b981; 
+    color:#34d399; 
+    background:#051f1f;
+    font-weight:700;
+  }
+  /* Anchor boxes: 4 corners + 4 middle boxes - visual hint for beginners */
+  .cell.anchor {
+    background:#0a2e4a;
+    border-color:#1e5a96;
+  }
+  /* 3x3 center anchor */
+  .board.size3x3 .cell.anchor {
+    background:#0a3a2a;
+    border-color:#1e8855;
+  }
+  /* 5x5 center grid shading (heart relationships) */
+  .board.size5x5 .cell.center-heart {
+    background:rgba(76, 175, 80, 0.3);
+    border-color:#4caf50;
+  }
+  .board.size5x5 .cell.center-ref {
+    background:rgba(33, 150, 243, 0.2);
+    border-color:#2196f3;
+  }
+  .cell.peek { /* Show/solved display - subtle background */ }
+  
+  /* SHOW display background colors - visible contrast */
+  .board.size3x3 .cell.peek { background: rgba(30, 64, 175, 0.15) !important; }
+  .board.size4x4 .cell.peek { background: rgba(124, 58, 237, 0.15) !important; }
+  .board.size5x5 .cell.peek { background: rgba(8, 145, 178, 0.15) !important; }
+  
+  /* Badge/target cells in SHOW display - more visible */
+  .board.size3x3 .badge.peek { background: rgba(30, 64, 175, 0.2) !important; }
+  .board.size4x4 .badge.peek { background: rgba(124, 58, 237, 0.2) !important; }
+  .board.size5x5 .badge.peek { background: rgba(8, 145, 178, 0.2) !important; }
+  
+  .badge {
+    border:2px dashed #555;
+    border-radius:6px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:15px; font-weight:700; color:#777;
+    line-height:1;
+    transition:all .3s ease;
+  }
+  /* 3x3 badge sizes */
+  .board.size3x3 .badge { width:52px; height:52px; }
+  /* 4x4 badge sizes */
+  .board.size4x4 .badge { width:52px; height:52px; }
+  
+  @media (min-width:480px){
+    .board.size3x3 .badge { width:68px; height:68px; font-size:17px; }
+    .board.size4x4 .badge { width:68px; height:68px; font-size:19px; }
+  }
+  @media (min-width:760px){
+    .board.size3x3 .badge { width:92px; height:92px; font-size:20px; }
+    .board.size4x4 .badge { width:92px; height:92px; font-size:24px; }
+  }
+  
+  .badge.corner { border-style:solid; }
+  .badge.partial { color:#aaa; }
+  .badge.full { border-color:#f59e0b; color:#fbbf24; }
+  .badge.peektone { border-color:#29a8e0; color:#29a8e0; }
+  .badge.win { 
+    border-color:#fbbf24; 
+    color:#fcd34d;
+    border-style:solid;
+    font-weight:700;
+  }
+  
+  /* Buttons */
+  .btnRow {
+    display:flex; gap:10px;
+    width:100%; max-width:600px;
+    margin:0 auto 12px;
+    padding:0 10px;
+    /* Markor app fix */
+    -webkit-box-shadow: none !important;
+    box-shadow: none !important;
+  }
+  .btnRow button {
+    flex:1;
+    border:2px solid; border-radius:8px;
+    height:48px; line-height:48px; padding:0;
+    font-size:17px; font-weight:800; cursor:pointer;
+    text-align:center;
+    transition:all .2s ease;
+    background:transparent;
+    /* Markor app fix */
+    -webkit-box-shadow: none !important;
+    box-shadow: none !important;
+  }
+  .btnRow button:active { transform:scale(0.98); }
+
+
+  #clearBtn { 
+    background:transparent;
+    border:2px solid #ef4444;
+    color:#ef4444;
+    -webkit-box-shadow: none !important;
+    box-shadow: none !important;
+  }
+  #peekBtn { 
+    background:transparent;
+    border:2px solid #7c3aed;
+    color:#7c3aed;
+    -webkit-box-shadow: none !important;
+    box-shadow: none !important;
+  }
+  
+  #timerBox {
+    flex:1;
+    border:2px solid #2ecc71; border-radius:8px;
+    height:48px; line-height:44px; padding:0;
+    text-align:center;
+    font-size:20px; font-weight:700; color:#2ecc71;
+    font-variant-numeric:tabular-nums;
+    background:#000000;
+    background:rgb(0, 0, 0);
+    /* Markor app fix - prevent grey shadow spreading */
+    -webkit-box-shadow: none !important;
+    box-shadow: none !important;
+  }
+  
+  #msg {
+    min-height:30px;
+    font-size:18px; font-weight:700; color:#2f9bf0;
+    text-align:center; margin:20px 0 14px;
+    max-width:560px;
+  }
+  #msg.win { color:#2ecc71; }
+  
+  /* Congratulations Modal */
+  .congratsModal {
+    display:none;
+    position:fixed; top:0; left:0; right:0; bottom:0;
+    background:rgba(0,0,0,.9);
+    z-index:9999;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    animation:fadeIn .4s ease;
+  }
+  @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+  
+  .congratsBox {
+    background:linear-gradient(135deg,#667eea,#764ba2);
+    border-radius:20px;
+    padding:40px 30px;
+    text-align:center;
+    max-width:320px;
+    animation:bounceIn .6s ease;
+  }
+  @keyframes bounceIn { 
+    0% { transform:scale(0.3); opacity:0; }
+    50% { transform:scale(1.05); }
+    100% { transform:scale(1); opacity:1; }
+  }
+  
+  .congratsBox h2 {
+    font-size:32px;
+    margin-bottom:16px;
+    animation:float 2s ease-in-out infinite;
+  }
+  @keyframes float { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-10px); } }
+  
+  .congratsBox p {
+    font-size:18px;
+    margin-bottom:24px;
+    font-weight:600;
+  }
+  
+  .congratsBtn {
+    background:linear-gradient(135deg,#f093fb,#f5576c);
+    border:none;
+    border-radius:12px;
+    padding:14px 32px;
+    font-size:18px;
+    font-weight:800;
+    color:#fff;
+    cursor:pointer;
+    transition:all .3s ease;
+    margin:0 auto;
+    display:block;
+  }
+  .congratsBtn:active { transform:scale(0.95); }
+  
+  #logicBtn {
+    background:linear-gradient(135deg,#7c3aed,#a855f7);
+    border:none; border-radius:12px;
+    height:48px; line-height:48px; padding:0 20px;
+    text-align:center;
+    font-size:16px; font-weight:700; color:#fff; cursor:pointer;
+    width:100%; max-width:560px;
+    transition:all .2s ease;
+    margin:0 auto;
+    display:block;
+    /* Markor app fix - prevent grey shadow spreading */
+    -webkit-box-shadow: none !important;
+    box-shadow: none !important;
+  }
+  #logicBtn:active { transform:scale(0.98); }
+  #logicBtn:hover { 
+    background:linear-gradient(135deg,#a855f7,#d946ef); 
+    -webkit-box-shadow: none !important;
+    box-shadow: none !important;
+  }
+  
+  #logicBox {
+    display:none; max-width:560px; margin:12px auto;
+    border:2.5px solid #e91e8c; border-radius:14px;
+    background:#160d1a; padding:20px 18px;
+    font-size:15px; line-height:1.6;
+    animation:slideIn .3s ease;
+    width:100%;
+    /* Markor app fix - prevent background shadow spreading */
+    -webkit-box-shadow: 0 0 0 transparent !important;
+    box-shadow: 0 0 0 transparent !important;
+    background-clip: padding-box;
+    -webkit-background-clip: padding-box;
+  }
+  @keyframes slideIn { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
+  
+  #logicBox h3 { color:#a855f7; font-size:17px; margin-bottom:8px; }
+  #logicBox p { margin-bottom:8px; }
+  #logicBox b { color:#22d3ee; }
+  #logicBox ol { color:#e0e0e0; line-height:1.8; }
+  #logicBox li { margin-bottom:6px; }
+  #logicBox ul { color:#e0e0e0; line-height:1.8; }
+  
+  .credit { 
+    margin-top:24px; 
+    font-size:14px; 
+    font-weight:600; 
+    color:#ccc; 
+    text-align:center; 
+    opacity:0.85;
+    transition:opacity .3s ease;
+  }
+  .credit:hover { opacity:1; }
+
+  /* ═══════════════════════════════════════════════════════════════════════ */
+  /* SIZE-SPECIFIC COLOR THEMES - 3×3, 4×4, 5×5 UNIQUE COLORS */
+  /* ═══════════════════════════════════════════════════════════════════════ */
+
+  /* 3×3 - BLUE THEME */
+  .board.size3x3 .cell { border-color: #1e40af !important; }
+  .board.size3x3 .cell:focus { border-color: #3b82f6 !important; }
+  .board.size3x3 .badge.partial { border-color: #fbbf24 !important; color: #fbbf24 !important; }
+  .board.size3x3 .badge.full { border-color: #1e40af !important; color: #3b82f6 !important; }
+  .board.size3x3 .cell.win { background: #10b981 !important; color: #ffffff !important; }
+  .board.size3x3 .badge.win { border-color: #fbbf24 !important; color: #fbbf24 !important; }
+  .board.size3x3 .cell.anchor { background: rgba(30, 64, 175, 0.2) !important; border-color: #3b82f6 !important; }
+  .board.size3x3 .cell.center-heart { background: rgba(16, 185, 129, 0.3) !important; border-color: #10b981 !important; }
+  .targetPill.size3x3 { background: #1e40af !important; color: #ffffff !important; border-color: #3b82f6 !important; }
+
+  /* 4×4 - PURPLE THEME */
+  .board.size4x4 .cell { border-color: #7c3aed !important; }
+  .board.size4x4 .cell:focus { border-color: #a78bfa !important; }
+  .board.size4x4 .badge.partial { border-color: #f97316 !important; color: #f97316 !important; }
+  .board.size4x4 .badge.full { border-color: #7c3aed !important; color: #a78bfa !important; }
+  .board.size4x4 .cell.win { background: #06b6d4 !important; color: #ffffff !important; }
+  .board.size4x4 .badge.win { border-color: #f97316 !important; color: #f97316 !important; }
+  .board.size4x4 .cell.anchor { background: rgba(124, 58, 237, 0.2) !important; border-color: #a78bfa !important; }
+  .targetPill.size4x4 { background: #7c3aed !important; color: #ffffff !important; border-color: #a78bfa !important; }
+
+  /* 5×5 - TEAL THEME */
+  .board.size5x5 .cell { border-color: #0891b2 !important; }
+  .board.size5x5 .cell:focus { border-color: #06b6d4 !important; }
+  .board.size5x5 .badge.partial { border-color: #f59e0b !important; color: #f59e0b !important; }
+  .board.size5x5 .badge.full { border-color: #0891b2 !important; color: #06b6d4 !important; }
+  .board.size5x5 .cell.win { background: #059669 !important; color: #ffffff !important; }
+  .board.size5x5 .badge.win { border-color: #f59e0b !important; color: #f59e0b !important; }
+
+
+  .targetPill.size5x5 { background: #0891b2 !important; color: #ffffff !important; border-color: #06b6d4 !important; }
+
+
+  /* DIAGONAL GUIDE CLASS - Green shade for 7 cells */
+  .diagonal-guide {
+    background: rgba(76, 175, 80, 0.3) !important;
+  }
+
+</style>
+</head>
+<body>
+
+<!-- Difficulty Toggle -->
+<div class="difficultyBar">
+  <span class="diffLabel">Choose Difficulty:</span>
+  <div class="toggleSwitch">
+    <button class="toggleBtn active" data-size="3x3">3×3 (Easy)</button>
+    <button class="toggleBtn" data-size="4x4">4×4 (Hard)</button>
+    <button class="toggleBtn" data-size="5x5">5×5 (Master)</button>
+  </div>
+  <button id="designerBtn" style="align-self:flex-end; font-size:12px; padding:6px 12px; background:#333; border:1px solid #666; color:#888; border-radius:6px; cursor:pointer; margin-top:8px;">🔐 Designer</button>
+</div>
+
+<!-- Solved Counter (for 3x3) -->
+<div class="solvedCounter" id="solvedCounter" style="display:block;">
+  🏆 Solved <span id="solvedCount">0</span>/3 with Different Targets — Unlock 4×4!
+</div>
+
+<div class="titleCard"><h1>🎲 MathMatrix Pro++</h1></div>
+<div class="targetPill" id="targetPill">🎯 Target : <span id="targetVal">?</span></div>
+<div class="instCard" id="instCard"></div>
+
+<div class="boardContainer">
+  <div class="board" id="board"></div>
+</div>
+
+<div class="btnRow">
+  <button id="clearBtn">CLEAR</button>
+  <div id="timerBox">00:00</div>
+</div>
+<div class="btnRow">
+  <button id="peekBtn">👁 SHOW</button>
+</div>
+
+<div style="text-align:center; font-size:16px; color:#888; margin-top:8px; margin-bottom:12px;">Observe solved table for 3 seconds</div>
+
+<div id="msg"></div>
+
+<div style="display:flex; flex-direction:column; align-items:center; width:100%; margin-bottom:20px;">
+  <button id="logicBtn">📐 Show Math Logic ▼</button>
+  <div id="logicBox"></div>
+</div>
+
+<div class="credit">Created by G.RajaPathamuthu · Kids Puzzle Library<br>Code Coordinated by : Claude AI</div>
+
+<!-- Congratulations Modal -->
+<div class="congratsModal" id="congratsModal">
+  <div class="congratsBox">
+    <h2>🎉</h2>
+    <p id="congratsText">Congratulations! Ready for 4×4?</p>
+    <button class="congratsBtn" id="nextBtn">Let's Go! →</button>
+  </div>
+</div>
+
+<!-- Designer Mode PIN Modal -->
+<div class="congratsModal" id="designerModal" style="display:none;">
+  <div class="congratsBox" style="width:300px;">
+    <h2>🔐 Designer Mode</h2>
+    <p style="font-size:14px; margin-bottom:16px;">Enter PIN to unlock developer access</p>
+    <input type="password" id="designerPin" placeholder="Enter 4-digit PIN" maxlength="4" style="width:100%; padding:12px; font-size:18px; letter-spacing:8px; text-align:center; margin-bottom:12px; border:2px solid #2f7ff0; border-radius:8px; background:#1a1a2e; color:#fff;">
+    <button class="congratsBtn" id="designerSubmit" style="width:100%; margin-bottom:8px;">Unlock</button>
+    <button class="congratsBtn" id="designerCancel" style="width:100%; background:#666;">Cancel</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  // Puzzle definitions
+  var PUZZLES = {
+    '3x3': {
+      example: [
+        [8, 1, 6],
+        [3, 5, 7],
+        [4, 9, 2]
+      ],
+      lines: ['r0','r1','r2','c0','c1','c2','d1','d2'],
+      rows: 3,
+      cols: 3,
+      inst: '<b>Blank Canvas!</b> Fill 3×3 — All Lines Must Total the SAME. New to puzzles? Click 👁 SHOW to see the pattern!'
+    },
+    '4x4': {
+      example: [
+        [ 1,  2,  3,  4],
+        [ 5,  6,  7,  8],
+        [ 9, 10, 11, 12],
+        [13, 14, 15, 16]
+      ],
+      lines: ['r0','r1','r2','r3','c0','c1','c2','c3','d1','d2'],
+      rows: 4,
+      cols: 4,
+      inst: '<b>Level Up!</b> Fill 4×4 — All Lines Must Total the SAME. Stuck? Click 👁 SHOW for a hint!'
+    },
+    '5x5': {
+      example: [
+        [17, 24,  1,  8, 15],
+        [23,  5,  7, 14, 16],
+        [ 4,  6, 13, 20, 22],
+        [10, 12, 19, 21,  3],
+        [11, 18, 25,  2,  9]
+      ],
+      lines: ['r0','r1','r2','r3','r4','c0','c1','c2','c3','c4','d1','d2'],
+      rows: 5,
+      cols: 5,
+      inst: '<b>Master Level!</b> Fill 5×5 — All Lines Must Total the SAME. You got this! 🌟'
+    }
+  };
+  
+  var currentSize = '3x3';
+  var solvedCount3x3 = 0; // Track 3x3 solves
+  var solvedTargets3x3 = []; // Track different targets used
+  var solvedCount4x4 = 0; // Track 4x4 solves
+  var solvedTargets4x4 = []; // Track different targets used
+  var solvedCount5x5 = 0; // Track 5x5 solves
+  var solvedTargets5x5 = []; // Track different targets used
+  var board = document.getElementById('board');
+  var targetPill = document.getElementById('targetPill');
+  var targetVal = document.getElementById('targetVal');
+  var msg = document.getElementById('msg');
+  var timerBox = document.getElementById('timerBox');
+  var instCard = document.getElementById('instCard');
+  var solvedCounter = document.getElementById('solvedCounter');
+  var cells = [];
+  var badges = {};
+  var solvedFlag = false;
+  var peeking = false;
+  var timerInt = null, startTime = null;
+  var designerMode = false; // Designer Mode flag
+  
+  // Difficulty toggle
+  document.querySelectorAll('.toggleBtn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var newSize = this.dataset.size;
+      // Allow switching if: Designer Mode ON, OR normal progression unlocked
+      var canSwitch = designerMode || newSize === '3x3' || solvedCount3x3 >= 3 || (newSize === '4x4' && solvedCount3x3 >= 3) || (newSize === '5x5' && solvedCount4x4 >= 3);
+      
+      if (canSwitch) {
+        document.querySelectorAll('.toggleBtn').forEach(function(b){ b.classList.remove('active'); });
+        this.classList.add('active');
+        if (newSize !== currentSize) {
+          currentSize = newSize;
+          if (currentSize === '3x3') {
+            solvedCounter.style.display = 'block';
+          } else {
+            solvedCounter.style.display = 'none';
+          }
+          initBoard();
+          applyTheme(); // Apply colors and diagonal guide
+        }
+      } else if (newSize === '4x4') {
+        msg.textContent = '🔒 Complete 3×3 with 3 different targets first!';
+        msg.className = '';
+      } else if (newSize === '5x5') {
+        msg.textContent = '🔒 Complete 4×4 with 3 different targets first!';
+        msg.className = '';
+      }
+    });
+  });
+  
+  // Hide 4x4 and 5x5 buttons initially
+  document.querySelector('[data-size="4x4"]').parentElement.style.display = 'none';
+  document.querySelector('[data-size="5x5"]').parentElement.style.display = 'none';
+  
+  function initBoard(){
+    board.innerHTML = '';
+    cells = [];
+    badges = {};
+    solvedFlag = false;
+    peeking = false;
+    resetTimer();
+    
+    var puzzle = PUZZLES[currentSize];
+    board.className = 'board size' + currentSize;
+    
+    // Update instruction
+    instCard.innerHTML = puzzle.inst;
+    
+    // Update logic box
+    if (currentSize === '3x3') {
+      document.getElementById('logicBox').innerHTML = `
+        <h3>📐 Beginner Tip for 3×3 - The Classical Magic Square!</h3>
+        <p><b>The Secret Structure:</b></p>
+        <ol style="margin: 10px 0; padding-left: 20px;">
+          <li><b>Center is ALWAYS 5</b> (shown in blue) - The heart of the magic!</li>
+          <li><b>Opposite numbers add up to 10:</b> 1+9=10, 2+8=10, 3+7=10, 4+6=10</li>
+          <li><b>All 8 lines total = 15</b> (rows, columns, diagonals)</li>
+          <li><b>Numbers are arranged in a special pattern</b> - Not simple counting!</li>
+        </ol>
+        <p><b>How to Learn It:</b></p>
+        <ol style="margin: 10px 0; padding-left: 20px;">
+          <li>Click 👁 <b>SHOW</b> to see where each number goes</li>
+          <li>Study the pattern carefully</li>
+          <li>Notice how opposites add to 10</li>
+          <li>Try rebuilding it yourself!</li>
+          <li>Once you master it, try with different target numbers</li>
+        </ol>
+        <p><b>💡 The Magic:</b> This pattern works for ANY numbers! You can change the target from 15 to anything - the structure stays the same!</p>
+        <p><b>🎮 Advanced Challenge:</b> Try using <b>0 as a number</b> to create new combinations! (e.g., 0, 1, 2... or negative numbers for bigger targets)</p>
+      `;
+    } else if (currentSize === '5x5') {
+      document.getElementById('logicBox').innerHTML = `
+        <h3>🧮 5×5 Master Tips - Hack Shaw Teeth Method!</h3>
+        <p><b>The Mathematical Secret:</b> Center Grid Value = <b>Target ÷ 5</b></p>
+        <p style="background:rgba(50, 50, 50, 0.8); padding:12px; border-radius:6px; margin:10px 0; border-left:4px solid #00bcd4;">
+          <b>Example:</b> If target = 65, then center = 65 ÷ 5 = <b>13</b> ✓<br>
+          <b>All rows, columns, and diagonals MUST equal your target!</b>
+        </p>
+        
+        <p style="background:rgba(50, 50, 50, 0.8); padding:12px; border-radius:6px; margin:10px 0; border-left:4px solid #4caf50;">
+          <b>🧠 CENTER GRID RELATIONSHIPS (The Heart of the Puzzle):</b><br>
+          <br>
+          <b>Center Cell [3,3] = Target ÷ 5 (The HEART)</b><br>
+          For target 65: Center = 13<br>
+          <br>
+          <b>Plus/Minus from Center:</b><br>
+          • <b>[1,3] (Top Row Middle) = Center - 12</b> → 13 - 12 = <b>1</b> ✓<br>
+          • <b>[5,3] (Bottom Row Middle) = Center + 12</b> → 13 + 12 = <b>25</b> ✓<br>
+          • <b>[3,1] (1st Column Middle) = Center - 9</b> → 13 - 9 = <b>4</b> ✓<br>
+          • <b>[3,5] (5th Column Middle) = Center + 9</b> → 13 + 9 = <b>22</b> ✓<br>
+          <br>
+          <b>💡 These 5 cells form a CROSS through the center!</b><br>
+          They reveal the mathematical balance of the entire puzzle!
+        </p>
+        
+        <p><b>Step 1: Place First Number (Row 1, Middle Column)</b></p>
+        <ol style="margin: 10px 0; padding-left: 20px;">
+          <li><b>Position:</b> Top row, middle column = [1,3] <b>(This is Center - 12!)</b></li>
+          <li><b>Number:</b> Place <b>1</b> here</li>
+          <li><b>Why:</b> This starts the pattern for placing all 25 numbers</li>
+          <li><b>Verify:</b> 1 = 13 - 12 ✓ (matches center relationship!)</li>
+        </ol>
+        
+        <p><b>Step 2: Count Down 5 (The "Teeth" Pattern)</b></p>
+        <ol style="margin: 10px 0; padding-left: 20px;">
+          <li>From where you placed number 1 [1,3], <b>count DOWN 5 cells in the SAME COLUMN</b></li>
+          <li>Count: [2,3], [3,3], [4,3], [5,3], [5,3] ← You reach [5,3]!</li>
+          <li><b>[5,3] is Bottom Row Middle = Center + 12 (will be 25)</b></li>
+          <li>When you reach "5" in your countdown, <b>place number 2 IMMEDIATELY TO THE RIGHT</b> at [5,4]</li>
+          <li><b>Example:</b> 1 at [1,3] → Count down 5 → [5,3] → Place 2 at [5,4] ✓</li>
+        </ol>
+        
+        <p><b>Step 3: Wrapping at Column 5 (Right Edge)</b></p>
+        <ol style="margin: 10px 0; padding-left: 20px;">
+          <li>If you're placing a number at <b>column 5</b> and the next "immediate right cell" would be column 6:</li>
+          <li><b>Wrap back to the same row, column 1</b> (go left, wrap around)</li>
+          <li><b>Example:</b> Placed at [row 2, col 5] → Next position wraps to [row 2, col 1] ✓</li>
+        </ol>
+        
+        <p><b>Step 4: Wrapping at Row 5 (Bottom Edge)</b></p>
+        <ol style="margin: 10px 0; padding-left: 20px;">
+          <li>If you're in <b>row 5</b> and count down 5 would go below the grid:</li>
+          <li><b>Start counting from row 1 of the SAME COLUMN</b> (wrap to top)</li>
+          <li>Count: 1 cell down from top, 2, 3, 4, 5</li>
+          <li>Place next number immediately to the right of where you end ✓</li>
+        </ol>
+        
+        <p><b>Step 5: If a Cell is Already Occupied</b></p>
+        <ol style="margin: 10px 0; padding-left: 20px;">
+          <li><b>Do NOT place the number in an occupied cell!</b></li>
+          <li>Instead, <b>place it in the cell DIRECTLY BELOW the previously placed number</b></li>
+          <li>Then continue the countdown pattern from this new position</li>
+          <li><b>Example:</b> If [row 5, col 4] is occupied, place next number at [row 1, col 4] (wrap to top) ✓</li>
+        </ol>
+        
+        <p><b>Step 6: Verify Your Solution</b></p>
+        <p style="background:rgba(50, 50, 50, 0.8); padding:12px; border-radius:6px; margin:10px 0; border-left:4px solid #4caf50;">
+          Check that <b>ALL</b> of these equal your target (65):<br>
+          ✓ <b>All 5 rows</b> sum to 65<br>
+          ✓ <b>All 5 columns</b> sum to 65<br>
+          ✓ <b>Both diagonals</b> sum to 65<br>
+          ✓ <b>Numbers 1-25</b> used exactly once
+        </p>
+        
+        <p><b>🧮 Why This Works (Mathematics):</b></p>
+        <ol style="margin: 10px 0; padding-left: 20px;">
+          <li><b>Center value</b> = 13 (exactly target ÷ 5)</li>
+          <li><b>Opposite positions balance:</b> 17+9=26, 24+2=26, 1+25=26, 15+11=26</li>
+          <li><b>All pairs sum to</b> = 2 × center = 26</li>
+          <li><b>The countdown pattern</b> distributes numbers perfectly</li>
+          <li><b>Result:</b> All lines total exactly to target!</li>
+        </ol>
+        
+        <p><b>💡 Complete Example (Target = 65) - Study This Pattern:</b></p>
+        <p style="background:rgba(50, 50, 50, 0.8); padding:12px; border-radius:6px; font-family:monospace; margin:10px 0; border-left:4px solid #ff9800;">
+          [17] [24]  [1]  [8] [15]  ← All rows = 65<br>
+          [23]  [5]  [7] [14] [16]<br>
+           [4]  [6] <b>[13]</b> [20] [22]  ← CENTER = 13 (Target÷5)<br>
+          [10] [12] [19] [21]  [3]<br>
+          [11] [18] [25]  [2]  [9]<br>
+        </p>
+        
+        <p><b>📌 KEY POINTS (Avoid Confusion):</b></p>
+        <p style="background:rgba(50, 50, 50, 0.8); padding:12px; border-radius:6px; margin:10px 0; border-left:4px solid #f44336;">
+          ✓ <b>Countdown is VERTICAL (straight down column)</b> - NOT diagonal!<br>
+          ✓ <b>Place next number to the RIGHT</b> of where countdown ends<br>
+          ✓ <b>Wrapping happens at edges</b> - top wraps to bottom, right wraps to left<br>
+          ✓ <b>If occupied, place BELOW</b> - NOT diagonal, just one cell down<br>
+        </p>
+        
+        <p><b>🚀 Try Different Targets!</b> The Hack Shaw method works for ANY target!</p>
+        <p style="background:rgba(50, 50, 50, 0.8); padding:12px; border-radius:6px; margin:10px 0; border-left:4px solid #2196f3;">
+          <b>Example: Target = 75</b><br>
+          Center = 75 ÷ 5 = <b>15</b> ✓<br>
+          Follow same countdown pattern<br>
+          All lines = 75! ✓
+        </p>
+        
+        <p><b>✅ Remember:</b></p>
+        <p>
+          ✓ <b>Systematic placement</b> - Follow countdown pattern exactly<br>
+          ✓ <b>Mathematical</b> - Every step has logic (center = target÷5)<br>
+          ✓ <b>Verifiable</b> - Can check every calculation<br>
+          ✓ <b>Works always</b> - For any target, not just 65!<br>
+          ✓ <b>Use your imagination!</b> - Once you understand the pattern, solve with YOUR OWN calculations!
+        </p>
+      `;
+    } else {
+      document.getElementById('logicBox').innerHTML = `
+        <h3>📐 4×4 Master Tips - Extract the Magic with Center Grid Math!</h3>
+        <p><b>The Heart of the Puzzle:</b> The <b>CENTER GRID (4 middle boxes)</b> is your ANCHOR - they reveal the target!</p>
+        
+        <p style="background:rgba(50, 50, 50, 0.8); padding:12px; border-radius:6px; margin:10px 0; border-left:4px solid #00bcd4;">
+          <b>🎯 Center Grid Mathematical Relationships:</b><br>
+          <b>Center Grid Value = Target ÷ 4</b> (e.g., target 34 → center avg = 8.5)<br>
+          <b>Shaded Diagonal Cells:</b><br>
+          ✓ <b>Top-Left to Bottom-Right:</b> [1,1], [2,2], [3,3], [4,4]<br>
+          ✓ <b>First Row Middle:</b> [1,2] + [1,3] = minus from center logic<br>
+          ✓ <b>Last Row Middle:</b> [4,2] + [4,3] = plus from center logic
+        </p>
+        
+        <p><b>Step 1: Understand the Anchor Boxes (The 8 Fixed Points)</b></p>
+        <ol style="margin: 10px 0; padding-left: 20px;">
+          <li><b>4 Corners ALWAYS stay:</b> [1,1], [1,4], [4,1], [4,4]</li>
+          <li><b>4 Middle boxes ALWAYS stay:</b> [2,2], [2,3], [3,2], [3,3] (shown in blue)</li>
+          <li><b>Total: 8 anchor boxes</b> - These are your reference skeleton!</li>
+          <li><b>Remaining 8 boxes:</b> You fill these with calculations</li>
+        </ol>
+        
+        <p><b>Step 2: Fill Initial Zigzag Pattern (To Understand Structure)</b></p>
+        <ol style="margin: 10px 0; padding-left: 20px;">
+          <li>Start at <b>TOP LEFT [1,1]</b> with any starting number (e.g., 1)</li>
+          <li>Fill <b>left to right</b> in first row: 1, 2, 3, 4</li>
+          <li>Row 2: Continue zigzag → 5, 6, 7, 8</li>
+          <li>Row 3: Continue → 9, 10, 11, 12</li>
+          <li>Row 4: Continue → 13, 14, 15, 16</li>
+          <li><b>Result:</b> Now you see how anchor boxes relate!</li>
+        </ol>
+        
+        <p><b>Step 3: Extract the Magic (Keep Anchors, Erase Others)</b></p>
+        <ol style="margin: 10px 0; padding-left: 20px;">
+          <li><b>KEEP all 8 anchor boxes</b> (4 corners + 4 middle) - Don't change them!</li>
+          <li><b>ERASE the remaining 8 boxes</b> - [1,2], [1,3], [2,1], [2,4], [3,1], [3,4], [4,2], [4,3]</li>
+          <li>Now study what you have - the pattern is revealed!</li>
+        </ol>
+        
+        <p><b>Step 4: Calculate Using Center Grid Logic</b></p>
+        <p style="background:rgba(50, 50, 50, 0.8); padding:12px; border-radius:6px; margin:10px 0; border-left:4px solid #ff9800;">
+          <b>Mathematical Relationships from Center Grid:</b><br>
+          <b>Center 4 boxes average = Target ÷ 4</b><br>
+          • <b>[2,2] + [2,3] + [3,2] + [3,3]</b> = Half of target (approx)<br>
+          • <b>Top-Left [1,1] = [3,3] opposite value</b> (diagonal balance)<br>
+          • <b>Diagonal Sum:</b> [1,1] + [2,2] + [3,3] + [4,4] reveals pattern<br>
+          <b>💡 Use these relationships to fill remaining 8 boxes!</b>
+        </p>
+        
+        <p><b>Step 5: Fill Remaining 8 Boxes with Strategy</b></p>
+        <ol style="margin: 10px 0; padding-left: 20px;">
+          <li>Look at each empty row - what's needed to hit target?</li>
+          <li>Look at each empty column - what's needed to hit target?</li>
+          <li>Check diagonals - they must also equal target!</li>
+          <li>Use the anchor boxes as guides for balance</li>
+          <li><b>Remember:</b> Opposite positions often have mathematical relationships</li>
+        </ol>
+        
+        <p style="background:rgba(50, 50, 50, 0.8); padding:12px; border-radius:6px; margin:10px 0; border-left:4px solid #4caf50;">
+          <b>Example: Target = 34 (Starting 1-16 zigzag)</b><br>
+          [1]  [2]  [3]  [4]  ← Row 1 sum = 10 (need 24 more)<br>
+          [5]  [6]  [7]  [8]  ← Row 2 sum = 26 (need 8 more)<br>
+          [9] [10] [11] [12]  ← Row 3 sum = 42 (too high!)<br>
+          [13][14][15][16]  ← Row 4 sum = 58 (too high!)<br>
+          <br>
+          <b>So 6, 7, 10, 11 need to be ERASED and recalculated!</b>
+        </p>
+        
+        <p><b>Step 6: Why This Works (The Mathematics)</b></p>
+        <ol style="margin: 10px 0; padding-left: 20px;">
+          <li><b>8 Anchor boxes</b> create the structural balance</li>
+          <li><b>Corners [1,1], [1,4], [4,1], [4,4]</b> = outer stability</li>
+          <li><b>Middle [2,2], [2,3], [3,2], [3,3]</b> = inner heart</li>
+          <li><b>Together they force</b> all lines to follow same total</li>
+          <li><b>Your job:</b> Calculate remaining 8 to honor this constraint</li>
+        </ol>
+        
+        <p><b>📐 Reference Grid (Study This Pattern!):</b></p>
+        <p style="background:rgba(50, 50, 50, 0.8); padding:12px; border-radius:6px; font-family:monospace; margin:10px 0; border-left:4px solid #2196f3;">
+          [16]  [3]  [2] [13]  ← All rows = 34<br>
+           [5] [10] [11]  [8]<br>
+           [9]  [6]  [7] [12]<br>
+           [4] [15] [14]  [1]<br>
+          <br>
+          <b>Shaded Diagonal:</b> [16], [10], [7], [1] = Pattern!<br>
+          <b>Anchor Positions:</b> Corners + Middle 4 boxes stay fixed
+        </p>
+        
+        <p><b>🎯 Key Insights:</b></p>
+        <p style="background:rgba(50, 50, 50, 0.8); padding:12px; border-radius:6px; margin:10px 0; border-left:4px solid #f44336;">
+          ✓ <b>8 Anchors provide the skeleton</b><br>
+          ✓ <b>Center grid math guides calculations</b><br>
+          ✓ <b>Opposite boxes balance each other</b><br>
+          ✓ <b>Diagonal reveals the pattern</b><br>
+          ✓ <b>Use logic, not memorization!</b>
+        </p>
+        
+        <p><b>💡 Try Different Targets!</b> Once you understand the anchor positions, try:</p>
+        <ol style="margin: 10px 0; padding-left: 20px;">
+          <li>Target = 30 (smaller)</li>
+          <li>Target = 40 (larger)</li>
+          <li>Target = 50 (much larger)</li>
+        </ol>
+        <p>The anchor positions stay the same - only the numbers change!</p>
+        
+        <p><b>🎮 Ready?</b> Study the anchors, understand the pattern, and create your own solution!</p>
+      `;
+    }
+    
+    var n = puzzle.rows;
+    
+    // Place badges and cells in grid
+    function place(el, row, col){
+      el.style.gridRow = row;
+      el.style.gridColumn = col;
+      board.appendChild(el);
+    }
+    
+    function makeBadge(key, isCorner){
+      var b = document.createElement('div');
+      b.className = 'badge' + (isCorner ? ' corner' : '');
+      b.textContent = '';
+      if (!badges[key]) badges[key] = [];
+      badges[key].push(b);
+      return b;
+    }
+    
+    // Create grid with badges around 3x3 or 4x4
+    // For 3x3: 5x5 grid (badge borders + 3x3 center)
+    // For 4x4: 6x6 grid (badge borders + 4x4 center)
+    
+    var bSize = n + 2; // 5 or 6
+    
+    // Top row badges
+    place(makeBadge('d1', true), 1, 1);
+    for (var c = 0; c < n; c++) place(makeBadge('c' + c, false), 1, c + 2);
+    place(makeBadge('d2', true), 1, bSize);
+    
+    // Middle rows: cells + badges
+    for (var r = 0; r < n; r++){
+      place(makeBadge('r' + r, false), r + 2, 1);
+      cells.push([]);
+      for (var c2 = 0; c2 < n; c2++){
+        var inp = document.createElement('input');
+        inp.className = 'cell';
+        inp.type = 'text';
+        inp.inputMode = 'numeric';
+        // 3-digit numbers for 4x4 and 5x5 (up to 999), 2-digit for 3x3
+        inp.maxLength = (currentSize === '3x3') ? 2 : 3;
+        inp.addEventListener('input', onInput);
+        inp.addEventListener('keydown', onKeyDown);
+        cells[r].push(inp);
+        place(inp, r + 2, c2 + 2);
+      }
+      place(makeBadge('r' + r, false), r + 2, bSize);
+    }
+    
+    // Mark anchor boxes (persistent guides)
+    if (currentSize === '4x4') {
+      // 4 corners
+      cells[0][0].classList.add('anchor'); // top-left
+      cells[0][3].classList.add('anchor'); // top-right
+      cells[3][0].classList.add('anchor'); // bottom-left
+      cells[3][3].classList.add('anchor'); // bottom-right
+      // 4 middle boxes
+      cells[1][1].classList.add('anchor'); // middle-left-top
+      cells[1][2].classList.add('anchor'); // middle-right-top
+      cells[2][1].classList.add('anchor'); // middle-left-bottom
+      cells[2][2].classList.add('anchor'); // middle-right-bottom
+    } else if (currentSize === '3x3') {
+      // For 3x3, mark only center
+      cells[1][1].classList.add('anchor');
+    } else if (currentSize === '5x5') {
+      // For 5x5, mark center (heart of puzzle)
+      cells[2][2].classList.add('anchor');
+      cells[2][2].classList.add('center-heart');
+      
+      // Add center grid reference highlighting (relationships from center)
+      // [1,3] = Center - 12 (top row middle)
+      cells[0][2].classList.add('center-ref');
+      // [5,3] = Center + 12 (bottom row middle)
+      cells[4][2].classList.add('center-ref');
+      // [3,1] = Center - 9 (first column middle)
+      cells[2][0].classList.add('center-ref');
+      // [3,5] = Center + 9 (fifth column middle)
+      cells[2][4].classList.add('center-ref');
+    }
+    
+    // Bottom row badges
+    place(makeBadge('d2', true), bSize, 1);
+    for (var c3 = 0; c3 < n; c3++) place(makeBadge('c' + c3, false), bSize, c3 + 2);
+    place(makeBadge('d1', true), bSize, bSize);
+  }
+  
+  function val(r, c){
+    if (!cells[r] || !cells[r][c]) return null;
+    var v = parseInt(cells[r][c].value, 10);
+    return isNaN(v) ? null : v;
+  }
+  
+  function lineVals(key){
+    var puzzle = PUZZLES[currentSize];
+    var n = puzzle.rows;
+    var out = [];
+    for (var i = 0; i < n; i++){
+      if (key[0] === 'r') out.push(val(+key[1], i));
+      else if (key[0] === 'c') out.push(val(i, +key[1]));
+      else if (key === 'd1') out.push(val(i, i));
+      else out.push(val(i, n - 1 - i));
+    }
+    return out;
+  }
+  
+  function setBadge(key, text, cls){
+    badges[key].forEach(function(b){
+      b.textContent = text;
+      b.classList.remove('partial','full','win','word','peektone');
+      if (cls) b.classList.add(cls);
+    });
+  }
+  
+  function applyTheme(){
+    // Apply size-specific color theme
+    var sizeClass = 'size' + currentSize.replace('x', 'x');
+    board.className = 'board ' + sizeClass;
+    targetPill.className = 'targetPill ' + sizeClass;
+    
+    // Apply diagonal guide to 5×5 cells
+    if (currentSize === '5x5') {
+      // 7 cells: (0,2), (0,4), (1,3), (2,2), (3,1), (4,0), (4,2)
+      // Clear all first
+      for (var i = 0; i < 5; i++) {
+        for (var j = 0; j < 5; j++) {
+          cells[i][j].classList.remove('diagonal-guide');
+        }
+      }
+      // Add diagonal guide to exact cells
+      cells[0][2].classList.add('diagonal-guide'); // R1C3
+      cells[0][4].classList.add('diagonal-guide'); // R1C5
+      cells[1][3].classList.add('diagonal-guide'); // R2C4
+      cells[2][2].classList.add('diagonal-guide'); // R3C3 HEART
+      cells[3][1].classList.add('diagonal-guide'); // R4C2
+      cells[4][0].classList.add('diagonal-guide'); // R5C1
+      cells[4][2].classList.add('diagonal-guide'); // R5C3
+    }
+  }
+
+  function update(){
+    if (solvedFlag) return;
+    var puzzle = PUZZLES[currentSize];
+    
+    // Duplicate detection
+    var seen = {}, dups = {};
+    for (var r = 0; r < puzzle.rows; r++) for (var c = 0; c < puzzle.cols; c++){
+      var v = val(r, c);
+      if (v === null) continue;
+      if (seen[v] !== undefined) dups[v] = true;
+      seen[v] = true;
+    }
+    
+    for (var r2 = 0; r2 < puzzle.rows; r2++) for (var c2 = 0; c2 < puzzle.cols; c2++){
+      var vv = val(r2, c2);
+      cells[r2][c2].classList.toggle('dup', !!(vv !== null && dups[vv]));
+    }
+    
+    // Badge updates
+    var completeSums = [];
+    puzzle.lines.forEach(function(k){
+      var vals = lineVals(k);
+      var filled = vals.filter(function(x){ return x !== null; });
+      var sum = filled.reduce(function(a, b){ return a + b; }, 0);
+      if (filled.length < puzzle.rows){
+        setBadge(k, sum, 'partial');
+      } else {
+        setBadge(k, sum, peeking ? 'peektone' : 'full');
+        completeSums.push(sum);
+      }
+    });
+    
+    // Target pill - persist if already solved, show ? if no complete line yet
+    if (!solvedFlag) {
+      targetVal.textContent = completeSums.length ? completeSums[0] : '?';
+    }
+    
+    // Win check
+    var allFilled = true;
+    for (var r3 = 0; r3 < puzzle.rows; r3++) for (var c4 = 0; c4 < puzzle.cols; c4++)
+      if (val(r3, c4) === null) allFilled = false;
+    
+    if (!peeking && allFilled && Object.keys(dups).length === 0 && completeSums.length === puzzle.lines.length &&
+        completeSums.every(function(s){ return s === completeSums[0]; })){
+      win(completeSums[0]); // Use actual target from first line
+    } else {
+      msg.textContent = '';
+      msg.className = '';
+    }
+  }
+  
+
+  
+  function win(actualTarget){
+    solvedFlag = true;
+    stopTimer();
+    var puzzle = PUZZLES[currentSize];
+    
+    targetPill.classList.add('solved');
+    targetVal.textContent = actualTarget;
+    puzzle.lines.forEach(function(k){ setBadge(k, actualTarget, 'win'); });
+    
+    for (var r = 0; r < puzzle.rows; r++) for (var c = 0; c < puzzle.cols; c++){
+      cells[r][c].classList.remove('given','dup','anchor');
+      cells[r][c].classList.add('win');
+      cells[r][c].readOnly = true;
+    }
+    
+    msg.textContent = '🎉 Solved! Your target: ' + actualTarget;
+    msg.className = 'win';
+    
+    // Handle progression
+    if (currentSize === '3x3') {
+      // Check if this target is new
+      if (solvedTargets3x3.indexOf(actualTarget) === -1) {
+        solvedTargets3x3.push(actualTarget);
+        solvedCount3x3 = solvedTargets3x3.length;
+        document.getElementById('solvedCount').textContent = solvedCount3x3;
+        
+        if (solvedCount3x3 >= 3) {
+          solvedCounter.classList.add('unlocked');
+          // Show 4x4 button
+          document.querySelector('[data-size="4x4"]').parentElement.style.display = 'flex';
+          showCongrats('🎉 Master of 3×3!', 'You solved with 3 different targets! Ready for 4×4?');
+        } else {
+          setTimeout(function(){
+            msg.textContent = '✨ ' + (3 - solvedCount3x3) + ' more with DIFFERENT targets to unlock 4×4!';
+          }, 1500);
+        }
+      } else {
+        setTimeout(function(){
+          msg.textContent = '⚠️ You already solved with target ' + actualTarget + '! Try a DIFFERENT number!';
+        }, 1500);
+      }
+    } else if (currentSize === '4x4') {
+      // Check if this target is new
+      if (solvedTargets4x4.indexOf(actualTarget) === -1) {
+        solvedTargets4x4.push(actualTarget);
+        solvedCount4x4 = solvedTargets4x4.length;
+        
+        if (solvedCount4x4 >= 3) {
+          // Show 5x5 button
+          document.querySelector('[data-size="5x5"]').parentElement.style.display = 'flex';
+          showCongrats('🏆 Master of 4×4!', 'You solved with 3 different targets! Ready for 5×5?');
+        } else {
+          setTimeout(function(){
+            msg.textContent = '✨ ' + (3 - solvedCount4x4) + ' more with DIFFERENT targets to unlock 5×5!';
+          }, 1500);
+        }
+      } else {
+        setTimeout(function(){
+          msg.textContent = '⚠️ You already solved with target ' + actualTarget + '! Try a DIFFERENT number!';
+        }, 1500);
+      }
+    } else if (currentSize === '5x5') {
+      // Check if this target is new
+      if (solvedTargets5x5.indexOf(actualTarget) === -1) {
+        solvedTargets5x5.push(actualTarget);
+        solvedCount5x5 = solvedTargets5x5.length;
+        
+        if (solvedCount5x5 >= 3) {
+          showCongrats('⭐ Master of 5×5!', '🌟 You are a Magic Square Master! 6×6 & beyond coming soon!');
+        } else {
+          setTimeout(function(){
+            msg.textContent = '✨ ' + (3 - solvedCount5x5) + ' more with DIFFERENT targets to master 5×5!';
+          }, 1500);
+        }
+      } else {
+        setTimeout(function(){
+          msg.textContent = '⚠️ You already solved with target ' + actualTarget + '! Try a DIFFERENT number!';
+        }, 1500);
+      }
+    }
+  }
+  
+  function showCongrats(title, subtitle){
+    var modal = document.getElementById('congratsModal');
+    document.getElementById('congratsText').textContent = title + ' ' + subtitle;
+    modal.style.display = 'flex';
+    
+    document.getElementById('nextBtn').onclick = function(){
+      modal.style.display = 'none';
+      if (currentSize === '3x3' && solvedCount >= 3) {
+        // Auto-unlock 4x4
+        document.querySelector('[data-size="4x4"]').click();
+      } else {
+        // Restart same puzzle
+        initBoard();
+        applyTheme(); // Apply colors and diagonal guide
+      }
+    };
+  }
+  
+  
+  
+  // Timer
+  function startTimer(){
+    if (timerInt) return;
+    startTime = Date.now();
+    timerInt = setInterval(function(){
+      var s = Math.floor((Date.now() - startTime) / 1000);
+      var m = Math.floor(s / 60); s = s % 60;
+      timerBox.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+    }, 500);
+  }
+  
+  function stopTimer(){ clearInterval(timerInt); timerInt = null; }
+  function resetTimer(){ stopTimer(); timerBox.textContent = '00:00'; startTime = null; }
+  
+  // Simple snapshot for peek
+  function snapshot(){
+    var puzzle = PUZZLES[currentSize];
+    var s = [];
+    for (var r = 0; r < puzzle.rows; r++) for (var c = 0; c < puzzle.cols; c++) s.push(cells[r][c].value);
+    return s;
+  }
+  
+  function onInput(e){
+    e.target.value = e.target.value.replace(/[^0-9]/g, '');
+    startTimer();
+    update();
+  }
+  
+  function onKeyDown(e){
+    if (e.key === 'Enter') e.target.blur();
+  }
+  
+
+  
+  // Reset
+  function resetVisuals(){
+    var puzzle = PUZZLES[currentSize];
+    solvedFlag = false;
+    targetPill.classList.remove('solved');
+    for (var r = 0; r < puzzle.rows; r++) for (var c = 0; c < puzzle.cols; c++){
+      cells[r][c].value = '';
+      cells[r][c].className = 'cell';
+      cells[r][c].readOnly = false;
+      // PRESERVE anchor boxes - always show them
+      if (currentSize === '4x4') {
+        // 4 corners + 4 middle
+        if ((r === 0 && c === 0) || (r === 0 && c === 3) || 
+            (r === 3 && c === 0) || (r === 3 && c === 3) ||
+            (r === 1 && c === 1) || (r === 1 && c === 2) ||
+            (r === 2 && c === 1) || (r === 2 && c === 2)) {
+          cells[r][c].classList.add('anchor');
+        }
+      } else if (currentSize === '3x3') {
+        // Center only for 3x3
+        if (r === 1 && c === 1) {
+          cells[r][c].classList.add('anchor');
+        }
+      }
+    }
+    resetTimer();
+  }
+  
+  
+  // Clear button
+  document.getElementById('clearBtn').addEventListener('click', function(){
+    if (peeking) return;
+    resetVisuals();
+    msg.textContent = 'Board cleared — set your own target!';
+    msg.className = '';
+    update();
+  });
+  
+  // Peek button
+  document.getElementById('peekBtn').addEventListener('click', function(){
+    if (peeking || solvedFlag) return;
+    peeking = true;
+    var btn = this;
+    var puzzle = PUZZLES[currentSize];
+    var saved = snapshot();
+    
+    // Show solution
+    for (var r = 0; r < puzzle.rows; r++) for (var c = 0; c < puzzle.cols; c++){
+      // Show ENTIRE GRID for all sizes (not just anchors for 4x4)
+      cells[r][c].value = puzzle.example[r][c];
+      
+      cells[r][c].classList.remove('dup');
+      cells[r][c].classList.add('peek');  // Add peek class for background color
+      cells[r][c].readOnly = true;
+      cells[r][c].blur();
+    }
+    
+    // Also add peek class to badges for contrast
+    for (var i = 0; i < badges.length; i++) {
+      badges[i].classList.add('peek');
+    }
+    
+    
+    update();
+    // Just show the solution quietly - no message needed
+    var secs = 3;
+    btn.textContent = '👁 ' + secs;
+    var iv = setInterval(function(){
+      secs--;
+      if (secs > 0){ btn.textContent = '👁 ' + secs; return; }
+      clearInterval(iv);
+      var i = 0;
+      for (var r2 = 0; r2 < puzzle.rows; r2++) for (var c2 = 0; c2 < puzzle.cols; c2++){
+        cells[r2][c2].value = saved[i++];
+        cells[r2][c2].classList.remove('peek');
+        cells[r2][c2].readOnly = false;
+      }
+      
+      btn.textContent = '👁 SHOW';
+      peeking = false;
+      update();
+    }, 1000);
+  });
+  
+  // Logic toggle
+  document.getElementById('logicBtn').addEventListener('click', function(){
+    var box = document.getElementById('logicBox');
+    var open = box.style.display === 'block';
+    box.style.display = open ? 'none' : 'block';
+    this.textContent = open ? '📐 Show Math Logic ▼' : '📐 Hide Math Logic ▲';
+  });
+  
+  // Designer Mode - PIN Protection
+  var DESIGNER_PIN = '1234'; // ⚠️ CHANGE THIS PIN TO YOUR CUSTOM 4-DIGIT CODE
+  
+  document.getElementById('designerBtn').addEventListener('click', function(){
+    document.getElementById('designerPin').value = '';
+    document.getElementById('designerModal').style.display = 'flex';
+  });
+  
+  document.getElementById('designerSubmit').addEventListener('click', function(){
+    var enteredPin = document.getElementById('designerPin').value;
+    if (enteredPin === DESIGNER_PIN) {
+      designerMode = true;
+      document.getElementById('designerModal').style.display = 'none';
+      // Unlock all levels
+      document.querySelector('[data-size="4x4"]').parentElement.style.display = 'flex';
+      document.querySelector('[data-size="5x5"]').parentElement.style.display = 'flex';
+      document.getElementById('designerBtn').textContent = '🔓 Designer (Active)';
+      document.getElementById('designerBtn').style.background = '#2f7ff0';
+      document.getElementById('designerBtn').style.color = '#fff';
+      msg.textContent = '🎯 Designer Mode Activated! All levels unlocked.';
+      msg.className = '';
+    } else {
+      alert('❌ Invalid PIN. Access denied.');
+      document.getElementById('designerPin').value = '';
+    }
+  });
+  
+  document.getElementById('designerCancel').addEventListener('click', function(){
+    document.getElementById('designerModal').style.display = 'none';
+  });
+  
+  // Init with 3x3
+  initBoard();
+  applyTheme(); // Apply colors and diagonal guide
+})();
+</script>
+</body>
+</html>
