@@ -574,6 +574,22 @@
   </div>
 </div>
 
+<!-- Cheat Sheet Image Popup (generic — reused by 3x3 / 4x4 / 5x5) -->
+<div class="congratsModal" id="cheatModal" onclick="closeCheat()">
+  <img id="cheatImg" alt="Quick formula sheet"
+       style="max-width:94vw; max-height:88vh; border-radius:12px; box-shadow:0 8px 40px rgba(0,0,0,.6); animation:bounceIn .5s ease;">
+  <p style="color:#fff; margin-top:12px; font-size:14px; opacity:.85;">Tap anywhere to close</p>
+</div>
+
+<script>
+function openCheat(src){
+  var m=document.getElementById('cheatModal');
+  document.getElementById('cheatImg').src=src;
+  m.style.display='flex';
+}
+function closeCheat(){ document.getElementById('cheatModal').style.display='none'; }
+</script>
+
 <script>
 (function(){
   // Puzzle definitions
@@ -689,6 +705,7 @@
     if (currentSize === '3x3') {
       document.getElementById('logicBox').innerHTML = `
         <h3>📐 Beginner Tip for 3×3 - The Classical Magic Square!</h3>
+        <button onclick="openCheat('cheat-3x3.png')" style="background:linear-gradient(135deg,#f093fb,#f5576c); color:#fff; border:none; border-radius:10px; padding:10px 18px; font-size:15px; font-weight:700; cursor:pointer; margin:6px 0 12px;">📋 Quick Formula Sheet</button>
         <p><b>The Secret Structure:</b></p>
         <ol style="margin: 10px 0; padding-left: 20px;">
           <li><b>Center = Target ÷ 3</b> (shown in blue) - The heart of the magic! For target 15, center = 15 ÷ 3 = 5.</li>
