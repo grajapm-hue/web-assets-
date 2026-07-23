@@ -706,6 +706,30 @@
         </ol>
         <p><b>💡 The Magic:</b> This pattern works for ANY numbers! You can change the target from 15 to anything - the structure stays the same!</p>
         <p><b>🎮 Advanced Challenge:</b> Try using <b>0 as a number</b> to create new combinations! (e.g., 0, 1, 2... or negative numbers for bigger targets)</p>
+
+        <p style="background:rgba(50, 50, 50, 0.8); padding:12px; border-radius:6px; margin:10px 0; border-left:4px solid #ffb300;">
+          <b>🪜 Build It Yourself - The "Count Down 3" Method</b><br>
+          <br>
+          A simple way to place <b>1 to 9</b> in the right order. Two rules only:<br>
+          <br>
+          <b>Move rule:</b> From the box you just filled, count <b>3 boxes downward</b> in the same column (the box you start on is "one"). If you reach the bottom, wrap around to the top and keep counting. Now place the next number in the box <b>immediately to the right</b> of where the count ended. If there is no box on the right, wrap around to the first column.<br>
+          <br>
+          <b>Blocked rule:</b> If that right-side box is <b>already filled</b>, place the next number <b>directly below the number you just placed</b> instead (wrapping bottom to top).
+        </p>
+
+        <p><b>Step by step</b> (R = row, C = column, 1 to 3):</p>
+        <ol style="margin: 10px 0; padding-left: 20px;">
+          <li><b>1</b> → R1, C2 (top middle). Your free starting box.</li>
+          <li><b>2</b> → count down 3 from 1 (ends R3, C2); go right → <b>R3, C3</b>.</li>
+          <li><b>3</b> → count down 3 from 2 (wraps, ends R2, C3); right wraps → <b>R2, C1</b>.</li>
+          <li><b>4</b> → count down 3 from 3 (ends R1, C1); right box is filled → blocked → below 3 → <b>R3, C1</b>.</li>
+          <li><b>5</b> → count down 3 from 4 (ends R2, C1); go right → <b>R2, C2</b> (the center).</li>
+          <li><b>6</b> → count down 3 from 5 (ends R1, C2); go right → <b>R1, C3</b>.</li>
+          <li><b>7</b> → count down 3 from 6 (ends R3, C3); right box is filled → blocked → below 6 → <b>R2, C3</b>.</li>
+          <li><b>8</b> → count down 3 from 7 (ends R1, C3); right wraps → <b>R1, C1</b>.</li>
+          <li><b>9</b> → count down 3 from 8 (ends R3, C1); go right → <b>R3, C2</b>. Done!</li>
+        </ol>
+        <p style="font-size:0.9em; opacity:0.85;">Tip: the count only picks a <i>landing</i> box - you always place to its <b>right</b>. It is fine if the landing box itself is already filled; only a filled <b>right-side</b> box triggers the blocked rule.</p>
       `;
     } else if (currentSize === '5x5') {
       document.getElementById('logicBox').innerHTML = `
