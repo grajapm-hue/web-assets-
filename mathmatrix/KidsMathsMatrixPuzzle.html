@@ -751,6 +751,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     } else if (currentSize === '5x5') {
       document.getElementById('logicBox').innerHTML = `
         <h3>🧮 5×5 Master Tips - Hack Shaw Teeth Method!</h3>
+        <button onclick="openCheat('cheat-5x5.png')" style="background:linear-gradient(135deg,#f093fb,#f5576c); color:#fff; border:none; border-radius:10px; padding:10px 18px; font-size:15px; font-weight:700; cursor:pointer; margin:6px 0 12px;">📋 Quick Formula Sheet</button>
         <p><b>The Mathematical Secret:</b> Center Grid Value = <b>Target ÷ 5</b></p>
         <p style="background:rgba(50, 50, 50, 0.8); padding:12px; border-radius:6px; margin:10px 0; border-left:4px solid #00bcd4;">
           <b>Example:</b> If target = 65, then center = 65 ÷ 5 = <b>13</b> ✓<br>
@@ -784,7 +785,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         <p><b>Step 2: Count Down 5 (The "Teeth" Pattern)</b></p>
         <ol style="margin: 10px 0; padding-left: 20px;">
           <li>From where you placed number 1 [1,3], <b>count DOWN 5 cells in the SAME COLUMN</b></li>
-          <li>Count: [2,3], [3,3], [4,3], [5,3], [5,3] ← You reach [5,3]!</li>
+          <li>Count (start box is "one"): [1,3]=1, [2,3]=2, [3,3]=3, [4,3]=4, [5,3]=5 ← You reach [5,3]!</li>
           <li><b>[5,3] is Bottom Row Middle = Center + 12 (will be 25)</b></li>
           <li>When you reach "5" in your countdown, <b>place number 2 IMMEDIATELY TO THE RIGHT</b> at [5,4]</li>
           <li><b>Example:</b> 1 at [1,3] → Count down 5 → [5,3] → Place 2 at [5,4] ✓</li>
