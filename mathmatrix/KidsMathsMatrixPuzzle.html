@@ -897,109 +897,19 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           <b>Target = sum of the 4 middle boxes</b> (6+7+10+11 = 34). The middle four never move, so they always tell you the target.
         </p>
 
-        <p><b>The Heart of the Puzzle:</b> The <b>CENTER GRID (4 middle boxes)</b> is your ANCHOR - they reveal the target!</p>
-        
         <p style="background:rgba(50, 50, 50, 0.8); padding:12px; border-radius:6px; margin:10px 0; border-left:4px solid #00bcd4;">
-          <b>🎯 Center Grid Mathematical Relationships:</b><br>
-          <b>Center Grid Value = Target ÷ 4</b> (e.g., target 34 → center avg = 8.5)<br>
-          <b>Shaded Diagonal Cells:</b><br>
-          ✓ <b>Top-Left to Bottom-Right:</b> [1,1], [2,2], [3,3], [4,4]<br>
-          ✓ <b>First Row Middle:</b> [1,2] + [1,3] = minus from center logic<br>
-          ✓ <b>Last Row Middle:</b> [4,2] + [4,3] = plus from center logic
+          <b>🎯 Good to know:</b><br>
+          • The <b>4 middle boxes</b> and <b>4 corners</b> never move - they are your anchor skeleton.<br>
+          • The <b>target</b> is the sum of the 4 middle boxes, and every row, column and diagonal matches it.<br>
+          • <b>Center average = Target ÷ 4</b> (for target 34 that is 8.5).
         </p>
-        
-        <p><b>Step 1: Understand the Anchor Boxes (The 8 Fixed Points)</b></p>
+
+        <p><b>🚀 Try Different Sequences!</b> The Fill &amp; Swap method works for any counting sequence - the swaps never change, only the numbers do:</p>
         <ol style="margin: 10px 0; padding-left: 20px;">
-          <li><b>4 Corners ALWAYS stay:</b> [1,1], [1,4], [4,1], [4,4]</li>
-          <li><b>4 Middle boxes ALWAYS stay:</b> [2,2], [2,3], [3,2], [3,3] (shown in blue)</li>
-          <li><b>Total: 8 anchor boxes</b> - These are your reference skeleton!</li>
-          <li><b>Remaining 8 boxes:</b> You fill these with calculations</li>
+          <li>1 to 16 → Target 34</li>
+          <li>5 to 20 → Target 50</li>
+          <li>Steps of 3 (2, 5, 8, …) → Target 98</li>
         </ol>
-        
-        <p><b>Step 2: Fill Initial Zigzag Pattern (To Understand Structure)</b></p>
-        <ol style="margin: 10px 0; padding-left: 20px;">
-          <li>Start at <b>TOP LEFT [1,1]</b> with any starting number (e.g., 1)</li>
-          <li>Fill <b>left to right</b> in first row: 1, 2, 3, 4</li>
-          <li>Row 2: Continue zigzag → 5, 6, 7, 8</li>
-          <li>Row 3: Continue → 9, 10, 11, 12</li>
-          <li>Row 4: Continue → 13, 14, 15, 16</li>
-          <li><b>Result:</b> Now you see how anchor boxes relate!</li>
-        </ol>
-        
-        <p><b>Step 3: Extract the Magic (Keep Anchors, Erase Others)</b></p>
-        <ol style="margin: 10px 0; padding-left: 20px;">
-          <li><b>KEEP all 8 anchor boxes</b> (4 corners + 4 middle) - Don't change them!</li>
-          <li><b>ERASE the remaining 8 boxes</b> - [1,2], [1,3], [2,1], [2,4], [3,1], [3,4], [4,2], [4,3]</li>
-          <li>Now study what you have - the pattern is revealed!</li>
-        </ol>
-        
-        <p><b>Step 4: Calculate Using Center Grid Logic</b></p>
-        <p style="background:rgba(50, 50, 50, 0.8); padding:12px; border-radius:6px; margin:10px 0; border-left:4px solid #ff9800;">
-          <b>Mathematical Relationships from Center Grid:</b><br>
-          <b>Center 4 boxes average = Target ÷ 4</b><br>
-          • <b>[2,2] + [2,3] + [3,2] + [3,3]</b> = Half of target (approx)<br>
-          • <b>Top-Left [1,1] = [3,3] opposite value</b> (diagonal balance)<br>
-          • <b>Diagonal Sum:</b> [1,1] + [2,2] + [3,3] + [4,4] reveals pattern<br>
-          <b>💡 Use these relationships to fill remaining 8 boxes!</b>
-        </p>
-        
-        <p><b>Step 5: Fill Remaining 8 Boxes with Strategy</b></p>
-        <ol style="margin: 10px 0; padding-left: 20px;">
-          <li>Look at each empty row - what's needed to hit target?</li>
-          <li>Look at each empty column - what's needed to hit target?</li>
-          <li>Check diagonals - they must also equal target!</li>
-          <li>Use the anchor boxes as guides for balance</li>
-          <li><b>Remember:</b> Opposite positions often have mathematical relationships</li>
-        </ol>
-        
-        <p style="background:rgba(50, 50, 50, 0.8); padding:12px; border-radius:6px; margin:10px 0; border-left:4px solid #4caf50;">
-          <b>Example: Target = 34 (Starting 1-16 zigzag)</b><br>
-          [1]  [2]  [3]  [4]  ← Row 1 sum = 10 (need 24 more)<br>
-          [5]  [6]  [7]  [8]  ← Row 2 sum = 26 (need 8 more)<br>
-          [9] [10] [11] [12]  ← Row 3 sum = 42 (too high!)<br>
-          [13][14][15][16]  ← Row 4 sum = 58 (too high!)<br>
-          <br>
-          <b>So 6, 7, 10, 11 need to be ERASED and recalculated!</b>
-        </p>
-        
-        <p><b>Step 6: Why This Works (The Mathematics)</b></p>
-        <ol style="margin: 10px 0; padding-left: 20px;">
-          <li><b>8 Anchor boxes</b> create the structural balance</li>
-          <li><b>Corners [1,1], [1,4], [4,1], [4,4]</b> = outer stability</li>
-          <li><b>Middle [2,2], [2,3], [3,2], [3,3]</b> = inner heart</li>
-          <li><b>Together they force</b> all lines to follow same total</li>
-          <li><b>Your job:</b> Calculate remaining 8 to honor this constraint</li>
-        </ol>
-        
-        <p><b>📐 Reference Grid (Study This Pattern!):</b></p>
-        <p style="background:rgba(50, 50, 50, 0.8); padding:12px; border-radius:6px; font-family:monospace; margin:10px 0; border-left:4px solid #2196f3;">
-          [16]  [3]  [2] [13]  ← All rows = 34<br>
-           [5] [10] [11]  [8]<br>
-           [9]  [6]  [7] [12]<br>
-           [4] [15] [14]  [1]<br>
-          <br>
-          <b>Shaded Diagonal:</b> [16], [10], [7], [1] = Pattern!<br>
-          <b>Anchor Positions:</b> Corners + Middle 4 boxes stay fixed
-        </p>
-        
-        <p><b>🎯 Key Insights:</b></p>
-        <p style="background:rgba(50, 50, 50, 0.8); padding:12px; border-radius:6px; margin:10px 0; border-left:4px solid #f44336;">
-          ✓ <b>8 Anchors provide the skeleton</b><br>
-          ✓ <b>Center grid math guides calculations</b><br>
-          ✓ <b>Opposite boxes balance each other</b><br>
-          ✓ <b>Diagonal reveals the pattern</b><br>
-          ✓ <b>Use logic, not memorization!</b>
-        </p>
-        
-        <p><b>💡 Try Different Targets!</b> Once you understand the anchor positions, try:</p>
-        <ol style="margin: 10px 0; padding-left: 20px;">
-          <li>Target = 30 (smaller)</li>
-          <li>Target = 40 (larger)</li>
-          <li>Target = 50 (much larger)</li>
-        </ol>
-        <p>The anchor positions stay the same - only the numbers change!</p>
-        
-        <p><b>🎮 Ready?</b> Study the anchors, understand the pattern, and create your own solution!</p>
       `;
     }
     
