@@ -1,6 +1,6 @@
 // MathMatrix Pro++ Service Worker — full offline support
 // Bump CACHE_VERSION whenever you update the game HTML so kids get the new version.
-const CACHE_VERSION = 'mathmatrix-v14';
+const CACHE_VERSION = 'mathmatrix-v15';
 
 const ASSETS = [
   './',
