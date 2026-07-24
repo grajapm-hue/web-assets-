@@ -957,10 +957,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       cells[0][2].classList.add('center-ref');
       // [5,3] = Center + 12 (bottom row middle)
       cells[4][2].classList.add('center-ref');
-      // [3,1] = Center - 9 (first column middle)
-      cells[2][0].classList.add('center-ref');
-      // [3,5] = Center + 9 (fifth column middle)
-      cells[2][4].classList.add('center-ref');
+      // Column-1 middle [3,1] and column-5 middle [3,5] shading removed per Raja
+      // (kept only the vertical start-to-end cue: top-middle and bottom-middle)
     }
     
     // Bottom row badges
