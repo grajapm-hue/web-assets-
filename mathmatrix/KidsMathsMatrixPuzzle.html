@@ -868,6 +868,35 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     } else {
       document.getElementById('logicBox').innerHTML = `
         <h3>📐 4×4 Master Tips - Extract the Magic with Center Grid Math!</h3>
+        <button onclick="openCheat('cheat-4x4.png')" style="background:linear-gradient(135deg,#f093fb,#f5576c); color:#fff; border:none; border-radius:10px; padding:10px 18px; font-size:15px; font-weight:700; cursor:pointer; margin:6px 0 12px;">📋 Quick Formula Sheet</button>
+
+        <p style="background:rgba(50, 50, 50, 0.8); padding:12px; border-radius:6px; margin:10px 0; border-left:4px solid #ffb300;">
+          <b>🔄 Easy Build Method - Fill &amp; Swap</b><br>
+          <br>
+          <b>Step 1:</b> Write <b>1 to 16 in order</b>, left to right, top to bottom (Row 1: 1,2,3,4 … Row 4: 13,14,15,16).<br>
+          <span style="font-size:0.9em; opacity:0.85;">Any counting <b>sequence</b> works - 1 to 16, 5 to 20, even steps like 2,5,8,… - as long as the numbers are <b>in sequence, not random</b>.</span><br>
+          <br>
+          <b>Step 2:</b> Make these <b>4 swaps</b> (each pair is opposite through the center):<br>
+          • Swap <b>R1,C2 ↔ R4,C3</b><br>
+          • Swap <b>R1,C3 ↔ R4,C2</b><br>
+          • Swap <b>R2,C1 ↔ R3,C4</b><br>
+          • Swap <b>R3,C1 ↔ R2,C4</b><br>
+          <br>
+          <b>Step 3:</b> Leave the rest untouched - the <b>4 corners</b> and the <b>4 middle boxes</b> stay where they are.<br>
+          <br>
+          <b>Done!</b> Every row, column and diagonal now equals the <b>Target</b>.
+        </p>
+
+        <p style="background:rgba(50, 50, 50, 0.8); padding:12px; border-radius:6px; font-family:monospace; margin:10px 0; border-left:4px solid #4caf50;">
+          <b>Result for 1 to 16 (Target = 34):</b><br>
+          &nbsp;1&nbsp; 15&nbsp; 14&nbsp;&nbsp; 4<br>
+          12&nbsp;&nbsp; 6&nbsp;&nbsp; 7&nbsp;&nbsp; 9<br>
+          &nbsp;8&nbsp; 10&nbsp; 11&nbsp;&nbsp; 5<br>
+          13&nbsp;&nbsp; 3&nbsp;&nbsp; 2&nbsp; 16<br>
+          <br>
+          <b>Target = sum of the 4 middle boxes</b> (6+7+10+11 = 34). The middle four never move, so they always tell you the target.
+        </p>
+
         <p><b>The Heart of the Puzzle:</b> The <b>CENTER GRID (4 middle boxes)</b> is your ANCHOR - they reveal the target!</p>
         
         <p style="background:rgba(50, 50, 50, 0.8); padding:12px; border-radius:6px; margin:10px 0; border-left:4px solid #00bcd4;">

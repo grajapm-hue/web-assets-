@@ -1,12 +1,13 @@
 // MathMatrix Pro++ Service Worker — full offline support
 // Bump CACHE_VERSION whenever you update the game HTML so kids get the new version.
-const CACHE_VERSION = 'mathmatrix-v6';
+const CACHE_VERSION = 'mathmatrix-v7';
 
 const ASSETS = [
   './',
   './KidsMathsMatrixPuzzle.html',
   './manifest.json',
   './cheat-3x3.png',
+  './cheat-4x4.png',
   './icon-192.png',
   './icon-512.png',
   './icon-512-maskable.png'
