@@ -896,7 +896,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     function makeBadge(key, isCorner){
       var b = document.createElement('div');
       b.className = 'badge' + (isCorner ? ' corner' : '');
-      b.textContent = '';
+      b.textContent = '?';   /* open-screen placeholder, like the Target : ? pill */
       if (!badges[key]) badges[key] = [];
       badges[key].push(b);
       return b;
@@ -1044,7 +1044,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       var vals = lineVals(k);
       var filled = vals.filter(function(x){ return x !== null; });
       var sum = filled.reduce(function(a, b){ return a + b; }, 0);
-      if (filled.length < puzzle.rows){
+      if (filled.length === 0){
+        setBadge(k, '?', null);        // no number entered yet in this line — keep the ? placeholder
+      } else if (filled.length < puzzle.rows){
         setBadge(k, sum, 'partial');
       } else {
         setBadge(k, sum, peeking ? 'peektone' : 'full');
