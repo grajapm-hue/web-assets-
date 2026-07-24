@@ -752,119 +752,44 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       document.getElementById('logicBox').innerHTML = `
         <h3>🧮 5×5 Master Tips - Hack Shaw Teeth Method!</h3>
         <button onclick="openCheat('cheat-5x5.png')" style="background:linear-gradient(135deg,#f093fb,#f5576c); color:#fff; border:none; border-radius:10px; padding:10px 18px; font-size:15px; font-weight:700; cursor:pointer; margin:6px 0 12px;">📋 Quick Formula Sheet</button>
-        <p><b>The Mathematical Secret:</b> Center Grid Value = <b>Target ÷ 5</b></p>
+
         <p style="background:rgba(50, 50, 50, 0.8); padding:12px; border-radius:6px; margin:10px 0; border-left:4px solid #00bcd4;">
-          <b>Example:</b> If target = 65, then center = 65 ÷ 5 = <b>13</b> ✓<br>
-          <b>All rows, columns, and diagonals MUST equal your target!</b>
-        </p>
-        
-        <p style="background:rgba(50, 50, 50, 0.8); padding:12px; border-radius:6px; margin:10px 0; border-left:4px solid #4caf50;">
-          <b>🧠 CENTER GRID RELATIONSHIPS (The Heart of the Puzzle):</b><br>
+          <b>🧠 The Secret Structure</b><br>
           <br>
-          <b>Center Cell [3,3] = Target ÷ 5 (The HEART)</b><br>
-          For target 65: Center = 13<br>
+          <b>Center = Target ÷ 5</b>, and backwards <b>Target = Center × 5</b>. Place the center first, then the target is just center × 5. For center 13, target = 65.<br>
+          <b>Opposite boxes</b> (through the center) add up to <b>2 × center</b>. For center 13 that is 26.<br>
+          <b>A cross forms through the center:</b> top-middle = center − 12, bottom-middle = center + 12, left-middle = center − 9, right-middle = center + 9.
+        </p>
+
+        <p style="background:rgba(50, 50, 50, 0.8); padding:12px; border-radius:6px; margin:10px 0; border-left:4px solid #ffb300;">
+          <b>🪜 Build It Yourself - The "Count Down 5" Method</b><br>
           <br>
-          <b>Plus/Minus from Center:</b><br>
-          • <b>[1,3] (Top Row Middle) = Center - 12</b> → 13 - 12 = <b>1</b> ✓<br>
-          • <b>[5,3] (Bottom Row Middle) = Center + 12</b> → 13 + 12 = <b>25</b> ✓<br>
-          • <b>[3,1] (1st Column Middle) = Center - 9</b> → 13 - 9 = <b>4</b> ✓<br>
-          • <b>[3,5] (5th Column Middle) = Center + 9</b> → 13 + 9 = <b>22</b> ✓<br>
+          Places <b>1 to 25</b> in order. Same idea as 3×3, just count 5. Two rules:<br>
           <br>
-          <b>💡 These 5 cells form a CROSS through the center!</b><br>
-          They reveal the mathematical balance of the entire puzzle!
+          <b>Move rule:</b> From the box you just filled, count <b>5 boxes downward</b> in the same column (the box you start on is "one"). If you reach the bottom, wrap to the top and keep counting. Place the next number in the box <b>immediately to the right</b> of where the count ends. No box on the right? Wrap to the first column.<br>
+          <br>
+          <b>Blocked rule:</b> If that right-side box is already filled, place the next number <b>directly below the number you just placed</b> instead (wrapping bottom to top).<br>
+          <br>
+          <b>Start:</b> put <b>1</b> in the top row, middle column [1,3]. Finish when 25 lands in the bottom row, middle column.
         </p>
-        
-        <p><b>Step 1: Place First Number (Row 1, Middle Column)</b></p>
-        <ol style="margin: 10px 0; padding-left: 20px;">
-          <li><b>Position:</b> Top row, middle column = [1,3] <b>(This is Center - 12!)</b></li>
-          <li><b>Number:</b> Place <b>1</b> here</li>
-          <li><b>Why:</b> This starts the pattern for placing all 25 numbers</li>
-          <li><b>Verify:</b> 1 = 13 - 12 ✓ (matches center relationship!)</li>
-        </ol>
-        
-        <p><b>Step 2: Count Down 5 (The "Teeth" Pattern)</b></p>
-        <ol style="margin: 10px 0; padding-left: 20px;">
-          <li>From where you placed number 1 [1,3], <b>count DOWN 5 cells in the SAME COLUMN</b></li>
-          <li>Count (start box is "one"): [1,3]=1, [2,3]=2, [3,3]=3, [4,3]=4, [5,3]=5 ← You reach [5,3]!</li>
-          <li><b>[5,3] is Bottom Row Middle = Center + 12 (will be 25)</b></li>
-          <li>When you reach "5" in your countdown, <b>place number 2 IMMEDIATELY TO THE RIGHT</b> at [5,4]</li>
-          <li><b>Example:</b> 1 at [1,3] → Count down 5 → [5,3] → Place 2 at [5,4] ✓</li>
-        </ol>
-        
-        <p><b>Step 3: Wrapping at Column 5 (Right Edge)</b></p>
-        <ol style="margin: 10px 0; padding-left: 20px;">
-          <li>If you're placing a number at <b>column 5</b> and the next "immediate right cell" would be column 6:</li>
-          <li><b>Wrap back to the same row, column 1</b> (go left, wrap around)</li>
-          <li><b>Example:</b> Placed at [row 2, col 5] → Next position wraps to [row 2, col 1] ✓</li>
-        </ol>
-        
-        <p><b>Step 4: Wrapping at Row 5 (Bottom Edge)</b></p>
-        <ol style="margin: 10px 0; padding-left: 20px;">
-          <li>If you're in <b>row 5</b> and count down 5 would go below the grid:</li>
-          <li><b>Start counting from row 1 of the SAME COLUMN</b> (wrap to top)</li>
-          <li>Count: 1 cell down from top, 2, 3, 4, 5</li>
-          <li>Place next number immediately to the right of where you end ✓</li>
-        </ol>
-        
-        <p><b>Step 5: If a Cell is Already Occupied</b></p>
-        <ol style="margin: 10px 0; padding-left: 20px;">
-          <li><b>Do NOT place the number in an occupied cell!</b></li>
-          <li>Instead, <b>place it in the cell DIRECTLY BELOW the previously placed number</b></li>
-          <li>Then continue the countdown pattern from this new position</li>
-          <li><b>Example:</b> If [row 5, col 4] is occupied, place next number at [row 1, col 4] (wrap to top) ✓</li>
-        </ol>
-        
-        <p><b>Step 6: Verify Your Solution</b></p>
-        <p style="background:rgba(50, 50, 50, 0.8); padding:12px; border-radius:6px; margin:10px 0; border-left:4px solid #4caf50;">
-          Check that <b>ALL</b> of these equal your target (65):<br>
-          ✓ <b>All 5 rows</b> sum to 65<br>
-          ✓ <b>All 5 columns</b> sum to 65<br>
-          ✓ <b>Both diagonals</b> sum to 65<br>
-          ✓ <b>Numbers 1-25</b> used exactly once
+
+        <p style="background:rgba(50, 50, 50, 0.8); padding:12px; border-radius:6px; font-family:monospace; margin:10px 0; border-left:4px solid #4caf50;">
+          <b>Result for 1 to 25 (Target = 65):</b><br>
+          17 24 &nbsp;1 &nbsp;8 15<br>
+          23 &nbsp;5 &nbsp;7 14 16<br>
+          &nbsp;4 &nbsp;6 <b>13</b> 20 22<br>
+          10 12 19 21 &nbsp;3<br>
+          11 18 25 &nbsp;2 &nbsp;9<br>
+          <br>
+          Every row, column and diagonal = 65. Center 13 × 5 = 65.
         </p>
-        
-        <p><b>🧮 Why This Works (Mathematics):</b></p>
+
+        <p><b>🚀 Try Different Sequences!</b> The Count Down 5 method works for any counting sequence - the rules never change, only the numbers do:</p>
         <ol style="margin: 10px 0; padding-left: 20px;">
-          <li><b>Center value</b> = 13 (exactly target ÷ 5)</li>
-          <li><b>Opposite positions balance:</b> 17+9=26, 24+2=26, 1+25=26, 15+11=26</li>
-          <li><b>All pairs sum to</b> = 2 × center = 26</li>
-          <li><b>The countdown pattern</b> distributes numbers perfectly</li>
-          <li><b>Result:</b> All lines total exactly to target!</li>
+          <li>1 to 25 → Target 65 (center 13)</li>
+          <li>5 to 29 → Target 85 (center 17)</li>
+          <li>Steps of 3 (2, 5, 8, …) → center × 5</li>
         </ol>
-        
-        <p><b>💡 Complete Example (Target = 65) - Study This Pattern:</b></p>
-        <p style="background:rgba(50, 50, 50, 0.8); padding:12px; border-radius:6px; font-family:monospace; margin:10px 0; border-left:4px solid #ff9800;">
-          [17] [24]  [1]  [8] [15]  ← All rows = 65<br>
-          [23]  [5]  [7] [14] [16]<br>
-           [4]  [6] <b>[13]</b> [20] [22]  ← CENTER = 13 (Target÷5)<br>
-          [10] [12] [19] [21]  [3]<br>
-          [11] [18] [25]  [2]  [9]<br>
-        </p>
-        
-        <p><b>📌 KEY POINTS (Avoid Confusion):</b></p>
-        <p style="background:rgba(50, 50, 50, 0.8); padding:12px; border-radius:6px; margin:10px 0; border-left:4px solid #f44336;">
-          ✓ <b>Countdown is VERTICAL (straight down column)</b> - NOT diagonal!<br>
-          ✓ <b>Place next number to the RIGHT</b> of where countdown ends<br>
-          ✓ <b>Wrapping happens at edges</b> - top wraps to bottom, right wraps to left<br>
-          ✓ <b>If occupied, place BELOW</b> - NOT diagonal, just one cell down<br>
-        </p>
-        
-        <p><b>🚀 Try Different Targets!</b> The Hack Shaw method works for ANY target!</p>
-        <p style="background:rgba(50, 50, 50, 0.8); padding:12px; border-radius:6px; margin:10px 0; border-left:4px solid #2196f3;">
-          <b>Example: Target = 75</b><br>
-          Center = 75 ÷ 5 = <b>15</b> ✓<br>
-          Follow same countdown pattern<br>
-          All lines = 75! ✓
-        </p>
-        
-        <p><b>✅ Remember:</b></p>
-        <p>
-          ✓ <b>Systematic placement</b> - Follow countdown pattern exactly<br>
-          ✓ <b>Mathematical</b> - Every step has logic (center = target÷5)<br>
-          ✓ <b>Verifiable</b> - Can check every calculation<br>
-          ✓ <b>Works always</b> - For any target, not just 65!<br>
-          ✓ <b>Use your imagination!</b> - Once you understand the pattern, solve with YOUR OWN calculations!
-        </p>
       `;
     } else {
       document.getElementById('logicBox').innerHTML = `
