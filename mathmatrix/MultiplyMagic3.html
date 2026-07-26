@@ -267,14 +267,15 @@
     },1000);
   });
 
-  // Watch Me Build — reveals the 216 example center-first, products building to center³
+  // Watch Me Build — reveals the 4096 square in value sequence 1,2,4,8,16,32,64,128,256 (like 3x3's 1..9)
   document.getElementById('watchBtn').addEventListener('click', function(){
     if (watching || showing || solved) return;
     watching = true;
     var btn = this; btn.disabled = true; document.getElementById('showBtn').disabled = true;
     resetAll();
     var ex = [[8,256,2],[4,16,64],[128,1,32]]; // 4096 — powers of 2 (familiar bit values)
-    var order = [[1,1],[0,0],[0,1],[0,2],[1,0],[1,2],[2,0],[2,1],[2,2]];
+    // cells in ascending value order: 1→2→4→8→16→32→64→128→256
+    var order = [[2,1],[0,2],[1,0],[0,0],[1,1],[2,2],[1,2],[2,0],[0,1]];
     var i = 0;
     msg.textContent = '▶ Watch the products build to center³…'; msg.className = '';
     var iv = setInterval(function(){
