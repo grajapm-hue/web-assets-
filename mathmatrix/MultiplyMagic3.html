@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0d0d0d">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>3³ — Multiply Magic Matrix</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { height:100%; width:100%; }
+  body {
+    background:#000; color:#fff;
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display:flex; flex-direction:column; align-items:center;
+    min-height:100vh; padding:12px 8px 30px; overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  a { color:#8ab4f8; }
+  .titleCard { background:#101820; border:3px solid #f59e0b; border-radius:14px; padding:10px 22px; margin-bottom:6px; text-align:center; }
+  .titleCard h1 { font-size:22px; color:#fbbf24; font-weight:800; }
+  .titleCard .sub { font-size:12px; font-weight:700; color:#f59e0b; margin-top:4px; letter-spacing:.5px; }
+  .backLink { font-size:13px; margin-bottom:12px; }
+  .targetPill {
+    border-radius:14px; padding:10px 26px; font-size:22px; font-weight:800; color:#fff;
+    display:flex; align-items:center; justify-content:center; gap:8px; line-height:1;
+    margin:6px 0 14px; background:linear-gradient(135deg,#b45309,#f59e0b); transition:all .3s ease;
+  }
+  .targetPill.preview { background:linear-gradient(135deg,#f59e0b,#fb923c) !important; }
+  .targetPill.solved  { background:linear-gradient(135deg,#15803d,#22c55e) !important; }
+  .instCard { background:#1e1e1e; border-left:6px solid #f59e0b; border-radius:12px; padding:10px 12px; font-size:13px; line-height:1.4; max-width:560px; margin-bottom:12px; }
+  .boardContainer { display:inline-flex; justify-content:center; width:100%; margin:0 auto 22px; border-bottom:2px solid #333; padding-bottom:18px; }
+  .board { display:grid; grid-gap:6px; gap:6px; grid-template-columns:repeat(5,52px); grid-template-rows:repeat(5,52px); }
+  @media (min-width:480px){ .board { grid-template-columns:repeat(5,64px); grid-template-rows:repeat(5,64px); } }
+  .cell {
+    background:#000; border:2px dashed #f59e0b; border-radius:6px; color:#fff; font-weight:600;
+    text-align:center; width:52px; height:52px; font-size:22px; outline:none; transition:all .15s ease;
+  }
+  @media (min-width:480px){ .cell { width:64px; height:64px; } }
+  .cell:focus { border-style:solid; border-color:#fbbf24; }
+  .cell.dup { border-color:#ef4444; color:#f87171; }
+  .cell.center { background:rgba(245,158,11,.15); }
+  .cell.win { border-style:solid; border-color:#10b981; background:#051f1f; color:#34d399; }
+  .badge {
+    border:2px dashed #22d3ee; border-radius:6px; display:flex; align-items:center; justify-content:center;
+    width:52px; height:52px; font-weight:700; color:#7fd8e8; line-height:1; overflow:hidden;
+  }
+  @media (min-width:480px){ .badge { width:64px; height:64px; } }
+  .badge.corner { border-style:solid; border-color:#d946ef; color:#e59bf5; }
+  .badge.full { border-color:#f59e0b; color:#fbbf24; }
+  .badge.win  { border-color:#22c55e; color:#4ade80; border-style:solid; }
+  .btnRow { display:flex; gap:10px; width:100%; max-width:560px; margin:0 auto 12px; padding:0 6px; }
+  .btnRow button, .btnRow .box {
+    flex:1; border:2px solid; border-radius:8px; height:46px; line-height:44px; padding:0;
+    font-size:16px; font-weight:800; cursor:pointer; text-align:center; background:transparent;
+  }
+  #clearBtn { border-color:#ef4444; color:#ef4444; }
+  #showBtn { border-color:#7c3aed; color:#a78bfa; }
+  #timerBox { border-color:#2ecc71; color:#2ecc71; font-variant-numeric:tabular-nums; cursor:default; }
+  #msg { min-height:22px; font-size:15px; font-weight:700; text-align:center; margin:2px 0 10px; }
+  #msg.win { color:#4ade80; }
+  .logicBox { background:#141414; border:1px solid #333; border-radius:12px; padding:14px 14px; max-width:560px; font-size:14px; line-height:1.5; margin-bottom:14px; }
+  .logicBox h3 { color:#fbbf24; font-size:16px; margin-bottom:8px; }
+  .logicBox b { color:#f59e0b; }
+  .ex { font-family:monospace; background:rgba(50,50,50,.7); padding:10px; border-radius:6px; margin:8px 0; border-left:4px solid #f59e0b; white-space:pre; }
+  .credit { font-size:12px; color:#888; text-align:center; margin-top:8px; line-height:1.5; }
+</style>
+</head>
+<body>
+<div class="titleCard">
+  <h1>🎲 3³ — Multiply Magic</h1>
+  <div class="sub">🧙 ADVANCED · Lines MULTIPLY (× × ×) · after you master 5×5</div>
+</div>
+<div class="backLink">← <a href="KidsMathsMatrixPuzzle.html">Back to Add Magic (3×3 · 4×4 · 5×5)</a></div>
+
+<div class="targetPill"><span>🎯</span><span>Target : <span id="targetVal">?</span></span></div>
+
+<div class="instCard"><b>Multiply Magic!</b> Fill the 3×3 so every row, column and diagonal <b>MULTIPLIES</b> to the SAME number. Set the center first — the target is <b>center × center × center</b> (center³).</div>
+
+<div class="boardContainer"><div class="board" id="board"></div></div>
+
+<div class="btnRow">
+  <button id="clearBtn">CLEAR</button>
+  <div class="box" id="timerBox">00:00</div>
+</div>
+<div class="btnRow">
+  <button id="showBtn">👁 SHOW</button>
+</div>
+<div id="msg"></div>
+
+<div class="logicBox">
+  <h3>📐 How Multiply Magic works</h3>
+  <p>Every line (row, column, diagonal) has the same <b>product</b> — you multiply the three numbers, not add them.</p>
+  <p style="margin-top:8px;"><b>Target = center³</b> (center × center × center). Set the center box and the goal appears in orange.</p>
+  <p style="margin-top:8px;"><b>Opposite boxes</b> through the center multiply to <b>center²</b>.</p>
+  <p style="margin-top:10px;"><b>Worked examples</b> (center → target):</p>
+  <div class="ex">center 6  → 216
+  3  36   2
+  4   6   9
+ 18   1  12</div>
+  <div class="ex">center 12 → 1728
+  6  72   4
+  8  12  18
+ 36   2  24</div>
+  <div class="ex">center 16 → 4096
+  8 256   2
+  4  16  64
+128   1  32</div>
+  <p style="margin-top:8px; font-size:.9em; opacity:.85;">Tip: these are the same magic squares as the adding ones — written as powers. Maths has no boundary. 🙌</p>
+</div>
+
+<div class="credit">Created by G.RajaPathamuthu · Kids Puzzle Library<br>Guided by : JNT<br>Code Coordinated by : Claude AI<br>
+  <i style="opacity:.85;">(What we get is all we ask for.)</i><br>
+  Mail To : <a href="mailto:grajapm@gmail.com?subject=MathMatrix%203cube%20Feedback">✉️ Feedback &amp; Suggestion</a>
+</div>
+
+<script>
+(function(){
+  var board = document.getElementById('board');
+  var targetVal = document.getElementById('targetVal');
+  var targetPill = document.querySelector('.targetPill');
+  var msg = document.getElementById('msg');
+  var inputs = [[],[],[]];      // 3x3 input cells
+  var badges = {};              // line-key -> [nodes]
+  var solved = false, showing = false, timer = null, secs = 0;
+
+  // display 5x5: ring badges + inner 3x3 inputs
+  function keyAt(dr, dc){
+    // returns ['input', r, c] or ['badge', key, isCorner]
+    var r = dr - 1, c = dc - 1;
+    if (dr >= 1 && dr <= 3 && dc >= 1 && dc <= 3) return ['input', r, c];
+    // corners -> diagonals
+    if ((dr===0&&dc===0) || (dr===4&&dc===4)) return ['badge','d1',true];
+    if ((dr===0&&dc===4) || (dr===4&&dc===0)) return ['badge','d2',true];
+    // top/bottom edges -> columns
+    if (dr===0 || dr===4) return ['badge','c'+(dc-1),false];
+    // left/right edges -> rows
+    return ['badge','r'+(dr-1),false];
+  }
+  for (var dr=0; dr<5; dr++) for (var dc=0; dc<5; dc++){
+    var spec = keyAt(dr,dc);
+    if (spec[0]==='input'){
+      var inp = document.createElement('input');
+      inp.className = 'cell' + (spec[1]===1&&spec[2]===1 ? ' center' : '');
+      inp.type='text'; inp.inputMode='numeric'; inp.maxLength=4;
+      inp.addEventListener('input', function(e){ e.target.value = e.target.value.replace(/[^0-9]/g,''); update(); startTimer(); });
+      inputs[spec[1]][spec[2]] = inp;
+      board.appendChild(inp);
+    } else {
+      var b = document.createElement('div');
+      b.className = 'badge' + (spec[2] ? ' corner' : '');
+      b.textContent = '?';
+      (badges[spec[1]] = badges[spec[1]] || []).push(b);
+      board.appendChild(b);
+    }
+  }
+
+  function val(r,c){ var v = parseInt(inputs[r][c].value,10); return isNaN(v) ? null : v; }
+  function lineVals(k){
+    var out=[];
+    for (var i=0;i<3;i++){
+      if (k[0]==='r') out.push(val(+k[1], i));
+      else if (k[0]==='c') out.push(val(i, +k[1]));
+      else if (k==='d1') out.push(val(i,i));
+      else out.push(val(i,2-i));
+    }
+    return out;
+  }
+  function setBadge(k, txt, cls){
+    badges[k].forEach(function(b){ b.textContent = txt; b.classList.remove('full','win'); if (cls) b.classList.add(cls); });
+  }
+  function fitCells(){
+    var w = inputs[0][0].clientWidth; if(!w) return;
+    for (var r=0;r<3;r++) for (var c=0;c<3;c++){
+      var len = (inputs[r][c].value||'').length || 1;
+      var f = len<=1?0.5: len===2?0.42: len===3?0.32: 0.26;
+      inputs[r][c].style.fontSize = Math.round(w*f)+'px';
+    }
+  }
+  function product(arr){ return arr.reduce(function(a,b){ return a*b; }, 1); }
+
+  var LINES = ['r0','r1','r2','c0','c1','c2','d1','d2'];
+  function update(){
+    if (solved) return;
+    // dup detection
+    var seen={}, dups={};
+    for (var r=0;r<3;r++) for (var c=0;c<3;c++){ var v=val(r,c); if(v===null)continue; if(seen[v])dups[v]=true; seen[v]=true; }
+    for (var r2=0;r2<3;r2++) for (var c2=0;c2<3;c2++){ var vv=val(r2,c2); inputs[r2][c2].classList.toggle('dup', !!(vv!==null&&dups[vv])); }
+    fitCells();
+
+    var complete=[];
+    LINES.forEach(function(k){
+      var vals=lineVals(k), filled=vals.filter(function(x){return x!==null;});
+      if (filled.length===0) setBadge(k,'?',null);
+      else if (filled.length<3) setBadge(k, product(filled), null);
+      else { setBadge(k, product(filled), 'full'); complete.push(product(filled)); }
+    });
+
+    // Target: center^3 preview (orange) when center set; else completed product; else ?
+    var cen = val(1,1);
+    if (cen !== null){ targetVal.textContent = cen*cen*cen; targetPill.classList.add('preview'); }
+    else { targetPill.classList.remove('preview'); targetVal.textContent = complete.length ? complete[0] : '?'; }
+
+    // win: all 9 filled, all 8 products equal
+    var allFilled=true;
+    for (var r3=0;r3<3;r3++) for (var c3=0;c3<3;c3++) if (val(r3,c3)===null) allFilled=false;
+    if (!showing && allFilled && Object.keys(dups).length===0 && complete.length===8 && complete.every(function(p){return p===complete[0];})){
+      win(complete[0]);
+    } else { msg.textContent=''; msg.className=''; }
+  }
+
+  function win(t){
+    solved=true; stopTimer();
+    targetPill.classList.remove('preview'); targetPill.classList.add('solved'); targetVal.textContent=t;
+    LINES.forEach(function(k){ setBadge(k,t,'win'); });
+    for (var r=0;r<3;r++) for (var c=0;c<3;c++){ inputs[r][c].classList.add('win'); inputs[r][c].readOnly=true; }
+    msg.textContent='🎉 Multiply Magic solved! Every line × = '+t;
+    msg.className='win';
+  }
+
+  function resetAll(){
+    solved=false; targetPill.classList.remove('solved','preview');
+    for (var r=0;r<3;r++) for (var c=0;c<3;c++){ inputs[r][c].value=''; inputs[r][c].readOnly=false; inputs[r][c].classList.remove('dup','win'); }
+    msg.textContent=''; msg.className=''; stopTimer(); secs=0; document.getElementById('timerBox').textContent='00:00';
+    update();
+  }
+
+  // Timer
+  function startTimer(){ if (timer||solved) return; timer=setInterval(function(){ secs++; var m=String(Math.floor(secs/60)).padStart(2,'0'), s=String(secs%60).padStart(2,'0'); document.getElementById('timerBox').textContent=m+':'+s; },1000); }
+  function stopTimer(){ if(timer){ clearInterval(timer); timer=null; } }
+
+  document.getElementById('clearBtn').addEventListener('click', function(){ if(showing) return; resetAll(); });
+
+  document.getElementById('showBtn').addEventListener('click', function(){
+    if (showing || solved) return;
+    showing=true;
+    var ex=[[3,36,2],[4,6,9],[18,1,12]]; // the 216 example
+    var saved=[]; for (var r=0;r<3;r++) for (var c=0;c<3;c++) saved.push(inputs[r][c].value);
+    for (var r2=0;r2<3;r2++) for (var c2=0;c2<3;c2++){ inputs[r2][c2].value=ex[r2][c2]; inputs[r2][c2].readOnly=true; }
+    update();
+    var btn=this, n=3; btn.textContent='👁 '+n;
+    var iv=setInterval(function(){
+      n--; if(n>0){ btn.textContent='👁 '+n; return; }
+      clearInterval(iv);
+      var i=0; for (var r=0;r<3;r++) for (var c=0;c<3;c++){ inputs[r][c].value=saved[i++]; inputs[r][c].readOnly=false; }
+      btn.textContent='👁 SHOW'; showing=false; update();
+    },1000);
+  });
+
+  window.addEventListener('resize', fitCells);
+  if ('serviceWorker' in navigator){ window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); }); }
+  update();
+})();
+</script>
+</body>
+</html>
