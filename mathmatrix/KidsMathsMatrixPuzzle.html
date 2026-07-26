@@ -1360,7 +1360,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // reveal order: value v -> its cell in the solution grid
     var pos = {};
     for (var r = 0; r < R; r++) for (var c = 0; c < Cc; c++) pos[puzzle.example[r][c]] = [r, c];
-    var delay = (currentSize === '5x5') ? 380 : (currentSize === '4x4') ? 520 : 720;
+    var delay = (currentSize === '5x5') ? 750 : (currentSize === '4x4') ? 950 : 1100;  // slow pace for mind-mapping
     var v = 1;
     msg.textContent = '▶ Watch how the ' + currentSize.replace('x','×') + ' builds itself…';
     msg.className = '';

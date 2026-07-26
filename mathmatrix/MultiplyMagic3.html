@@ -290,7 +290,7 @@
       cell.value = String(ex[rc[0]][rc[1]]);
       cell.classList.remove('placing'); void cell.offsetWidth; cell.classList.add('placing');
       update(); i++;
-    }, 700);
+    }, 1100);  // slow pace for mind-mapping
   });
 
   window.addEventListener('resize', fitCells);
