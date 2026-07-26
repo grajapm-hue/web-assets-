@@ -1407,24 +1407,38 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   // Designer Mode - PIN Protection
   var DESIGNER_PIN = '1947'; // ⚠️ CHANGE THIS PIN TO YOUR CUSTOM 4-DIGIT CODE
   
+  // Apply the supervisor unlock (all levels + 3³ tab). Persists via localStorage until manually locked.
+  function applyDesignerUnlock(){
+    designerMode = true;
+    document.querySelector('[data-size="4x4"]').parentElement.style.display = 'flex';
+    document.querySelector('[data-size="5x5"]').parentElement.style.display = 'flex';
+    var _m3d = document.getElementById('mult3Tab'); if (_m3d) _m3d.style.display = '';
+    var db = document.getElementById('designerBtn');
+    db.textContent = '🔓';
+    db.style.background = '#2f7ff0';
+    db.style.color = '#fff';
+    db.style.opacity = '1';
+    db.title = 'Supervisor unlock ON — tap to lock';
+  }
+
   document.getElementById('designerBtn').addEventListener('click', function(){
+    if (designerMode) {
+      // Supervisor manually locks — clears the persistent unlock and returns to the gated ladder
+      try { localStorage.removeItem('mmDesigner'); } catch(e){}
+      location.reload();
+      return;
+    }
     document.getElementById('designerPin').value = '';
     document.getElementById('designerModal').style.display = 'flex';
   });
-  
+
   document.getElementById('designerSubmit').addEventListener('click', function(){
     var enteredPin = document.getElementById('designerPin').value;
     if (enteredPin === DESIGNER_PIN) {
-      designerMode = true;
+      try { localStorage.setItem('mmDesigner', 'on'); } catch(e){}
       document.getElementById('designerModal').style.display = 'none';
-      // Unlock all levels
-      document.querySelector('[data-size="4x4"]').parentElement.style.display = 'flex';
-      document.querySelector('[data-size="5x5"]').parentElement.style.display = 'flex';
-      var _m3d = document.getElementById('mult3Tab'); if (_m3d) _m3d.style.display = '';
-      document.getElementById('designerBtn').textContent = '🔓';
-      document.getElementById('designerBtn').style.background = '#2f7ff0';
-      document.getElementById('designerBtn').style.color = '#fff';
-      msg.textContent = '🎯 Designer Mode Activated! All levels unlocked.';
+      applyDesignerUnlock();
+      msg.textContent = '🎯 Supervisor unlock ON — stays open until you tap 🔓 to lock.';
       msg.className = '';
     } else {
       alert('❌ Invalid PIN. Access denied.');
@@ -1442,6 +1456,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   // Init with 3x3
   initBoard();
   applyTheme(); // Apply colors and diagonal guide
+
+  // Restore persistent supervisor unlock (set once via PIN, survives navigation/reload until manually locked)
+  try { if (localStorage.getItem('mmDesigner') === 'on') applyDesignerUnlock(); } catch(e){}
 })();
 
 // PWA: register service worker for full offline play
