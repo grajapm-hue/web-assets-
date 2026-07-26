@@ -633,7 +633,7 @@
 <div class="congratsModal" id="designerModal" style="display:none;">
   <div class="congratsBox" style="width:300px;">
     <h2>🔐 Supervisor Key</h2>
-    <p style="font-size:14px; margin-bottom:16px;">Enter the PIN to <b>unlock</b> all levels — or, when already unlocked, the <b>same PIN locks</b> it back.</p>
+    <p id="designerModalText" style="font-size:14px; margin-bottom:16px;">Enter the PIN to unlock all levels.</p>
     <input type="password" id="designerPin" placeholder="Enter 4-digit PIN" maxlength="4" style="width:100%; padding:12px; font-size:18px; letter-spacing:8px; text-align:center; margin-bottom:12px; border:2px solid #2f7ff0; border-radius:8px; background:#1a1a2e; color:#fff;">
     <button class="congratsBtn" id="designerSubmit" style="width:100%; margin-bottom:8px;">Unlock</button>
     <button class="congratsBtn" id="designerCancel" style="width:100%; background:#666;">Cancel</button>
@@ -1421,9 +1421,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     db.title = 'Supervisor unlock ON — tap and enter PIN to lock';
   }
 
-  // Same PIN both locks and unlocks — always prompt for it
+  // Same PIN both locks and unlocks — always prompt for it, wording swaps by current mode
   document.getElementById('designerBtn').addEventListener('click', function(){
     document.getElementById('designerPin').value = '';
+    document.getElementById('designerModalText').textContent = designerMode
+      ? 'Enter the PIN to LOCK all levels back.'
+      : 'Enter the PIN to UNLOCK all levels.';
+    document.getElementById('designerSubmit').textContent = designerMode ? '🔒 Lock' : '🔓 Unlock';
     document.getElementById('designerModal').style.display = 'flex';
   });
 
