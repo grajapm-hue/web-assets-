@@ -942,8 +942,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         inp.className = 'cell';
         inp.type = 'text';
         inp.inputMode = 'numeric';
-        // Up to 3-digit numbers (up to 999) on every size — 3x3 was previously capped at 2 (digit-limit fix)
-        inp.maxLength = 3;
+        // Up to 4-digit numbers (up to 9999) on every size — future-proof for multiplicative targets (e.g. 4096)
+        inp.maxLength = 4;
         inp.addEventListener('input', onInput);
         inp.addEventListener('keydown', onKeyDown);
         cells[r].push(inp);
