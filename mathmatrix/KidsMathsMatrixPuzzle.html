@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#0d0d0d">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>🎲 MathMatrix Pro++ — Volume 1 (3×3 · 4×4 · 5×5)</title>
+<title>🎲 MathMatrix Pro++ — Magic Square Puzzles (3×3 · 4×4 · 5×5 · 3³ …)</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html, body { height:100%; width:100%; }
@@ -572,7 +572,7 @@
 
 <div class="titleCard">
   <h1>🎲 MathMatrix Pro++</h1>
-  <div style="text-align:center; font-size:12px; font-weight:700; color:#8ab4f8; margin-top:4px; letter-spacing:.5px;">📚 VOLUME 1 · Small Squares (3×3 · 4×4 · 5×5)</div>
+  <div style="text-align:center; font-size:12px; font-weight:700; color:#8ab4f8; margin-top:4px; letter-spacing:.5px;">🎲 Magic Squares that grow with you — pick a level above · more coming (6×6 · 8×8 · 10×10)</div>
 </div>
 <div class="targetPill" id="targetPill">🎯 Target : <span id="targetVal">?</span></div>
 <div class="instCard" id="instCard"></div>
@@ -1360,7 +1360,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // reveal order: value v -> its cell in the solution grid
     var pos = {};
     for (var r = 0; r < R; r++) for (var c = 0; c < Cc; c++) pos[puzzle.example[r][c]] = [r, c];
-    var delay = (currentSize === '5x5') ? 750 : (currentSize === '4x4') ? 950 : 1100;  // slow pace for mind-mapping
+    var delay = 1100;  // same slow pace on all sizes — time to mind-map each placement
     var v = 1;
     msg.textContent = '▶ Watch how the ' + currentSize.replace('x','×') + ' builds itself…';
     msg.className = '';
