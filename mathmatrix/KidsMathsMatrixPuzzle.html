@@ -1040,6 +1040,20 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       cells[4][0].classList.add('diagonal-guide'); // R5C1
       cells[4][2].classList.add('diagonal-guide'); // R5C3
     }
+    fitCells();   // fit digit sizes after a size switch / theme apply
+  }
+
+  // Auto-shrink each cell's font by its digit count so 1–4 digit numbers fit uniformly (no horizontal overflow)
+  function fitCells(){
+    if (!cells[0] || !cells[0][0]) return;
+    var w = cells[0][0].clientWidth;
+    if (!w) return;
+    var puzzle = PUZZLES[currentSize];
+    for (var r = 0; r < puzzle.rows; r++) for (var c = 0; c < puzzle.cols; c++){
+      var len = (cells[r][c].value || '').length || 1;
+      var frac = len <= 1 ? 0.50 : len === 2 ? 0.42 : len === 3 ? 0.32 : 0.26;
+      cells[r][c].style.fontSize = Math.round(w * frac) + 'px';
+    }
   }
 
   function update(){
@@ -1059,7 +1073,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       var vv = val(r2, c2);
       cells[r2][c2].classList.toggle('dup', !!(vv !== null && dups[vv]));
     }
-    
+    fitCells();   // keep digit sizes fitted on every change
+
     // Badge updates
     var completeSums = [];
     puzzle.lines.forEach(function(k){
@@ -1412,6 +1427,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     document.getElementById('designerModal').style.display = 'none';
   });
   
+  // Re-fit digit sizes on orientation / breakpoint change
+  window.addEventListener('resize', fitCells);
+
   // Init with 3x3
   initBoard();
   applyTheme(); // Apply colors and diagonal guide
