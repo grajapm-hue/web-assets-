@@ -942,8 +942,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         inp.className = 'cell';
         inp.type = 'text';
         inp.inputMode = 'numeric';
-        // 3-digit numbers for 4x4 and 5x5 (up to 999), 2-digit for 3x3
-        inp.maxLength = (currentSize === '3x3') ? 2 : 3;
+        // Up to 3-digit numbers (up to 999) on every size — 3x3 was previously capped at 2 (digit-limit fix)
+        inp.maxLength = 3;
         inp.addEventListener('input', onInput);
         inp.addEventListener('keydown', onKeyDown);
         cells[r].push(inp);
