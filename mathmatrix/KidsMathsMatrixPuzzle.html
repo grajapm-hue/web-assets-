@@ -1023,7 +1023,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     board.className = 'board ' + sizeClass;
     targetPill.className = 'targetPill ' + sizeClass;
     var _wb = document.getElementById('watchBtn');   // Watch Me Solve: 3x3 sample only for now
-    if (_wb) _wb.style.display = (currentSize === '3x3') ? '' : 'none';
+    if (_wb) _wb.style.display = '';   // Watch Me Solve available on 3x3 / 4x4 / 5x5
     
     // Apply diagonal guide to 5×5 cells
     if (currentSize === '5x5') {
@@ -1346,27 +1346,28 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     }, 1000);
   });
   
-  // Watch Me Solve — animated 3x3 demo: places 1..9 in method (Count Down 3) order
+  // Watch Me Solve — animated demo: reveals the solution numbers 1..N into their cells (3x3 / 4x4 / 5x5)
   document.getElementById('watchBtn').addEventListener('click', function(){
-    if (currentSize !== '3x3' || watching || peeking || solvedFlag) return;
+    if (watching || peeking || solvedFlag) return;
     watching = true;
     var btn = this;
     btn.disabled = true;
     document.getElementById('peekBtn').disabled = true;
+    var puzzle = PUZZLES[currentSize];
+    var R = puzzle.rows, Cc = puzzle.cols, N = R * Cc;
     resetVisuals();
     update();
-    // value n  ->  cell [row][col]  (the Count Down 3 placement sequence)
-    var order = [[0,1],[2,2],[1,0],[2,0],[1,1],[0,2],[1,2],[0,0],[2,1]];
-    var num = 0;
-    msg.textContent = '▶ Watch how the 3×3 builds itself…';
+    // reveal order: value v -> its cell in the solution grid
+    var pos = {};
+    for (var r = 0; r < R; r++) for (var c = 0; c < Cc; c++) pos[puzzle.example[r][c]] = [r, c];
+    var delay = (currentSize === '5x5') ? 380 : (currentSize === '4x4') ? 520 : 720;
+    var v = 1;
+    msg.textContent = '▶ Watch how the ' + currentSize.replace('x','×') + ' builds itself…';
     msg.className = '';
     var iv = setInterval(function(){
-      if (num >= order.length){
+      if (v > N){
         clearInterval(iv);
-        for (var r = 0; r < 3; r++) for (var c = 0; c < 3; c++){
-          cells[r][c].classList.add('win');
-          cells[r][c].readOnly = true;
-        }
+        for (var r = 0; r < R; r++) for (var c = 0; c < Cc; c++){ cells[r][c].classList.add('win'); cells[r][c].readOnly = true; }
         msg.textContent = '✨ That is the pattern! Tap CLEAR and try it yourself.';
         msg.className = 'win';
         btn.disabled = false;
@@ -1374,15 +1375,17 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         watching = false;
         return;
       }
-      var rc = order[num];
-      var cell = cells[rc[0]][rc[1]];
-      cell.value = String(num + 1);
-      cell.classList.remove('placing');
-      void cell.offsetWidth;       // restart the drop animation
-      cell.classList.add('placing');
-      update();
-      num++;
-    }, 780);
+      var rc = pos[v];
+      if (rc){
+        var cell = cells[rc[0]][rc[1]];
+        cell.value = String(v);
+        cell.classList.remove('placing');
+        void cell.offsetWidth;       // restart the drop animation
+        cell.classList.add('placing');
+        update();
+      }
+      v++;
+    }, delay);
   });
 
   // Offline panel toggle
