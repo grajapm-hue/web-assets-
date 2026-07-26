@@ -539,6 +539,9 @@
 
 
   .targetPill.size5x5 { background: #0891b2 !important; color: #ffffff !important; border-color: #06b6d4 !important; }
+  /* Target preview (orange = center x 3 goal shown) and solved (green) — win over the per-size colours */
+  .targetPill.preview { background: linear-gradient(135deg,#f59e0b,#fb923c) !important; color: #ffffff !important; border-color: #fbbf24 !important; }
+  .targetPill.solved  { background: linear-gradient(135deg,#15803d,#22c55e) !important; color: #ffffff !important; border-color: #22c55e !important; }
 
 
   /* DIAGONAL GUIDE CLASS - Green shade for 7 cells */
@@ -1075,7 +1078,14 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     
     // Target pill - persist if already solved, show ? if no complete line yet
     if (!solvedFlag) {
-      targetVal.textContent = completeSums.length ? completeSums[0] : '?';
+      // 3x3: as soon as the center (heart) box has a number, preview the target = center × 3 in orange
+      if (currentSize === '3x3' && val(1, 1) !== null) {
+        targetVal.textContent = val(1, 1) * 3;
+        targetPill.classList.add('preview');
+      } else {
+        targetPill.classList.remove('preview');
+        targetVal.textContent = completeSums.length ? completeSums[0] : '?';
+      }
     }
     
     // Win check
@@ -1099,6 +1109,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     stopTimer();
     var puzzle = PUZZLES[currentSize];
     
+    targetPill.classList.remove('preview');
     targetPill.classList.add('solved');
     targetVal.textContent = actualTarget;
     puzzle.lines.forEach(function(k){ setBadge(k, actualTarget, 'win'); });
@@ -1235,6 +1246,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     var puzzle = PUZZLES[currentSize];
     solvedFlag = false;
     targetPill.classList.remove('solved');
+    targetPill.classList.remove('preview');
     for (var r = 0; r < puzzle.rows; r++) for (var c = 0; c < puzzle.cols; c++){
       cells[r][c].value = '';
       cells[r][c].className = 'cell';
