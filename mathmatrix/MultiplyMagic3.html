@@ -254,7 +254,7 @@
   document.getElementById('showBtn').addEventListener('click', function(){
     if (showing || solved) return;
     showing=true;
-    var ex=[[3,36,2],[4,6,9],[18,1,12]]; // the 216 example
+    var ex=[[8,256,2],[4,16,64],[128,1,32]]; // the 4096 example — powers of 2 (familiar bit values)
     var saved=[]; for (var r=0;r<3;r++) for (var c=0;c<3;c++) saved.push(inputs[r][c].value);
     for (var r2=0;r2<3;r2++) for (var c2=0;c2<3;c2++){ inputs[r2][c2].value=ex[r2][c2]; inputs[r2][c2].readOnly=true; }
     update();
@@ -273,7 +273,7 @@
     watching = true;
     var btn = this; btn.disabled = true; document.getElementById('showBtn').disabled = true;
     resetAll();
-    var ex = [[3,36,2],[4,6,9],[18,1,12]];
+    var ex = [[8,256,2],[4,16,64],[128,1,32]]; // 4096 — powers of 2 (familiar bit values)
     var order = [[1,1],[0,0],[0,1],[0,2],[1,0],[1,2],[2,0],[2,1],[2,2]];
     var i = 0;
     msg.textContent = '▶ Watch the products build to center³…'; msg.className = '';
@@ -281,7 +281,7 @@
       if (i >= order.length){
         clearInterval(iv);
         for (var r=0;r<3;r++) for (var c=0;c<3;c++){ inputs[r][c].classList.add('win'); inputs[r][c].readOnly = true; }
-        msg.textContent = '✨ Every line × = 216 = 6³. Tap CLEAR and try your own!'; msg.className = 'win';
+        msg.textContent = '✨ Every line × = 4096 = 16³ (powers of 2!). Tap CLEAR and try your own!'; msg.className = 'win';
         btn.disabled = false; document.getElementById('showBtn').disabled = false; watching = false;
         return;
       }
