@@ -632,8 +632,8 @@
 <!-- Designer Mode PIN Modal -->
 <div class="congratsModal" id="designerModal" style="display:none;">
   <div class="congratsBox" style="width:300px;">
-    <h2>🔐 Designer Mode</h2>
-    <p style="font-size:14px; margin-bottom:16px;">Enter PIN to unlock developer access</p>
+    <h2>🔐 Supervisor Key</h2>
+    <p style="font-size:14px; margin-bottom:16px;">Enter the PIN to <b>unlock</b> all levels — or, when already unlocked, the <b>same PIN locks</b> it back.</p>
     <input type="password" id="designerPin" placeholder="Enter 4-digit PIN" maxlength="4" style="width:100%; padding:12px; font-size:18px; letter-spacing:8px; text-align:center; margin-bottom:12px; border:2px solid #2f7ff0; border-radius:8px; background:#1a1a2e; color:#fff;">
     <button class="congratsBtn" id="designerSubmit" style="width:100%; margin-bottom:8px;">Unlock</button>
     <button class="congratsBtn" id="designerCancel" style="width:100%; background:#666;">Cancel</button>
@@ -1418,16 +1418,11 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     db.style.background = '#2f7ff0';
     db.style.color = '#fff';
     db.style.opacity = '1';
-    db.title = 'Supervisor unlock ON — tap to lock';
+    db.title = 'Supervisor unlock ON — tap and enter PIN to lock';
   }
 
+  // Same PIN both locks and unlocks — always prompt for it
   document.getElementById('designerBtn').addEventListener('click', function(){
-    if (designerMode) {
-      // Supervisor manually locks — clears the persistent unlock and returns to the gated ladder
-      try { localStorage.removeItem('mmDesigner'); } catch(e){}
-      location.reload();
-      return;
-    }
     document.getElementById('designerPin').value = '';
     document.getElementById('designerModal').style.display = 'flex';
   });
@@ -1435,11 +1430,18 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   document.getElementById('designerSubmit').addEventListener('click', function(){
     var enteredPin = document.getElementById('designerPin').value;
     if (enteredPin === DESIGNER_PIN) {
-      try { localStorage.setItem('mmDesigner', 'on'); } catch(e){}
       document.getElementById('designerModal').style.display = 'none';
-      applyDesignerUnlock();
-      msg.textContent = '🎯 Supervisor unlock ON — stays open until you tap 🔓 to lock.';
-      msg.className = '';
+      if (designerMode) {
+        // Correct PIN while unlocked -> LOCK back to the gated ladder
+        try { localStorage.removeItem('mmDesigner'); } catch(e){}
+        location.reload();
+      } else {
+        // Correct PIN while locked -> UNLOCK (persists across navigation/reload)
+        try { localStorage.setItem('mmDesigner', 'on'); } catch(e){}
+        applyDesignerUnlock();
+        msg.textContent = '🎯 Supervisor unlock ON — enter the same PIN again to lock.';
+        msg.className = '';
+      }
     } else {
       alert('❌ Invalid PIN. Access denied.');
       document.getElementById('designerPin').value = '';
