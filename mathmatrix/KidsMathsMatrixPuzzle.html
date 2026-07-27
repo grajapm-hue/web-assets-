@@ -810,6 +810,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   var solvedFlag = false;
   var peeking = false;
   var watching = false;   // true while the "Watch Me Solve" demo is running
+  var watchIv = null;     // handle to the running Watch demo interval (so a size switch can cancel it)
+  var peekIv = null;      // handle to the running SHOW countdown interval
   var timerInt = null, startTime = null;
   var designerMode = false; // Designer Mode flag
   
@@ -856,6 +858,15 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   document.querySelector('[data-size="8x8"]').style.display = 'none';
   
   function initBoard(){
+    // Cancel any in-flight demo so a mid-demo size switch can't leave the board
+    // stuck (watching/peeking true, SHOW & Watch buttons disabled forever).
+    if (watchIv) { clearInterval(watchIv); watchIv = null; }
+    if (peekIv)  { clearInterval(peekIv);  peekIv  = null; }
+    watching = false;
+    var _wbtn = document.getElementById('watchBtn'); if (_wbtn) _wbtn.disabled = false;
+    var _pbtn = document.getElementById('peekBtn');
+    if (_pbtn) { _pbtn.disabled = false; _pbtn.textContent = '👁 SHOW'; }
+
     board.innerHTML = '';
     cells = [];
     badges = {};
@@ -1523,17 +1534,17 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // Just show the solution quietly - no message needed
     var secs = 3;
     btn.textContent = '👁 ' + secs;
-    var iv = setInterval(function(){
+    peekIv = setInterval(function(){
       secs--;
       if (secs > 0){ btn.textContent = '👁 ' + secs; return; }
-      clearInterval(iv);
+      clearInterval(peekIv); peekIv = null;
       var i = 0;
       for (var r2 = 0; r2 < puzzle.rows; r2++) for (var c2 = 0; c2 < puzzle.cols; c2++){
         cells[r2][c2].value = saved[i++];
         cells[r2][c2].classList.remove('peek');
         cells[r2][c2].readOnly = false;
       }
-      
+
       btn.textContent = '👁 SHOW';
       peeking = false;
       update();
@@ -1577,9 +1588,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       ? '▶ Step 1 — write the START sequence, keep these going down…'
       : '▶ Watch how the ' + currentSize.replace('x','×') + ' builds itself…';
     msg.className = '';
-    var iv = setInterval(function(){
+    watchIv = setInterval(function(){
       if (i >= N){
-        clearInterval(iv);
+        clearInterval(watchIv); watchIv = null;
         for (var r = 0; r < R; r++) for (var c = 0; c < Cc; c++){ cells[r][c].classList.add('win'); cells[r][c].readOnly = true; }
         msg.textContent = '✨ That is the pattern! Tap CLEAR and try it yourself.';
         msg.className = 'win';
