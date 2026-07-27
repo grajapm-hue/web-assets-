@@ -767,7 +767,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       lines: ['r0','r1','r2','r3','r4','r5','c0','c1','c2','c3','c4','c5','d1','d2'],
       rows: 6,
       cols: 6,
-      inst: '<b>Expert Level!</b> Fill 6×6 — every row, column and diagonal must total the SAME (111). 🧩'
+      inst: '<b>Expert Level!</b> Fill 6×6 — every row, column and diagonal must total the SAME. 🧩'
     },
     '8x8': {
       example: [
@@ -783,7 +783,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       lines: ['r0','r1','r2','r3','r4','r5','r6','r7','c0','c1','c2','c3','c4','c5','c6','c7','d1','d2'],
       rows: 8,
       cols: 8,
-      inst: '<b>Champion Level!</b> Fill 8×8 — every row, column and diagonal must total the SAME (260). 🏅'
+      inst: '<b>Champion Level!</b> Fill 8×8 — every row, column and diagonal must total the SAME. 🏅'
     }
   };
   
@@ -1011,11 +1011,12 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         <button onclick="openCheat('cheat-6x6.png')" style="background:linear-gradient(135deg,#f093fb,#f5576c); color:#fff; border:none; border-radius:10px; padding:10px 18px; font-size:15px; font-weight:700; cursor:pointer; margin:6px 0 12px;">📋 Quick Formula Sheet</button>
         <p><b>The Secret Structure:</b></p>
         <ol style="margin: 10px 0; padding-left: 20px;">
-          <li><b>Target = 111</b> — every row, column and diagonal, using the numbers <b>1–36</b>.</li>
+          <li><b>The target is not fixed — it appears once a full line is complete.</b> With the classic <b>1–36</b> every line totals <b>111</b> (all 36 numbers add to 666, and 666 ÷ 6 = 111).</li>
           <li><b>Four little 3×3 magic blocks.</b> Each block is the same magic pattern, just shifted: block <b>A = 1–9</b>, then <b>+9</b>, <b>+18</b>, <b>+27</b> for the others.</li>
           <li><b>Place them in the corners A · C · D · B</b> — A top-left, C top-right, D bottom-left, B bottom-right.</li>
-          <li><b>One swap finishes it:</b> swap <b>3 cells</b> of the top-left block with the matching 3 cells of the bottom-left block. Now every line totals 111! ✨</li>
+          <li><b>One swap finishes it:</b> swap <b>3 cells</b> of the top-left block with the matching 3 cells of the bottom-left block. Now every line matches! ✨</li>
         </ol>
+        <p><b>🚀 Different start = different target!</b> Start at 2 and step by 2 (2, 4, 6, … 72) → every line totals <b>222</b>. The pattern never changes, only the numbers do.</p>
         <p><b>💡 The Magic:</b> Big squares are just small squares stitched together — once you know 3×3, you already know 6×6! Tap 👁 <b>SHOW</b> to watch it build.</p>
       `;
     } else if (currentSize === '8x8') {
@@ -1024,11 +1025,12 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         <button onclick="openCheat('cheat-8x8.png')" style="background:linear-gradient(135deg,#f093fb,#f5576c); color:#fff; border:none; border-radius:10px; padding:10px 18px; font-size:15px; font-weight:700; cursor:pointer; margin:6px 0 12px;">📋 Quick Formula Sheet</button>
         <p><b>The Secret Structure:</b></p>
         <ol style="margin: 10px 0; padding-left: 20px;">
-          <li><b>Target = 260</b> — every row, column and diagonal, using the numbers <b>1–64</b>.</li>
+          <li><b>The target is not fixed — it shows once a full line is complete.</b> With the classic <b>1–64</b> every line totals <b>260</b> (all 64 numbers add to 2080, and 2080 ÷ 8 = 260).</li>
           <li><b>Step 1 — count 1 to 64</b> straight across the rows, but only <b>write</b> the numbers that land on the shaded pattern (the diagonals of each 4×4 block).</li>
-          <li><b>Step 2 — fill each blank with its "flip" partner: 65 − n.</b> So 1↔64, 2↔63, 3↔62 … each pair adds to 65.</li>
-          <li>That one flip makes every line add up to 260. ✨</li>
+          <li><b>Step 2 — fill each blank with its "flip" partner: (biggest + smallest) − n.</b> For 1–64 that is <b>65 − n</b>: 1↔64, 2↔63, 3↔62 … each pair adds to 65.</li>
+          <li>That one flip makes every line match. ✨</li>
         </ol>
+        <p><b>🚀 Different start = different target!</b> Start at 2 and step by 2 (2, 4, … 128) → every line totals <b>520</b>. Same trick, new numbers.</p>
         <p><b>💡 The Magic:</b> Same trick as 4×4, just bigger — keep the diagonal numbers, flip the rest! Tap 👁 <b>SHOW</b> to watch it build.</p>
       `;
     }
