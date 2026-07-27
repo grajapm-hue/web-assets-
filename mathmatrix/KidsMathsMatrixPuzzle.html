@@ -1540,7 +1540,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     }, 1000);
   });
   
-  // Watch Me Solve — animated demo: reveals the solution numbers 1..N into their cells (3x3 / 4x4 / 5x5)
+  // Watch Me Solve — animated demo. 4×4/8×8 reveal in method order (keep down, then flip back up); other sizes reveal 1..N.
   document.getElementById('watchBtn').addEventListener('click', function(){
     if (watching || peeking || solvedFlag) return;
     watching = true;
@@ -1551,16 +1551,34 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     var R = puzzle.rows, Cc = puzzle.cols, N = R * Cc;
     resetVisuals();
     update();
-    // reveal order: value v -> its cell in the solution grid
-    var pos = {};
-    for (var r = 0; r < R; r++) for (var c = 0; c < Cc; c++) pos[puzzle.example[r][c]] = [r, c];
+    // Reveal ORDER teaches the method:
+    //  • 4×4 / 8×8 (keep-&-flip, doubly-even): Pass 1 = the "start sequence" cells
+    //    top→bottom, left→right (1,4,5,8 … 64); Pass 2 = the flip cells
+    //    bottom→top, right→left (2,3,6,7 … 62,63). Two opposite sweeps.
+    //  • other sizes: simple value order 1..N.
+    var order = [];
+    var keptCount = 0;
+    var dualPass = (currentSize === '4x4' || currentSize === '8x8');
+    if (dualPass) {
+      for (var pr = 0; pr < R; pr++) for (var pc = 0; pc < Cc; pc++)
+        if (puzzle.example[pr][pc] === pr * Cc + pc + 1) { order.push([pr, pc]); keptCount++; }   // Pass 1: keep (top→bottom)
+      for (var fr = R - 1; fr >= 0; fr--) for (var fc = Cc - 1; fc >= 0; fc--)
+        if (puzzle.example[fr][fc] !== fr * Cc + fc + 1) order.push([fr, fc]);   // Pass 2: flip (bottom→top, right→left)
+    } else {
+      var pos = {};
+      for (var r = 0; r < R; r++) for (var c = 0; c < Cc; c++) pos[puzzle.example[r][c]] = [r, c];
+      for (var ov = 1; ov <= N; ov++) order.push(pos[ov]);
+    }
+    var flipSum = N + 1;   // partner sum for the demo grid: 17 for 4×4, 65 for 8×8
     // slow, mind-mapping pace on the small sizes; scale down on the big grids so the demo stays ~18–20s
     var delay = currentSize === '8x8' ? 300 : currentSize === '6x6' ? 500 : 1100;
-    var v = 1;
-    msg.textContent = '▶ Watch how the ' + currentSize.replace('x','×') + ' builds itself…';
+    var i = 0;
+    msg.textContent = dualPass
+      ? '▶ Step 1 — write the START sequence, keep these going down…'
+      : '▶ Watch how the ' + currentSize.replace('x','×') + ' builds itself…';
     msg.className = '';
     var iv = setInterval(function(){
-      if (v > N){
+      if (i >= N){
         clearInterval(iv);
         for (var r = 0; r < R; r++) for (var c = 0; c < Cc; c++){ cells[r][c].classList.add('win'); cells[r][c].readOnly = true; }
         msg.textContent = '✨ That is the pattern! Tap CLEAR and try it yourself.';
@@ -1570,16 +1588,19 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         watching = false;
         return;
       }
-      var rc = pos[v];
+      if (dualPass && i === keptCount){
+        msg.textContent = '▶ Step 2 — FLIP-fill the rest, coming back up (' + flipSum + ' − n)…';
+      }
+      var rc = order[i];
       if (rc){
         var cell = cells[rc[0]][rc[1]];
-        cell.value = String(v);
+        cell.value = String(puzzle.example[rc[0]][rc[1]]);
         cell.classList.remove('placing');
         void cell.offsetWidth;       // restart the drop animation
         cell.classList.add('placing');
         update();
       }
-      v++;
+      i++;
     }, delay);
   });
 
