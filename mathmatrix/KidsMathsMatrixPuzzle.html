@@ -866,6 +866,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     if (peekIv)  { clearInterval(peekIv);  peekIv  = null; }
     watching = false;
     peeking = false;
+    Object.keys(badges).forEach(function(k){          // drop any leftover SHOW tint if a demo was cancelled mid-way
+      badges[k].forEach(function(b){ b.classList.remove('peek'); });
+    });
     var _wbtn = document.getElementById('watchBtn'); if (_wbtn) _wbtn.disabled = false;
     var _pbtn = document.getElementById('peekBtn'); if (_pbtn){ _pbtn.disabled = false; _pbtn.textContent = '👁 SHOW'; }
   }
@@ -1412,14 +1415,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     
     document.getElementById('nextBtn').onclick = function(){
       modal.style.display = 'none';
-      if (currentSize === '3x3' && solvedCount >= 3) {
-        // Auto-unlock 4x4
-        document.querySelector('[data-size="4x4"]').click();
-      } else {
-        // Restart same puzzle
-        initBoard();
-        applyTheme(); // Apply colors and diagonal guide
-      }
+      // Restart the current puzzle. The next size is already unlocked in win(),
+      // so the player just taps its (now visible) tab when ready.
+      initBoard();
+      applyTheme(); // Apply colors and diagonal guide
     };
   }
   
@@ -1503,10 +1502,11 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       cells[r][c].blur();
     }
     
-    // Also add peek class to badges for contrast
-    for (var i = 0; i < badges.length; i++) {
-      badges[i].classList.add('peek');
-    }
+    // Also add peek class to badges for contrast (badges is keyed by line name,
+    // each value an array of badge elements — iterate keys, not .length)
+    Object.keys(badges).forEach(function(k){
+      badges[k].forEach(function(b){ b.classList.add('peek'); });
+    });
     
     
     update();
@@ -1523,6 +1523,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         cells[r2][c2].classList.remove('peek');
         cells[r2][c2].readOnly = false;
       }
+      Object.keys(badges).forEach(function(k){          // clear the badge tint added at SHOW start
+        badges[k].forEach(function(b){ b.classList.remove('peek'); });
+      });
 
       btn.textContent = '👁 SHOW';
       peeking = false;
