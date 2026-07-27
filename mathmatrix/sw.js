@@ -1,7 +1,7 @@
 // MathMatrix Pro++ Service Worker — full offline support
 // Bump CACHE_VERSION whenever you update the game HTML so kids get the new version.
 
-const CACHE_VERSION = 'mathmatrix-v56';
+const CACHE_VERSION = 'mathmatrix-v57';
 
 const ASSETS = [
   './',
@@ -38,17 +38,38 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch: cache-first, so the game opens instantly with zero network.
-// Falls back to network only for anything not cached, and silently
-// updates the cache in the background when online.
+// Fetch strategy:
+//  • Pages (HTML / navigations): NETWORK-FIRST — always load the newest version
+//    when online, so a deploy shows on a single refresh (no double-refresh).
+//    Falls back to the cached page when offline.
+//  • Everything else (images, icons, manifest): CACHE-FIRST for instant, offline
+//    loads, with a quiet background refresh.
 self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const networkFetch = fetch(event.request)
+  const req = event.request;
+  const isPage = req.mode === 'navigate' || req.destination === 'document' || /\.html(\?|$)/.test(req.url);
+
+  if (isPage) {
+    event.respondWith(
+      fetch(req)
         .then((response) => {
           if (response && response.ok) {
             const copy = response.clone();
-            caches.open(CACHE_VERSION).then((cache) => cache.put(event.request, copy));
+            caches.open(CACHE_VERSION).then((cache) => cache.put(req, copy));
+          }
+          return response;
+        })
+        .catch(() => caches.match(req).then((c) => c || caches.match('./KidsMathsMatrixPuzzle.html')))
+    );
+    return;
+  }
+
+  event.respondWith(
+    caches.match(req).then((cached) => {
+      const networkFetch = fetch(req)
+        .then((response) => {
+          if (response && response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE_VERSION).then((cache) => cache.put(req, copy));
           }
           return response;
         })
