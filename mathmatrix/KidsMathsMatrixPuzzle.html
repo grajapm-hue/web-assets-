@@ -753,8 +753,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   });
   
   // Hide 4x4 and 5x5 buttons initially
-  document.querySelector('[data-size="4x4"]').parentElement.style.display = 'none';
-  document.querySelector('[data-size="5x5"]').parentElement.style.display = 'none';
+  document.querySelector('[data-size="4x4"]').style.display = 'none';
+  document.querySelector('[data-size="5x5"]').style.display = 'none';
   
   function initBoard(){
     board.innerHTML = '';
@@ -1165,7 +1165,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         if (solvedCount3x3 >= 2) {
           solvedCounter.classList.add('unlocked');
           // Show 4x4 button
-          document.querySelector('[data-size="4x4"]').parentElement.style.display = 'flex';
+          document.querySelector('[data-size="4x4"]').style.display = '';
           showCongrats('🎉 Master of 3×3!', 'You solved with 2 different targets! Ready for 4×4?');
         } else {
           setTimeout(function(){
@@ -1186,7 +1186,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         
         if (solvedCount4x4 >= 2) {
           // Show 5x5 button
-          document.querySelector('[data-size="5x5"]').parentElement.style.display = 'flex';
+          document.querySelector('[data-size="5x5"]').style.display = '';
           showCongrats('🏆 Master of 4×4!', 'You solved with 2 different targets! Ready for 5×5?');
         } else {
           setTimeout(function(){
@@ -1425,8 +1425,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   // Apply the supervisor unlock (all levels + 3³ tab). Persists via localStorage until manually locked.
   function applyDesignerUnlock(){
     designerMode = true;
-    document.querySelector('[data-size="4x4"]').parentElement.style.display = 'flex';
-    document.querySelector('[data-size="5x5"]').parentElement.style.display = 'flex';
+    document.querySelector('[data-size="4x4"]').style.display = '';
+    document.querySelector('[data-size="5x5"]').style.display = '';
     var _m3d = document.getElementById('mult3Tab'); if (_m3d) _m3d.style.display = '';
     var db = document.getElementById('designerBtn');
     db.textContent = '🔓';
