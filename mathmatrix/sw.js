@@ -1,7 +1,7 @@
 // MathMatrix Pro++ Service Worker — full offline support
 // Bump CACHE_VERSION whenever you update the game HTML so kids get the new version.
 
-const CACHE_VERSION = 'mathmatrix-v48';
+const CACHE_VERSION = 'mathmatrix-v49';
 
 const ASSETS = [
   './',
@@ -11,6 +11,8 @@ const ASSETS = [
   './cheat-3x3.png',
   './cheat-4x4.png',
   './cheat-5x5.png',
+  './cheat-6x6.png',
+  './cheat-8x8.png',
   './icon-192.png',
   './icon-512.png',
   './icon-512-maskable.png'

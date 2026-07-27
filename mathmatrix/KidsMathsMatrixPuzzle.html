@@ -159,7 +159,19 @@
     grid-template-columns:repeat(7, 40px);
     grid-template-rows:repeat(7, 40px);
   }
-  
+  /* 6x6 board (8-track ring) */
+  .board.size6x6 {
+    grid-template-columns:repeat(8, 30px);
+    grid-template-rows:repeat(8, 30px);
+    grid-gap:3px; gap:3px;
+  }
+  /* 8x8 board (10-track ring) */
+  .board.size8x8 {
+    grid-template-columns:repeat(10, 26px);
+    grid-template-rows:repeat(10, 26px);
+    grid-gap:2px; gap:2px;
+  }
+
   @media (min-width:480px){
     .board.size3x3 {
       grid-template-columns:repeat(5, 68px);
@@ -176,6 +188,16 @@
       grid-template-rows:repeat(7, 56px);
       grid-gap:6px; gap:6px;
     }
+    .board.size6x6 {
+      grid-template-columns:repeat(8, 44px);
+      grid-template-rows:repeat(8, 44px);
+      grid-gap:5px; gap:5px;
+    }
+    .board.size8x8 {
+      grid-template-columns:repeat(10, 38px);
+      grid-template-rows:repeat(10, 38px);
+      grid-gap:3px; gap:3px;
+    }
   }
   
   @media (min-width:760px){
@@ -190,6 +212,14 @@
     .board.size5x5 {
       grid-template-columns:repeat(7, 72px);
       grid-template-rows:repeat(7, 72px);
+    }
+    .board.size6x6 {
+      grid-template-columns:repeat(8, 60px);
+      grid-template-rows:repeat(8, 60px);
+    }
+    .board.size8x8 {
+      grid-template-columns:repeat(10, 50px);
+      grid-template-rows:repeat(10, 50px);
     }
   }
   
@@ -210,16 +240,23 @@
   .board.size4x4 .cell { width:52px; height:52px; font-size:28px; line-height:48px; }
   /* 5x5 cell sizes */
   .board.size5x5 .cell { width:40px; height:40px; font-size:20px; line-height:36px; }
-  
+  /* 6x6 / 8x8 cell sizes (font auto-shrinks via fitCells) */
+  .board.size6x6 .cell { width:30px; height:30px; font-size:15px; line-height:26px; }
+  .board.size8x8 .cell { width:26px; height:26px; font-size:12px; line-height:22px; }
+
   @media (min-width:480px){
     .board.size3x3 .cell { width:68px; height:68px; font-size:28px; line-height:64px; }
     .board.size4x4 .cell { width:68px; height:68px; font-size:34px; line-height:64px; }
     .board.size5x5 .cell { width:56px; height:56px; font-size:24px; line-height:52px; }
+    .board.size6x6 .cell { width:44px; height:44px; font-size:20px; line-height:40px; }
+    .board.size8x8 .cell { width:38px; height:38px; font-size:17px; line-height:34px; }
   }
   @media (min-width:760px){
     .board.size3x3 .cell { width:92px; height:92px; font-size:32px; line-height:88px; }
     .board.size4x4 .cell { width:92px; height:92px; font-size:40px; line-height:88px; }
     .board.size5x5 .cell { width:72px; height:72px; font-size:30px; line-height:68px; }
+    .board.size6x6 .cell { width:60px; height:60px; font-size:26px; line-height:56px; }
+    .board.size8x8 .cell { width:50px; height:50px; font-size:22px; line-height:46px; }
   }
   
   .cell:focus { border-style:solid; border-color:#22d3ee; }
@@ -257,11 +294,15 @@
   .board.size3x3 .cell.peek { background: rgba(30, 64, 175, 0.15) !important; }
   .board.size4x4 .cell.peek { background: rgba(124, 58, 237, 0.15) !important; }
   .board.size5x5 .cell.peek { background: rgba(8, 145, 178, 0.15) !important; }
-  
+  .board.size6x6 .cell.peek { background: rgba(13, 148, 136, 0.15) !important; }
+  .board.size8x8 .cell.peek { background: rgba(67, 56, 202, 0.15) !important; }
+
   /* Badge/target cells in SHOW display - more visible */
   .board.size3x3 .badge.peek { background: rgba(30, 64, 175, 0.2) !important; }
   .board.size4x4 .badge.peek { background: rgba(124, 58, 237, 0.2) !important; }
   .board.size5x5 .badge.peek { background: rgba(8, 145, 178, 0.2) !important; }
+  .board.size6x6 .badge.peek { background: rgba(13, 148, 136, 0.2) !important; }
+  .board.size8x8 .badge.peek { background: rgba(67, 56, 202, 0.2) !important; }
   
   .badge {
     border:2px dashed #22d3ee;   /* edge badges (row/column trackers) = cyan */
@@ -276,13 +317,21 @@
   /* 4x4 badge sizes */
   .board.size4x4 .badge { width:52px; height:52px; }
   
+  /* 6x6 / 8x8 badges auto-fill their grid track; only tune the sum font so 3-digit totals fit */
+  .board.size6x6 .badge { font-size:11px; }
+  .board.size8x8 .badge { font-size:9px; }
+
   @media (min-width:480px){
     .board.size3x3 .badge { width:68px; height:68px; font-size:17px; }
     .board.size4x4 .badge { width:68px; height:68px; font-size:19px; }
+    .board.size6x6 .badge { font-size:14px; }
+    .board.size8x8 .badge { font-size:12px; }
   }
   @media (min-width:760px){
     .board.size3x3 .badge { width:92px; height:92px; font-size:20px; }
     .board.size4x4 .badge { width:92px; height:92px; font-size:24px; }
+    .board.size6x6 .badge { font-size:18px; }
+    .board.size8x8 .badge { font-size:15px; }
   }
   
   .badge.corner { border-style:solid; border-color:#d946ef; color:#e59bf5; }  /* corner badges (diagonal trackers) = magenta */
@@ -541,6 +590,8 @@
 
 
   .targetPill.size5x5 { background: #0891b2 !important; color: #ffffff !important; border-color: #06b6d4 !important; }
+  .targetPill.size6x6 { background: #0d9488 !important; color: #ffffff !important; border-color: #2dd4bf !important; }
+  .targetPill.size8x8 { background: #4338ca !important; color: #ffffff !important; border-color: #818cf8 !important; }
   /* Target preview (orange = center x 3 goal shown) and solved (green) — win over the per-size colours */
   .targetPill.preview { background: linear-gradient(135deg,#f59e0b,#fb923c) !important; color: #ffffff !important; border-color: #fbbf24 !important; }
   .targetPill.solved  { background: linear-gradient(135deg,#15803d,#22c55e) !important; color: #ffffff !important; border-color: #22c55e !important; }
@@ -560,7 +611,7 @@
 
 <div class="titleCard">
   <h1>🎲 MathMatrix Pro++</h1>
-  <div style="text-align:center; font-size:12px; font-weight:700; margin-top:4px; letter-spacing:.4px; line-height:1.5;">🎲 Kids Puzzle · for 5th grade &amp; up<br><span style="color:#4ade80;">Now playing:</span> <span style="color:#8ab4f8;">3×3 · 4×4 · 5×5 · 3³</span> &nbsp;|&nbsp; <span style="color:#fbbf24;">Coming:</span> <span style="color:#c9a54a;">6×6 · 8×8 · 10×10</span></div>
+  <div style="text-align:center; font-size:12px; font-weight:700; margin-top:4px; letter-spacing:.4px; line-height:1.5;">🎲 Kids Puzzle · for 5th grade &amp; up<br><span style="color:#4ade80;">Now playing:</span> <span style="color:#8ab4f8;">3×3 · 4×4 · 5×5 · 6×6 · 8×8 · 3³</span> &nbsp;|&nbsp; <span style="color:#fbbf24;">Coming:</span> <span style="color:#c9a54a;">10×10</span></div>
 </div>
 <div class="targetPill" id="targetPill">🎯 Target : <span id="targetVal">?</span></div>
 
@@ -614,6 +665,8 @@
     <button class="toggleBtn active" data-size="3x3">3×3 (Easy)</button>
     <button class="toggleBtn" data-size="4x4">4×4 (Hard)</button>
     <button class="toggleBtn" data-size="5x5">5×5 (Master)</button>
+    <button class="toggleBtn" data-size="6x6" style="display:none; color:#5eead4; border-color:#14b8a6;">6×6 (Expert)</button>
+    <button class="toggleBtn" data-size="8x8" style="display:none; color:#a5b4fc; border-color:#6366f1;">8×8 (Champion)</button>
     <button class="toggleBtn" id="mult3Tab" data-size="3cube" style="display:none; color:#fbbf24; border-color:#f59e0b;">3³ (×)</button>
   </div>
   <button id="designerBtn" style="align-self:flex-end; font-size:13px; padding:4px 8px; background:transparent; border:none; color:#444; cursor:pointer; margin-top:8px; opacity:0.5;">🔑</button>
@@ -701,6 +754,36 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       rows: 5,
       cols: 5,
       inst: '<b>Master Level!</b> Fill 5×5 — every row, column and diagonal must total the SAME. You got this! 🌟'
+    },
+    '6x6': {
+      example: [
+        [35,  1,  6, 26, 19, 24],
+        [ 3, 32,  7, 21, 23, 25],
+        [31,  9,  2, 22, 27, 20],
+        [ 8, 28, 33, 17, 10, 15],
+        [30,  5, 34, 12, 14, 16],
+        [ 4, 36, 29, 13, 18, 11]
+      ],
+      lines: ['r0','r1','r2','r3','r4','r5','c0','c1','c2','c3','c4','c5','d1','d2'],
+      rows: 6,
+      cols: 6,
+      inst: '<b>Expert Level!</b> Fill 6×6 — every row, column and diagonal must total the SAME (111). 🧩'
+    },
+    '8x8': {
+      example: [
+        [ 1, 63, 62,  4,  5, 59, 58,  8],
+        [56, 10, 11, 53, 52, 14, 15, 49],
+        [48, 18, 19, 45, 44, 22, 23, 41],
+        [25, 39, 38, 28, 29, 35, 34, 32],
+        [33, 31, 30, 36, 37, 27, 26, 40],
+        [24, 42, 43, 21, 20, 46, 47, 17],
+        [16, 50, 51, 13, 12, 54, 55,  9],
+        [57,  7,  6, 60, 61,  3,  2, 64]
+      ],
+      lines: ['r0','r1','r2','r3','r4','r5','r6','r7','c0','c1','c2','c3','c4','c5','c6','c7','d1','d2'],
+      rows: 8,
+      cols: 8,
+      inst: '<b>Champion Level!</b> Fill 8×8 — every row, column and diagonal must total the SAME (260). 🏅'
     }
   };
   
@@ -711,6 +794,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   var solvedTargets4x4 = []; // Track different targets used
   var solvedCount5x5 = 0; // Track 5x5 solves
   var solvedTargets5x5 = []; // Track different targets used
+  var solvedCount6x6 = 0; // Track 6x6 solves
+  var solvedTargets6x6 = []; // Track different targets used
+  var solvedCount8x8 = 0; // Track 8x8 solves
+  var solvedTargets8x8 = []; // Track different targets used
   var board = document.getElementById('board');
   var targetPill = document.getElementById('targetPill');
   var targetVal = document.getElementById('targetVal');
@@ -732,8 +819,12 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       var newSize = this.dataset.size;
       if (newSize === '3cube'){ window.location.href = 'MultiplyMagic3.html'; return; }  // 3³ tab = gateway to the multiply page
       // Allow switching if: Designer Mode ON, OR normal progression unlocked
-      var canSwitch = designerMode || newSize === '3x3' || solvedCount3x3 >= 2 || (newSize === '4x4' && solvedCount3x3 >= 2) || (newSize === '5x5' && solvedCount4x4 >= 2);
-      
+      var canSwitch = designerMode || newSize === '3x3'
+        || (newSize === '4x4' && solvedCount3x3 >= 2)
+        || (newSize === '5x5' && solvedCount4x4 >= 2)
+        || (newSize === '6x6' && solvedCount5x5 >= 2)
+        || (newSize === '8x8' && solvedCount6x6 >= 2);
+
       if (canSwitch) {
         document.querySelectorAll('.toggleBtn').forEach(function(b){ b.classList.remove('active'); });
         this.classList.add('active');
@@ -748,13 +839,21 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       } else if (newSize === '5x5') {
         msg.textContent = '🔒 Complete 4×4 with 2 different targets first!';
         msg.className = '';
+      } else if (newSize === '6x6') {
+        msg.textContent = '🔒 Complete 5×5 with 2 different targets first!';
+        msg.className = '';
+      } else if (newSize === '8x8') {
+        msg.textContent = '🔒 Complete 6×6 with 2 different targets first!';
+        msg.className = '';
       }
     });
   });
   
-  // Hide 4x4 and 5x5 buttons initially
+  // Hide all higher-level buttons initially (unlocked by earning or supervisor key)
   document.querySelector('[data-size="4x4"]').style.display = 'none';
   document.querySelector('[data-size="5x5"]').style.display = 'none';
+  document.querySelector('[data-size="6x6"]').style.display = 'none';
+  document.querySelector('[data-size="8x8"]').style.display = 'none';
   
   function initBoard(){
     board.innerHTML = '';
@@ -860,7 +959,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           <li>Steps of 3 (2, 5, 8, …) → center × 5</li>
         </ol>
       `;
-    } else {
+    } else if (currentSize === '4x4') {
       document.getElementById('logicBox').innerHTML = `
         <h3>📐 4×4 Master Tips - Extract the Magic with Center Grid Math!</h3>
         <button onclick="openCheat('cheat-4x4.png')" style="background:linear-gradient(135deg,#f093fb,#f5576c); color:#fff; border:none; border-radius:10px; padding:10px 18px; font-size:15px; font-weight:700; cursor:pointer; margin:6px 0 12px;">📋 Quick Formula Sheet</button>
@@ -906,8 +1005,34 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           <li>Steps of 3 (2, 5, 8, …) → Target 98</li>
         </ol>
       `;
+    } else if (currentSize === '6x6') {
+      document.getElementById('logicBox').innerHTML = `
+        <h3>📐 Expert Tip for 6×6 — Four Blocks &amp; a Swap!</h3>
+        <button onclick="openCheat('cheat-6x6.png')" style="background:linear-gradient(135deg,#f093fb,#f5576c); color:#fff; border:none; border-radius:10px; padding:10px 18px; font-size:15px; font-weight:700; cursor:pointer; margin:6px 0 12px;">📋 Quick Formula Sheet</button>
+        <p><b>The Secret Structure:</b></p>
+        <ol style="margin: 10px 0; padding-left: 20px;">
+          <li><b>Target = 111</b> — every row, column and diagonal, using the numbers <b>1–36</b>.</li>
+          <li><b>Four little 3×3 magic blocks.</b> Each block is the same magic pattern, just shifted: block <b>A = 1–9</b>, then <b>+9</b>, <b>+18</b>, <b>+27</b> for the others.</li>
+          <li><b>Place them in the corners A · C · D · B</b> — A top-left, C top-right, D bottom-left, B bottom-right.</li>
+          <li><b>One swap finishes it:</b> swap <b>3 cells</b> of the top-left block with the matching 3 cells of the bottom-left block. Now every line totals 111! ✨</li>
+        </ol>
+        <p><b>💡 The Magic:</b> Big squares are just small squares stitched together — once you know 3×3, you already know 6×6! Tap 👁 <b>SHOW</b> to watch it build.</p>
+      `;
+    } else if (currentSize === '8x8') {
+      document.getElementById('logicBox').innerHTML = `
+        <h3>📐 Champion Tip for 8×8 — Fill &amp; Flip!</h3>
+        <button onclick="openCheat('cheat-8x8.png')" style="background:linear-gradient(135deg,#f093fb,#f5576c); color:#fff; border:none; border-radius:10px; padding:10px 18px; font-size:15px; font-weight:700; cursor:pointer; margin:6px 0 12px;">📋 Quick Formula Sheet</button>
+        <p><b>The Secret Structure:</b></p>
+        <ol style="margin: 10px 0; padding-left: 20px;">
+          <li><b>Target = 260</b> — every row, column and diagonal, using the numbers <b>1–64</b>.</li>
+          <li><b>Step 1 — count 1 to 64</b> straight across the rows, but only <b>write</b> the numbers that land on the shaded pattern (the diagonals of each 4×4 block).</li>
+          <li><b>Step 2 — fill each blank with its "flip" partner: 65 − n.</b> So 1↔64, 2↔63, 3↔62 … each pair adds to 65.</li>
+          <li>That one flip makes every line add up to 260. ✨</li>
+        </ol>
+        <p><b>💡 The Magic:</b> Same trick as 4×4, just bigger — keep the diagonal numbers, flip the rest! Tap 👁 <b>SHOW</b> to watch it build.</p>
+      `;
     }
-    
+
     var n = puzzle.rows;
     
     // Place badges and cells in grid
@@ -1052,7 +1177,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   function refreshCounter(){
     var n, next;
     if (currentSize === '4x4') { n = solvedCount4x4; next = '5×5'; }
-    else if (currentSize === '5x5') { n = solvedCount5x5; next = '3³ Multiply'; }
+    else if (currentSize === '5x5') { n = solvedCount5x5; next = '6×6'; }
+    else if (currentSize === '6x6') { n = solvedCount6x6; next = '8×8'; }
+    else if (currentSize === '8x8') { n = solvedCount8x8; next = '10×10 (coming soon)'; }
     else { n = solvedCount3x3; next = '4×4'; }
     solvedCounter.style.display = 'block';
     solvedCounter.classList.toggle('unlocked', n >= 2);
@@ -1206,12 +1333,50 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         refreshCounter();
         
         if (solvedCount5x5 >= 2) {
+          document.querySelector('[data-size="6x6"]').style.display = '';  // unlock the next size
           var _m3 = document.getElementById('mult3Tab');
-          if (_m3) _m3.style.display = '';   // unlock the advanced 3³ Multiply Magic tab
-          showCongrats('⭐ Master of 5×5!', '🌟 Advanced unlocked: the 3³ Multiply Magic tab is now open!');
+          if (_m3) _m3.style.display = '';   // also unlock the advanced 3³ Multiply Magic tab
+          showCongrats('⭐ Master of 5×5!', '🌟 Unlocked: 6×6 (Expert) — plus the bonus 3³ Multiply Magic tab!');
         } else {
           setTimeout(function(){
-            msg.textContent = '✨ ' + (2 - solvedCount5x5) + ' more with DIFFERENT targets to unlock 3³ Multiply Magic!';
+            msg.textContent = '✨ ' + (2 - solvedCount5x5) + ' more with DIFFERENT targets to unlock 6×6!';
+          }, 1500);
+        }
+      } else {
+        setTimeout(function(){
+          msg.textContent = '⚠️ You already solved with target ' + actualTarget + '! Try a DIFFERENT number!';
+        }, 1500);
+      }
+    } else if (currentSize === '6x6') {
+      if (solvedTargets6x6.indexOf(actualTarget) === -1) {
+        solvedTargets6x6.push(actualTarget);
+        solvedCount6x6 = solvedTargets6x6.length;
+        refreshCounter();
+
+        if (solvedCount6x6 >= 2) {
+          document.querySelector('[data-size="8x8"]').style.display = '';  // unlock 8×8
+          showCongrats('🧩 Master of 6×6!', 'You solved with 2 different targets! Ready for 8×8 (Champion)?');
+        } else {
+          setTimeout(function(){
+            msg.textContent = '✨ ' + (2 - solvedCount6x6) + ' more with DIFFERENT targets to unlock 8×8!';
+          }, 1500);
+        }
+      } else {
+        setTimeout(function(){
+          msg.textContent = '⚠️ You already solved with target ' + actualTarget + '! Try a DIFFERENT number!';
+        }, 1500);
+      }
+    } else if (currentSize === '8x8') {
+      if (solvedTargets8x8.indexOf(actualTarget) === -1) {
+        solvedTargets8x8.push(actualTarget);
+        solvedCount8x8 = solvedTargets8x8.length;
+        refreshCounter();
+
+        if (solvedCount8x8 >= 2) {
+          showCongrats('🏅 Champion of 8×8!', 'Amazing! You mastered every size so far. 10×10 is coming soon! 🚀');
+        } else {
+          setTimeout(function(){
+            msg.textContent = '✨ ' + (2 - solvedCount8x8) + ' more with DIFFERENT targets — you are almost a Grandmaster!';
           }, 1500);
         }
       } else {
@@ -1375,7 +1540,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // reveal order: value v -> its cell in the solution grid
     var pos = {};
     for (var r = 0; r < R; r++) for (var c = 0; c < Cc; c++) pos[puzzle.example[r][c]] = [r, c];
-    var delay = 1100;  // same slow pace on all sizes — time to mind-map each placement
+    // slow, mind-mapping pace on the small sizes; scale down on the big grids so the demo stays ~18–20s
+    var delay = currentSize === '8x8' ? 300 : currentSize === '6x6' ? 500 : 1100;
     var v = 1;
     msg.textContent = '▶ Watch how the ' + currentSize.replace('x','×') + ' builds itself…';
     msg.className = '';
@@ -1427,6 +1593,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     designerMode = true;
     document.querySelector('[data-size="4x4"]').style.display = '';
     document.querySelector('[data-size="5x5"]').style.display = '';
+    document.querySelector('[data-size="6x6"]').style.display = '';
+    document.querySelector('[data-size="8x8"]').style.display = '';
     var _m3d = document.getElementById('mult3Tab'); if (_m3d) _m3d.style.display = '';
     var db = document.getElementById('designerBtn');
     db.textContent = '🔓';
