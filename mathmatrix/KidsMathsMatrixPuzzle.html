@@ -857,15 +857,46 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   document.querySelector('[data-size="6x6"]').style.display = 'none';
   document.querySelector('[data-size="8x8"]').style.display = 'none';
   
-  function initBoard(){
-    // Cancel any in-flight demo so a mid-demo size switch can't leave the board
-    // stuck (watching/peeking true, SHOW & Watch buttons disabled forever).
+  // Cancel any in-flight SHOW/Watch demo and return both buttons to active.
+  // initBoard (size switch) and CLEAR both route through here, so the board can
+  // never stay stuck (watching/peeking true, buttons disabled) — the bug that
+  // previously needed a full page reload (via the 3³ page) to clear.
+  function stopDemos(){
     if (watchIv) { clearInterval(watchIv); watchIv = null; }
     if (peekIv)  { clearInterval(peekIv);  peekIv  = null; }
     watching = false;
+    peeking = false;
     var _wbtn = document.getElementById('watchBtn'); if (_wbtn) _wbtn.disabled = false;
-    var _pbtn = document.getElementById('peekBtn');
-    if (_pbtn) { _pbtn.disabled = false; _pbtn.textContent = '👁 SHOW'; }
+    var _pbtn = document.getElementById('peekBtn'); if (_pbtn){ _pbtn.disabled = false; _pbtn.textContent = '👁 SHOW'; }
+  }
+
+  // Mark the persistent guide/shade cells for the current size (used by both
+  // initBoard and resetVisuals so CLEAR keeps the shading on every size).
+  function markAnchors(){
+    var puzzle = PUZZLES[currentSize];
+    var n = puzzle.rows;
+    if (currentSize === '4x4') {
+      [[0,0],[0,3],[3,0],[3,3],[1,1],[1,2],[2,1],[2,2]].forEach(function(p){ cells[p[0]][p[1]].classList.add('anchor'); });
+    } else if (currentSize === '3x3') {
+      cells[1][1].classList.add('anchor');
+    } else if (currentSize === '5x5') {
+      cells[2][2].classList.add('anchor');
+      cells[2][2].classList.add('center-heart');
+      cells[0][2].classList.add('center-ref');
+      cells[4][2].classList.add('center-ref');
+    } else if (currentSize === '6x6') {
+      // 3 swap cells in block A ↔ 3 in block D
+      [[0,0],[1,1],[2,0],[3,0],[4,1],[5,0]].forEach(function(p){ cells[p[0]][p[1]].classList.add('anchor'); });
+    } else if (currentSize === '8x8') {
+      // "start sequence" cells that keep their natural 1..N value
+      for (var ar = 0; ar < n; ar++) for (var ac = 0; ac < n; ac++){
+        if (puzzle.example[ar][ac] === ar * n + ac + 1) cells[ar][ac].classList.add('anchor');
+      }
+    }
+  }
+
+  function initBoard(){
+    stopDemos();      // clear any running demo + re-enable buttons before rebuild
 
     board.innerHTML = '';
     cells = [];
@@ -1094,46 +1125,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       place(makeBadge('r' + r, false), r + 2, bSize);
     }
     
-    // Mark anchor boxes (persistent guides)
-    if (currentSize === '4x4') {
-      // 4 corners
-      cells[0][0].classList.add('anchor'); // top-left
-      cells[0][3].classList.add('anchor'); // top-right
-      cells[3][0].classList.add('anchor'); // bottom-left
-      cells[3][3].classList.add('anchor'); // bottom-right
-      // 4 middle boxes
-      cells[1][1].classList.add('anchor'); // middle-left-top
-      cells[1][2].classList.add('anchor'); // middle-right-top
-      cells[2][1].classList.add('anchor'); // middle-left-bottom
-      cells[2][2].classList.add('anchor'); // middle-right-bottom
-    } else if (currentSize === '3x3') {
-      // For 3x3, mark only center
-      cells[1][1].classList.add('anchor');
-    } else if (currentSize === '5x5') {
-      // For 5x5, mark center (heart of puzzle)
-      cells[2][2].classList.add('anchor');
-      cells[2][2].classList.add('center-heart');
-      
-      // Add center grid reference highlighting (relationships from center)
-      // [1,3] = Center - 12 (top row middle)
-      cells[0][2].classList.add('center-ref');
-      // [5,3] = Center + 12 (bottom row middle)
-      cells[4][2].classList.add('center-ref');
-      // Column-1 middle [3,1] and column-5 middle [3,5] shading removed per Raja
-      // (kept only the vertical start-to-end cue: top-middle and bottom-middle)
-    } else if (currentSize === '6x6') {
-      // Shade the 3 swap cells in top-left block A ↔ 3 in bottom-left block D
-      // pairs: [0,0]↔[3,0], [1,1]↔[4,1], [2,0]↔[5,0]
-      [[0,0],[1,1],[2,0],[3,0],[4,1],[5,0]].forEach(function(p){
-        cells[p[0]][p[1]].classList.add('anchor');
-      });
-    } else if (currentSize === '8x8') {
-      // Shade the "start sequence" cells — the ones that keep their natural 1..64 value.
-      // (Every other cell is its 65−n flip.)
-      for (var ar = 0; ar < n; ar++) for (var ac = 0; ac < n; ac++){
-        if (puzzle.example[ar][ac] === ar * n + ac + 1) cells[ar][ac].classList.add('anchor');
-      }
-    }
+    // Mark anchor / guide-shade cells (persistent hints), per size
+    markAnchors();
 
     // Bottom row badges
     place(makeBadge('d2', true), bSize, 1);
@@ -1476,29 +1469,15 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       cells[r][c].value = '';
       cells[r][c].className = 'cell';
       cells[r][c].readOnly = false;
-      // PRESERVE anchor boxes - always show them
-      if (currentSize === '4x4') {
-        // 4 corners + 4 middle
-        if ((r === 0 && c === 0) || (r === 0 && c === 3) || 
-            (r === 3 && c === 0) || (r === 3 && c === 3) ||
-            (r === 1 && c === 1) || (r === 1 && c === 2) ||
-            (r === 2 && c === 1) || (r === 2 && c === 2)) {
-          cells[r][c].classList.add('anchor');
-        }
-      } else if (currentSize === '3x3') {
-        // Center only for 3x3
-        if (r === 1 && c === 1) {
-          cells[r][c].classList.add('anchor');
-        }
-      }
     }
+    markAnchors();   // re-apply the guide shading for the current size (all sizes)
     resetTimer();
   }
   
   
   // Clear button
   document.getElementById('clearBtn').addEventListener('click', function(){
-    if (peeking) return;
+    stopDemos();      // also cancels a running (or stuck) SHOW / Watch demo
     resetVisuals();
     msg.textContent = 'Board cleared — set your own target!';
     msg.className = '';
