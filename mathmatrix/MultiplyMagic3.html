@@ -310,6 +310,8 @@
 
   window.addEventListener('resize', fitCells);
   if ('serviceWorker' in navigator){ window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); }); }
+  // Best-effort: keep the offline cache from being evicted under storage pressure.
+  if (navigator.storage && navigator.storage.persist){ navigator.storage.persisted().then(function(a){ if(!a) navigator.storage.persist(); }).catch(function(){}); }
   update();
 })();
 </script>

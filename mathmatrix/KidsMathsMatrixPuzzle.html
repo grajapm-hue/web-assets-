@@ -1684,6 +1684,15 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js');
   });
 }
+
+// Ask the browser to keep our offline cache "persistent" (much less likely to be
+// evicted under storage pressure). Best-effort: may be granted silently, or not
+// at all on some mobile browsers — either way the game still works.
+if (navigator.storage && navigator.storage.persist) {
+  navigator.storage.persisted().then(function (already) {
+    if (!already) navigator.storage.persist();
+  }).catch(function () {});
+}
 </script>
 </body>
 </html>
