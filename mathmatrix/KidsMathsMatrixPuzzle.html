@@ -880,7 +880,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     var osc = audioCtx.createOscillator();
     var g = audioCtx.createGain();
     osc.type = type || 'square';
-    osc.frequency.setValueAtTime(freq, t0);
+    if (Array.isArray(freq)){ osc.frequency.setValueAtTime(freq[0], t0); osc.frequency.exponentialRampToValueAtTime(freq[1], t0 + dur * 0.9); }
+    else osc.frequency.setValueAtTime(freq, t0);   // number = steady pitch; [from,to] = glide
     g.gain.setValueAtTime(0.0001, t0);
     g.gain.exponentialRampToValueAtTime(peak || 0.18, t0 + 0.012);
     g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
@@ -892,10 +893,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     ensureAudio();
     if (!audioCtx) return;
     switch (kind){
-      case 'place':  tone(520, 0, 0.08, 'square', 0.14); break;                                  // snappy pop
-      case 'line':   tone(880, 0, 0.10, 'triangle', 0.16); tone(1320, 0.05, 0.12, 'triangle', 0.13); break; // sparkly bling
+      case 'place':  tone([700,1150], 0, 0.10, 'triangle', 0.20); tone(1400, 0.02, 0.08, 'sine', 0.10); break;   // F · candy plink
+      case 'line':   [784,1047,1319].forEach(function(fr,i){ tone(fr, i*0.05, 0.12, 'triangle', 0.15); }); break; // 3 · candy shimmer (3-note rise)
       case 'dup':    tone(150, 0, 0.16, 'sawtooth', 0.10); break;                                 // gentle low boop
-      case 'win':    [523,659,784,1047].forEach(function(fr,i){ tone(fr, i*0.11, 0.20, 'square', 0.17); }); break; // fanfare
+      case 'win':    [523,587,659,784,880,1047,1319].forEach(function(fr,i){ tone(fr, i*0.06, 0.16, 'triangle', 0.16); tone(fr*2, i*0.06, 0.10, 'sine', 0.05); }); break; // 2 · candy cascade
       case 'unlock': [392,523,659,784,1047].forEach(function(fr,i){ tone(fr, i*0.08, 0.18, 'triangle', 0.18); }); break; // power-up
       case 'tick':   tone(700, 0, 0.045, 'square', 0.08); break;                                  // soft placement tick
     }
