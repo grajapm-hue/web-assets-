@@ -11,7 +11,7 @@
 <title>3³ — Multiply Magic Matrix</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  html, body { height:100%; width:100%; }
+  html, body { height:100%; width:100%; touch-action:manipulation; }
   body {
     background:#000; color:#fff;
     font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -37,7 +37,7 @@
   @media (min-width:480px){ .board { grid-template-columns:repeat(5,64px); grid-template-rows:repeat(5,64px); } }
   .cell {
     -webkit-appearance:none; appearance:none;   /* iOS: honour our border/bg instead of default input chrome */
-    background:#1a1b22; border:2px dashed #f59e0b; border-radius:6px; color:#fff; font-weight:600;  /* neutral dark tile so the box is visible on iOS (was #000 on #000) */
+    background:#1a1b22; border:2px solid #f59e0b; border-radius:6px; color:#fff; font-weight:600;  /* solid border + neutral tile so the box is visible on iOS (dashes render faint there) */
     text-align:center; width:52px; height:52px; font-size:22px; outline:none; transition:all .15s ease;
   }
   @media (min-width:480px){ .cell { width:64px; height:64px; } }
@@ -46,7 +46,7 @@
   .cell.center { background:rgba(245,158,11,.15); }
   .cell.win { border-style:solid; border-color:#10b981; background:#051f1f; color:#34d399; }
   .badge {
-    border:2px dashed #22d3ee; border-radius:6px; display:flex; align-items:center; justify-content:center;
+    border:2px solid #22d3ee; border-radius:6px; display:flex; align-items:center; justify-content:center;
     width:52px; height:52px; font-weight:700; color:#7fd8e8; line-height:1; overflow:hidden;
   }
   @media (min-width:480px){ .badge { width:64px; height:64px; } }
@@ -406,6 +406,8 @@
   if ('serviceWorker' in navigator){ window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); }); }
   // Best-effort: keep the offline cache from being evicted under storage pressure.
   if (navigator.storage && navigator.storage.persist){ navigator.storage.persisted().then(function(a){ if(!a) navigator.storage.persist(); }).catch(function(){}); }
+  // iOS ignores user-scalable=no — block pinch/gesture zoom so the layout stays put.
+  ['gesturestart','gesturechange','gestureend'].forEach(function(evt){ document.addEventListener(evt, function(e){ e.preventDefault(); }, { passive:false }); });
   update();
 })();
 </script>

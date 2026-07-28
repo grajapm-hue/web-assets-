@@ -11,7 +11,7 @@
 <title>🎲 MathMatrix Pro++ — Magic Square Puzzles (3×3 · 4×4 · 5×5 · 3³ …)</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  html, body { height:100%; width:100%; }
+  html, body { height:100%; width:100%; touch-action:manipulation; }  /* manipulation = normal taps/scroll but no double-tap zoom */
   
   /* Markor App Optimization - Fix grey background spreading */
   @supports (display: -webkit-box) {
@@ -241,8 +241,8 @@
   .cell {
     -webkit-appearance:none;   /* iOS Safari: drop default input chrome so our border/bg render */
     appearance:none;
-    background:#1a1b22;         /* neutral dark tile — visible box even if dashes render faint on iOS (was #000 on a #000 page); stays dimmer than the blue/teal/violet shades so those still pop */
-    border:2px dashed #2aa5c9;
+    background:#1a1b22;         /* neutral dark tile — visible box; stays dimmer than the blue/teal/violet shades so those still pop */
+    border:2px solid #2aa5c9;  /* solid (was dashed) — dashes render sparse/faint on iOS */
     border-radius:6px;
     color:#fff;
     font-weight:600;
@@ -331,7 +331,7 @@
   .board.size10x10 .badge.peek { background: rgba(190, 24, 93, 0.2) !important; }
   
   .badge {
-    border:2px dashed #22d3ee;   /* edge badges (row/column trackers) = cyan */
+    border:2px solid #22d3ee;   /* edge badges (row/column trackers) = cyan */
     border-radius:6px;
     display:flex; align-items:center; justify-content:center;
     font-size:15px; font-weight:700; color:#7fd8e8;
@@ -1800,6 +1800,12 @@ if (navigator.storage && navigator.storage.persist) {
     if (!already) navigator.storage.persist();
   }).catch(function () {});
 }
+
+// iOS Safari ignores user-scalable=no, so pinch-zoom still shifts the layout.
+// Block the zoom gestures directly so the grid stays put like on Android.
+['gesturestart','gesturechange','gestureend'].forEach(function(evt){
+  document.addEventListener(evt, function(e){ e.preventDefault(); }, { passive:false });
+});
 </script>
 </body>
 </html>
