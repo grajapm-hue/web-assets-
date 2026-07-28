@@ -292,6 +292,10 @@
     background:#0a2e4a;
     border-color:#1e5a96;
   }
+  /* Swap-pair shading (6x6 / 10x10): two colours so kids see which group trades
+     with which. Teal = first group, violet = second group. (Avoids red=error / green=win.) */
+  .cell.swapA { background:#0c3b34; border-color:#2dd4bf; }
+  .cell.swapB { background:#331a45; border-color:#c084fc; }
   /* 3x3 center anchor */
   .board.size3x3 .cell.anchor {
     background:#0a3a2a;
@@ -978,19 +982,23 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       cells[0][2].classList.add('center-ref');
       cells[4][2].classList.add('center-ref');
     } else if (currentSize === '6x6') {
-      // 3 swap cells in block A ↔ 3 in block D
-      [[0,0],[1,1],[2,0],[3,0],[4,1],[5,0]].forEach(function(p){ cells[p[0]][p[1]].classList.add('anchor'); });
+      // swap PAIR groups, two shades: block A cells (teal) ↔ block D cells (violet)
+      [[0,0],[1,1],[2,0]].forEach(function(p){ cells[p[0]][p[1]].classList.add('swapA'); });  // block A group
+      [[3,0],[4,1],[5,0]].forEach(function(p){ cells[p[0]][p[1]].classList.add('swapB'); });  // block D group
     } else if (currentSize === '8x8') {
       // "start sequence" cells that keep their natural 1..N value
       for (var ar = 0; ar < n; ar++) for (var ac = 0; ac < n; ac++){
         if (puzzle.example[ar][ac] === ar * n + ac + 1) cells[ar][ac].classList.add('anchor');
       }
     } else if (currentSize === '10x10') {
-      // the 30 swap cells: left two columns of both left blocks (A↔D, with a
-      // diagonal tweak at rows 3 & 8) + the whole rightmost column (C↔B)
-      [[0,0],[0,1],[0,9],[1,0],[1,1],[1,9],[2,1],[2,2],[2,9],[3,0],[3,1],[3,9],[4,0],[4,1],[4,9],
-       [5,0],[5,1],[5,9],[6,0],[6,1],[6,9],[7,1],[7,2],[7,9],[8,0],[8,1],[8,9],[9,0],[9,1],[9,9]].forEach(function(p){
-        cells[p[0]][p[1]].classList.add('anchor');
+      // swap PAIR groups, two shades. Top half (rows 0-4) = block A left + block C
+      // right-column (teal); bottom half (rows 5-9) = block D left + block B
+      // right-column (violet). Each teal cell trades with its violet partner.
+      [[0,0],[0,1],[1,0],[1,1],[2,1],[2,2],[3,0],[3,1],[4,0],[4,1],[0,9],[1,9],[2,9],[3,9],[4,9]].forEach(function(p){
+        cells[p[0]][p[1]].classList.add('swapA');
+      });
+      [[5,0],[5,1],[6,0],[6,1],[7,1],[7,2],[8,0],[8,1],[9,0],[9,1],[5,9],[6,9],[7,9],[8,9],[9,9]].forEach(function(p){
+        cells[p[0]][p[1]].classList.add('swapB');
       });
     }
   }
@@ -1422,7 +1430,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     puzzle.lines.forEach(function(k){ setBadge(k, actualTarget, 'win'); });
     
     for (var r = 0; r < puzzle.rows; r++) for (var c = 0; c < puzzle.cols; c++){
-      cells[r][c].classList.remove('given','dup','anchor');
+      cells[r][c].classList.remove('given','dup','anchor','swapA','swapB');
       cells[r][c].classList.add('win');
       cells[r][c].readOnly = true;
     }
