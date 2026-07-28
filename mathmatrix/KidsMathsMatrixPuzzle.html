@@ -862,6 +862,31 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     b.style.borderColor = soundOn ? '#f59e0b' : '#666';
     b.style.color = soundOn ? '#fbbf24' : '#888';
   }
+
+  // Celebration burst on a win — emoji fly out + a quick flash. Works even when muted.
+  function celebrate(){
+    var emojis = ['⭐','✨','🎉','🎊','🌟','💫'];
+    var cx = window.innerWidth / 2, cy = window.innerHeight * 0.40;
+    for (var i = 0; i < 22; i++){
+      var s = document.createElement('span');
+      s.textContent = emojis[i % emojis.length];
+      s.style.cssText = 'position:fixed;left:' + cx + 'px;top:' + cy + 'px;font-size:' +
+        (18 + Math.round(Math.random() * 22)) + 'px;pointer-events:none;z-index:9999;opacity:1;' +
+        'transition:transform 1s cubic-bezier(.2,.7,.3,1),opacity 1s ease;transform:translate(-50%,-50%)';
+      document.body.appendChild(s);
+      void s.offsetWidth;   // reflow so the transition runs
+      var ang = Math.random() * Math.PI * 2, dist = 90 + Math.random() * 170;
+      var dx = Math.cos(ang) * dist, dy = Math.sin(ang) * dist - 40;   // slight upward bias
+      s.style.transform = 'translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px)) rotate(' + (Math.random() * 720 - 360) + 'deg)';
+      s.style.opacity = '0';
+      (function(el){ setTimeout(function(){ el.remove(); }, 1150); })(s);
+    }
+    var fl = document.createElement('div');
+    fl.style.cssText = 'position:fixed;inset:0;background:radial-gradient(circle at 50% 40%, rgba(255,220,120,.30), transparent 60%);pointer-events:none;z-index:9998;transition:opacity .5s ease;opacity:1';
+    document.body.appendChild(fl);
+    void fl.offsetWidth; fl.style.opacity = '0';
+    setTimeout(function(){ fl.remove(); }, 560);
+  }
   var timerInt = null, startTime = null;
   var designerMode = false; // Designer Mode flag
   
@@ -1349,6 +1374,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   function win(actualTarget){
     solvedFlag = true;
     sfx('win');          // 🎉 celebratory fanfare
+    celebrate();         // emoji burst + flash (works even when muted)
     stopTimer();
     var puzzle = PUZZLES[currentSize];
     
