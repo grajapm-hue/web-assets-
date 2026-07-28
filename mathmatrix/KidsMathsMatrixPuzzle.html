@@ -1301,13 +1301,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         }
       }
       // Add diagonal guide to exact cells
-      cells[0][2].classList.add('diagonal-guide'); // R1C3
+      // Anti-diagonal only = green. Top-middle (R1C3) and bottom-middle (R5C3)
+      // stay BLUE (center-ref) so the diagonal reads distinct from them.
       cells[0][4].classList.add('diagonal-guide'); // R1C5
       cells[1][3].classList.add('diagonal-guide'); // R2C4
       cells[2][2].classList.add('diagonal-guide'); // R3C3 HEART
       cells[3][1].classList.add('diagonal-guide'); // R4C2
       cells[4][0].classList.add('diagonal-guide'); // R5C1
-      cells[4][2].classList.add('diagonal-guide'); // R5C3
     }
     fitCells();   // fit digit sizes after a size switch / theme apply
     refreshCounter();
