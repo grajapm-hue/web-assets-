@@ -626,6 +626,7 @@
   .targetPill.size6x6 { background: #0d9488 !important; color: #ffffff !important; border-color: #2dd4bf !important; }
   .targetPill.size8x8 { background: #4338ca !important; color: #ffffff !important; border-color: #818cf8 !important; }
   .targetPill.size10x10 { background: #9d174d !important; color: #ffffff !important; border-color: #ec4899 !important; }
+  .targetPill.size3cube { background: #b45309 !important; color: #ffffff !important; border-color: #f59e0b !important; }
   /* Target preview (orange = center x 3 goal shown) and solved (green) — win over the per-size colours */
   .targetPill.preview { background: linear-gradient(135deg,#f59e0b,#fb923c) !important; color: #ffffff !important; border-color: #fbbf24 !important; }
   .targetPill.solved  { background: linear-gradient(135deg,#15803d,#22c55e) !important; color: #ffffff !important; border-color: #22c55e !important; }
@@ -635,6 +636,24 @@
   .diagonal-guide {
     background: rgba(76, 175, 80, 0.3) !important;
   }
+
+  /* 3³ Multiply — reuses the 3×3 board layout with a gold identity */
+  .board.size3cube { grid-template-columns:repeat(5, 52px); grid-template-rows:repeat(5, 52px); }
+  .board.size3cube .cell { width:52px; height:52px; font-size:24px; line-height:48px; border-color:#f59e0b; }
+  .board.size3cube .badge { width:52px; height:52px; }
+  @media (min-width:480px){
+    .board.size3cube { grid-template-columns:repeat(5, 68px); grid-template-rows:repeat(5, 68px); grid-gap:8px; gap:8px; }
+    .board.size3cube .cell { width:68px; height:68px; font-size:26px; line-height:64px; }
+    .board.size3cube .badge { width:68px; height:68px; font-size:17px; }
+  }
+  @media (min-width:760px){
+    .board.size3cube { grid-template-columns:repeat(5, 92px); grid-template-rows:repeat(5, 92px); }
+    .board.size3cube .cell { width:92px; height:92px; font-size:30px; line-height:88px; }
+    .board.size3cube .badge { width:92px; height:92px; font-size:20px; }
+  }
+  .board.size3cube .cell.anchor { background:#3a2e0a; border-color:#f59e0b; }
+  .board.size3cube .cell.peek { background: rgba(245,158,11,0.15) !important; }
+  .board.size3cube .badge.peek { background: rgba(245,158,11,0.2) !important; }
 
 </style>
 </head>
@@ -831,6 +850,18 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       rows: 10,
       cols: 10,
       inst: '<b>Grandmaster Level!</b> Fill 10×10 — every row, column and diagonal must total the SAME. 🏆'
+    },
+    '3cube': {
+      mode: 'multiply',
+      example: [
+        [  8, 256,   2],
+        [  4,  16,  64],
+        [128,   1,  32]
+      ],
+      lines: ['r0','r1','r2','c0','c1','c2','d1','d2'],
+      rows: 3,
+      cols: 3,
+      inst: '<b>Multiply Magic!</b> Fill 3×3 — every row, column and diagonal must MULTIPLY to the SAME. Set the center first → target = center³. ✖️'
     }
   };
   
@@ -847,6 +878,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   var solvedTargets8x8 = []; // Track different targets used
   var solvedCount10x10 = 0; // Track 10x10 solves
   var solvedTargets10x10 = []; // Track different targets used
+  var solvedCount3cube = 0; // Track 3³ multiply solves
+  var solvedTargets3cube = []; // Track different targets used
   var board = document.getElementById('board');
   var targetPill = document.getElementById('targetPill');
   var targetVal = document.getElementById('targetVal');
@@ -945,7 +978,6 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   document.querySelectorAll('.toggleBtn').forEach(function(btn){
     btn.addEventListener('click', function(){
       var newSize = this.dataset.size;
-      if (newSize === '3cube'){ window.location.href = 'MultiplyMagic3.html'; return; }  // 3³ tab = gateway to the multiply page
       document.querySelectorAll('.toggleBtn').forEach(function(b){ b.classList.remove('active'); });
       this.classList.add('active');
       if (newSize !== currentSize) {
@@ -982,6 +1014,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       [[0,0],[0,3],[3,0],[3,3],[1,1],[1,2],[2,1],[2,2]].forEach(function(p){ cells[p[0]][p[1]].classList.add('anchor'); });
     } else if (currentSize === '3x3') {
       cells[1][1].classList.add('anchor');
+    } else if (currentSize === '3cube') {
+      cells[1][1].classList.add('anchor');   // center = heart (target is center³)
     } else if (currentSize === '5x5') {
       cells[2][2].classList.add('anchor');
       cells[2][2].classList.add('center-heart');
@@ -1203,6 +1237,19 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         <p><b>🚀 Different start = different target!</b> Start at 2 and step by 2 (2, 4, … 200) → every line totals <b>1010</b>. Same method, new numbers.</p>
         <p><b>💡 The Magic:</b> The biggest square is still just small squares stitched together — you have come all the way from 3×3! 🏆 Tap 👁 <b>SHOW</b> to watch it build.</p>
       `;
+    } else if (currentSize === '3cube') {
+      document.getElementById('logicBox').innerHTML = `
+        <h3>📐 Multiply Magic — lines × instead of +!</h3>
+        <p><b>The Secret Structure:</b></p>
+        <ol style="margin: 10px 0; padding-left: 20px;">
+          <li><b>Every line MULTIPLIES to the same number</b> — rows, columns and both diagonals give the same product.</li>
+          <li><b>The target = center × center × center (center³).</b> Set the middle box first and the target appears. Center 16 → 16 × 16 × 16 = <b>4096</b>.</li>
+          <li><b>Opposite boxes multiply to center².</b> Each pair through the center = center × center. For center 16 that is 256: 8×32, 2×128, 4×64, 1×256.</li>
+          <li><b>Use a "times" family, not 1–9.</b> The easy one is <b>powers of 2</b>: 1, 2, 4, 8, 16, 32, 64, 128, 256 — tap 👁 <b>SHOW</b> to see them fall into place.</li>
+        </ol>
+        <p><b>🚀 Try other families!</b> Powers of 3 (1, 3, 9, 27, 81 …) or any geometric run work the same way — only the numbers change.</p>
+        <p><b>💡 The Magic:</b> It is the addition square's twin — swap "+" for "×" and "center × 3" for "center³". Same shape, new operation! ✖️</p>
+      `;
     }
 
     var n = puzzle.rows;
@@ -1280,6 +1327,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     }
     return out;
   }
+
+  // Mode-aware line total: ADD sizes sum a line; the 3³ MULTIPLY size takes the product.
+  function isMul(){ return PUZZLES[currentSize].mode === 'multiply'; }
+  function lineValue(arr){
+    return isMul() ? arr.reduce(function(a, b){ return a * b; }, 1)
+                   : arr.reduce(function(a, b){ return a + b; }, 0);
+  }
   
   function setBadge(key, text, cls){
     badges[key].forEach(function(b){
@@ -1336,6 +1390,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     else if (currentSize === '6x6') n = solvedCount6x6;
     else if (currentSize === '8x8') n = solvedCount8x8;
     else if (currentSize === '10x10') n = solvedCount10x10;
+    else if (currentSize === '3cube') n = solvedCount3cube;
     else n = solvedCount3x3;
     solvedCounter.style.display = 'block';
     solvedCounter.classList.toggle('unlocked', n >= 2);
@@ -1381,7 +1436,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     puzzle.lines.forEach(function(k){
       var vals = lineVals(k);
       var filled = vals.filter(function(x){ return x !== null; });
-      var sum = filled.reduce(function(a, b){ return a + b; }, 0);
+      var sum = lineValue(filled);   // sum (add sizes) or product (3³ multiply)
       if (filled.length === 0){
         setBadge(k, '?', null);        // no number entered yet in this line — keep the ? placeholder
       } else if (filled.length < puzzle.rows){
@@ -1391,12 +1446,16 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         completeSums.push(sum);
       }
     });
-    
+
     // Target pill - persist if already solved, show ? if no complete line yet
     if (!solvedFlag) {
-      // 3x3: as soon as the center (heart) box has a number, preview the target = center × 3 in orange
+      // 3x3: preview target = center × 3 as soon as the center box has a number
       if (currentSize === '3x3' && val(1, 1) !== null) {
         targetVal.textContent = val(1, 1) * 3;
+        targetPill.classList.add('preview');
+      } else if (isMul() && val(1, 1) !== null) {
+        // 3³ multiply: target = center × center × center
+        targetVal.textContent = val(1, 1) * val(1, 1) * val(1, 1);
         targetPill.classList.add('preview');
       } else {
         targetPill.classList.remove('preview');
@@ -1450,7 +1509,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       cells[r][c].readOnly = true;
     }
     
-    msg.textContent = '🎉 Solved! Your target: ' + actualTarget;
+    msg.textContent = '🎉 Solved! ' + (isMul() ? 'Every line × = ' : 'Your target: ') + actualTarget;
     msg.className = 'win';
     
     // Handle progression
@@ -1568,6 +1627,24 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       } else {
         setTimeout(function(){
           msg.textContent = '⚠️ You already solved with target ' + actualTarget + '! Try a DIFFERENT number!';
+        }, 1500);
+      }
+    } else if (currentSize === '3cube') {
+      if (solvedTargets3cube.indexOf(actualTarget) === -1) {
+        solvedTargets3cube.push(actualTarget);
+        solvedCount3cube = solvedTargets3cube.length;
+        refreshCounter();
+
+        if (solvedCount3cube >= 2) {
+          showCongrats('✖️ Multiply Master!', 'You cracked 3³ Multiply Magic with 2 different center cubes! 🌟');
+        } else {
+          setTimeout(function(){
+            msg.textContent = '✨ Solve once more with a DIFFERENT center (new center³) to master Multiply Magic!';
+          }, 1500);
+        }
+      } else {
+        setTimeout(function(){
+          msg.textContent = '⚠️ You already solved with target ' + actualTarget + '! Try a DIFFERENT center!';
         }, 1500);
       }
     }
@@ -1725,9 +1802,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       for (var fr = R - 1; fr >= 0; fr--) for (var fc = Cc - 1; fc >= 0; fc--)
         if (puzzle.example[fr][fc] !== fr * Cc + fc + 1) order.push([fr, fc]);   // Pass 2: flip (bottom→top, right→left)
     } else {
-      var pos = {};
-      for (var r = 0; r < R; r++) for (var c = 0; c < Cc; c++) pos[puzzle.example[r][c]] = [r, c];
-      for (var ov = 1; ov <= N; ov++) order.push(pos[ov]);
+      // reveal in ascending value order — works for 1..N grids AND the 3³ powers-of-2 grid
+      for (var r = 0; r < R; r++) for (var c = 0; c < Cc; c++) order.push([r, c]);
+      order.sort(function(a, b){ return puzzle.example[a[0]][a[1]] - puzzle.example[b[0]][b[1]]; });
     }
     var flipSum = N + 1;   // partner sum for the demo grid: 17 for 4×4, 65 for 8×8
     // slow, mind-mapping pace on the small sizes; scale down on the big grids so the demo stays ~18–20s
