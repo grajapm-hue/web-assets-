@@ -686,19 +686,18 @@
   <div id="logicBox"></div>
 </div>
 
-<!-- Supervision controls: difficulty selector + supervisor key, moved to bottom -->
+<!-- Difficulty selector — every level open, pick any grade any time -->
 <div class="difficultyBar">
   <span class="diffLabel">Choose Difficulty:</span>
   <div class="toggleSwitch">
     <button class="toggleBtn active" data-size="3x3">3×3 (Easy)</button>
     <button class="toggleBtn" data-size="4x4">4×4 (Hard)</button>
     <button class="toggleBtn" data-size="5x5">5×5 (Master)</button>
-    <button class="toggleBtn" data-size="6x6" style="display:none; color:#5eead4; border-color:#14b8a6;">6×6 (Expert)</button>
-    <button class="toggleBtn" data-size="8x8" style="display:none; color:#a5b4fc; border-color:#6366f1;">8×8 (Champion)</button>
-    <button class="toggleBtn" data-size="10x10" style="display:none; color:#f9a8d4; border-color:#db2777;">10×10 (Grandmaster)</button>
-    <button class="toggleBtn" id="mult3Tab" data-size="3cube" style="display:none; color:#fbbf24; border-color:#f59e0b;">3³ (×)</button>
+    <button class="toggleBtn" data-size="6x6" style="color:#5eead4; border-color:#14b8a6;">6×6 (Expert)</button>
+    <button class="toggleBtn" data-size="8x8" style="color:#a5b4fc; border-color:#6366f1;">8×8 (Champion)</button>
+    <button class="toggleBtn" data-size="10x10" style="color:#f9a8d4; border-color:#db2777;">10×10 (Grandmaster)</button>
+    <button class="toggleBtn" id="mult3Tab" data-size="3cube" style="color:#fbbf24; border-color:#f59e0b;">3³ (×)</button>
   </div>
-  <button id="designerBtn" style="align-self:flex-end; font-size:13px; padding:4px 8px; background:transparent; border:none; color:#444; cursor:pointer; margin-top:8px; opacity:0.5;">🔑</button>
 </div>
 
 
@@ -717,16 +716,7 @@
   </div>
 </div>
 
-<!-- Designer Mode PIN Modal -->
-<div class="congratsModal" id="designerModal" style="display:none;">
-  <div class="congratsBox" style="width:300px;">
-    <h2>🔐 Supervisor Key</h2>
-    <p id="designerModalText" style="font-size:14px; margin-bottom:16px;">Enter the PIN to unlock all levels.</p>
-    <input type="password" id="designerPin" placeholder="Enter 4-digit PIN" maxlength="4" style="width:100%; padding:12px; font-size:18px; letter-spacing:8px; text-align:center; margin-bottom:12px; border:2px solid #2f7ff0; border-radius:8px; background:#1a1a2e; color:#fff;">
-    <button class="congratsBtn" id="designerSubmit" style="width:100%; margin-bottom:8px;">Unlock</button>
-    <button class="congratsBtn" id="designerCancel" style="width:100%; background:#666;">Cancel</button>
-  </div>
-</div>
+<!-- (Supervisor PIN modal removed — every level is now open to free choice) -->
 
 <!-- Cheat Sheet Image Popup (generic — reused by 3x3 / 4x4 / 5x5) -->
 <div class="congratsModal" id="cheatModal" onclick="closeCheat()">
@@ -934,55 +924,22 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     setTimeout(function(){ fl.remove(); }, 560);
   }
   var timerInt = null, startTime = null;
-  var designerMode = false; // Designer Mode flag
-  
-  // Difficulty toggle
+  // Difficulty toggle — every level is open to free choice (grade labels are the guide).
+  // Reward/applause on solving stays; there is no lock.
   document.querySelectorAll('.toggleBtn').forEach(function(btn){
     btn.addEventListener('click', function(){
       var newSize = this.dataset.size;
       if (newSize === '3cube'){ window.location.href = 'MultiplyMagic3.html'; return; }  // 3³ tab = gateway to the multiply page
-      // Allow switching if: Designer Mode ON, OR normal progression unlocked
-      var canSwitch = designerMode || newSize === '3x3'
-        || (newSize === '4x4' && solvedCount3x3 >= 2)
-        || (newSize === '5x5' && solvedCount4x4 >= 2)
-        || (newSize === '6x6' && solvedCount5x5 >= 2)
-        || (newSize === '8x8' && solvedCount6x6 >= 2)
-        || (newSize === '10x10' && solvedCount8x8 >= 2);
-
-      if (canSwitch) {
-        document.querySelectorAll('.toggleBtn').forEach(function(b){ b.classList.remove('active'); });
-        this.classList.add('active');
-        if (newSize !== currentSize) {
-          currentSize = newSize;
-          initBoard();
-          applyTheme(); // Apply colors and diagonal guide
-        }
-      } else if (newSize === '4x4') {
-        msg.textContent = '🔒 Complete 3×3 with 2 different targets first!';
-        msg.className = '';
-      } else if (newSize === '5x5') {
-        msg.textContent = '🔒 Complete 4×4 with 2 different targets first!';
-        msg.className = '';
-      } else if (newSize === '6x6') {
-        msg.textContent = '🔒 Complete 5×5 with 2 different targets first!';
-        msg.className = '';
-      } else if (newSize === '8x8') {
-        msg.textContent = '🔒 Complete 6×6 with 2 different targets first!';
-        msg.className = '';
-      } else if (newSize === '10x10') {
-        msg.textContent = '🔒 Complete 8×8 with 2 different targets first!';
-        msg.className = '';
+      document.querySelectorAll('.toggleBtn').forEach(function(b){ b.classList.remove('active'); });
+      this.classList.add('active');
+      if (newSize !== currentSize) {
+        currentSize = newSize;
+        initBoard();
+        applyTheme(); // Apply colors and diagonal guide
       }
     });
   });
-  
-  // Hide all higher-level buttons initially (unlocked by earning or supervisor key)
-  document.querySelector('[data-size="4x4"]').style.display = 'none';
-  document.querySelector('[data-size="5x5"]').style.display = 'none';
-  document.querySelector('[data-size="6x6"]').style.display = 'none';
-  document.querySelector('[data-size="8x8"]').style.display = 'none';
-  document.querySelector('[data-size="10x10"]').style.display = 'none';
-  
+
   // Cancel any in-flight SHOW/Watch demo and return both buttons to active.
   // initBoard (size switch) and CLEAR both route through here, so the board can
   // never stay stuck (watching/peeking true, buttons disabled) — the bug that
@@ -1342,25 +1299,20 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     refreshCounter();
   }
 
-  // One merged bar: current size's progress + the unlock rule, per size
+  // Achievement badge for the current level (no lock — every level is open)
   function refreshCounter(){
-    var n, next;
-    if (currentSize === '4x4') { n = solvedCount4x4; next = '5×5'; }
-    else if (currentSize === '5x5') { n = solvedCount5x5; next = '6×6'; }
-    else if (currentSize === '6x6') { n = solvedCount6x6; next = '8×8'; }
-    else if (currentSize === '8x8') { n = solvedCount8x8; next = '10×10'; }
-    else if (currentSize === '10x10') { n = solvedCount10x10; next = null; }  // final size — no "next"
-    else { n = solvedCount3x3; next = '4×4'; }
+    var n;
+    if (currentSize === '4x4') n = solvedCount4x4;
+    else if (currentSize === '5x5') n = solvedCount5x5;
+    else if (currentSize === '6x6') n = solvedCount6x6;
+    else if (currentSize === '8x8') n = solvedCount8x8;
+    else if (currentSize === '10x10') n = solvedCount10x10;
+    else n = solvedCount3x3;
     solvedCounter.style.display = 'block';
     solvedCounter.classList.toggle('unlocked', n >= 2);
-    if (next) {
-      solvedCounter.innerHTML = '🏆 <b>' + n + '/2</b> different targets · solve 2 to open ' + next + ' →';
-    } else {
-      // final size (10×10): no next tab to unlock — celebrate the last climb instead
-      solvedCounter.innerHTML = n >= 2
-        ? '🏆 <b>Grandmaster!</b> Every size mastered — try new targets for fun! ✨'
-        : '🏆 <b>' + n + '/2</b> different targets · the final challenge — earn the Grandmaster crown! 🏆';
-    }
+    solvedCounter.innerHTML = n >= 2
+      ? '🏆 <b>Level mastered!</b> ✨ Try a new target, or pick any level below.'
+      : '🏆 <b>' + n + '/2</b> different targets · solve 2 different ones to master this level!';
   }
 
   // Auto-shrink each cell's font by its digit count so 1–4 digit numbers fit uniformly (no horizontal overflow)
@@ -1487,7 +1439,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           showCongrats('🎉 Master of 3×3!', 'You solved with 2 different targets! Ready for 4×4?');
         } else {
           setTimeout(function(){
-            msg.textContent = '✨ ' + (2 - solvedCount3x3) + ' more with DIFFERENT targets to unlock 4×4!';
+            msg.textContent = '✨ ' + (2 - solvedCount3x3) + ' more with a DIFFERENT target to master 3×3!';
           }, 1500);
         }
       } else {
@@ -1508,7 +1460,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           showCongrats('🏆 Master of 4×4!', 'You solved with 2 different targets! Ready for 5×5?');
         } else {
           setTimeout(function(){
-            msg.textContent = '✨ ' + (2 - solvedCount4x4) + ' more with DIFFERENT targets to unlock 5×5!';
+            msg.textContent = '✨ ' + (2 - solvedCount4x4) + ' more with a DIFFERENT target to master 4×4!';
           }, 1500);
         }
       } else {
@@ -1524,13 +1476,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         refreshCounter();
         
         if (solvedCount5x5 >= 2) {
-          document.querySelector('[data-size="6x6"]').style.display = '';  // unlock the next size
-          var _m3 = document.getElementById('mult3Tab');
-          if (_m3) _m3.style.display = '';   // also unlock the advanced 3³ Multiply Magic tab
-          showCongrats('⭐ Master of 5×5!', '🌟 Unlocked: 6×6 (Expert) — plus the bonus 3³ Multiply Magic tab!');
+          showCongrats('⭐ Master of 5×5!', 'You mastered 5×5 with 2 different targets! 🌟 Pick any level, or keep exploring 5×5.');
         } else {
           setTimeout(function(){
-            msg.textContent = '✨ ' + (2 - solvedCount5x5) + ' more with DIFFERENT targets to unlock 6×6!';
+            msg.textContent = '✨ ' + (2 - solvedCount5x5) + ' more with a DIFFERENT target to master 5×5!';
           }, 1500);
         }
       } else {
@@ -1545,11 +1494,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         refreshCounter();
 
         if (solvedCount6x6 >= 2) {
-          document.querySelector('[data-size="8x8"]').style.display = '';  // unlock 8×8
-          showCongrats('🧩 Master of 6×6!', 'You solved with 2 different targets! Ready for 8×8 (Champion)?');
+          showCongrats('🧩 Master of 6×6!', 'You mastered 6×6 with 2 different targets! 🌟 Try the 8×8 Champion whenever you like.');
         } else {
           setTimeout(function(){
-            msg.textContent = '✨ ' + (2 - solvedCount6x6) + ' more with DIFFERENT targets to unlock 8×8!';
+            msg.textContent = '✨ ' + (2 - solvedCount6x6) + ' more with a DIFFERENT target to master 6×6!';
           }, 1500);
         }
       } else {
@@ -1564,11 +1512,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         refreshCounter();
 
         if (solvedCount8x8 >= 2) {
-          document.querySelector('[data-size="10x10"]').style.display = '';  // unlock 10×10
-          showCongrats('🏅 Champion of 8×8!', 'You solved with 2 different targets! The final 10×10 (Grandmaster) is now open! 🚀');
+          showCongrats('🏅 Champion of 8×8!', 'You mastered 8×8 with 2 different targets! 🚀 The final 10×10 Grandmaster awaits whenever you are ready.');
         } else {
           setTimeout(function(){
-            msg.textContent = '✨ ' + (2 - solvedCount8x8) + ' more with DIFFERENT targets to unlock 10×10!';
+            msg.textContent = '✨ ' + (2 - solvedCount8x8) + ' more with a DIFFERENT target to master 8×8!';
           }, 1500);
         }
       } else {
@@ -1814,70 +1761,12 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     if (soundOn){ ensureAudio(); sfx('line'); }   // little confirmation blip when turned on
   });
   
-  // Designer Mode - PIN Protection
-  var DESIGNER_PIN = '1947'; // ⚠️ CHANGE THIS PIN TO YOUR CUSTOM 4-DIGIT CODE
-  
-  // Apply the supervisor unlock (all levels + 3³ tab). Persists via localStorage until manually locked.
-  function applyDesignerUnlock(){
-    designerMode = true;
-    document.querySelector('[data-size="4x4"]').style.display = '';
-    document.querySelector('[data-size="5x5"]').style.display = '';
-    document.querySelector('[data-size="6x6"]').style.display = '';
-    document.querySelector('[data-size="8x8"]').style.display = '';
-    document.querySelector('[data-size="10x10"]').style.display = '';
-    var _m3d = document.getElementById('mult3Tab'); if (_m3d) _m3d.style.display = '';
-    var db = document.getElementById('designerBtn');
-    db.textContent = '🔓';
-    db.style.background = '#2f7ff0';
-    db.style.color = '#fff';
-    db.style.opacity = '1';
-    db.title = 'Supervisor unlock ON — tap and enter PIN to lock';
-  }
-
-  // Same PIN both locks and unlocks — always prompt for it, wording swaps by current mode
-  document.getElementById('designerBtn').addEventListener('click', function(){
-    document.getElementById('designerPin').value = '';
-    document.getElementById('designerModalText').textContent = designerMode
-      ? 'Enter the PIN to LOCK all levels back.'
-      : 'Enter the PIN to UNLOCK all levels.';
-    document.getElementById('designerSubmit').textContent = designerMode ? '🔒 Lock' : '🔓 Unlock';
-    document.getElementById('designerModal').style.display = 'flex';
-  });
-
-  document.getElementById('designerSubmit').addEventListener('click', function(){
-    var enteredPin = document.getElementById('designerPin').value;
-    if (enteredPin === DESIGNER_PIN) {
-      document.getElementById('designerModal').style.display = 'none';
-      if (designerMode) {
-        // Correct PIN while unlocked -> LOCK back to the gated ladder
-        try { localStorage.removeItem('mmDesigner'); } catch(e){}
-        location.reload();
-      } else {
-        // Correct PIN while locked -> UNLOCK (persists across navigation/reload)
-        try { localStorage.setItem('mmDesigner', 'on'); } catch(e){}
-        applyDesignerUnlock();
-        msg.textContent = '🎯 Supervisor unlock ON — enter the same PIN again to lock.';
-        msg.className = '';
-      }
-    } else {
-      alert('❌ Invalid PIN. Access denied.');
-      document.getElementById('designerPin').value = '';
-    }
-  });
-  
-  document.getElementById('designerCancel').addEventListener('click', function(){
-    document.getElementById('designerModal').style.display = 'none';
-  });
-  
   // Re-fit digit sizes on orientation / breakpoint change
   window.addEventListener('resize', fitCells);
 
   // Init with 3x3
   initBoard();
   applyTheme(); // Apply colors and diagonal guide
-
-  // Restore persistent supervisor unlock (set once via PIN, survives navigation/reload until manually locked)
-  try { if (localStorage.getItem('mmDesigner') === 'on') applyDesignerUnlock(); } catch(e){}
 })();
 
 // PWA: register service worker for full offline play
