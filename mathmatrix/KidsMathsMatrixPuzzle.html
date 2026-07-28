@@ -898,6 +898,12 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     b.style.borderColor = soundOn ? '#f59e0b' : '#666';
     b.style.color = soundOn ? '#fbbf24' : '#888';
   }
+  // Mobile audio unlock: a real touch/click/key wakes the AudioContext. Typing a
+  // number only fires an 'input' event, which may NOT count as user-activation on
+  // phones — so without this the place-pop stays silent until some other tap.
+  ['pointerdown','touchstart','keydown'].forEach(function(evt){
+    document.addEventListener(evt, function(){ if (soundOn) ensureAudio(); }, { passive:true });
+  });
 
   // Celebration burst on a win — emoji fly out + a quick flash. Works even when muted.
   function celebrate(){

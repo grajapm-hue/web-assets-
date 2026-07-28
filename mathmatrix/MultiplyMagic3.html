@@ -196,6 +196,11 @@
     b.style.borderColor = soundOn ? '#f59e0b' : '#666';
     b.style.color = soundOn ? '#fbbf24' : '#888';
   }
+  // Mobile audio unlock: wake the AudioContext on the first real touch/key, so the
+  // place-pop plays on manual entry (typing's 'input' event may not count as a gesture).
+  ['pointerdown','touchstart','keydown'].forEach(function(evt){
+    document.addEventListener(evt, function(){ if (soundOn) ensureAudio(); }, { passive:true });
+  });
   function celebrate(){
     var emojis = ['⭐','✨','🎉','🎊','🌟','💫'];
     var cx = window.innerWidth / 2, cy = window.innerHeight * 0.40;
