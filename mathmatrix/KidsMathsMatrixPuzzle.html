@@ -21,6 +21,10 @@
     }
   }
   
+  /* "Now playing" — highlight the level you're currently on */
+  #nowPlaying .np { transition: color .2s ease; }
+  #nowPlaying .np-active { color:#111 !important; background:#fde047; border-radius:5px; padding:0 6px; font-weight:800; box-shadow:0 0 8px rgba(253,224,71,.6); }
+
   /* Force solid backgrounds in Markor */
   .logicBox, .instCard, .difficultyBar, .targetPill, .titleCard {
     -webkit-box-shadow: none !important;
@@ -641,7 +645,7 @@
 
 <div class="titleCard">
   <h1>🎲 MathMatrix Pro++</h1>
-  <div style="text-align:center; font-size:12px; font-weight:700; margin-top:4px; letter-spacing:.4px; line-height:1.5;">🎲 Kids Puzzle · for 5th grade &amp; up<br><span style="color:#4ade80;">Now playing:</span> <span style="color:#8ab4f8;">3×3 · 4×4 · 5×5 · 6×6 · 8×8 · 10×10 · 3³</span><br><span style="color:#fbbf24;">🔄 Once you know it: rotate or mirror any solution — 8 twins — for endless new puzzles!</span></div>
+  <div style="text-align:center; font-size:12px; font-weight:700; margin-top:4px; letter-spacing:.4px; line-height:1.5;">🎲 Kids Puzzle · for 5th grade &amp; up<br><span style="color:#4ade80;">Now playing:</span> <span id="nowPlaying" style="color:#8ab4f8;"><span class="np" data-np="3x3">3×3</span> · <span class="np" data-np="4x4">4×4</span> · <span class="np" data-np="5x5">5×5</span> · <span class="np" data-np="6x6">6×6</span> · <span class="np" data-np="8x8">8×8</span> · <span class="np" data-np="10x10">10×10</span> · <span class="np" data-np="3cube">3³</span></span><br><span style="color:#fbbf24;">🔄 Once you know it: rotate or mirror any solution — 8 twins — for endless new puzzles!</span></div>
 </div>
 <div class="targetPill" id="targetPill">🎯 Target : <span id="targetVal">?</span></div>
 
@@ -1313,6 +1317,15 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     }
     fitCells();   // fit digit sizes after a size switch / theme apply
     refreshCounter();
+    highlightNowPlaying();
+  }
+
+  // Highlight the current size in the "Now playing" header list
+  function highlightNowPlaying(){
+    var list = document.querySelectorAll('#nowPlaying .np');
+    for (var i = 0; i < list.length; i++){
+      list[i].classList.toggle('np-active', list[i].dataset.np === currentSize);
+    }
   }
 
   // Achievement badge for the current level (no lock — every level is open)
