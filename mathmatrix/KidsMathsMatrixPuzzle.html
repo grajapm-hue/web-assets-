@@ -239,7 +239,9 @@
   }
   
   .cell {
-    background:#000;
+    -webkit-appearance:none;   /* iOS Safari: drop default input chrome so our border/bg render */
+    appearance:none;
+    background:#1a1b22;         /* neutral dark tile — visible box even if dashes render faint on iOS (was #000 on a #000 page); stays dimmer than the blue/teal/violet shades so those still pop */
     border:2px dashed #2aa5c9;
     border-radius:6px;
     color:#fff;

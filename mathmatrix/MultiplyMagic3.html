@@ -36,7 +36,8 @@
   .board { display:grid; grid-gap:6px; gap:6px; grid-template-columns:repeat(5,52px); grid-template-rows:repeat(5,52px); }
   @media (min-width:480px){ .board { grid-template-columns:repeat(5,64px); grid-template-rows:repeat(5,64px); } }
   .cell {
-    background:#000; border:2px dashed #f59e0b; border-radius:6px; color:#fff; font-weight:600;
+    -webkit-appearance:none; appearance:none;   /* iOS: honour our border/bg instead of default input chrome */
+    background:#1a1b22; border:2px dashed #f59e0b; border-radius:6px; color:#fff; font-weight:600;  /* neutral dark tile so the box is visible on iOS (was #000 on #000) */
     text-align:center; width:52px; height:52px; font-size:22px; outline:none; transition:all .15s ease;
   }
   @media (min-width:480px){ .cell { width:64px; height:64px; } }
