@@ -896,8 +896,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   var peekIv = null;      // handle to the running SHOW countdown interval
   var prevComplete = 0;   // # of complete lines last update (to detect a NEW line for the chime)
   var prevDup = 0;        // # of duplicate values last update (to detect a NEW clash for the boop)
-  var curMaxDigits = 1;   // longest number on the current board (auto-advance snaps at this length)
-  var advanceTimer = null;// debounce for advancing after a shorter-than-max number
+  var validStrs = [];     // string form of every valid number on this board — auto-advance waits only while the typed digits could still grow into a longer valid one
 
   // ---- Sound FX: playful/arcade tones generated in-code (WebAudio, no files, offline-safe) ----
   var soundOn = (localStorage.getItem('mmSound') !== 'off');   // default ON
@@ -1383,11 +1382,11 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       cells[3][1].classList.add('diagonal-guide'); // R4C2
       cells[4][0].classList.add('diagonal-guide'); // R5C1
     }
-    // longest number on this board → the length at which auto-advance snaps instantly
-    var mx = 0, pz = PUZZLES[currentSize];
+    // string forms of every valid number on this board (drives prefix-based auto-advance)
+    var pz = PUZZLES[currentSize];
+    validStrs = [];
     for (var mr = 0; mr < pz.rows; mr++) for (var mc = 0; mc < pz.cols; mc++)
-      if (pz.example[mr][mc] > mx) mx = pz.example[mr][mc];
-    curMaxDigits = String(mx).length;
+      validStrs.push(String(pz.example[mr][mc]));
 
     fitCells();   // fit digit sizes after a size switch / theme apply
     refreshCounter();
@@ -1729,16 +1728,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     if (e.target.value !== '') sfx('place');   // snappy pop as a number lands
     startTimer();
     update();
-    // Auto-advance: snap instantly once the number reaches the board's max length,
-    // otherwise advance after a short pause (so 2–3 digit numbers aren't cut off).
-    clearTimeout(advanceTimer);
-    var len = e.target.value.length;
-    if (len >= curMaxDigits){
+    // Auto-advance ONLY when the typed digits can no longer grow into a longer
+    // valid number (so multi-digit entry like 16 / 128 is never cut off, and
+    // there is no timer that could jump early). Ambiguous stubs (e.g. "1" on a
+    // board with 10–16) simply wait for the next digit or a manual tap.
+    var v = e.target.value;
+    if (v.length > 0 && !validStrs.some(function(s){ return s.length > v.length && s.indexOf(v) === 0; })){
       focusNext(e.target);
-    } else if (len > 0){
-      var tgt = e.target;
-      // only advance if the user is still in this cell (didn't tap elsewhere meanwhile)
-      advanceTimer = setTimeout(function(){ if (document.activeElement === tgt) focusNext(tgt); }, 650);
     }
   }
 
