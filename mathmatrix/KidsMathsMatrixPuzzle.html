@@ -1466,21 +1466,20 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       }
     });
 
-    // Target pill - persist if already solved, show ? if no complete line yet
+    // Target pill — EVIDENCE-BASED and uniform for every size: the target appears
+    // (orange) only once TWO or more complete lines/diagonals agree on the same
+    // value; until then it stays '?'. All lines matching → green (handled in win()).
     if (!solvedFlag) {
-      // 3x3: preview target = center × 3, but only for a VALID center (> 4).
-      // A standard 1–9 square needs the median (5) in the middle; centers 1–4
-      // can't form one, so we don't pop a misleading target for them.
-      if (currentSize === '3x3' && val(1, 1) !== null && val(1, 1) > 4) {
-        targetVal.textContent = val(1, 1) * 3;
-        targetPill.classList.add('preview');
-      } else if (isMul() && val(1, 1) !== null) {
-        // 3³ multiply: target = center × center × center
-        targetVal.textContent = val(1, 1) * val(1, 1) * val(1, 1);
-        targetPill.classList.add('preview');
+      var counts = {};
+      completeSums.forEach(function(s){ counts[s] = (counts[s] || 0) + 1; });
+      var candidate = null, best = 1;
+      for (var key in counts){ if (counts[key] >= 2 && counts[key] > best){ best = counts[key]; candidate = +key; } }
+      if (candidate !== null){
+        targetVal.textContent = candidate;
+        targetPill.classList.add('preview');   // orange = two-plus lines agree on this target
       } else {
         targetPill.classList.remove('preview');
-        targetVal.textContent = completeSums.length ? completeSums[0] : '?';
+        targetVal.textContent = '?';
       }
     }
     
