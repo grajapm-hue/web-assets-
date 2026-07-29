@@ -2081,8 +2081,29 @@ if (navigator.storage && navigator.storage.persist) {
   } else if (verEl) { verEl.textContent = ''; }
 
   var upBtn = document.getElementById('updateBtn');
+  // Reflect the network state on the button so users never trigger a destructive
+  // update while offline (which would wipe the cache and strand offline play).
+  function reflectNet(){
+    if (!upBtn) return;
+    if (navigator.onLine){
+      upBtn.textContent = '🔄 Online Update';
+      upBtn.style.borderColor = '#f59e0b'; upBtn.style.color = '#fbbf24';
+    } else {
+      upBtn.textContent = '📴 Offline';
+      upBtn.style.borderColor = '#555'; upBtn.style.color = '#888';
+    }
+  }
   if (upBtn){
+    reflectNet();
+    window.addEventListener('online', reflectNet);
+    window.addEventListener('offline', reflectNet);
     upBtn.addEventListener('click', function(){
+      if (!navigator.onLine){
+        // NEVER clear the cache offline — that breaks offline play. Just tell the user.
+        upBtn.textContent = '📴 No internet — connect first';
+        setTimeout(reflectNet, 2500);
+        return;
+      }
       upBtn.textContent = '⏳ Updating…'; upBtn.disabled = true;
       var jobs = [];
       try {
