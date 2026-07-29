@@ -672,6 +672,27 @@
   /* active cell highlight (keypad cursor) */
   .cell.cursor { outline:3px solid #fde047; outline-offset:-2px; box-shadow:0 0 9px rgba(253,224,71,.55); }
 
+  /* "Coming Soon" preview strip — chips shimmer in glare mode until launch */
+  .comingWrap { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:8px; margin-top:12px; padding-top:10px; border-top:1px dashed #333; }
+  .comingLabel { font-size:12.5px; font-weight:800; color:#9aa; letter-spacing:.3px; width:100%; text-align:center; margin-bottom:2px; }
+  .comingChip {
+    position:relative; overflow:hidden;
+    background:#171821; border:2px dashed #4a4a5a; color:#9aa;
+    border-radius:9px; padding:7px 13px; font-size:13.5px; font-weight:700; cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .comingChip::after {
+    content:''; position:absolute; top:0; left:-70%; width:60%; height:100%;
+    background:linear-gradient(120deg, transparent 0%, rgba(255,255,255,.28) 50%, transparent 100%);
+    transform:skewX(-18deg); pointer-events:none;
+    animation:glare 2.6s ease-in-out infinite;
+  }
+  .comingChip:nth-child(3)::after { animation-delay:.5s; }
+  .comingChip:nth-child(4)::after { animation-delay:1s; }
+  .comingChip:active { transform:scale(.97); }
+  @keyframes glare { 0% { left:-70%; } 55%, 100% { left:130%; } }
+  @media (prefers-reduced-motion: reduce){ .comingChip::after { animation:none; } }
+
 </style>
 </head>
 <body>
@@ -762,6 +783,13 @@
     <button class="toggleBtn" data-size="8x8" style="color:#a5b4fc; border-color:#6366f1;">8×8 (Champion)</button>
     <button class="toggleBtn" data-size="10x10" style="color:#f9a8d4; border-color:#db2777;">10×10 (Grandmaster)</button>
     <button class="toggleBtn" id="mult3Tab" data-size="3cube" style="color:#fbbf24; border-color:#f59e0b;">3³ (×)</button>
+  </div>
+
+  <div class="comingWrap">
+    <span class="comingLabel">🔜 Coming Soon</span>
+    <button class="comingChip" data-soon="Angle Magic">📐 Angle Magic</button>
+    <button class="comingChip" data-soon="Logic Gates">🔀 Logic Gates</button>
+    <button class="comingChip" data-soon="New Dimension">🧊 New Dimension</button>
   </div>
 </div>
 
@@ -2038,6 +2066,14 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       else if (b.dataset.nav === 'sys') toggleSysKb(b);
     });
   }
+
+  // "Coming Soon" preview chips — announce until the real puzzle launches
+  document.querySelectorAll('.comingChip').forEach(function(chip){
+    chip.addEventListener('click', function(){
+      msg.textContent = '🔜 ' + this.dataset.soon + ' — coming soon! Stay tuned ✨';
+      msg.className = '';
+    });
+  });
   
   // Re-fit digit sizes on orientation / breakpoint change
   window.addEventListener('resize', fitCells);
@@ -2074,7 +2110,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'v86';
+  var BUILD_VER = 'v87';
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
