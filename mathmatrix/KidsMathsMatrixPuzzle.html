@@ -1063,8 +1063,12 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     badges = {};
     solvedFlag = false;
     peeking = false;
+    prevComplete = 0; prevDup = 0;
+    // Reset the Target on every fresh board so a previous level's value can't linger
+    targetVal.textContent = '?';
+    targetPill.classList.remove('preview', 'solved');
     resetTimer();
-    
+
     var puzzle = PUZZLES[currentSize];
     board.className = 'board size' + currentSize;
     
