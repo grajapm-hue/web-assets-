@@ -896,14 +896,27 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   var peekIv = null;      // handle to the running SHOW countdown interval
   var prevComplete = 0;   // # of complete lines last update (to detect a NEW line for the chime)
   var prevDup = 0;        // # of duplicate values last update (to detect a NEW clash for the boop)
+  var curMaxDigits = 1;   // longest number on the current board (auto-advance snaps at this length)
+  var advanceTimer = null;// debounce for advancing after a shorter-than-max number
 
   // ---- Sound FX: playful/arcade tones generated in-code (WebAudio, no files, offline-safe) ----
   var soundOn = (localStorage.getItem('mmSound') !== 'off');   // default ON
   var audioCtx = null;
+  var audioUnlocked = false;
   function ensureAudio(){
     try {
       if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      // iOS (esp. 14) needs a 1-sample SILENT buffer played inside the gesture to
+      // truly unlock WebAudio — resume() alone often leaves it muted.
+      if (!audioUnlocked) {
+        var b = audioCtx.createBuffer(1, 1, 22050);
+        var src = audioCtx.createBufferSource();
+        src.buffer = b;
+        src.connect(audioCtx.destination);
+        (src.start || src.noteOn).call(src, 0);
+        audioUnlocked = true;
+      }
     } catch (e) { audioCtx = null; }
   }
   // one tone: freq(Hz), start offset(s), duration(s), wave, peak volume
@@ -1292,6 +1305,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         inp.inputMode = 'numeric';
         // Up to 4-digit numbers (up to 9999) on every size — future-proof for multiplicative targets (e.g. 4096)
         inp.maxLength = 4;
+        inp.dataset.r = r; inp.dataset.c = c2;   // position, for auto-advance to the next cell
         inp.addEventListener('input', onInput);
         inp.addEventListener('keydown', onKeyDown);
         cells[r].push(inp);
@@ -1369,6 +1383,12 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       cells[3][1].classList.add('diagonal-guide'); // R4C2
       cells[4][0].classList.add('diagonal-guide'); // R5C1
     }
+    // longest number on this board → the length at which auto-advance snaps instantly
+    var mx = 0, pz = PUZZLES[currentSize];
+    for (var mr = 0; mr < pz.rows; mr++) for (var mc = 0; mc < pz.cols; mc++)
+      if (pz.example[mr][mc] > mx) mx = pz.example[mr][mc];
+    curMaxDigits = String(mx).length;
+
     fitCells();   // fit digit sizes after a size switch / theme apply
     refreshCounter();
     highlightNowPlaying();
@@ -1689,15 +1709,50 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     return s;
   }
   
+  // Move focus to the next cell (row-major). iOS number pads have no Enter key,
+  // so we advance automatically instead of relying on a return key.
+  function focusNext(inp){
+    var pz = PUZZLES[currentSize];
+    var r = +inp.dataset.r, c = +inp.dataset.c + 1;
+    if (c >= pz.cols){ c = 0; r++; }
+    if (r < pz.rows && cells[r] && cells[r][c]){
+      var nx = cells[r][c];
+      nx.focus();
+      try { nx.setSelectionRange(nx.value.length, nx.value.length); } catch (e) {}
+    } else {
+      inp.blur();   // last cell — done
+    }
+  }
+
   function onInput(e){
     e.target.value = e.target.value.replace(/[^0-9]/g, '');
     if (e.target.value !== '') sfx('place');   // snappy pop as a number lands
     startTimer();
     update();
+    // Auto-advance: snap instantly once the number reaches the board's max length,
+    // otherwise advance after a short pause (so 2–3 digit numbers aren't cut off).
+    clearTimeout(advanceTimer);
+    var len = e.target.value.length;
+    if (len >= curMaxDigits){
+      focusNext(e.target);
+    } else if (len > 0){
+      var tgt = e.target;
+      // only advance if the user is still in this cell (didn't tap elsewhere meanwhile)
+      advanceTimer = setTimeout(function(){ if (document.activeElement === tgt) focusNext(tgt); }, 650);
+    }
   }
-  
+
   function onKeyDown(e){
-    if (e.key === 'Enter') e.target.blur();
+    if (e.key === 'Enter') { e.target.blur(); return; }
+    // desktop niceties (harmless on mobile)
+    if (e.key === 'Backspace' && e.target.value === '') focusPrev(e.target);
+  }
+
+  function focusPrev(inp){
+    var pz = PUZZLES[currentSize];
+    var r = +inp.dataset.r, c = +inp.dataset.c - 1;
+    if (c < 0){ c = pz.cols - 1; r--; }
+    if (r >= 0 && cells[r] && cells[r][c]) cells[r][c].focus();
   }
   
 
