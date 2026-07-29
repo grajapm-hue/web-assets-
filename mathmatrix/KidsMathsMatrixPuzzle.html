@@ -727,7 +727,7 @@
     <button class="kp kpnav" data-nav="back">⌫</button><button class="kp kpnav" data-nav="left">←</button><button class="kp kpnav" data-nav="up">↑</button><button class="kp kpnav" data-nav="down">↓</button><button class="kp kpnav" data-nav="right">→</button>
   </div>
   <div style="text-align:center; margin-top:2px;">
-    <button class="kp kpsys" data-nav="sys">⌨️ System keyboard</button>
+    <button class="kp kpsys" data-nav="sys" onmousedown="event.preventDefault()">⌨️ System keyboard</button>
   </div>
 </div>
 
@@ -1878,8 +1878,17 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     useSysKb = !useSysKb;
     var mode = useSysKb ? 'numeric' : 'none';
     for (var r = 0; r < cells.length; r++) for (var c = 0; c < cells[r].length; c++) cells[r][c].inputMode = mode;
-    if (btn) btn.classList.toggle('on', useSysKb);
-    if (useSysKb && activeCell) activeCell.focus();   // summon the system keyboard
+    if (btn){
+      btn.classList.toggle('on', useSysKb);
+      // label reflects what a tap will DO next
+      btn.textContent = useSysKb ? '🎹 App keypad' : '⌨️ System keyboard';
+    }
+    var cell = currentCell();
+    if (useSysKb){
+      if (cell) cell.focus();   // pop the system keyboard on this single press
+    } else if (cell){
+      cell.blur();              // switching back to the app keypad dismisses the OS keyboard
+    }
   }
   
 
@@ -2110,7 +2119,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'v87';
+  var BUILD_VER = 'v88';
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
