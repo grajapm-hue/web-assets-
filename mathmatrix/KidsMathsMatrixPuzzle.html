@@ -766,7 +766,9 @@
 
 <div class="credit">Created by G.RajaPathamuthu · Kids Puzzle Library<br>Guided by : JNT<br>Code Coordinated by : Claude AI<br>
   <i style="opacity:.85;">(What we get is all we ask for.)</i><br>
-  Mail To : <a href="mailto:grajapm@gmail.com?subject=MathMatrix%20Feedback%20%26%20Suggestion" style="color:#8ab4f8; text-decoration:underline;">✉️ Feedback &amp; Suggestion</a>
+  Mail To : <a href="mailto:grajapm@gmail.com?subject=MathMatrix%20Feedback%20%26%20Suggestion" style="color:#8ab4f8; text-decoration:underline;">✉️ Feedback &amp; Suggestion</a><br>
+  <span style="opacity:.7; font-size:12px;">App <span id="verLabel">…</span></span>
+  <button id="updateBtn" style="margin-left:6px; background:transparent; border:1px solid #2aa5c9; color:#7fd8e8; border-radius:7px; padding:4px 12px; font-size:12px; font-weight:700; cursor:pointer;">🔄 Update to latest</button>
 </div>
 
 <!-- Congratulations Modal -->
@@ -2064,6 +2066,40 @@ if (navigator.storage && navigator.storage.persist) {
 ['gesturestart','gesturechange','gestureend'].forEach(function(evt){
   document.addEventListener(evt, function(e){ e.preventDefault(); }, { passive:false });
 });
+
+// Show the current cached build, and give a one-tap "clear cache & reload to newest"
+// button — the reliable escape hatch when a device is stuck on an old cached version.
+(function(){
+  var verEl = document.getElementById('verLabel');
+  if (verEl && window.caches && caches.keys){
+    caches.keys().then(function(keys){
+      var v = keys.filter(function(k){ return k.indexOf('mathmatrix-') === 0; }).sort().pop();
+      verEl.textContent = v ? v.replace('mathmatrix-', '') : 'online';
+    }).catch(function(){ verEl.textContent = ''; });
+  } else if (verEl) { verEl.textContent = ''; }
+
+  var upBtn = document.getElementById('updateBtn');
+  if (upBtn){
+    upBtn.addEventListener('click', function(){
+      upBtn.textContent = '⏳ Updating…'; upBtn.disabled = true;
+      var jobs = [];
+      try {
+        if ('serviceWorker' in navigator && navigator.serviceWorker.getRegistrations){
+          jobs.push(navigator.serviceWorker.getRegistrations().then(function(rs){
+            return Promise.all(rs.map(function(r){ return r.unregister(); }));
+          }));
+        }
+        if (window.caches && caches.keys){
+          jobs.push(caches.keys().then(function(ks){
+            return Promise.all(ks.map(function(k){ return caches.delete(k); }));
+          }));
+        }
+      } catch (e) {}
+      var reload = function(){ location.reload(); };
+      Promise.all(jobs).then(reload).catch(reload);
+    });
+  }
+})();
 </script>
 </body>
 </html>
