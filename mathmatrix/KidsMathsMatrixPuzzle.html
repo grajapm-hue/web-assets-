@@ -2072,13 +2072,11 @@ if (navigator.storage && navigator.storage.persist) {
 // Show the current cached build, and give a one-tap "clear cache & reload to newest"
 // button — the reliable escape hatch when a device is stuck on an old cached version.
 (function(){
+  // Build baked into this HTML — always reflects the exact version being run,
+  // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
+  var BUILD_VER = 'v86';
   var verEl = document.getElementById('verLabel');
-  if (verEl && window.caches && caches.keys){
-    caches.keys().then(function(keys){
-      var v = keys.filter(function(k){ return k.indexOf('mathmatrix-') === 0; }).sort().pop();
-      verEl.textContent = v ? v.replace('mathmatrix-', '') : 'online';
-    }).catch(function(){ verEl.textContent = ''; });
-  } else if (verEl) { verEl.textContent = ''; }
+  if (verEl) verEl.textContent = BUILD_VER;
 
   var upBtn = document.getElementById('updateBtn');
   // Reflect the network state on the button so users never trigger a destructive
