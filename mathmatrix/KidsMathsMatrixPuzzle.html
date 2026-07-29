@@ -1712,15 +1712,19 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   // so we advance automatically instead of relying on a return key.
   function focusNext(inp){
     var pz = PUZZLES[currentSize];
-    var r = +inp.dataset.r, c = +inp.dataset.c + 1;
-    if (c >= pz.cols){ c = 0; r++; }
-    if (r < pz.rows && cells[r] && cells[r][c]){
-      var nx = cells[r][c];
-      nx.focus();
-      try { nx.setSelectionRange(nx.value.length, nx.value.length); } catch (e) {}
-    } else {
-      inp.blur();   // last cell — done
+    var total = pz.rows * pz.cols;
+    var start = (+inp.dataset.r) * pz.cols + (+inp.dataset.c) + 1;
+    // scan forward (wrapping) for the first EMPTY cell — skip ones already filled
+    for (var k = 0; k < total; k++){
+      var idx = (start + k) % total;
+      var r = (idx / pz.cols) | 0, c = idx % pz.cols;
+      if (cells[r] && cells[r][c] && cells[r][c].value === ''){
+        cells[r][c].focus();
+        try { cells[r][c].setSelectionRange(0, 0); } catch (e) {}
+        return;
+      }
     }
+    inp.blur();   // no empty cells left
   }
 
   function onInput(e){
