@@ -711,6 +711,13 @@
 
 <div class="instCard" id="instCard"></div>
 
+<!-- Learn-first row: sits ABOVE the table so a beginner sees "watch a sample" before playing -->
+<div class="btnRow">
+  <button id="peekBtn">👁 SHOW</button>
+  <button id="watchBtn">▶ Watch Me Solve</button>
+</div>
+<div style="text-align:center; font-size:14px; color:#888; margin:-4px 0 10px;">👶 New? Watch a sample first — SHOW reveals the solved table for 3 seconds</div>
+
 <div class="boardContainer">
   <div class="board" id="board"></div>
 </div>
@@ -735,16 +742,10 @@
   <button id="clearBtn">CLEAR</button>
   <div id="timerBox">00:00</div>
 </div>
-<div class="btnRow">
-  <button id="peekBtn">👁 SHOW</button>
-  <button id="watchBtn">▶ Watch Me Solve</button>
-</div>
 
 <div style="text-align:center; margin:-2px 0 10px;">
   <button id="soundBtn" style="background:transparent; border:2px solid #f59e0b; color:#fbbf24; border-radius:8px; padding:6px 16px; font-size:15px; font-weight:800; cursor:pointer;">🔊 Sound: ON</button>
 </div>
-
-<div style="text-align:center; font-size:16px; color:#888; margin-top:8px; margin-bottom:12px;">Observe solved table for 3 seconds</div>
 
 <div id="msg"></div>
 
@@ -2119,7 +2120,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'v89';
+  var BUILD_VER = 'v90';
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
