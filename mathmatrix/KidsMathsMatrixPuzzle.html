@@ -695,7 +695,9 @@
 
   /* Tagline — glowing gradient that drifts slowly across the words */
   .tagline {
-    font-style:italic; font-weight:700; letter-spacing:.2px;
+    display:inline-block; max-width:100%;
+    font-size:15.5px; line-height:1.35; margin:5px 0 3px;
+    font-style:italic; font-weight:800; letter-spacing:.3px;
     background:linear-gradient(90deg,#fbbf24,#f472b6,#a78bfa,#22d3ee,#4ade80,#fbbf24);
     background-size:300% 100%;
     -webkit-background-clip:text; background-clip:text;
@@ -705,6 +707,8 @@
   }
   @keyframes tagShift { 0% { background-position:0% 50%; } 100% { background-position:300% 50%; } }
   @media (prefers-reduced-motion: reduce){ .tagline { animation:none; } }
+  @media (min-width:480px){ .tagline { font-size:18px; } }
+  @media (min-width:760px){ .tagline { font-size:21px; } }
 
   /* AUTO-FIT: JS sets --cell/--gap so the board always uses the full available
      width in any orientation (never horizontal scroll). Turning the phone gives
@@ -2248,7 +2252,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'v101';
+  var BUILD_VER = 'v102';
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
