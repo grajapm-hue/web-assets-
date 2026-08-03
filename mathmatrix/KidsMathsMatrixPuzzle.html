@@ -962,7 +962,6 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   var peekIv = null;      // handle to the running SHOW countdown interval
   var prevComplete = 0;   // # of complete lines last update (to detect a NEW line for the chime)
   var prevDup = 0;        // # of duplicate values last update (to detect a NEW clash for the boop)
-  var validStrs = [];     // string form of every valid number on this board — auto-advance waits only while the typed digits could still grow into a longer valid one
   var activeCell = null;  // the cell the custom keypad writes into (highlighted with .cursor)
   var useSysKb = false;   // false = custom in-page keypad (OS keyboard suppressed); true = system keyboard
 
@@ -1380,6 +1379,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         inp.addEventListener('input', onInput);
         inp.addEventListener('keydown', onKeyDown);
         inp.addEventListener('focus', function(){ setActive(this); });
+        inp.addEventListener('pointerdown', function(){ setActive(this); });   // tapping a cell moves the yellow ring here
         cells[r].push(inp);
         place(inp, r + 2, c2 + 2);
       }
@@ -1458,12 +1458,6 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       cells[3][1].classList.add('diagonal-guide'); // R4C2
       cells[4][0].classList.add('diagonal-guide'); // R5C1
     }
-    // string forms of every valid number on this board (drives prefix-based auto-advance)
-    var pz = PUZZLES[currentSize];
-    validStrs = [];
-    for (var mr = 0; mr < pz.rows; mr++) for (var mc = 0; mc < pz.cols; mc++)
-      validStrs.push(String(pz.example[mr][mc]));
-
     fitCells();   // fit digit sizes after a size switch / theme apply
     refreshCounter();
     highlightNowPlaying();
@@ -1832,12 +1826,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     if (cell.value !== '') sfx('place');   // snappy pop as a number lands
     startTimer();
     update();
-    // Auto-advance ONLY when the digits can no longer grow into a longer valid
-    // number, so multi-digit entry (16 / 128 / 256) is never cut off.
-    var v = cell.value;
-    if (v.length > 0 && !validStrs.some(function(s){ return s.length > v.length && s.indexOf(v) === 0; })){
-      focusNext(cell);
-    }
+    // The cursor STAYS on this cell so any number can be typed (22, 333, 4444…).
+    // It only leaves when the cell is full (4 digits); otherwise the player moves
+    // it themselves by tapping a cell or using the ← ↑ ↓ → keys.
+    if (cell.value.length >= 4) focusNext(cell);
   }
 
   function onInput(e){ setActive(e.target); processInput(e.target); }
@@ -2120,7 +2112,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'v90';
+  var BUILD_VER = 'v91';
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
