@@ -693,6 +693,27 @@
   @keyframes glare { 0% { left:-70%; } 55%, 100% { left:130%; } }
   @media (prefers-reduced-motion: reduce){ .comingChip::after { animation:none; } }
 
+  /* AUTO-FIT: JS sets --cell/--gap so the board always uses the full available
+     width in any orientation (never horizontal scroll). Turning the phone gives
+     a much wider viewport, so every board — especially 10×10 — gets bigger. */
+  .board.autofit {
+    grid-template-columns:repeat(var(--tracks), var(--cell)) !important;
+    grid-template-rows:repeat(var(--tracks), var(--cell)) !important;
+    grid-gap:var(--gap) !important; gap:var(--gap) !important;
+  }
+  .board.autofit .cell, .board.autofit .badge {
+    width:var(--cell) !important; height:var(--cell) !important;
+  }
+  .board.autofit .cell { line-height:calc(var(--cell) - 6px) !important; }
+  .board.autofit .badge { font-size:var(--badgeFont) !important; }
+
+  /* Rotate prompt — only shown in portrait on the big boards */
+  #rotateHint {
+    display:none; text-align:center; font-size:13px; font-weight:700;
+    color:#fbbf24; margin:6px auto 10px; max-width:560px; padding:0 10px;
+  }
+  @media (orientation:portrait){ #rotateHint.show { display:block; } }
+
 </style>
 </head>
 <body>
@@ -721,6 +742,8 @@
 <div class="boardContainer">
   <div class="board" id="board"></div>
 </div>
+
+<div id="rotateHint">📱 Turn your phone sideways for a much bigger board (scroll down to see it all)</div>
 
 <!-- Built-in puzzle keypad: numbers + navigation, so the OS keyboard never covers the board -->
 <div id="keypad">
@@ -1458,7 +1481,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       cells[3][1].classList.add('diagonal-guide'); // R4C2
       cells[4][0].classList.add('diagonal-guide'); // R5C1
     }
-    fitCells();   // fit digit sizes after a size switch / theme apply
+    fitBoard();   // size the board to the screen, then fit digit sizes
     refreshCounter();
     highlightNowPlaying();
   }
@@ -1486,6 +1509,30 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     solvedCounter.innerHTML = n >= 2
       ? '🏆 <b>Level mastered!</b> ✨ Try a new target, or pick any level below.'
       : '🏆 <b>' + n + '/2</b> different targets · solve 2 different ones to master this level!';
+  }
+
+  // Size the board to the available width so it always fills the screen without
+  // horizontal scrolling. In landscape the viewport is much wider, so every board
+  // (10×10 most of all) becomes far bigger; the page then scrolls vertically.
+  function fitBoard(){
+    var pz = PUZZLES[currentSize];
+    var tracks = pz.rows + 2;                       // grid cells + the badge ring
+    var gap = tracks >= 10 ? 2 : tracks >= 8 ? 3 : 6;
+    var vw = document.documentElement.clientWidth || window.innerWidth || 360;
+    var avail = Math.min(vw, 900) - 16;             // page padding; cap so desktop stays sane
+    var cell = Math.floor((avail - gap * (tracks - 1)) / tracks);
+    cell = Math.max(18, Math.min(cell, 92));        // readable floor, sensible ceiling
+    board.classList.add('autofit');
+    board.style.setProperty('--tracks', tracks);
+    board.style.setProperty('--cell', cell + 'px');
+    board.style.setProperty('--gap', gap + 'px');
+    board.style.setProperty('--badgeFont', Math.max(8, Math.round(cell * 0.30)) + 'px');
+
+    // Suggest rotating only where it actually helps (the big, cramped boards)
+    var hint = document.getElementById('rotateHint');
+    if (hint) hint.classList.toggle('show', tracks >= 8 && cell < 40);
+
+    fitCells();
   }
 
   // Auto-shrink each cell's font by its digit count so 1–4 digit numbers fit uniformly (no horizontal overflow)
@@ -2078,7 +2125,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   });
   
   // Re-fit digit sizes on orientation / breakpoint change
-  window.addEventListener('resize', fitCells);
+  window.addEventListener('resize', fitBoard);
+  window.addEventListener('orientationchange', function(){ setTimeout(fitBoard, 250); });
 
   // Init with 3x3
   initBoard();
@@ -2112,7 +2160,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'v91';
+  var BUILD_VER = 'v92';
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
