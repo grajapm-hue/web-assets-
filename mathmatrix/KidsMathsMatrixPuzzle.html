@@ -766,8 +766,9 @@
   <div id="timerBox">00:00</div>
 </div>
 
-<div style="text-align:center; margin:-2px 0 10px;">
+<div style="text-align:center; margin:-2px 0 10px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
   <button id="soundBtn" style="background:transparent; border:2px solid #f59e0b; color:#fbbf24; border-radius:8px; padding:6px 16px; font-size:15px; font-weight:800; cursor:pointer;">🔊 Sound: ON</button>
+  <button id="musicBtn" style="background:transparent; border:2px solid #22c55e; color:#4ade80; border-radius:8px; padding:6px 16px; font-size:15px; font-weight:800; cursor:pointer;">🎵 Music: ON</button>
 </div>
 
 <div id="msg"></div>
@@ -822,7 +823,9 @@
 <div class="credit">Created by G.RajaPathamuthu · Kids Puzzle Library<br>Guided by : JNT<br>Code Coordinated by : Claude AI<br>
   <i style="opacity:.85;">(What we get is all we ask for.)</i><br>
   Mail To : <a href="mailto:grajapm@gmail.com?subject=MathMatrix%20Feedback%20%26%20Suggestion" style="color:#8ab4f8; text-decoration:underline;">✉️ Feedback &amp; Suggestion</a><br>
-  <span style="opacity:.7; font-size:12px;">App <span id="verLabel">…</span></span>
+  <span style="opacity:.7; font-size:12px;">App <span id="verLabel">…</span></span><br>
+  <span style="opacity:.75; font-size:11.5px; line-height:1.6;">🎵 Music: “Expedition” by Alex-Productions · <a href="https://onsound.eu/" style="color:#8ab4f8;">onsound.eu</a><br>
+  Promoted by <a href="https://www.chosic.com/free-music/all/" style="color:#8ab4f8;">Chosic</a> · <a href="https://creativecommons.org/licenses/by/3.0/" style="color:#8ab4f8;">CC BY 3.0</a> — thanks for sharing! 🙏</span>
 </div>
 
 <!-- Congratulations Modal -->
@@ -1036,6 +1039,53 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       case 'tick':   tone(700, 0, 0.045, 'square', 0.08); break;                                  // soft placement tick
     }
   }
+  // ---- Background music: "Expedition" by Alex-Productions (CC BY 3.0, chosic.com) ----
+  // Plays softly while the child thinks; fades down while they enter numbers so the
+  // puzzle sounds stay clear, then rises again after a short pause.
+  var musicOn = (localStorage.getItem('mmMusic') !== 'off');   // default ON
+  var bgm = null, bgmFadeIv = null, bgmDuckTimer = null;
+  var BGM_IDLE = 0.20, BGM_DUCK = 0.06;
+
+  function fadeMusicTo(target){
+    if (!bgm) return;
+    clearInterval(bgmFadeIv);
+    bgmFadeIv = setInterval(function(){
+      if (!bgm){ clearInterval(bgmFadeIv); bgmFadeIv = null; return; }
+      var d = target - bgm.volume;
+      if (Math.abs(d) < 0.013){
+        bgm.volume = Math.max(0, Math.min(1, target));
+        clearInterval(bgmFadeIv); bgmFadeIv = null;
+        return;
+      }
+      bgm.volume = Math.max(0, Math.min(1, bgm.volume + (d > 0 ? 0.013 : -0.013)));
+    }, 60);
+  }
+  function ensureMusic(){
+    if (!musicOn) return;
+    if (!bgm){
+      bgm = new Audio('bgm-expedition.mp3');
+      bgm.loop = true; bgm.preload = 'auto'; bgm.volume = 0;
+    }
+    if (bgm.paused){
+      var p = bgm.play();
+      if (p && p.catch) p.catch(function(){});   // browsers block autoplay until a real gesture
+    }
+    fadeMusicTo(BGM_IDLE);
+  }
+  function duckMusic(){
+    if (!musicOn || !bgm || bgm.paused) return;
+    fadeMusicTo(BGM_DUCK);
+    clearTimeout(bgmDuckTimer);
+    bgmDuckTimer = setTimeout(function(){ fadeMusicTo(BGM_IDLE); }, 2500);
+  }
+  function refreshMusicBtn(){
+    var b = document.getElementById('musicBtn');
+    if (!b) return;
+    b.textContent = musicOn ? '🎵 Music: ON' : '🎵 Music: OFF';
+    b.style.borderColor = musicOn ? '#22c55e' : '#666';
+    b.style.color = musicOn ? '#4ade80' : '#888';
+  }
+
   function refreshSoundBtn(){
     var b = document.getElementById('soundBtn');
     if (!b) return;
@@ -1047,7 +1097,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   // number only fires an 'input' event, which may NOT count as user-activation on
   // phones — so without this the place-pop stays silent until some other tap.
   ['pointerdown','touchstart','keydown'].forEach(function(evt){
-    document.addEventListener(evt, function(){ if (soundOn) ensureAudio(); }, { passive:true });
+    document.addEventListener(evt, function(){
+      if (soundOn) ensureAudio();
+      if (musicOn) ensureMusic();   // autoplay is only allowed from a real gesture
+    }, { passive:true });
   });
 
   // Celebration burst on a win — emoji fly out + a quick flash. Works even when muted.
@@ -1879,6 +1932,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   function processInput(cell){
     cell.value = cell.value.replace(/[^0-9]/g, '');
     if (cell.value !== '') sfx('place');   // snappy pop as a number lands
+    duckMusic();                           // soften the music while numbers are being entered
     startTimer();
     update();
     // The cursor STAYS on this cell so any number can be typed (22, 333, 4444…).
@@ -2107,6 +2161,19 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     if (soundOn){ ensureAudio(); sfx('line'); }   // little confirmation blip when turned on
   });
 
+  // Music on/off (separate from the effects toggle, remembered across visits)
+  refreshMusicBtn();
+  document.getElementById('musicBtn').addEventListener('click', function(){
+    musicOn = !musicOn;
+    localStorage.setItem('mmMusic', musicOn ? 'on' : 'off');
+    refreshMusicBtn();
+    if (musicOn) ensureMusic();
+    else if (bgm){
+      fadeMusicTo(0);
+      setTimeout(function(){ if (bgm && !musicOn) bgm.pause(); }, 1000);
+    }
+  });
+
   // Custom keypad (numbers + navigation), so the OS keyboard never covers the board
   var kpEl = document.getElementById('keypad');
   if (kpEl){
@@ -2168,7 +2235,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'v93';
+  var BUILD_VER = 'v94';
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
