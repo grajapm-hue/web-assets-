@@ -1402,7 +1402,15 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         inp.addEventListener('input', onInput);
         inp.addEventListener('keydown', onKeyDown);
         inp.addEventListener('focus', function(){ setActive(this); });
-        inp.addEventListener('pointerdown', function(){ setActive(this); });   // tapping a cell moves the yellow ring here
+        // Tapping a cell moves the yellow ring here. On touch in keypad mode we
+        // suppress the browser's native focus, because its scroll-into-view can
+        // shift the page mid-tap and land focus on a NEIGHBOURING cell (the
+        // intermittent first-tap ring jump). The keypad types into activeCell,
+        // so DOM focus isn't needed; system-keyboard mode and mouse keep it.
+        inp.addEventListener('pointerdown', function(e){
+          setActive(this);
+          if (!useSysKb && e.pointerType === 'touch') e.preventDefault();
+        });
         cells[r].push(inp);
         place(inp, r + 2, c2 + 2);
       }
@@ -2160,7 +2168,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'v92';
+  var BUILD_VER = 'v93';
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
