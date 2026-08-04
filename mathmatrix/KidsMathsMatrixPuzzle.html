@@ -63,11 +63,15 @@
     flex:0 0 auto; text-align:center; padding:2px 0; white-space:nowrap;
   }
   .toggleSwitch {
-    display:flex; flex-direction:column; gap:8px; flex:1 1 auto; min-width:0;
+    /* narrower column (Raja's mark): long names wrap onto a second line and the
+       box simply grows taller, leaving breathing room to the right */
+    display:flex; flex-direction:column; gap:8px;
+    flex:0 1 auto; width:62%; max-width:330px; min-width:0;
   }
   .toggleSwitch .toggleBtn {
     width:100%; text-align:left;
-    padding:10px 14px; white-space:normal; overflow-wrap:anywhere; line-height:1.25;
+    padding:10px 14px; white-space:normal; overflow-wrap:break-word; line-height:1.3;
+    height:auto; min-height:0;          /* height follows the text, however long */
     box-sizing:border-box;
   }
   .toggleBtn {
@@ -2435,7 +2439,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'v113';
+  var BUILD_VER = 'v114';
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
