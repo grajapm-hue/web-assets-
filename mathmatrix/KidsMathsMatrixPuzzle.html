@@ -63,17 +63,20 @@
     flex:0 0 auto; text-align:center; padding:2px 0; white-space:nowrap;
   }
   .toggleSwitch {
-    /* narrower column (Raja's mark): long names wrap onto a second line and the
-       box simply grows taller, leaving breathing room to the right */
-    display:flex; flex-direction:column; gap:8px;
-    flex:0 1 auto; width:62%; max-width:330px; min-width:0;
+    /* two columns beside the vertical label — uses the full width and keeps the
+       list short as more puzzles arrive; rows grow taller when a name wraps */
+    display:grid; grid-template-columns:1fr 1fr; gap:8px;
+    flex:1 1 auto; min-width:0;
   }
   .toggleSwitch .toggleBtn {
     width:100%; text-align:left;
-    padding:10px 14px; white-space:normal; overflow-wrap:break-word; line-height:1.3;
+    padding:10px 12px; font-size:15px;
+    white-space:normal; overflow-wrap:break-word; line-height:1.3;
     height:auto; min-height:0;          /* height follows the text, however long */
     box-sizing:border-box;
   }
+  /* one wide column on very narrow phones so names never get cramped */
+  @media (max-width:359px){ .toggleSwitch { grid-template-columns:1fr; } }
   .toggleBtn {
     border:2px solid #555; border-radius:8px;
     padding:8px 16px;
@@ -2439,7 +2442,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'v114';
+  var BUILD_VER = 'v115';
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
