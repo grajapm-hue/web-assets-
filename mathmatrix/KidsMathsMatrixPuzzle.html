@@ -729,6 +729,37 @@
   @media (prefers-reduced-motion: reduce){ .comingChip::after { animation:none; } }
 
 
+
+  /* ---- 4-bit bi-directional converter (inside the Binary Guess notes) ---- */
+  .convBox { border:2px solid #3b82f6; border-radius:14px; background:#101828; padding:12px; margin:12px 0; }
+  .convBox.b { border-color:#a855f7; }
+  .convTitle { font-size:13.5px; font-weight:900; letter-spacing:.6px; color:#60a5fa; text-transform:uppercase;
+               border-bottom:1px solid #253048; padding-bottom:7px; margin-bottom:10px; }
+  .convBox.b .convTitle { color:#c084fc; }
+  .convTitle span { font-weight:700; opacity:.75; text-transform:none; letter-spacing:0; }
+  .convBits { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+  .convBit {
+    height:52px; border:2px solid #35405c; border-radius:10px; background:#0b1120;
+    color:#93a3bd; font-size:22px; font-weight:900; cursor:pointer; font-family:inherit;
+    -webkit-tap-highlight-color:transparent; transition:all .15s ease;
+  }
+  .convBit.on { border-color:#22c55e; background:#06281a; color:#4ade80; box-shadow:0 0 9px rgba(34,197,94,.4); }
+  .convLabels { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:4px 0 12px; }
+  .convLabels span { text-align:center; font-size:12px; font-weight:700; color:#64748b; }
+  .convDecLabel { font-size:11.5px; font-weight:800; letter-spacing:.6px; color:#7c8aa5; text-transform:uppercase; margin-bottom:5px; }
+  .convDec {
+    width:100%; box-sizing:border-box; height:54px; text-align:center;
+    border:2px solid #35405c; border-radius:10px; background:#0b1120;
+    color:#fff; font-size:26px; font-weight:900; font-family:inherit;
+    -webkit-appearance:none; appearance:none; outline:none;
+  }
+  .convDec:focus { border-color:#60a5fa; }
+  .convClear {
+    width:100%; margin-top:10px; height:44px; border:none; border-radius:10px;
+    background:#334155; color:#e2e8f0; font-size:15px; font-weight:800; cursor:pointer; font-family:inherit;
+  }
+  .convClear:active { background:#475569; }
+
   /* ---- Binary Number Guess ---- */
   #binaryPanel { width:100%; max-width:560px; margin:0 auto 6px; padding:0 10px; box-sizing:border-box; }
   .binBlock { border:2px solid #2f7ff0; border-radius:12px; background:#141a2e; padding:10px; margin-bottom:12px; }
@@ -2078,6 +2109,77 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   }
   
 
+
+  // ---------- 4-bit bi-directional converter (Binary Guess notes) ----------
+  function convSystem(id, label, cls){
+    var w = [8,4,2,1], bits = '', labs = '';
+    for (var i = 0; i < 4; i++){
+      bits += '<button type="button" class="convBit" data-sys="' + id + '" data-i="' + i + '">0</button>';
+      labs += '<span>' + w[i] + '</span>';
+    }
+    return '<div class="convBox ' + cls + '">' +
+      '<div class="convTitle">Converter System ' + id + ' <span>(' + label + ')</span></div>' +
+      '<div class="convBits">' + bits + '</div>' +
+      '<div class="convLabels">' + labs + '</div>' +
+      '<div class="convDecLabel">Decimal value (0 – 15)</div>' +
+      '<input class="convDec" data-sys="' + id + '" inputmode="numeric" maxlength="2" value="0">' +
+      '<button type="button" class="convClear" data-sys="' + id + '">Clear System ' + id + '</button>' +
+    '</div>';
+  }
+
+  function convRefresh(sys, from){
+    var bitsEls = document.querySelectorAll('.convBit[data-sys="' + sys + '"]');
+    var dec = document.querySelector('.convDec[data-sys="' + sys + '"]');
+    if (!bitsEls.length || !dec) return;
+    var w = [8,4,2,1], v;
+    if (from === 'dec'){                       // decimal typed → light the bits
+      v = parseInt(dec.value, 10);
+      if (isNaN(v)) v = 0;
+      if (v > 15) { v = 15; dec.value = '15'; }
+      if (v < 0)  { v = 0;  dec.value = '0';  }
+      for (var i = 0; i < 4; i++){
+        var on = (v & w[i]) !== 0;
+        bitsEls[i].textContent = on ? '1' : '0';
+        bitsEls[i].classList.toggle('on', on);
+      }
+    } else {                                   // bits toggled → show the decimal
+      v = 0;
+      for (var j = 0; j < 4; j++) if (bitsEls[j].classList.contains('on')) v += w[j];
+      dec.value = String(v);
+    }
+  }
+
+  function wireConverter(){
+    var box = document.getElementById('logicBox');
+    if (!box || box.dataset.convWired) return;
+    box.dataset.convWired = '1';
+    box.addEventListener('click', function(e){
+      var b = e.target.closest ? e.target.closest('.convBit') : null;
+      if (b){
+        var on = !b.classList.contains('on');
+        b.classList.toggle('on', on);
+        b.textContent = on ? '1' : '0';
+        if (soundOn) ensureAudio();
+        sfx(on ? 'line' : 'place');
+        convRefresh(b.dataset.sys, 'bit');
+        return;
+      }
+      var c = e.target.closest ? e.target.closest('.convClear') : null;
+      if (c){
+        var dec = document.querySelector('.convDec[data-sys="' + c.dataset.sys + '"]');
+        if (dec) dec.value = '0';
+        convRefresh(c.dataset.sys, 'dec');
+        sfx('place');
+      }
+    });
+    box.addEventListener('input', function(e){
+      var d = e.target.classList && e.target.classList.contains('convDec') ? e.target : null;
+      if (!d) return;
+      d.value = d.value.replace(/[^0-9]/g, '');
+      convRefresh(d.dataset.sys, 'dec');
+    });
+  }
+
   // ---------- Binary Number Guess ----------
   // Switches 1-4 carry the TENS digit as binary bits 8,4,2,1; switches 5-8 do the
   // same for the UNITS digit. Lists are GENERATED from that rule (the printed
@@ -2165,6 +2267,24 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     if (on){
       stopDemos();
       instCard.innerHTML = '<b>Binary Number Guess!</b> Think of a number from <b>1 to 99</b>, then tap every box <b>where your guess number appears</b> — the binary bits will name it. 🔢';
+      document.getElementById('logicBox').innerHTML =
+        '<h3>📐 Binary Number Guess — how the trick works</h3>' +
+        '<p>Every digit from <b>0 to 9</b> can be built from just four values: <b>8, 4, 2 and 1</b>. ' +
+        'For example <b>9 = 8 + 1</b> and <b>6 = 4 + 2</b>. Writing which ones you used gives the <b>binary</b> code: ' +
+        '9 becomes <b>1001</b> and 6 becomes <b>0110</b>.</p>' +
+        '<ol style="margin:10px 0; padding-left:20px;">' +
+          '<li><b>Boxes 1–4</b> hold the <b>tens</b> digit — box 1 lists every number whose tens digit contains 8, box 2 the 4, box 3 the 2, box 4 the 1.</li>' +
+          '<li><b>Boxes 5–8</b> do exactly the same for the <b>units</b> digit.</li>' +
+          '<li>So the boxes you pick <b>are</b> the binary code. Add their values back up and the number appears — no guessing at all!</li>' +
+          '<li><b>Example — 99:</b> tens 9 = 8+1 → boxes <b>1</b> and <b>4</b>; units 9 = 8+1 → boxes <b>5</b> and <b>8</b>. ✅</li>' +
+        '</ol>' +
+        '<p><b>💡 Why 4 bits?</b> Four switches make 16 combinations (0–15), which is more than the ten digits 0–9 — just enough to name every digit.</p>' +
+        '<h3 style="margin-top:16px;">🔢 4-Bit Converter — works both ways</h3>' +
+        '<p style="margin-bottom:2px;">Tap the bits to build a number, <i>or</i> type a decimal (0–15) and watch the bits light up. ' +
+        'System A is the <b>tens</b> digit, System B the <b>units</b> — together they make any number to 99.</p>' +
+        convSystem('A', 'tens digit', '') +
+        convSystem('B', 'units digit', 'b');
+      wireConverter();
       buildBinary(); resetBinary();
       document.getElementById('binaryClear').onclick = resetBinary;
     }
@@ -2583,7 +2703,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'v119';
+  var BUILD_VER = 'v120';
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
