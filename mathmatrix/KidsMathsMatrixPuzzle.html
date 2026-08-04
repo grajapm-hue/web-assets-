@@ -779,7 +779,7 @@
     <button class="kp" data-k="6">6</button><button class="kp" data-k="7">7</button><button class="kp" data-k="8">8</button><button class="kp" data-k="9">9</button><button class="kp" data-k="0">0</button>
   </div>
   <div class="kprow">
-    <button class="kp kpnav" data-nav="back">⌫</button><button class="kp kpnav" data-nav="left">←</button><button class="kp kpnav" data-nav="up">↑</button><button class="kp kpnav" data-nav="down">↓</button><button class="kp kpnav" data-nav="right">→</button>
+    <button class="kp kpnav" data-nav="sign">±</button><button class="kp kpnav" data-nav="back">⌫</button><button class="kp kpnav" data-nav="left">←</button><button class="kp kpnav" data-nav="up">↑</button><button class="kp kpnav" data-nav="down">↓</button><button class="kp kpnav" data-nav="right">→</button>
   </div>
   <div style="text-align:center; margin-top:2px;">
     <button class="kp kpsys" data-nav="sys" onmousedown="event.preventDefault()">⌨️ System keyboard</button>
@@ -1479,6 +1479,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           <li><b>It works for ANY four numbers</b> — your birthday, a friend's, any date at all. The magic is in the recipe, not the numbers.</li>
         </ol>
         <p><b>🎁 There is more!</b> Besides the 4 rows, 4 columns and 2 diagonals, the same total also hides in the <b>4 corners</b>, all four <b>2×2 corner blocks</b>, the <b>centre 2×2</b>, and the middle pairs of the outer rows and columns — <b>18 magic groups in all</b> (an ordinary 4×4 has only 10).</p>
+        <p><b>➖ Negative numbers are welcome!</b> A January or February birthday makes MM−3 go below zero — try <b>09-01-2015</b> and you will see <b>−2</b> and <b>−1</b> in the square, yet every line still totals 45. Tap the <b>±</b> key to type a minus yourself: the magic holds for negatives, for zero, even for decimals. The recipe cares about the <i>differences</i>, never the size of the numbers.</p>
         <p><b>💡 Try it:</b> type your own birthday, then your friend's — each person gets their own magic number. 🎂</p>
       `;
     }
@@ -2035,7 +2036,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
   // Core input processing — shared by the native input event and the custom keypad.
   function processInput(cell){
-    cell.value = cell.value.replace(/[^0-9]/g, '');
+    // keep an optional leading minus: negative numbers make valid magic squares too
+    var neg = cell.value.charAt(0) === '-';
+    cell.value = (neg ? '-' : '') + cell.value.replace(/[^0-9]/g, '');
     if (cell.value !== '') sfx('place');   // snappy pop as a number lands
     duckMusic();                           // soften the music while numbers are being entered
     if (isBirthday()) fillRamanujan();     // the rest of the square writes itself
@@ -2064,6 +2067,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     if (!cell || cell.readOnly || cell.value.length >= 4) return;
     setActive(cell);
     cell.value += d;
+    processInput(cell);
+  }
+  function kpSign(){
+    var cell = currentCell();
+    if (!cell || cell.readOnly) return;
+    setActive(cell);
+    cell.value = cell.value.charAt(0) === '-' ? cell.value.slice(1) : ('-' + cell.value);
     processInput(cell);
   }
   function kpBack(){
@@ -2342,6 +2352,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       if (!b) return;
       if (soundOn) ensureAudio();
       if (b.dataset.k !== undefined) kpDigit(b.dataset.k);
+      else if (b.dataset.nav === 'sign') kpSign();
       else if (b.dataset.nav === 'back') kpBack();
       else if (b.dataset.nav === 'up') kpMove(-1, 0);
       else if (b.dataset.nav === 'down') kpMove(1, 0);
@@ -2395,7 +2406,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'v107';
+  var BUILD_VER = 'v108';
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
