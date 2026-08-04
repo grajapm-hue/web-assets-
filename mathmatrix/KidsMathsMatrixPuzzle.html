@@ -87,9 +87,11 @@
     color:#888;
   }
   .toggleBtn.active {
-    background:#2f7ff0;
-    border-color:#2f9bf0;
-    color:#fff;
+    /* !important so the selected level still reads white-on-blue — each button
+       now carries its own inline colour, which would otherwise win */
+    background:#2f7ff0 !important;
+    border-color:#2f9bf0 !important;
+    color:#fff !important;
   }
   
   /* Solved Counter */
@@ -855,9 +857,9 @@
   <div class="diffRow">
   <span class="diffLabel">Choose Difficulty</span>
   <div class="toggleSwitch">
-    <button class="toggleBtn active" data-size="3x3">3×3 (Easy)</button>
-    <button class="toggleBtn" data-size="4x4">4×4 (Hard)</button>
-    <button class="toggleBtn" data-size="5x5">5×5 (Master)</button>
+    <button class="toggleBtn active" data-size="3x3" style="color:#93c5fd; border-color:#3b82f6;">3×3 (Easy)</button>
+    <button class="toggleBtn" data-size="4x4" style="color:#c4b5fd; border-color:#a78bfa;">4×4 (Hard)</button>
+    <button class="toggleBtn" data-size="5x5" style="color:#67e8f9; border-color:#06b6d4;">5×5 (Master)</button>
     <button class="toggleBtn" data-size="6x6" style="color:#5eead4; border-color:#14b8a6;">6×6 (Expert)</button>
     <button class="toggleBtn" data-size="8x8" style="color:#a5b4fc; border-color:#6366f1;">8×8 (Champion)</button>
     <button class="toggleBtn" data-size="10x10" style="color:#f9a8d4; border-color:#db2777;">10×10 (Grandmaster)</button>
@@ -2442,7 +2444,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'v115';
+  var BUILD_VER = 'v116';
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
