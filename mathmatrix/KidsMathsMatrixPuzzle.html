@@ -2041,8 +2041,30 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   });
   
   // Peek button
+  // Bring the whole board into view (plus the keypad when it also fits) so the
+  // player never has to scroll while SHOW / Watch Me Solve is running.
+  function showWholeBoard(){
+    var bc = document.querySelector('.boardContainer');
+    if (!bc) return;
+    var vh = window.innerHeight || document.documentElement.clientHeight;
+    var sy = window.pageYOffset || document.documentElement.scrollTop || 0;
+    var top = bc.getBoundingClientRect().top + sy;
+    var boardBottom = bc.getBoundingClientRect().bottom + sy;
+    var kp = document.getElementById('keypad');
+    var bottom = boardBottom;
+    if (kp){
+      var kpBottom = kp.getBoundingClientRect().bottom + sy;
+      if (kpBottom - top <= vh - 12) bottom = kpBottom;   // keypad fits too — include it
+    }
+    var h = bottom - top;
+    var y = (h <= vh - 12) ? top - (vh - h) / 2 : top - 8;   // centre if it fits, else align top
+    try { window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' }); }
+    catch (e) { window.scrollTo(0, Math.max(0, y)); }
+  }
+
   document.getElementById('peekBtn').addEventListener('click', function(){
     if (peeking || solvedFlag) return;
+    showWholeBoard();
     peeking = true;
     var btn = this;
     var puzzle = PUZZLES[currentSize];
@@ -2093,6 +2115,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   // Watch Me Solve — animated demo. 4×4/8×8 reveal in method order (keep down, then flip back up); other sizes reveal 1..N.
   document.getElementById('watchBtn').addEventListener('click', function(){
     if (watching || peeking || solvedFlag) return;
+    showWholeBoard();
     watching = true;
     var btn = this;
     btn.disabled = true;
@@ -2254,7 +2277,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'v103';
+  var BUILD_VER = 'v104';
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
