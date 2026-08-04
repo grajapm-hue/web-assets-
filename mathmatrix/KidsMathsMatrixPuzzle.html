@@ -2147,19 +2147,38 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     if (!iBtn) return;
     var deferred = null;
 
-    var standalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
-    if (standalone || window.navigator.standalone){
+    function markInstalled(){
       iBtn.textContent = '✅ Installed';
       iBtn.style.borderColor = '#22c55e'; iBtn.style.color = '#4ade80';
       iBtn.disabled = true; iBtn.style.opacity = '.75';
-      return;                                   // already running as an app
+    }
+    function markHowTo(){                        // cannot install directly here
+      iBtn.textContent = '📲 How to Install';
+      iBtn.style.borderColor = '#64748b'; iBtn.style.color = '#cbd5e1';
+    }
+
+    var standalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
+    if (standalone || window.navigator.standalone){ markInstalled(); return; }   // running as the app
+
+    // Chrome can confirm the PWA is already installed even while browsing
+    if (navigator.getInstalledRelatedApps){
+      navigator.getInstalledRelatedApps().then(function(apps){
+        if (apps && apps.length) markInstalled();
+      }).catch(function(){});
     }
 
     window.addEventListener('beforeinstallprompt', function(e){
       e.preventDefault();
       deferred = e;
-      iBtn.textContent = '📥 Install App';      // ready for a real one-tap install
+      if (!iBtn.disabled){                       // a real one-tap install is available
+        iBtn.textContent = '📥 Install App';
+        iBtn.style.borderColor = '#38bdf8'; iBtn.style.color = '#7dd3fc';
+      }
     });
+
+    // No install event (iPhone, unsupported browser, or already installed):
+    // stop promising a one-tap install and offer the instructions instead.
+    setTimeout(function(){ if (!deferred && !iBtn.disabled) markHowTo(); }, 2500);
 
     window.addEventListener('appinstalled', function(){
       deferred = null;
@@ -2788,7 +2807,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'v122';
+  var BUILD_VER = 'v123';
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 

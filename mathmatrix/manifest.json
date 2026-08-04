@@ -27,5 +27,12 @@
       "type": "image/png",
       "purpose": "maskable"
     }
-  ]
+  ],
+  "related_applications": [
+    {
+      "platform": "webapp",
+      "url": "https://kidsmathsmatrixpuzzle.github.io/manifest.json"
+    }
+  ],
+  "prefer_related_applications": false
 }
