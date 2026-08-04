@@ -786,6 +786,24 @@
     .binCard .binHead { font-size:14px; }
   }
 
+
+  /* Provenance note — paper, spreadsheets, AI, and whatever a child invents next */
+  .journeyNote {
+    width:100%; max-width:560px; margin:6px auto 12px; padding:12px 14px; box-sizing:border-box;
+    border:1px dashed #3a4a6b; border-left:4px solid #8ab4f8; border-radius:10px;
+    background:#0e1526; color:#a7b4cc; font-size:12.5px; line-height:1.7; text-align:center;
+  }
+  .journeyNote b { color:#cbd5e1; }
+  .journeyCall {
+    display:block; margin-top:6px; font-style:italic; font-weight:700;
+    background:linear-gradient(90deg,#fbbf24,#f472b6,#a78bfa,#22d3ee,#fbbf24);
+    background-size:300% 100%;
+    -webkit-background-clip:text; background-clip:text;
+    -webkit-text-fill-color:transparent; color:transparent;
+    animation:tagShift 12s linear infinite;
+  }
+  @media (prefers-reduced-motion: reduce){ .journeyCall { animation:none; } }
+
   /* Tagline — glowing gradient that drifts slowly across the words */
   .tagline {
     display:inline-block; max-width:100%;
@@ -946,6 +964,15 @@
 </div>
 
 
+
+<!-- The journey of these puzzles: paper -> spreadsheets -> AI -> whatever comes next -->
+<div class="journeyNote">
+  <b>📜 How these puzzles travelled</b><br>
+  Collected in <b>school days</b> on paper · kept through the <b>1990s</b> in spreadsheets ·
+  rebuilt today with <b>AI</b>.<br>
+  <span class="journeyCall">If you keep them, in twenty years you may open them in a way none of us can imagine yet.
+  Preserve · explore · pass them on.</span>
+</div>
 
 <div class="credit">Created by G.RajaPathamuthu · Kids Puzzle Library<br>Guided by : JNT<br>Code Coordinated by : Claude AI<br>
   <i style="opacity:.85;">(What we get is all we ask for.)</i><br>
@@ -2703,7 +2730,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'v120';
+  var BUILD_VER = 'v121';
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
