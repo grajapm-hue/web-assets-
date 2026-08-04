@@ -792,6 +792,11 @@
 
 <div id="msg"></div>
 
+<!-- Share: the installed app has no address bar, so this is the way to pass the link on -->
+<div style="width:100%; max-width:560px; margin:0 auto 10px; padding:0 10px; box-sizing:border-box;">
+  <button id="shareBtn" style="width:100%; background:#04231a; border:2px solid #22c55e; border-radius:12px; height:48px; font-size:16px; font-weight:800; color:#4ade80; cursor:pointer;">📤 Share this puzzle</button>
+</div>
+
 <div style="display:flex; gap:10px; width:100%; max-width:560px; margin:0 auto 12px; padding:0 10px; box-sizing:border-box;">
   <button id="offlineBtn" style="flex:1; width:auto; max-width:none; margin:0;">📲 Play Offline ▼</button>
   <button id="updateBtn" style="flex:1; background:#000; border:2px solid #f59e0b; border-radius:12px; height:48px; line-height:44px; padding:0 10px; font-size:15px; font-weight:700; color:#fbbf24; cursor:pointer;">🔄 Online Update</button>
@@ -2216,6 +2221,30 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     }
   });
 
+  // Share — the installed app has no address bar, so offer the phone's own share
+  // sheet; fall back to copying the link when the browser has no Web Share API.
+  (function(){
+    var sBtn = document.getElementById('shareBtn');
+    if (!sBtn) return;
+    var LINK = 'https://kidsmathsmatrixpuzzle.github.io';
+    var TEXT = '🐒🎲 MathMatrix Pro++ — magic square puzzles for kids (5th grade & up). '
+             + '3×3 to 10×10 plus 3³ Multiply Magic. Free, works offline, no ads.';
+    sBtn.addEventListener('click', function(){
+      var payload = { title: 'Kids Maths Matrix Puzzle', text: TEXT, url: LINK };
+      if (navigator.share){
+        navigator.share(payload).catch(function(){});   // user cancelling is not an error
+        return;
+      }
+      var done = function(ok){
+        sBtn.textContent = ok ? '✅ Link copied — paste it anywhere!' : '📤 ' + LINK;
+        setTimeout(function(){ sBtn.textContent = '📤 Share this puzzle'; }, 3000);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(TEXT + '\n' + LINK).then(function(){ done(true); }, function(){ done(false); });
+      } else { done(false); }
+    });
+  })();
+
   // Custom keypad (numbers + navigation), so the OS keyboard never covers the board
   var kpEl = document.getElementById('keypad');
   if (kpEl){
@@ -2277,7 +2306,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'v104';
+  var BUILD_VER = 'v105';
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
