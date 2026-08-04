@@ -911,8 +911,9 @@
 <div id="msg"></div>
 
 <!-- Share: the installed app has no address bar, so this is the way to pass the link on -->
-<div style="width:100%; max-width:560px; margin:0 auto 10px; padding:0 10px; box-sizing:border-box;">
-  <button id="shareBtn" style="width:100%; background:#04231a; border:2px solid #22c55e; border-radius:12px; height:48px; font-size:16px; font-weight:800; color:#4ade80; cursor:pointer;">📤 Share this puzzle</button>
+<div style="display:flex; gap:10px; width:100%; max-width:560px; margin:0 auto 10px; padding:0 10px; box-sizing:border-box;">
+  <button id="shareBtn" style="flex:1; background:#04231a; border:2px solid #22c55e; border-radius:12px; height:48px; font-size:15px; font-weight:800; color:#4ade80; cursor:pointer;">📤 Share</button>
+  <button id="installBtn" style="flex:1; background:#0a1a33; border:2px solid #38bdf8; border-radius:12px; height:48px; font-size:15px; font-weight:800; color:#7dd3fc; cursor:pointer;">📥 Install App</button>
 </div>
 
 <div style="display:flex; gap:10px; width:100%; max-width:560px; margin:0 auto 12px; padding:0 10px; box-sizing:border-box;">
@@ -2137,6 +2138,63 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   
 
 
+
+  // ---- Install to home screen -------------------------------------------------
+  // Chrome/Edge fire beforeinstallprompt, so one tap can install. iOS Safari has
+  // no such API, so there we open the step-by-step panel instead.
+  (function(){
+    var iBtn = document.getElementById('installBtn');
+    if (!iBtn) return;
+    var deferred = null;
+
+    var standalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
+    if (standalone || window.navigator.standalone){
+      iBtn.textContent = '✅ Installed';
+      iBtn.style.borderColor = '#22c55e'; iBtn.style.color = '#4ade80';
+      iBtn.disabled = true; iBtn.style.opacity = '.75';
+      return;                                   // already running as an app
+    }
+
+    window.addEventListener('beforeinstallprompt', function(e){
+      e.preventDefault();
+      deferred = e;
+      iBtn.textContent = '📥 Install App';      // ready for a real one-tap install
+    });
+
+    window.addEventListener('appinstalled', function(){
+      deferred = null;
+      iBtn.textContent = '✅ Installed';
+      iBtn.style.borderColor = '#22c55e'; iBtn.style.color = '#4ade80';
+      sfx('unlock');
+    });
+
+    iBtn.addEventListener('click', function(){
+      if (soundOn) ensureAudio();
+      if (deferred){
+        deferred.prompt();
+        deferred.userChoice.then(function(res){
+          if (res && res.outcome === 'accepted'){ iBtn.textContent = '✅ Installing…'; }
+          deferred = null;
+        }).catch(function(){});
+        return;
+      }
+      // No install API (iPhone/iPad, or already dismissed): show how to do it by hand
+      var box = document.getElementById('offlineBox');
+      var btn = document.getElementById('offlineBtn');
+      if (box){
+        box.style.display = 'block';
+        if (btn) btn.textContent = '📲 Play Offline ▲';
+        try { box.scrollIntoView({ behavior:'smooth', block:'center' }); }
+        catch(e){ box.scrollIntoView(); }
+      }
+      var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+      msg.innerHTML = isIOS
+        ? '📲 On iPhone: tap <b>Share ⬆️</b> at the bottom of Safari, then <b>Add to Home Screen</b>.'
+        : '📲 Use your browser menu <b>⋮</b> → <b>Install app</b> / <b>Add to Home screen</b>.';
+      msg.className = '';
+    });
+  })();
+
   // ---------- 4-bit bi-directional converter (Binary Guess notes) ----------
   function convSystem(id, label, cls){
     var w = [8,4,2,1], bits = '', labs = '';
@@ -2730,7 +2788,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'v121';
+  var BUILD_VER = 'v122';
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
