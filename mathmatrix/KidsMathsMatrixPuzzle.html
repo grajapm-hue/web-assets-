@@ -629,6 +629,7 @@
   .targetPill.size8x8 { background: #4338ca !important; color: #ffffff !important; border-color: #818cf8 !important; }
   .targetPill.size10x10 { background: #9d174d !important; color: #ffffff !important; border-color: #ec4899 !important; }
   .targetPill.size3cube { background: #b45309 !important; color: #ffffff !important; border-color: #f59e0b !important; }
+  .targetPill.sizeramanujan { background: #9f1239 !important; color: #ffffff !important; border-color: #fb7185 !important; }
   /* Target preview (orange = center x 3 goal shown) and solved (green) — win over the per-size colours */
   .targetPill.preview { background: linear-gradient(135deg,#f59e0b,#fb923c) !important; color: #ffffff !important; border-color: #fbbf24 !important; }
   .targetPill.solved  { background: linear-gradient(135deg,#15803d,#22c55e) !important; color: #ffffff !important; border-color: #22c55e !important; }
@@ -673,6 +674,11 @@
   .kp.kpsys.on { border-color:#f59e0b; color:#fbbf24; }
   /* active cell highlight (keypad cursor) */
   .cell.cursor { outline:3px solid #fde047; outline-offset:-2px; box-shadow:0 0 9px rgba(253,224,71,.55); }
+
+  /* Ramanujan birthday square: top row is yours to type, the rest is computed */
+  .board.sizeramanujan .cell.anchor { background:#3b0a1e; border-color:#f43f5e; color:#fecdd3; }
+  .cell.locked { border-style:dashed; border-color:#3f3f52; color:#8b93a7; }
+  .cell.locked.derived { border-style:solid; border-color:#e11d48; color:#fda4af; background:#1b0810; }
 
   /* "Coming Soon" preview strip — chips shimmer in glare mode until launch */
   .comingWrap { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:8px; margin-top:12px; padding-top:10px; border-top:1px dashed #333; }
@@ -742,7 +748,7 @@
 
 <div class="titleCard">
   <h1>🐒🎲 MathMatrix Pro++</h1>
-  <div style="text-align:center; font-size:12px; font-weight:700; margin-top:4px; letter-spacing:.4px; line-height:1.5;">🐒 Kids Puzzle · for 5th grade &amp; up<br><span class="tagline">“Maths and monkeys — neither sits in one direction.”</span><br><span style="color:#4ade80;">Now playing:</span> <span id="nowPlaying" style="color:#8ab4f8;"><span class="np" data-np="3x3">3×3</span> · <span class="np" data-np="4x4">4×4</span> · <span class="np" data-np="5x5">5×5</span> · <span class="np" data-np="6x6">6×6</span> · <span class="np" data-np="8x8">8×8</span> · <span class="np" data-np="10x10">10×10</span> · <span class="np" data-np="3cube">3³</span></span><br><span style="color:#4ade80;">👶 New here? Tap ▶ Watch Me Solve to see a sample, then pick any level in the table below.</span><br><span style="color:#fbbf24;">🔄 Once you know it: rotate or mirror any solution — 8 twins — for endless new puzzles!</span></div>
+  <div style="text-align:center; font-size:12px; font-weight:700; margin-top:4px; letter-spacing:.4px; line-height:1.5;">🐒 Kids Puzzle · for 5th grade &amp; up<br><span class="tagline">“Maths and monkeys — neither sits in one direction.”</span><br><span style="color:#4ade80;">Now playing:</span> <span id="nowPlaying" style="color:#8ab4f8;"><span class="np" data-np="3x3">3×3</span> · <span class="np" data-np="4x4">4×4</span> · <span class="np" data-np="5x5">5×5</span> · <span class="np" data-np="6x6">6×6</span> · <span class="np" data-np="8x8">8×8</span> · <span class="np" data-np="10x10">10×10</span> · <span class="np" data-np="3cube">3³</span> · <span class="np" data-np="ramanujan">🎂</span></span><br><span style="color:#4ade80;">👶 New here? Tap ▶ Watch Me Solve to see a sample, then pick any level in the table below.</span><br><span style="color:#fbbf24;">🔄 Once you know it: rotate or mirror any solution — 8 twins — for endless new puzzles!</span></div>
 </div>
 <div class="targetPill" id="targetPill">🎯 Target : <span id="targetVal">?</span></div>
 
@@ -832,6 +838,7 @@
     <button class="toggleBtn" data-size="8x8" style="color:#a5b4fc; border-color:#6366f1;">8×8 (Champion)</button>
     <button class="toggleBtn" data-size="10x10" style="color:#f9a8d4; border-color:#db2777;">10×10 (Grandmaster)</button>
     <button class="toggleBtn" id="mult3Tab" data-size="3cube" style="color:#fbbf24; border-color:#f59e0b;">3³ (×)</button>
+    <button class="toggleBtn" data-size="ramanujan" style="color:#fda4af; border-color:#e11d48;">🎂 Ramanujan</button>
   </div>
 
   <div class="comingWrap">
@@ -978,6 +985,22 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       rows: 3,
       cols: 3,
       inst: '<b>Multiply Magic!</b> Fill 3×3 — every row, column and diagonal must MULTIPLY to the SAME. Set the center first → target = center³. ✖️'
+    },
+    // Ramanujan's birthday square: you type only the TOP row (DD·MM·CC·YY) and the
+    // other 12 cells follow fixed offsets that all cancel out — so EVERY line lands
+    // on your own total. Verified for any first row.
+    'ramanujan': {
+      mode: 'birthday',
+      example: [
+        [22, 12, 18, 87],
+        [88, 17,  9, 25],
+        [10, 24, 89, 16],
+        [19, 86, 23, 11]
+      ],
+      lines: ['r0','r1','r2','r3','c0','c1','c2','c3','d1','d2'],
+      rows: 4,
+      cols: 4,
+      inst: '<b>Sir Ramanujan Math Magic!</b> Type any date of birth in the TOP row — DD · MM · CC · YY — and the rest of the square fills itself. Every row, column and diagonal becomes YOUR total. 🎂'
     }
   };
   
@@ -994,6 +1017,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   var solvedTargets8x8 = []; // Track different targets used
   var solvedCount10x10 = 0; // Track 10x10 solves
   var solvedTargets10x10 = []; // Track different targets used
+  var solvedCountRam = 0; // Track Ramanujan birthday squares made
+  var solvedTargetsRam = []; // different birthday totals
   var solvedCount3cube = 0; // Track 3³ multiply solves
   var solvedTargets3cube = []; // Track different targets used
   var board = document.getElementById('board');
@@ -1200,6 +1225,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       cells[2][2].classList.add('center-heart');
       cells[0][2].classList.add('center-ref');
       cells[4][2].classList.add('center-ref');
+    } else if (currentSize === 'ramanujan') {
+      // only the date row is typed; the 12 cells below are computed and locked
+      for (var bc = 0; bc < 4; bc++) cells[0][bc].classList.add('anchor');
+      for (var br = 1; br < 4; br++) for (var bc2 = 0; bc2 < 4; bc2++){
+        cells[br][bc2].readOnly = true;
+        cells[br][bc2].classList.add('locked');
+      }
     } else if (currentSize === '6x6') {
       // swap PAIR groups, two shades: block A cells (teal) ↔ block D cells (violet)
       [[0,0],[1,1],[2,0]].forEach(function(p){ cells[p[0]][p[1]].classList.add('swapA'); });  // block A group
@@ -1433,6 +1465,22 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         <p><b>🚀 Try other families!</b> Powers of 3 (1, 3, 9, 27, 81 …) or any geometric run work the same way — only the numbers change.</p>
         <p><b>💡 The Magic:</b> It is the addition square's twin — swap "+" for "×" and "center × 3" for "center³". Same shape, new operation! ✖️</p>
       `;
+    } else if (currentSize === 'ramanujan') {
+      document.getElementById('logicBox').innerHTML = `
+        <h3>📐 Sir Ramanujan's Birthday Magic Square</h3>
+        <button onclick="openCheat('cheat-ramanujan.jpg')" style="background:linear-gradient(135deg,#f093fb,#f5576c); color:#fff; border:none; border-radius:10px; padding:10px 18px; font-size:15px; font-weight:700; cursor:pointer; margin:6px 0 12px;">📋 See the Full Formula</button>
+        <p>Srinivasa Ramanujan (1887–1920), India's self-taught genius, built a 4×4 square from his own birth date <b>22-12-1887</b> — and every line adds to <b>139</b>.</p>
+        <p><b>The Secret Structure:</b></p>
+        <ol style="margin: 10px 0; padding-left: 20px;">
+          <li><b>You type only the top row:</b> <b>DD · MM · CC · YY</b> (day, month, century, year). For Ramanujan: 22 · 12 · 18 · 87.</li>
+          <li><b>The other 12 boxes follow a fixed recipe</b> — each is one of your four numbers, nudged up or down:
+            <br><span style="font-size:0.95em; opacity:.9;">Row 2: YY+1 · CC−1 · MM−3 · DD+3<br>Row 3: MM−2 · DD+2 · YY+2 · CC−2<br>Row 4: CC+1 · YY−1 · DD+1 · MM−1</span></li>
+          <li><b>Why it always works:</b> look at the nudges on each row — <b>+1−1−3+3 = 0</b>, <b>−2+2+2−2 = 0</b>, <b>+1−1+1−1 = 0</b>. They cancel out! So every line comes back to your own total, DD+MM+CC+YY.</li>
+          <li><b>It works for ANY four numbers</b> — your birthday, a friend's, any date at all. The magic is in the recipe, not the numbers.</li>
+        </ol>
+        <p><b>🎁 There is more!</b> Besides the 4 rows, 4 columns and 2 diagonals, the same total also hides in the <b>4 corners</b>, all four <b>2×2 corner blocks</b>, the <b>centre 2×2</b>, and the middle pairs of the outer rows and columns — <b>18 magic groups in all</b> (an ordinary 4×4 has only 10).</p>
+        <p><b>💡 Try it:</b> type your own birthday, then your friend's — each person gets their own magic number. 🎂</p>
+      `;
     }
 
     var n = puzzle.rows;
@@ -1527,6 +1575,24 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
   // Mode-aware line total: ADD sizes sum a line; the 3³ MULTIPLY size takes the product.
   function isMul(){ return PUZZLES[currentSize].mode === 'multiply'; }
+  function isBirthday(){ return PUZZLES[currentSize].mode === 'birthday'; }
+
+  // Ramanujan's rule: the 12 cells under the typed date follow fixed offsets whose
+  // sum is zero on every line, so each line returns to DD+MM+CC+YY.
+  function fillRamanujan(){
+    var DD = val(0,0), MM = val(0,1), CC = val(0,2), YY = val(0,3);
+    var ready = DD !== null && MM !== null && CC !== null && YY !== null;
+    var rows = ready ? [
+      [YY+1, CC-1, MM-3, DD+3],
+      [MM-2, DD+2, YY+2, CC-2],
+      [CC+1, YY-1, DD+1, MM-1]
+    ] : null;
+    for (var r = 1; r < 4; r++) for (var c = 0; c < 4; c++){
+      if (!cells[r] || !cells[r][c]) continue;
+      cells[r][c].value = ready ? String(rows[r-1][c]) : '';
+      cells[r][c].classList.toggle('derived', ready);
+    }
+  }
   function lineValue(arr){
     return isMul() ? arr.reduce(function(a, b){ return a * b; }, 1)
                    : arr.reduce(function(a, b){ return a + b; }, 0);
@@ -1588,6 +1654,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     else if (currentSize === '8x8') n = solvedCount8x8;
     else if (currentSize === '10x10') n = solvedCount10x10;
     else if (currentSize === '3cube') n = solvedCount3cube;
+    else if (currentSize === 'ramanujan') n = solvedCountRam;
     else n = solvedCount3x3;
     solvedCounter.style.display = 'block';
     solvedCounter.classList.toggle('unlocked', n >= 2);
@@ -1637,13 +1704,16 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     if (solvedFlag) return;
     var puzzle = PUZZLES[currentSize];
     
-    // Duplicate detection
+    // Duplicate detection — skipped for the birthday square, where a date can
+    // legitimately produce two equal numbers (e.g. DD+3 matching another cell).
     var seen = {}, dups = {};
-    for (var r = 0; r < puzzle.rows; r++) for (var c = 0; c < puzzle.cols; c++){
-      var v = val(r, c);
-      if (v === null) continue;
-      if (seen[v] !== undefined) dups[v] = true;
-      seen[v] = true;
+    if (!isBirthday()){
+      for (var r = 0; r < puzzle.rows; r++) for (var c = 0; c < puzzle.cols; c++){
+        var v = val(r, c);
+        if (v === null) continue;
+        if (seen[v] !== undefined) dups[v] = true;
+        seen[v] = true;
+      }
     }
     
     for (var r2 = 0; r2 < puzzle.rows; r2++) for (var c2 = 0; c2 < puzzle.cols; c2++){
@@ -1869,9 +1939,20 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           msg.textContent = '⚠️ You already solved with target ' + actualTarget + '! Try a DIFFERENT center!';
         }, 1500);
       }
+    } else if (currentSize === 'ramanujan') {
+      if (solvedTargetsRam.indexOf(actualTarget) === -1) {
+        solvedTargetsRam.push(actualTarget);
+        solvedCountRam = solvedTargetsRam.length;
+        refreshCounter();
+      }
+      setTimeout(function(){
+        msg.innerHTML = '🎂 Your magic number is <b>' + actualTarget + '</b> — and it hides in <b>18</b> places: ' +
+                        'every row, column, diagonal, the 4 corners, all four 2×2 blocks and the centre! ✨';
+        msg.className = 'win';
+      }, 1400);
     }
   }
-  
+
   function showCongrats(title, subtitle){
     var modal = document.getElementById('congratsModal');
     document.getElementById('congratsText').textContent = title + ' ' + subtitle;
@@ -1923,9 +2004,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
   // The cell the keypad should act on (active one, else first empty, else first cell)
   function currentCell(){
-    if (activeCell && activeCell.parentNode) return activeCell;
+    if (activeCell && activeCell.parentNode && !activeCell.readOnly) return activeCell;
     for (var r = 0; r < cells.length; r++) for (var c = 0; c < cells[r].length; c++)
-      if (cells[r][c].value === '') return cells[r][c];
+      if (cells[r][c].value === '' && !cells[r][c].readOnly) return cells[r][c];
     return cells[0] && cells[0][0];
   }
 
@@ -1937,7 +2018,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     for (var k = 0; k < total; k++){
       var idx = (start + k) % total;
       var r = (idx / pz.cols) | 0, c = idx % pz.cols;
-      if (cells[r] && cells[r][c] && cells[r][c].value === ''){
+      if (cells[r] && cells[r][c] && cells[r][c].value === '' && !cells[r][c].readOnly){
         setActive(cells[r][c]);
         if (useSysKb) cells[r][c].focus();
         return;
@@ -1957,6 +2038,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     cell.value = cell.value.replace(/[^0-9]/g, '');
     if (cell.value !== '') sfx('place');   // snappy pop as a number lands
     duckMusic();                           // soften the music while numbers are being entered
+    if (isBirthday()) fillRamanujan();     // the rest of the square writes itself
     startTimer();
     update();
     // The cursor STAYS on this cell so any number can be typed (22, 333, 4444…).
@@ -2137,7 +2219,11 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     var order = [];
     var keptCount = 0;
     var dualPass = (currentSize === '4x4' || currentSize === '8x8');
-    if (dualPass) {
+    if (isBirthday()) {
+      // type Ramanujan's own date across the top row; the 12 cells below appear by themselves
+      for (var bc = 0; bc < Cc; bc++) order.push([0, bc]);
+      N = Cc;
+    } else if (dualPass) {
       for (var pr = 0; pr < R; pr++) for (var pc = 0; pc < Cc; pc++)
         if (puzzle.example[pr][pc] === pr * Cc + pc + 1) { order.push([pr, pc]); keptCount++; }   // Pass 1: keep (top→bottom)
       for (var fr = R - 1; fr >= 0; fr--) for (var fc = Cc - 1; fc >= 0; fc--)
@@ -2149,11 +2235,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     }
     var flipSum = N + 1;   // partner sum for the demo grid: 17 for 4×4, 65 for 8×8
     // slow, mind-mapping pace on the small sizes; scale down on the big grids so the demo stays ~18–20s
-    var delay = currentSize === '10x10' ? 500 : currentSize === '8x8' ? 430 : currentSize === '6x6' ? 500 : 1100;
+    var delay = isBirthday() ? 950 : currentSize === '10x10' ? 500 : currentSize === '8x8' ? 430 : currentSize === '6x6' ? 500 : 1100;
     var i = 0;
-    msg.textContent = dualPass
-      ? '▶ Step 1 — write the START sequence, keep these going down…'
-      : '▶ Watch how the ' + currentSize.replace('x','×') + ' builds itself…';
+    msg.textContent = isBirthday()
+      ? '▶ Typing Ramanujan’s birthday 22-12-1887 — watch the rest appear…'
+      : dualPass
+        ? '▶ Step 1 — write the START sequence, keep these going down…'
+        : '▶ Watch how the ' + currentSize.replace('x','×') + ' builds itself…';
     msg.className = '';
     watchIv = setInterval(function(){
       if (i >= N){
@@ -2177,6 +2265,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         void cell.offsetWidth;       // restart the drop animation
         cell.classList.add('placing');
         sfx('tick');                 // soft tick as each number drops in
+        if (isBirthday()) fillRamanujan();   // the square completes itself once all 4 dates are in
         update();
       }
       i++;
@@ -2306,7 +2395,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'v106';
+  var BUILD_VER = 'v107';
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
