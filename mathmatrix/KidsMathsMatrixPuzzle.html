@@ -728,6 +728,33 @@
   @keyframes glare { 0% { left:-70%; } 55%, 100% { left:130%; } }
   @media (prefers-reduced-motion: reduce){ .comingChip::after { animation:none; } }
 
+
+  /* ---- Binary Number Guess ---- */
+  #binaryPanel { width:100%; max-width:560px; margin:0 auto 6px; padding:0 10px; box-sizing:border-box; }
+  .binBlock { border:2px solid #2f7ff0; border-radius:12px; background:#141a2e; padding:10px; margin-bottom:12px; }
+  .binBlockTitle { text-align:center; font-size:14px; font-weight:800; color:#8ab4f8; margin-bottom:8px; }
+  .binGrid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .binCard {
+    text-align:left; border:2px solid #3f3f52; border-radius:10px; background:#0f1424;
+    color:#9aa; padding:8px 9px; cursor:pointer; font-family:inherit;
+    -webkit-tap-highlight-color:transparent; transition:all .15s ease;
+  }
+  .binCard .binHead { font-size:13px; font-weight:900; color:#cbd5e1; margin-bottom:4px; }
+  .binCard .binNums { font-size:10.5px; line-height:1.45; color:#7f8aa3; word-spacing:1px; }
+  .binCard.on { border-color:#22c55e; background:#06281a; box-shadow:0 0 10px rgba(34,197,94,.35); }
+  .binCard.on .binHead { color:#4ade80; }
+  .binCard.on .binNums { color:#a7f3d0; }
+  #binaryReadout {
+    text-align:center; border:2px solid #f59e0b; border-radius:12px; background:#1a1206;
+    padding:12px; font-weight:800; color:#fbbf24; font-size:16px; line-height:1.6;
+  }
+  #binaryReadout .big { font-size:34px; color:#fde047; display:block; margin-top:4px; }
+  #binaryReadout .bits { font-family:ui-monospace,Menlo,Consolas,monospace; color:#8ab4f8; font-size:15px; }
+  @media (min-width:480px){
+    .binCard .binNums { font-size:12px; }
+    .binCard .binHead { font-size:14px; }
+  }
+
   /* Tagline — glowing gradient that drifts slowly across the words */
   .tagline {
     display:inline-block; max-width:100%;
@@ -775,7 +802,7 @@
 
 <div class="titleCard">
   <h1>🐒🎲 MathMatrix Pro++</h1>
-  <div style="text-align:center; font-size:12px; font-weight:700; margin-top:4px; letter-spacing:.4px; line-height:1.5;">🐒 Kids Puzzle · for 5th grade &amp; up<br><span class="tagline">“Maths and monkeys — neither sits in one direction.”</span><br><span style="color:#4ade80;">Now playing:</span> <span id="nowPlaying" style="color:#8ab4f8;"><span class="np" data-np="3x3">3×3</span> · <span class="np" data-np="4x4">4×4</span> · <span class="np" data-np="5x5">5×5</span> · <span class="np" data-np="6x6">6×6</span> · <span class="np" data-np="8x8">8×8</span> · <span class="np" data-np="10x10">10×10</span> · <span class="np" data-np="3cube">3³</span> · <span class="np" data-np="ramanujan">🎂 Sir Ramanujan MathMagic</span></span><br><span style="color:#4ade80;">👶 New here? Tap ▶ Watch Me Solve to see a sample, then pick any level in the table below.</span><br><span style="color:#fbbf24;">🔄 Once you know it: rotate or mirror any solution — 8 twins — for endless new puzzles!</span></div>
+  <div style="text-align:center; font-size:12px; font-weight:700; margin-top:4px; letter-spacing:.4px; line-height:1.5;">🐒 Kids Puzzle · for 5th grade &amp; up<br><span class="tagline">“Maths and monkeys — neither sits in one direction.”</span><br><span style="color:#4ade80;">Now playing:</span> <span id="nowPlaying" style="color:#8ab4f8;"><span class="np" data-np="3x3">3×3</span> · <span class="np" data-np="4x4">4×4</span> · <span class="np" data-np="5x5">5×5</span> · <span class="np" data-np="6x6">6×6</span> · <span class="np" data-np="8x8">8×8</span> · <span class="np" data-np="10x10">10×10</span> · <span class="np" data-np="3cube">3³</span> · <span class="np" data-np="ramanujan">🎂 Sir Ramanujan MathMagic</span> · <span class="np" data-np="binary">🔢 Binary Guess</span></span><br><span style="color:#4ade80;">👶 New here? Tap ▶ Watch Me Solve to see a sample, then pick any level in the table below.</span><br><span style="color:#fbbf24;">🔄 Once you know it: rotate or mirror any solution — 8 twins — for endless new puzzles!</span></div>
 </div>
 <div class="targetPill" id="targetPill">🎯 Target : <span id="targetVal">?</span></div>
 
@@ -785,14 +812,23 @@
 <div class="instCard" id="instCard"></div>
 
 <!-- Learn-first row: sits ABOVE the table so a beginner sees "watch a sample" before playing -->
-<div class="btnRow">
+<div class="btnRow" id="learnRow">
   <button id="peekBtn">👁 SHOW</button>
   <button id="watchBtn">▶ Watch Me Solve</button>
 </div>
-<div style="text-align:center; font-size:14px; color:#888; margin:-4px 0 10px;">👶 New? Watch a sample first — SHOW reveals the solved table for 3 seconds</div>
+<div id="learnHint" style="text-align:center; font-size:14px; color:#888; margin:-4px 0 10px;">👶 New? Watch a sample first — SHOW reveals the solved table for 3 seconds</div>
 
-<div class="boardContainer">
+<div class="boardContainer" id="boardWrap">
   <div class="board" id="board"></div>
+</div>
+
+<!-- Binary Number Guess: 8 switch cards, tens = bits 8·4·2·1, units = bits 8·4·2·1 -->
+<div id="binaryPanel" style="display:none;">
+  <div id="binaryBlocks"></div>
+  <div id="binaryReadout"></div>
+  <div style="text-align:center; margin:10px 0 4px;">
+    <button id="binaryClear" style="background:transparent; border:2px solid #ef4444; color:#ef4444; border-radius:10px; padding:8px 20px; font-size:15px; font-weight:800; cursor:pointer;">↺ Start again</button>
+  </div>
 </div>
 
 <div id="rotateHint">📱 Turn your phone sideways for a much bigger board (scroll down to see it all)</div>
@@ -813,7 +849,7 @@
   </div>
 </div>
 
-<div class="btnRow">
+<div class="btnRow" id="playRow">
   <button id="clearBtn">CLEAR</button>
   <div id="timerBox">00:00</div>
 </div>
@@ -867,6 +903,7 @@
     <button class="toggleBtn" data-size="10x10" style="color:#e879f9; border-color:#c026d3;">10×10 (Grandmaster)</button>
     <button class="toggleBtn" id="mult3Tab" data-size="3cube" style="color:#fbbf24; border-color:#f59e0b;">3³ (×)</button>
     <button class="toggleBtn" data-size="ramanujan" style="color:#fb7185; border-color:#e11d48;">🎂 Sir Ramanujan MathMagic</button>
+    <button class="toggleBtn" data-size="binary" style="color:#fcd34d; border-color:#84cc16;">🔢 Binary Number Guess</button>
   </div>
   </div>
 
@@ -1212,6 +1249,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       var newSize = this.dataset.size;
       document.querySelectorAll('.toggleBtn').forEach(function(b){ b.classList.remove('active'); });
       this.classList.add('active');
+      if (newSize === 'binary'){          // card game, not a grid puzzle
+        currentSize = newSize;
+        showBinaryMode(true);
+        highlightNowPlaying();
+        return;
+      }
+      if (currentSize === 'binary') showBinaryMode(false);   // coming back to the grids
       if (newSize !== currentSize) {
         currentSize = newSize;
         initBoard();
@@ -2033,6 +2077,99 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     return s;
   }
   
+
+  // ---------- Binary Number Guess ----------
+  // Switches 1-4 carry the TENS digit as binary bits 8,4,2,1; switches 5-8 do the
+  // same for the UNITS digit. Lists are GENERATED from that rule (the printed
+  // magazine table has typos: it shows 36 and 92 inside the odd-units switch).
+  var BIN_W = [8,4,2,1];
+  var binOn = [false,false,false,false,false,false,false,false];
+
+  function binMembers(sw){          // sw = 1..8
+    var w = BIN_W[(sw-1) % 4], tens = sw <= 4, out = [];
+    for (var n = 1; n <= 99; n++){
+      var d = tens ? Math.floor(n/10) : (n % 10);
+      if (d & w) out.push(n);
+    }
+    return out;
+  }
+
+  function buildBinary(){
+    var host = document.getElementById('binaryBlocks');
+    if (!host || host.dataset.built) return;
+    var html = '';
+    [[1,'FIRST digit (tens)'],[5,'SECOND digit (units)']].forEach(function(blk){
+      var start = blk[0];
+      html += '<div class="binBlock"><div class="binBlockTitle">' + blk[1] + ' — bits 8 · 4 · 2 · 1</div><div class="binGrid">';
+      for (var i = 0; i < 4; i++){
+        var sw = start + i, nums = binMembers(sw);
+        html += '<button type="button" class="binCard" data-sw="' + sw + '">' +
+                  '<span class="binHead">Box ' + sw + ' <span style="opacity:.7">(' + BIN_W[i] + ')</span></span>' +
+                  '<span class="binNums">' + nums.join(' ') + '</span>' +
+                '</button>';
+      }
+      html += '</div></div>';
+    });
+    host.innerHTML = html;
+    host.dataset.built = '1';
+    host.addEventListener('click', function(e){
+      var b = e.target.closest ? e.target.closest('.binCard') : null;
+      if (!b) return;
+      var sw = +b.dataset.sw;
+      binOn[sw-1] = !binOn[sw-1];
+      b.classList.toggle('on', binOn[sw-1]);
+      if (soundOn) ensureAudio();
+      sfx(binOn[sw-1] ? 'line' : 'place');
+      binaryReadout();
+    });
+  }
+
+  function binaryReadout(){
+    var el = document.getElementById('binaryReadout');
+    if (!el) return;
+    var tens = 0, units = 0;
+    for (var i = 0; i < 4; i++) if (binOn[i]) tens  += BIN_W[i];
+    for (var j = 4; j < 8; j++) if (binOn[j]) units += BIN_W[j-4];
+    var n = tens * 10 + units;
+    var bits = function(v){ return ((v & 8)?1:0) + '' + ((v & 4)?1:0) + ((v & 2)?1:0) + ((v & 1)?1:0); };
+    if (n === 0){
+      el.innerHTML = 'Think of a number from <b>1 to 99</b>.<br>Tap every box your number appears in…';
+      return;
+    }
+    el.innerHTML = 'tens <span class="bits">' + bits(tens) + '</span> = ' + tens +
+                   ' &nbsp;·&nbsp; units <span class="bits">' + bits(units) + '</span> = ' + units +
+                   '<span class="big">Your number is ' + n + '! 🎉</span>';
+    if (n !== binaryReadout.last){
+      binaryReadout.last = n;
+      sfx('win'); celebrate();
+    }
+  }
+
+  function resetBinary(){
+    binOn = [false,false,false,false,false,false,false,false];
+    binaryReadout.last = null;
+    var cards = document.querySelectorAll('#binaryPanel .binCard');
+    for (var i = 0; i < cards.length; i++) cards[i].classList.remove('on');
+    binaryReadout();
+  }
+
+  // Swap the whole puzzle UI for the binary panel (and back)
+  function showBinaryMode(on){
+    ['targetPill','solvedCounter','learnRow','learnHint','boardWrap','rotateHint','keypad','playRow']
+      .forEach(function(id){
+        var el = document.getElementById(id);
+        if (el) el.style.display = on ? 'none' : '';
+      });
+    var bp = document.getElementById('binaryPanel');
+    if (bp) bp.style.display = on ? 'block' : 'none';
+    if (on){
+      stopDemos();
+      instCard.innerHTML = '<b>Binary Number Guess!</b> Think of a number from <b>1 to 99</b> and tap every box it appears in — the binary bits will name your number. 🔢';
+      buildBinary(); resetBinary();
+      document.getElementById('binaryClear').onclick = resetBinary;
+    }
+  }
+
   // Mark a cell as the active keypad target (bright .cursor highlight)
   function setActive(cell){
     if (!cell) return;
@@ -2446,7 +2583,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'v117';
+  var BUILD_VER = 'v118';
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
