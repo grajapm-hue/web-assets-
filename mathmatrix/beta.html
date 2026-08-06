@@ -1412,10 +1412,13 @@ body.onPlay .solvedCounter{ font-size:9px !important; padding:3px 9px !important
 .mrHead{ flex:none; display:flex; align-items:baseline; justify-content:space-between; margin-bottom:7px; }
 .mrHead b{ font-size:13px; font-weight:900; }
 .mrHead span{ font-size:9px; color:var(--bink3); font-weight:700; }
-.mrNums{ flex:1; min-height:0; display:grid; grid-template-columns:repeat(6,1fr); gap:4px;
-  align-content:start; overflow:hidden; }
-.mrNums span{ background:#120C34; border-radius:8px; padding:5px 1px; text-align:center; font-size:11.5px;
-  font-weight:800; font-variant-numeric:tabular-nums; box-shadow:var(--sunk); color:var(--bink); }
+/* all 50 numbers must fit; auto-fit columns keep them legible on any width,
+   and overflow-y is a safety net so a number can never be hidden */
+.mrNums{ flex:1; min-height:0; display:grid; gap:3px; align-content:start; overflow-y:auto;
+  grid-template-columns:repeat(auto-fill, minmax(30px, 1fr)); }
+.mrNums span{ background:#120C34; border-radius:6px; padding:3px 1px; text-align:center; font-size:10.5px;
+  font-weight:800; font-variant-numeric:tabular-nums; box-shadow:var(--sunk); color:var(--bink);
+  line-height:1.35; }
 .mrMore{ flex:none; text-align:center; font-size:9.5px; color:var(--bink3); margin-top:6px; font-weight:700; }
 .mrYN{ flex:none; display:flex; gap:8px; margin-top:9px; }
 .mrYN button{ flex:1; border:0; font-family:inherit; cursor:pointer; font-size:15px; font-weight:900;
@@ -2692,6 +2695,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   // (10×10 most of all) becomes far bigger; the page then scrolls vertically.
   function fitBoard(){
     var pz = PUZZLES[currentSize];
+    // The Mind Reader is a card game with no grid, so its entry has no .rows.
+    // Guarded HERE, at the source: the resize listener captured this function by
+    // reference before it was wrapped, so guarding only the wrapper missed it.
+    if (!pz || !pz.rows) return;
     var tracks = pz.rows + 2;                       // grid cells + the badge ring
     var gap = tracks >= 10 ? 2 : tracks >= 8 ? 3 : 6;
     var vw = document.documentElement.clientWidth || window.innerWidth || 360;
@@ -4049,10 +4056,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   /* ---- 6. the board fills the leftover box — width AND height ---- */
   var _fitBoard = fitBoard;
   fitBoard = function(){
-    _fitBoard.apply(null, arguments);          // keep every existing side effect
+    // The Mind Reader has no grid, so PUZZLES['binary'] has no .rows — the original
+    // fitBoard reads pz.rows unguarded and threw on every resize while it was open.
     var pz = PUZZLES[currentSize];
+    if (!pz || !pz.rows) return;
+    _fitBoard.apply(null, arguments);          // keep every existing side effect
     var box = document.getElementById('boardWrap');
-    if (!pz || !box || !pz.rows) return;
+    if (!box) return;
     var tracks = pz.rows + 2;
     var gap = tracks >= 10 ? 2 : tracks >= 8 ? 3 : 5;
     var w = box.clientWidth, h = box.clientHeight;
@@ -4187,7 +4197,17 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
   /* ---- 10. THE MIND READER — one card at a time ---- */
   var MR = { step:0, answers:[], learn:0, secret:'' };
-  var MR_VALUES = [80,40,20,10,8,4,2,1];      // card 1..8, matching binMembers()
+  // Derived, not assumed: the SMALLEST number on a card is exactly its place value
+  // (card of 80s starts at 80, card of odd units starts at 1). Deriving it from the
+  // real card data means the decode cannot drift out of step with what is displayed.
+  var MR_VALUES = (function(){
+    var v = [];
+    for (var i = 1; i <= 8; i++){
+      var m = binMembers(i);
+      v.push(m.length ? Math.min.apply(null, m) : 0);
+    }
+    return v;
+  })();
   function mrEl(){ return document.getElementById('binaryPanel'); }
 
   function mrStart(){
@@ -4207,7 +4227,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
   function mrAsk(){
     if (MR.step >= 8) return mrReveal();
-    var i = MR.step, list = binMembers(i + 1), show = list.slice(0, 18);
+    // EVERY number must be visible. Card 4 and card 8 hold 50 numbers each; showing
+    // a subset made children answer "no" for a number that was simply off-screen,
+    // which is why the guess came out wrong every time.
+    var i = MR.step, list = binMembers(i + 1), show = list;
     kimo('Is your number on <b>this</b> card?', 'think', true);
     mrEl().innerHTML =
       '<div class="mrWrap">' +
@@ -4218,7 +4241,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         '<div class="mrCard mrQcard" id="mrCard">' +
           '<div class="mrHead"><b>Card ' + (i + 1) + '</b><span>value hidden 🔒</span></div>' +
           '<div class="mrNums">' + show.map(function(n){ return '<span>' + n + '</span>'; }).join('') + '</div>' +
-          '<div class="mrMore">…and ' + (list.length - show.length) + ' more</div>' +
+          '<div class="mrMore">all ' + list.length + ' numbers on this card</div>' +
         '</div>' +
         '<div class="mrYN"><button class="mrNo" data-a="0">✗ No</button>' +
           '<button class="mrYes" data-a="1">✓ Yes</button></div>' +
@@ -4371,10 +4394,19 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     }
   }
 
-  // hook the Mind Reader in wherever binary mode is entered
+  // hook the Mind Reader in wherever binary mode is entered.
+  // The original showBinaryMode wires handlers onto elements INSIDE #binaryPanel, which
+  // mrStart() replaces. On a second visit those lookups returned null and it threw before
+  // the Mind Reader could render — so restore the pristine markup first, every time.
+  var BIN_ORIGINAL = (function(){
+    var p = document.getElementById('binaryPanel');
+    return p ? p.innerHTML : '';
+  })();
   var _showBinaryMode = showBinaryMode;
   showBinaryMode = function(on){
-    _showBinaryMode(on);
+    var p = document.getElementById('binaryPanel');
+    if (p && on) p.innerHTML = BIN_ORIGINAL;
+    try { _showBinaryMode(on); } catch(e){}
     if (on) mrStart();
   };
   if (currentSize === 'binary') mrStart();
