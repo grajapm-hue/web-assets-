@@ -1283,6 +1283,16 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   function refreshMusicBtn(){
     var b = document.getElementById('musicBtn');
     if (!b) return;
+    if (!soundOn){
+      // Master sound is OFF, so music cannot play — say so instead of a
+      // misleading "ON". The stored 🎵 preference is untouched underneath.
+      b.textContent = '🎵 Music: OFF';
+      b.style.borderColor = '#444'; b.style.color = '#666';
+      b.disabled = true; b.style.opacity = '.6';
+      b.title = 'Turn Sound on first';
+      return;
+    }
+    b.disabled = false; b.style.opacity = '1'; b.title = '';
     b.textContent = musicOn ? '🎵 Music: ON' : '🎵 Music: OFF';
     b.style.borderColor = musicOn ? '#22c55e' : '#666';
     b.style.color = musicOn ? '#4ade80' : '#888';
@@ -2793,6 +2803,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     soundOn = !soundOn;
     localStorage.setItem('mmSound', soundOn ? 'on' : 'off');
     refreshSoundBtn();
+    refreshMusicBtn();   // music label mirrors the master state instantly
     if (soundOn){
       ensureAudio(); sfx('line');   // little confirmation blip when turned on
       if (musicOn) ensureMusic();   // music resumes if its own toggle is still ON
@@ -2902,7 +2913,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'v125';
+  var BUILD_VER = 'v126';
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
