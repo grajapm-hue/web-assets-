@@ -761,23 +761,72 @@
   .convClear:active { background:#475569; }
 
 
-  /* ---- Day theme: muted grey — no glaring white, so the light chrome sits
-     calmly BESIDE the dark game tables instead of fighting them ---- */
-  body.day { background:#c3ccd8; color:#1e2938; }
-  body.day .instCard { background:#dde3ec; color:#1e2938; }
-  body.day #logicBox { background:#dde3ec; color:#2b3648; }
-  body.day #logicBox ol, body.day #logicBox li, body.day #logicBox ul, body.day #logicBox p { color:#2b3648; }
-  body.day #logicBox b { color:#0e5f8a; }
-  body.day #logicBox h3 { color:#6d28d9; }
-  body.day #logicBox p[style*="background"] { background:#cdd5e0 !important; color:#2b3648; }
-  body.day .journeyNote { background:#dde3ec; color:#46536a; border-color:#9aa8ba; }
-  body.day .journeyNote b { color:#1e2938; }
-  body.day #offlineBox { background:#dde3ec; color:#3a465c; }
-  body.day #offlineBox h3 { color:#0e5f8a; }
-  body.day .credit { color:#5c6a80; }
-  body.day #msg { color:#1e40af; }
-  body.day #themeBtn { border-color:#46536a; }
-  body.day #learnHint, body.day .comingLabel { color:#5c6a80; }
+
+  /* ════════ KID-FRIENDLY DECORATION LAYER (v134) ════════
+     Purely visual: clay depth, squish feedback and gentle motion.
+     Every colour, size and behaviour rule below this point is untouched. */
+
+  /* soft drifting colour blobs behind everything */
+  .blob{position:fixed; border-radius:50%; filter:blur(70px); opacity:.22; z-index:0; pointer-events:none;}
+  .blob-a{width:280px;height:280px;background:#ec4899; top:-90px;  left:-90px;  animation:blobDrift1 21s ease-in-out infinite;}
+  .blob-b{width:240px;height:240px;background:#8b5cf6; top:42%;    right:-100px;animation:blobDrift2 26s ease-in-out infinite;}
+  .blob-c{width:220px;height:220px;background:#22d3ee; bottom:-80px;left:22%;   animation:blobDrift1 31s ease-in-out infinite reverse;}
+  @keyframes blobDrift1{0%,100%{transform:translate(0,0)}50%{transform:translate(26px,30px)}}
+  @keyframes blobDrift2{0%,100%{transform:translate(0,0)}50%{transform:translate(-30px,20px)}}
+  body > *:not(.blob){position:relative; z-index:1;}
+
+  /* clay depth — light from top-left, shadow beneath, soft inner rim */
+  .cell, .toggleBtn, .kp, .btnRow button, #timerBox, .binCard, .comingChip, .convBit, .convDec{
+    box-shadow: 4px 4px 10px rgba(0,0,0,.42), -3px -3px 8px rgba(255,255,255,.05),
+                inset 1px 1px 2px rgba(255,255,255,.08), inset -2px -2px 4px rgba(0,0,0,.22) !important;
+  }
+  /* squish on press — like real silicone */
+  .cell, .toggleBtn, .kp, .btnRow button, .comingChip, .binCard, .convBit{
+    transition: transform .13s cubic-bezier(.34,1.56,.64,1), box-shadow .13s ease, background .2s ease;
+  }
+  .toggleBtn:active, .kp:active, .btnRow button:active, .binCard:active, .convBit:active{
+    transform: scale(.93) !important;
+    box-shadow: inset 4px 4px 9px rgba(0,0,0,.45), inset -2px -2px 6px rgba(255,255,255,.06) !important;
+  }
+  .cell:active{ transform: scale(.92) !important; }
+
+  /* rounder, friendlier corners */
+  .cell, .badge{ border-radius:14px !important; }
+  .kp, .toggleBtn{ border-radius:16px !important; }
+  .titleCard, .instCard, #logicBox, .difficultyBar, .binBlock{ border-radius:26px !important; }
+
+  /* the monkey in the title keeps bouncing */
+  .titleCard h1{ animation: titleFloat 3.4s cubic-bezier(.34,1.56,.64,1) infinite; }
+  @keyframes titleFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+
+  /* cards rise in on load, one after another */
+  .titleCard{ animation: riseIn .5s cubic-bezier(.34,1.56,.64,1) backwards; }
+  .targetPill{ animation: riseIn .5s cubic-bezier(.34,1.56,.64,1) .07s backwards; }
+  .solvedCounter{ animation: riseIn .5s cubic-bezier(.34,1.56,.64,1) .12s backwards; }
+  .instCard{ animation: riseIn .5s cubic-bezier(.34,1.56,.64,1) .17s backwards; }
+  .boardContainer{ animation: riseIn .55s cubic-bezier(.34,1.56,.64,1) .22s backwards; }
+  @keyframes riseIn{from{opacity:0; transform:translateY(16px) scale(.97)} to{opacity:1; transform:none}}
+
+  /* the target pill breathes while you are still hunting for it */
+  .targetPill{ transition: transform .3s cubic-bezier(.34,1.56,.64,1), background .3s ease; }
+  .targetPill.preview{ animation: pulseGlow 1.9s ease-in-out infinite; }
+  @keyframes pulseGlow{0%,100%{box-shadow:0 0 0 rgba(251,191,36,0)}50%{box-shadow:0 0 22px rgba(251,191,36,.55)}}
+  .targetPill.solved{ transform: scale(1.07); }
+
+  /* a finished cell flips into place */
+  .cell.win{ animation: winFlip .45s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes winFlip{from{transform:rotateY(80deg) scale(.85)} to{transform:none}}
+  /* a line that just hit its target gives a happy nudge */
+  .badge.full{ animation: badgePop .32s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes badgePop{0%{transform:scale(1)}55%{transform:scale(1.22)}100%{transform:scale(1)}}
+
+  /* selected level gets a soft halo so it reads instantly */
+  .toggleBtn.active{ box-shadow: 0 0 18px rgba(96,165,250,.55), inset 2px 2px 5px rgba(255,255,255,.10) !important; }
+
+  @media (prefers-reduced-motion: reduce){
+    .blob, .titleCard h1, .targetPill.preview{ animation:none !important; }
+    .titleCard, .targetPill, .solvedCounter, .instCard, .boardContainer, .cell.win, .badge.full{ animation:none !important; }
+  }
 
   /* ---- Binary Number Guess ---- */
   #binaryPanel { width:100%; max-width:560px; margin:0 auto 6px; padding:0 10px; box-sizing:border-box; }
@@ -864,13 +913,10 @@
 </style>
 </head>
 <body>
+<div class="blob blob-a"></div><div class="blob blob-b"></div><div class="blob blob-c"></div>
 
 <!-- Difficulty Toggle -->
 
-
-<div style="width:100%; max-width:560px; margin:0 auto 4px; padding:0 10px; box-sizing:border-box; text-align:right;">
-  <button id="themeBtn" style="background:transparent; border:2px solid #64748b; border-radius:9px; padding:5px 14px; font-size:13.5px; font-weight:800; color:inherit; cursor:pointer;">☀️ Day</button>
-</div>
 
 <div class="titleCard">
   <h1>🐒🎲 MathMatrix Pro++</h1>
@@ -2884,23 +2930,6 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   });
 
 
-  // ---- Day / Night theme (remembered; label shows what tapping switches to) ----
-  var dayMode = localStorage.getItem('mmTheme') === 'day';
-  function applyDayNight(){
-    document.body.classList.toggle('day', dayMode);
-    var b = document.getElementById('themeBtn');
-    if (b) b.textContent = dayMode ? '🌙 Night' : '☀️ Day';
-    var meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', dayMode ? '#c3ccd8' : '#101838');
-  }
-  applyDayNight();
-  document.getElementById('themeBtn').addEventListener('click', function(){
-    dayMode = !dayMode;
-    localStorage.setItem('mmTheme', dayMode ? 'day' : 'night');
-    applyDayNight();
-    sfx('place');
-  });
-
   // Sound on/off toggle (remembered across visits; the tap itself unlocks WebAudio)
   refreshSoundBtn();
   document.getElementById('soundBtn').addEventListener('click', function(){
@@ -3017,7 +3046,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'v133';
+  var BUILD_VER = 'v134';
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
