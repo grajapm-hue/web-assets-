@@ -1788,9 +1788,19 @@ body.onPlay .solvedCounter{ font-size:9px !important; padding:3px 9px !important
 </div>
 
 <script>
+/* ── Where the pictures and the music actually live ──────────────────────────
+   The beta is served from /beta/ but the images and the mp3 sit at the site
+   ROOT. Asking for 'cheat-3x3.png' from /beta/ resolves to /beta/cheat-3x3.png,
+   which does not exist — that is why the music was silent and every formula
+   sheet was blank. Everything is resolved through here instead, so the same
+   file works from /beta/, from the site root, and from a local folder. */
+function ASSET(name){
+  if (!name || /^(data:|blob:|https?:|\/|\.\.\/)/.test(name)) return name;
+  return (location.pathname.indexOf('/beta/') > -1) ? '../' + name : name;
+}
 function openCheat(src){
   var m=document.getElementById('cheatModal');
-  document.getElementById('cheatImg').src=src;
+  document.getElementById('cheatImg').src=ASSET(src);
   m.style.display='flex';
 }
 function closeCheat(){ document.getElementById('cheatModal').style.display='none'; }
@@ -2089,7 +2099,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   function ensureMusic(){
     if (!musicOn || !soundOn) return;   // 🔊 Sound is the MASTER: off = total silence (night play)
     if (!bgm){
-      bgm = new Audio('bgm-monkeys.mp3');
+      bgm = new Audio(ASSET('bgm-monkeys.mp3'));
       bgm.loop = true; bgm.preload = 'auto'; bgm.volume = 0;
     }
     wireBgmPan();
@@ -4147,7 +4157,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       var nm = lvl ? (lvl.dataset.name || 'this puzzle') : 'this puzzle';
       if (k === 'logic') openSheet('logic', '📐 How ' + nm + ' works');
       if (k === 'sheet'){
-        var src = CHEAT[currentSize];
+        var src = ASSET(CHEAT[currentSize]);
         openSheet('cheat', '📋 Formula sheet — ' + nm,
           '<p>The step diagram for this puzzle.</p>' +
           '<img src="' + src + '" alt="Formula sheet for ' + nm + '" ' +
@@ -4571,8 +4581,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-4 (hint ladder)';
-  window.BETA_VER = 'beta-4';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-5 (music + formula sheets fixed)';
+  window.BETA_VER = 'beta-5';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
