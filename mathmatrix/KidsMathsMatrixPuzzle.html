@@ -760,6 +760,23 @@
   }
   .convClear:active { background:#475569; }
 
+
+  /* ---- Day theme: light page & reading cards; the dark game tiles stay as-is ---- */
+  body.day { background:#eef2f7; color:#0f172a; }
+  body.day .instCard { background:#ffffff; color:#0f172a; }
+  body.day #logicBox { background:#ffffff; color:#1e293b; }
+  body.day #logicBox ol, body.day #logicBox li, body.day #logicBox ul, body.day #logicBox p { color:#1e293b; }
+  body.day #logicBox b { color:#0369a1; }
+  body.day #logicBox h3 { color:#7c3aed; }
+  body.day #logicBox p[style*="background"] { background:#f1f5f9 !important; color:#1e293b; }
+  body.day .journeyNote { background:#ffffff; color:#475569; border-color:#cbd5e1; }
+  body.day .journeyNote b { color:#0f172a; }
+  body.day #offlineBox { background:#ffffff; color:#334155; }
+  body.day #offlineBox h3 { color:#0369a1; }
+  body.day .credit { color:#64748b; }
+  body.day #msg { color:#1d4ed8; }
+  body.day #themeBtn { border-color:#475569; }
+
   /* ---- Binary Number Guess ---- */
   #binaryPanel { width:100%; max-width:560px; margin:0 auto 6px; padding:0 10px; box-sizing:border-box; }
   .binBlock { border:2px solid #2f7ff0; border-radius:12px; background:#141a2e; padding:10px; margin-bottom:12px; }
@@ -848,6 +865,10 @@
 
 <!-- Difficulty Toggle -->
 
+
+<div style="width:100%; max-width:560px; margin:0 auto 4px; padding:0 10px; box-sizing:border-box; text-align:right;">
+  <button id="themeBtn" style="background:transparent; border:2px solid #64748b; border-radius:9px; padding:5px 14px; font-size:13.5px; font-weight:800; color:inherit; cursor:pointer;">☀️ Day</button>
+</div>
 
 <div class="titleCard">
   <h1>🐒🎲 MathMatrix Pro++</h1>
@@ -2860,6 +2881,24 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     this.textContent = open ? '📐 Show Math Logic ▼' : '📐 Hide Math Logic ▲';
   });
 
+
+  // ---- Day / Night theme (remembered; label shows what tapping switches to) ----
+  var dayMode = localStorage.getItem('mmTheme') === 'day';
+  function applyDayNight(){
+    document.body.classList.toggle('day', dayMode);
+    var b = document.getElementById('themeBtn');
+    if (b) b.textContent = dayMode ? '🌙 Night' : '☀️ Day';
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', dayMode ? '#eef2f7' : '#101838');
+  }
+  applyDayNight();
+  document.getElementById('themeBtn').addEventListener('click', function(){
+    dayMode = !dayMode;
+    localStorage.setItem('mmTheme', dayMode ? 'day' : 'night');
+    applyDayNight();
+    sfx('place');
+  });
+
   // Sound on/off toggle (remembered across visits; the tap itself unlocks WebAudio)
   refreshSoundBtn();
   document.getElementById('soundBtn').addEventListener('click', function(){
@@ -2976,7 +3015,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'v131';
+  var BUILD_VER = 'v132';
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
