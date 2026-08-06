@@ -1473,6 +1473,15 @@ body.onPlay .solvedCounter{ font-size:9px !important; padding:3px 9px !important
 .mrRow2{ flex:none; display:flex; gap:7px; }
 .mrRow2 button{ flex:1; }
 
+/* ══ HINT LADDER ══ */
+#hintBtn{ background:var(--gold) !important; color:#1a1204 !important; }
+.cell.hintPoint{ box-shadow:0 0 0 3px var(--gold) !important; animation:hintPulse 1.3s ease-in-out infinite; }
+@keyframes hintPulse{ 0%,100%{ box-shadow:0 0 0 3px var(--gold) } 50%{ box-shadow:0 0 0 7px rgba(247,179,43,.34) } }
+.cell.hintGiven{ background:color-mix(in srgb, var(--gold) 30%, var(--sf2)) !important; }
+.hintDots{ display:inline-flex; gap:3px; margin-left:5px; vertical-align:middle; }
+.hintDots i{ width:5px; height:5px; border-radius:50%; background:rgba(255,255,255,.22); }
+.hintDots i.used{ background:var(--gold); }
+
 /* congrats becomes a sheet, not a full-screen modal */
 .congratsModal{ position:absolute !important; z-index:90 !important; }
 @media(prefers-reduced-motion:reduce){ *{ animation:none !important; } }
@@ -4394,6 +4403,126 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     }
   }
 
+  /* ---- 11. THE HINT LADDER — four levels, least help first ----
+     Today the app offers nothing between "no help" and "Watch me solve the whole
+     thing". This gives a stuck child the smallest push that unsticks them, and
+     counts what was used so a no-hint win still means something. */
+  var HINTS = {
+    '3x3':      ['The middle box is <b>the target ÷ 3</b>. Opposite boxes always add to twice the middle.',
+                 'Put <b>1</b> in the top middle. Count three down, then place to the right.'],
+    '5x5':      ['The middle box is <b>the target ÷ 5</b>. Same count-down trick as 3×3, just bigger.',
+                 'Put <b>1</b> in the top middle. Count three down, place to the right, wrapping round.'],
+    '4x4':      ['Write <b>1 upwards in order</b> first, then swap a few pairs.',
+                 'Keep the numbers on the two diagonals where they are. Every other box becomes <b>17 − its number</b>.'],
+    '8x8':      ['Same trick as 4×4, only bigger — write in order, then flip.',
+                 'Keep the block diagonals. Every other box becomes <b>65 − its number</b>.'],
+    '6x6':      ['It is <b>four smaller squares</b> joined together, not one big one.',
+                 'Build the top-left block first, then swap whole columns between blocks.'],
+    '10x10':    ['Four blocks again — solve one small square at a time.',
+                 'Build the top-left 5×5 first, then swap whole columns between blocks.'],
+    '3cube':    ['The lines <b>multiply</b>, they do not add. Target = middle × middle × middle.',
+                 'Set the <b>middle box</b> first. Every number here is a power of two.'],
+    'ramanujan':['Only the <b>top row</b> is yours. The maths fills the other twelve boxes.',
+                 'Type your date as <b>DD · MM · CC · YY</b>, two digits in each box.']
+  };
+  var hintLevel = 0, hintsUsed = 0;
+
+  function clearHintPoint(){
+    document.querySelectorAll('.cell.hintPoint').forEach(function(c){ c.classList.remove('hintPoint'); });
+  }
+  // prefer the centre — it sits on four lines at once, so it teaches the most
+  function hintTarget(){
+    var pz = PUZZLES[currentSize];
+    if (!pz || !pz.example || !pz.rows) return null;
+    var mid = Math.floor(pz.rows / 2);
+    var order = [];
+    if (pz.rows % 2) order.push([mid, mid]);
+    for (var r = 0; r < pz.rows; r++) for (var c = 0; c < pz.cols; c++) order.push([r, c]);
+    for (var i = 0; i < order.length; i++){
+      var r2 = order[i][0], c2 = order[i][1];
+      var el = cells[r2] && cells[r2][c2];
+      if (el && !el.readOnly && String(el.value || '') === '')
+        return { r:r2, c:c2, v: pz.example[r2][c2], el: el };
+    }
+    return null;
+  }
+
+  function giveHint(){
+    if (currentSize === 'binary'){
+      kimo('On this one the only hint is: <b>answer honestly</b>. One wrong card and I land next door.', 'think');
+      return;
+    }
+    var pair = HINTS[currentSize];
+    hintLevel++; hintsUsed++;
+    paintHintDots();
+    if (hintLevel === 1 && pair){ kimo('<b>Hint 1 of 4.</b> ' + pair[0], 'think'); return; }
+    if (hintLevel === 2 && pair){ kimo('<b>Hint 2 of 4.</b> ' + pair[1], 'think'); return; }
+
+    var t = hintTarget();
+    if (!t){
+      kimo('Every box is filled already — check the line totals around the edge.', 'think');
+      hintLevel = 4; return;
+    }
+    if (hintLevel === 3){
+      clearHintPoint();
+      t.el.classList.add('hintPoint');
+      var where = (t.r === t.c && t.r === Math.floor(PUZZLES[currentSize].rows / 2))
+        ? 'the <b>middle</b> box — it sits on four lines at once'
+        : 'this box, row ' + (t.r + 1) + ', column ' + (t.c + 1);
+      kimo('<b>Hint 3 of 4.</b> Try ' + where + '. I will not say the number — work it out.', 'think');
+      return;
+    }
+    // level 4: fill it in and say why
+    clearHintPoint();
+    t.el.value = String(t.v);
+    t.el.dispatchEvent(new Event('input', { bubbles: true }));
+    t.el.classList.add('hintGiven');
+    sfx('place');
+    kimo('<b>Hint 4 of 4.</b> That box is <b>' + t.v + '</b>. Now the lines through it give you the rest.', 'cheer');
+    hintLevel = 0;   // ladder resets, so more help is available if they stall again
+  }
+
+  function paintHintDots(){
+    var d = document.getElementById('hintDots');
+    if (!d) return;
+    var lit = Math.min(hintLevel, 4);
+    d.innerHTML = '<i class="' + (lit >= 1 ? 'used' : '') + '"></i><i class="' + (lit >= 2 ? 'used' : '') +
+      '"></i><i class="' + (lit >= 3 ? 'used' : '') + '"></i><i class="' + (lit >= 4 ? 'used' : '') + '"></i>';
+  }
+
+  (function buildHintButton(){
+    var row = document.getElementById('playRow');
+    if (!row) return;
+    var b = document.createElement('button');
+    b.id = 'hintBtn'; b.type = 'button';
+    b.innerHTML = '💡 Hint<span class="hintDots" id="hintDots"></span>';
+    row.insertBefore(b, row.firstChild ? row.firstChild.nextSibling : null);
+    b.addEventListener('click', giveHint);
+    paintHintDots();
+  })();
+
+  // a fresh board means a fresh ladder
+  var _initBoard2 = initBoard;
+  initBoard = function(){
+    hintLevel = 0; hintsUsed = 0; clearHintPoint();
+    _initBoard2.apply(null, arguments);
+    paintHintDots();
+  };
+
+  // hint use is counted, not punished — a clean win should still feel clean
+  var _sfx2 = sfx;
+  sfx = function(kind, pan){
+    _sfx2(kind, pan);
+    if (kind === 'win'){
+      setTimeout(function(){
+        kimo(hintsUsed === 0
+          ? '<b>Solved with no hints at all.</b> That is the good one. 🐒'
+          : 'Solved — with <b>' + hintsUsed + ' hint' + (hintsUsed > 1 ? 's' : '') + '</b>. Try the next one with fewer!',
+          'party', true);
+      }, 900);
+    }
+  };
+
   // hook the Mind Reader in wherever binary mode is entered.
   // The original showBinaryMode wires handlers onto elements INSIDE #binaryPanel, which
   // mrStart() replaces. On a second visit those lookups returned null and it threw before
@@ -4442,8 +4571,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-3 (all numbers · all games tested)';
-  window.BETA_VER = 'beta-3';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-4 (hint ladder)';
+  window.BETA_VER = 'beta-4';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
