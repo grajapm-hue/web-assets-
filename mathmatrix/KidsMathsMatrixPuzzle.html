@@ -761,21 +761,23 @@
   .convClear:active { background:#475569; }
 
 
-  /* ---- Day theme: light page & reading cards; the dark game tiles stay as-is ---- */
-  body.day { background:#eef2f7; color:#0f172a; }
-  body.day .instCard { background:#ffffff; color:#0f172a; }
-  body.day #logicBox { background:#ffffff; color:#1e293b; }
-  body.day #logicBox ol, body.day #logicBox li, body.day #logicBox ul, body.day #logicBox p { color:#1e293b; }
-  body.day #logicBox b { color:#0369a1; }
-  body.day #logicBox h3 { color:#7c3aed; }
-  body.day #logicBox p[style*="background"] { background:#f1f5f9 !important; color:#1e293b; }
-  body.day .journeyNote { background:#ffffff; color:#475569; border-color:#cbd5e1; }
-  body.day .journeyNote b { color:#0f172a; }
-  body.day #offlineBox { background:#ffffff; color:#334155; }
-  body.day #offlineBox h3 { color:#0369a1; }
-  body.day .credit { color:#64748b; }
-  body.day #msg { color:#1d4ed8; }
-  body.day #themeBtn { border-color:#475569; }
+  /* ---- Day theme: muted grey — no glaring white, so the light chrome sits
+     calmly BESIDE the dark game tables instead of fighting them ---- */
+  body.day { background:#c3ccd8; color:#1e2938; }
+  body.day .instCard { background:#dde3ec; color:#1e2938; }
+  body.day #logicBox { background:#dde3ec; color:#2b3648; }
+  body.day #logicBox ol, body.day #logicBox li, body.day #logicBox ul, body.day #logicBox p { color:#2b3648; }
+  body.day #logicBox b { color:#0e5f8a; }
+  body.day #logicBox h3 { color:#6d28d9; }
+  body.day #logicBox p[style*="background"] { background:#cdd5e0 !important; color:#2b3648; }
+  body.day .journeyNote { background:#dde3ec; color:#46536a; border-color:#9aa8ba; }
+  body.day .journeyNote b { color:#1e2938; }
+  body.day #offlineBox { background:#dde3ec; color:#3a465c; }
+  body.day #offlineBox h3 { color:#0e5f8a; }
+  body.day .credit { color:#5c6a80; }
+  body.day #msg { color:#1e40af; }
+  body.day #themeBtn { border-color:#46536a; }
+  body.day #learnHint, body.day .comingLabel { color:#5c6a80; }
 
   /* ---- Binary Number Guess ---- */
   #binaryPanel { width:100%; max-width:560px; margin:0 auto 6px; padding:0 10px; box-sizing:border-box; }
@@ -2889,7 +2891,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     var b = document.getElementById('themeBtn');
     if (b) b.textContent = dayMode ? '🌙 Night' : '☀️ Day';
     var meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', dayMode ? '#eef2f7' : '#101838');
+    if (meta) meta.setAttribute('content', dayMode ? '#c3ccd8' : '#101838');
   }
   applyDayNight();
   document.getElementById('themeBtn').addEventListener('click', function(){
@@ -3015,7 +3017,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'v132';
+  var BUILD_VER = 'v133';
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
