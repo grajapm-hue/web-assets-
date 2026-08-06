@@ -1708,7 +1708,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           <li><b>It works for ANY four numbers</b> — your birthday, a friend's, any date at all. The magic is in the recipe, not the numbers.</li>
         </ol>
         <p><b>🎁 There is more!</b> Besides the 4 rows, 4 columns and 2 diagonals, the same total also hides in the <b>4 corners</b>, all four <b>2×2 corner blocks</b>, the <b>centre 2×2</b>, and the middle pairs of the outer rows and columns — <b>18 magic groups in all</b> (an ordinary 4×4 has only 10).</p>
-        <p><b>➖ Negative numbers are welcome!</b> A January or February birthday makes MM−3 go below zero — try <b>09-01-2015</b> and you will see <b>−2</b> and <b>−1</b> in the square, yet every line still totals 45. Tap the <b>±</b> key to type a minus yourself: the magic holds for negatives, for zero, even for decimals. The recipe cares about the <i>differences</i>, never the size of the numbers.</p>
+        <p><b>➖ Negative numbers are welcome!</b> A January or February birthday makes MM−3 go below zero — try <b>09-01-2015</b> and you will see <b>−2</b> and <b>−1</b> in the square, yet every line still totals 45. Tap the <b>±</b> key to type a minus yourself, then <b>tap the next box</b> — a single-digit entry completes the moment you move on. The magic holds for negatives, for zero, even for decimals. The recipe cares about the <i>differences</i>, never the size of the numbers.</p>
         <p><b>💡 Try it:</b> type your own birthday, then your friend's — each person gets their own magic number. 🎂</p>
       `;
     }
@@ -1811,12 +1811,15 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   // sum is zero on every line, so each line returns to DD+MM+CC+YY.
   function fillRamanujan(){
     var DD = val(0,0), MM = val(0,1), CC = val(0,2), YY = val(0,3);
-    // Wait for TWO digits in each box (the DD·MM·CC·YY format). Otherwise the
-    // first digit of the year — the "8" of "87" — would already complete the
-    // square and pop a wrong total before the child finished typing.
+    // A box counts as finished when it has TWO digits (the DD·MM·CC·YY date
+    // format) OR it has a value and the cursor has MOVED OFF it — so single-digit
+    // and negative entries like -5 commit as soon as you tap the next box, while
+    // the "8" of "87" still can't pop the square early (it is still the active box).
     function done(c){
-      var d = (cells[0][c].value.match(/\d/g) || []).length;
-      return d >= 2;
+      var el = cells[0][c];
+      var d = (el.value.match(/\d/g) || []).length;
+      if (d >= 2) return true;
+      return d >= 1 && activeCell !== el;
     }
     var ready = DD !== null && MM !== null && CC !== null && YY !== null &&
                 done(0) && done(1) && done(2) && done(3);
@@ -2549,6 +2552,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       var row = cells[r] || [];
       for (var c = 0; c < row.length; c++) row[c].classList.toggle('cursor', row[c] === cell);
     }
+    if (isBirthday()){ fillRamanujan(); update(); }   // leaving a date box may complete the square
   }
 
   // The cell the keypad should act on (active one, else first empty, else first cell)
@@ -2962,7 +2966,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'v127';
+  var BUILD_VER = 'v128';
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
