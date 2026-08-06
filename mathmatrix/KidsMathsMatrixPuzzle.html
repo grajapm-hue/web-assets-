@@ -1188,7 +1188,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     } catch (e) { audioCtx = null; }
   }
   // one tone: freq(Hz), start offset(s), duration(s), wave, peak volume
-  function tone(freq, start, dur, type, peak){
+  // pan: -1 = left ear … 0 = centre … +1 = right ear (skipped on browsers without StereoPanner)
+  function tone(freq, start, dur, type, peak, pan){
     if (!audioCtx) return;
     var t0 = audioCtx.currentTime + start;
     var osc = audioCtx.createOscillator();
@@ -1199,20 +1200,36 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     g.gain.setValueAtTime(0.0001, t0);
     g.gain.exponentialRampToValueAtTime(peak || 0.18, t0 + 0.012);
     g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-    osc.connect(g); g.connect(audioCtx.destination);
+    osc.connect(g);
+    if (pan !== undefined && pan !== 0 && audioCtx.createStereoPanner){
+      var p = audioCtx.createStereoPanner();
+      p.pan.value = Math.max(-1, Math.min(1, pan));
+      g.connect(p); p.connect(audioCtx.destination);
+    } else {
+      g.connect(audioCtx.destination);
+    }
     osc.start(t0); osc.stop(t0 + dur + 0.03);
   }
-  function sfx(kind){
+  // Where does this cell sit on the board? → its stereo position (left col = left ear)
+  function panForCell(cell){
+    if (!cell || !cell.dataset) return 0;
+    var pz = PUZZLES[currentSize];
+    if (!pz || pz.cols < 2) return 0;
+    var c = +cell.dataset.c;
+    if (isNaN(c)) return 0;
+    return ((c / (pz.cols - 1)) * 2 - 1) * 0.8;
+  }
+  function sfx(kind, pan){
     if (!soundOn) return;
     ensureAudio();
     if (!audioCtx) return;
     switch (kind){
-      case 'place':  tone([700,1150], 0, 0.10, 'triangle', 0.20); tone(1400, 0.02, 0.08, 'sine', 0.10); break;   // F · candy plink
-      case 'line':   [784,1047,1319].forEach(function(fr,i){ tone(fr, i*0.05, 0.12, 'triangle', 0.15); }); break; // 3 · candy shimmer (3-note rise)
-      case 'dup':    tone(150, 0, 0.16, 'sawtooth', 0.10); break;                                 // gentle low boop
-      case 'win':    [523,587,659,784,880,1047,1319].forEach(function(fr,i){ tone(fr, i*0.06, 0.16, 'triangle', 0.16); tone(fr*2, i*0.06, 0.10, 'sine', 0.05); }); break; // 2 · candy cascade
-      case 'unlock': [392,523,659,784,1047].forEach(function(fr,i){ tone(fr, i*0.08, 0.18, 'triangle', 0.18); }); break; // power-up
-      case 'tick':   tone(700, 0, 0.045, 'square', 0.08); break;                                  // soft placement tick
+      case 'place':  tone([700,1150], 0, 0.10, 'triangle', 0.20, pan); tone(1400, 0.02, 0.08, 'sine', 0.10, pan); break;   // F · candy plink, at the cell's position
+      case 'line':   [784,1047,1319].forEach(function(fr,i){ tone(fr, i*0.05, 0.12, 'triangle', 0.15, -0.7 + i*0.7); }); break; // shimmer sweeps L→C→R
+      case 'dup':    tone(150, 0, 0.16, 'sawtooth', 0.10, pan); break;                                 // gentle low boop
+      case 'win':    [523,587,659,784,880,1047,1319].forEach(function(fr,i){ var pw = -0.8 + i*(1.6/6); tone(fr, i*0.06, 0.16, 'triangle', 0.16, pw); tone(fr*2, i*0.06, 0.10, 'sine', 0.05, pw); }); break; // cascade sweeps across
+      case 'unlock': [392,523,659,784,1047].forEach(function(fr,i){ tone(fr, i*0.08, 0.18, 'triangle', 0.18, -0.5 + i*0.25); }); break; // power-up rises L→R
+      case 'tick':   tone(700, 0, 0.045, 'square', 0.08, pan); break;                                  // tick from the revealed cell's side
       case 'clap':
         // Applause burst — filtered noise pulses spaced like real clapping
         (function(){
@@ -1231,7 +1248,12 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
                   flt.type = 'bandpass'; flt.frequency.value = 1100 + Math.random() * 400; flt.Q.value = 0.9;
                   var gn = audioCtx.createGain(); gn.gain.value = 0.22;
                   nSrc.buffer = buf;
-                  nSrc.connect(flt); flt.connect(gn); gn.connect(audioCtx.destination);
+                  nSrc.connect(flt); flt.connect(gn);
+                  if (audioCtx.createStereoPanner){
+                    var pp = audioCtx.createStereoPanner();
+                    pp.pan.value = Math.random() * 1.6 - 0.8;   // audience clapping all around you
+                    gn.connect(pp); pp.connect(audioCtx.destination);
+                  } else { gn.connect(audioCtx.destination); }
                   nSrc.start();
                 } catch(e){}
               }, delay);
@@ -1262,15 +1284,42 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       bgm.volume = Math.max(0, Math.min(1, bgm.volume + (d > 0 ? 0.013 : -0.013)));
     }, 60);
   }
+  var bgmPanTried = false, bgmTipShown = false;
+  // The monkey drifts slowly left↔right: route the music through a StereoPanner
+  // swung by a very slow LFO (~12s per crossing). Best effort — if the browser
+  // lacks the nodes the music simply plays centred as before.
+  function wireBgmPan(){
+    if (bgmPanTried || !audioCtx || !audioCtx.createStereoPanner || !audioCtx.createMediaElementSource) return;
+    bgmPanTried = true;   // createMediaElementSource is once-per-element; never retry
+    try {
+      var src = audioCtx.createMediaElementSource(bgm);
+      var pan = audioCtx.createStereoPanner();
+      var lfo = audioCtx.createOscillator();
+      var lfoGain = audioCtx.createGain();
+      lfo.type = 'sine'; lfo.frequency.value = 0.08;   // one full left↔right swing ≈ 12s
+      lfoGain.gain.value = 0.45;                        // gentle drift, never hard-panned
+      lfo.connect(lfoGain); lfoGain.connect(pan.pan);
+      src.connect(pan); pan.connect(audioCtx.destination);
+      lfo.start();
+    } catch (e) {}
+  }
   function ensureMusic(){
     if (!musicOn || !soundOn) return;   // 🔊 Sound is the MASTER: off = total silence (night play)
     if (!bgm){
       bgm = new Audio('bgm-monkeys.mp3');
       bgm.loop = true; bgm.preload = 'auto'; bgm.volume = 0;
     }
+    wireBgmPan();
     if (bgm.paused){
       var p = bgm.play();
-      if (p && p.catch) p.catch(function(){});   // browsers block autoplay until a real gesture
+      if (p && p.then) p.then(function(){
+        if (!bgmTipShown && msg){
+          bgmTipShown = true;
+          msg.innerHTML = '🎧 Tip: wear earphones — the sounds play in stereo and the monkey music drifts side to side!';
+          msg.className = '';
+        }
+      }, function(){});   // browsers block autoplay until a real gesture
+      else if (p && p.catch) p.catch(function(){});
     }
     fadeMusicTo(BGM_IDLE);
   }
@@ -2423,7 +2472,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       binOn[sw-1] = !binOn[sw-1];
       b.classList.toggle('on', binOn[sw-1]);
       if (soundOn) ensureAudio();
-      sfx(binOn[sw-1] ? 'line' : 'place');
+      sfx(binOn[sw-1] ? 'line' : 'place', (sw % 2 === 1) ? -0.6 : 0.6);   // left-column boxes in the left ear
       binaryReadout();
     });
   }
@@ -2538,7 +2587,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // keep an optional leading minus: negative numbers make valid magic squares too
     var neg = cell.value.charAt(0) === '-';
     cell.value = (neg ? '-' : '') + cell.value.replace(/[^0-9]/g, '');
-    if (cell.value !== '') sfx('place');   // snappy pop as a number lands
+    if (cell.value !== '') sfx('place', panForCell(cell));   // pop sounds from the cell's side of the board
     duckMusic();                           // soften the music while numbers are being entered
     if (isBirthday()) fillRamanujan();     // the rest of the square writes itself
     startTimer();
@@ -2773,7 +2822,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         cell.classList.remove('placing');
         void cell.offsetWidth;       // restart the drop animation
         cell.classList.add('placing');
-        sfx('tick');                 // soft tick as each number drops in
+        sfx('tick', panForCell(cell));   // tick follows the cell being revealed — sweeps with the demo
         if (isBirthday()) fillRamanujan();   // the square completes itself once all 4 dates are in
         update();
       }
@@ -2913,7 +2962,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'v126';
+  var BUILD_VER = 'v127';
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
