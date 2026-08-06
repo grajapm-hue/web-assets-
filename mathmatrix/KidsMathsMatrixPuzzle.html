@@ -1026,7 +1026,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       lines: ['r0','r1','r2','c0','c1','c2','d1','d2'],
       rows: 3,
       cols: 3,
-      inst: '<b>Easy Level!</b> Fill 3×3 — every row, column and diagonal must total the SAME. 🐒🎲'
+      inst: '<b>Easy Level!</b> Fill 3×3 with any numbers — plus or minus — every row, column and diagonal must total the SAME. 🐒🎲'
     },
     '4x4': {
       example: [
@@ -1038,7 +1038,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       lines: ['r0','r1','r2','r3','c0','c1','c2','c3','d1','d2'],
       rows: 4,
       cols: 4,
-      inst: '<b>Hard Level!</b> Fill 4×4 — every row, column and diagonal must total the SAME. 🎯'
+      inst: '<b>Hard Level!</b> Fill 4×4 with any numbers (+ or −) — rows, columns and diagonals total the SAME, and the four quarter-blocks, the centre four and the 4 corners match it too! 🎯'
     },
     '5x5': {
       example: [
@@ -1051,7 +1051,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       lines: ['r0','r1','r2','r3','r4','c0','c1','c2','c3','c4','d1','d2'],
       rows: 5,
       cols: 5,
-      inst: '<b>Master Level!</b> Fill 5×5 — every row, column and diagonal must total the SAME. 🌟'
+      inst: '<b>Master Level!</b> Fill 5×5 with any numbers (+ or −) — every row, column and diagonal must total the SAME. 🌟'
     },
     '6x6': {
       example: [
@@ -1065,7 +1065,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       lines: ['r0','r1','r2','r3','r4','r5','c0','c1','c2','c3','c4','c5','d1','d2'],
       rows: 6,
       cols: 6,
-      inst: '<b>Expert Level!</b> Fill 6×6 — every row, column and diagonal must total the SAME. 🧩'
+      inst: '<b>Expert Level!</b> Fill 6×6 with any numbers (+ or −) — every row, column and diagonal must total the SAME. 🧩'
     },
     '8x8': {
       example: [
@@ -1081,7 +1081,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       lines: ['r0','r1','r2','r3','r4','r5','r6','r7','c0','c1','c2','c3','c4','c5','c6','c7','d1','d2'],
       rows: 8,
       cols: 8,
-      inst: '<b>Champion Level!</b> Fill 8×8 — every row, column and diagonal must total the SAME. 🏅'
+      inst: '<b>Champion Level!</b> Fill 8×8 with any numbers (+ or −) — rows, columns and diagonals total the SAME, and every aligned block of four totals half the target! 🏅'
     },
     '10x10': {
       example: [
@@ -1099,7 +1099,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       lines: ['r0','r1','r2','r3','r4','r5','r6','r7','r8','r9','c0','c1','c2','c3','c4','c5','c6','c7','c8','c9','d1','d2'],
       rows: 10,
       cols: 10,
-      inst: '<b>Grandmaster Level!</b> Fill 10×10 — every row, column and diagonal must total the SAME. 🏆'
+      inst: '<b>Grandmaster Level!</b> Fill 10×10 with any numbers (+ or −) — every row, column and diagonal must total the SAME. 🏆'
     },
     '3cube': {
       mode: 'multiply',
@@ -2976,7 +2976,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'v129';
+  var BUILD_VER = 'v130';
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
