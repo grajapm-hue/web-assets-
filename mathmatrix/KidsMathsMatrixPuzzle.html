@@ -986,9 +986,12 @@
 <!-- Congratulations Modal -->
 <div class="congratsModal" id="congratsModal">
   <div class="congratsBox">
-    <h2>🎉</h2>
+    <h2>🎉👏</h2>
     <p id="congratsText">Congratulations! Ready for 4×4?</p>
-    <button class="congratsBtn" id="nextBtn">Let's Go! →</button>
+    <p id="congratsCountdown" style="font-size:14px; color:#fde68a; margin:-10px 0 14px; font-weight:700; letter-spacing:.5px;"></p>
+    <button class="congratsBtn" id="nextBtn" style="margin-bottom:12px;">Let's Go! →</button>
+    <br>
+    <button id="chooseLaterBtn" style="background:transparent; border:2px solid rgba(255,255,255,0.35); border-radius:10px; padding:10px 20px; font-size:15px; font-weight:700; color:rgba(255,255,255,0.8); cursor:pointer; display:block; margin:0 auto; width:100%;">📋 Choose from list below ▼</button>
   </div>
 </div>
 
@@ -1210,6 +1213,32 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       case 'win':    [523,587,659,784,880,1047,1319].forEach(function(fr,i){ tone(fr, i*0.06, 0.16, 'triangle', 0.16); tone(fr*2, i*0.06, 0.10, 'sine', 0.05); }); break; // 2 · candy cascade
       case 'unlock': [392,523,659,784,1047].forEach(function(fr,i){ tone(fr, i*0.08, 0.18, 'triangle', 0.18); }); break; // power-up
       case 'tick':   tone(700, 0, 0.045, 'square', 0.08); break;                                  // soft placement tick
+      case 'clap':
+        // Applause burst — filtered noise pulses spaced like real clapping
+        (function(){
+          var bursts = 9;
+          for (var ci = 0; ci < bursts; ci++) {
+            (function(i){
+              var delay = i * 110 + Math.random() * 40;
+              setTimeout(function(){
+                try {
+                  var bufLen = Math.floor(audioCtx.sampleRate * 0.07);
+                  var buf = audioCtx.createBuffer(1, bufLen, audioCtx.sampleRate);
+                  var data = buf.getChannelData(0);
+                  for (var j = 0; j < bufLen; j++) data[j] = (Math.random() * 2 - 1) * Math.exp(-j / (bufLen * 0.35));
+                  var nSrc = audioCtx.createBufferSource();
+                  var flt = audioCtx.createBiquadFilter();
+                  flt.type = 'bandpass'; flt.frequency.value = 1100 + Math.random() * 400; flt.Q.value = 0.9;
+                  var gn = audioCtx.createGain(); gn.gain.value = 0.22;
+                  nSrc.buffer = buf;
+                  nSrc.connect(flt); flt.connect(gn); gn.connect(audioCtx.destination);
+                  nSrc.start();
+                } catch(e){}
+              }, delay);
+            })(ci);
+          }
+        })();
+        break;
     }
   }
   // ---- Background music: "Monkeys Spinning Monkeys" by Kevin MacLeod (CC BY 3.0, incompetech.com) ----
@@ -1305,6 +1334,12 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   // Reward/applause on solving stays; there is no lock.
   document.querySelectorAll('.toggleBtn').forEach(function(btn){
     btn.addEventListener('click', function(){
+      // If a congrats countdown is running, cancel it — player chose their own level
+      if (_congratsAutoTimer){ clearInterval(_congratsAutoTimer); _congratsAutoTimer = null; }
+      var cdEl = document.getElementById('congratsCountdown');
+      if (cdEl) cdEl.textContent = '';
+      var cm = document.getElementById('congratsModal');
+      if (cm && cm.style.display === 'flex') cm.style.display = 'none';
       var newSize = this.dataset.size;
       document.querySelectorAll('.toggleBtn').forEach(function(b){ b.classList.remove('active'); });
       this.classList.add('active');
@@ -2097,18 +2132,71 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     }
   }
 
-  function showCongrats(title, subtitle){
-    var modal = document.getElementById('congratsModal');
+  // Next-level map: recommendation sequence
+  var NEXT_SIZE_MAP = {
+    '3x3':'4x4', '4x4':'5x5', '5x5':'6x6',
+    '6x6':'8x8', '8x8':'10x10', '10x10':'3x3',
+    '3cube':'ramanujan', 'ramanujan':'binary', 'binary':'3x3'
+  };
+
+  var _congratsAutoTimer = null; // global so difficulty-btn clicks can cancel it
+
+  function showCongrats(title, subtitle, nextSize){
+    var modal    = document.getElementById('congratsModal');
+    var countEl  = document.getElementById('congratsCountdown');
+    var nextBtn  = document.getElementById('nextBtn');
+    var chooseBtn= document.getElementById('chooseLaterBtn');
+
     document.getElementById('congratsText').textContent = title + ' ' + subtitle;
     modal.style.display = 'flex';
-    setTimeout(function(){ sfx('unlock'); }, 700);   // power-up after the win fanfare, as the "new level!" modal appears
-    
-    document.getElementById('nextBtn').onclick = function(){
+
+    // Sounds: clap immediately, power-up chord at 700ms
+    sfx('clap');
+    setTimeout(function(){ sfx('unlock'); }, 700);
+
+    // Determine auto-advance target
+    var goTo = nextSize || NEXT_SIZE_MAP[currentSize] || null;
+
+    // Clear any previous running timer
+    if (_congratsAutoTimer){ clearInterval(_congratsAutoTimer); _congratsAutoTimer = null; }
+
+    var secs = 4;
+    function updateCount(){ countEl.textContent = 'Auto-advancing in ' + secs + '…'; }
+    updateCount();
+
+    _congratsAutoTimer = setInterval(function(){
+      secs--;
+      if (secs <= 0){
+        clearInterval(_congratsAutoTimer); _congratsAutoTimer = null;
+        doAdvance(goTo);
+      } else { updateCount(); }
+    }, 1000);
+
+    function doAdvance(size){
       modal.style.display = 'none';
-      // Restart the current puzzle. The next size is already unlocked in win(),
-      // so the player just taps its (now visible) tab when ready.
-      initBoard();
-      applyTheme(); // Apply colors and diagonal guide
+      countEl.textContent = '';
+      if (size){
+        var btn = document.querySelector('.toggleBtn[data-size="' + size + '"]');
+        if (btn) { btn.click(); return; }
+      }
+      initBoard(); applyTheme();
+    }
+
+    // Let's Go — instant advance
+    nextBtn.onclick = function(){
+      clearInterval(_congratsAutoTimer); _congratsAutoTimer = null;
+      doAdvance(goTo);
+    };
+
+    // Choose from list — close modal, scroll to difficulty bar
+    chooseBtn.onclick = function(){
+      clearInterval(_congratsAutoTimer); _congratsAutoTimer = null;
+      modal.style.display = 'none';
+      countEl.textContent = '';
+      setTimeout(function(){
+        var bar = document.querySelector('.difficultyBar');
+        if (bar) bar.scrollIntoView({ behavior:'smooth', block:'center' });
+      }, 100);
     };
   }
   
@@ -2807,7 +2895,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'v123';
+  var BUILD_VER = 'v124';
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
