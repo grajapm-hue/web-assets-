@@ -814,6 +814,73 @@
   .tabBtn.on{ color:var(--accent); background:rgba(255,255,255,.07); }
   .tabBtn.on .tabIco{ transform:translateY(-2px) scale(1.14); }
 
+  /* ═══ Level cards — grouped by MODE, gradient clay tiles ═══
+     Six tiles used to read "3×3 / 4×4 / 5×5 …" and looked like duplicates.
+     Each card now carries a real dot-grid of its own size, the numbers it
+     uses and its method — all different, none of which spoil the target
+     (the target stays "?" until the player finds it). */
+  .difficultyBar > .diffLabel{
+    writing-mode:horizontal-tb; transform:none; text-align:left;
+    font-size:12.5px; letter-spacing:1.7px; text-transform:uppercase;
+    color:#f87171; padding:0; margin:0 0 2px;
+  }
+  .modeGroup{ width:100%; }
+  .modeHead{ display:flex; align-items:center; gap:10px; margin:14px 0 9px; }
+  .modeHead .mIco{
+    width:36px; height:36px; flex:none; border-radius:12px; display:grid; place-items:center;
+    font-size:17px; background:linear-gradient(150deg,var(--m1),var(--m2));
+    box-shadow:3px 3px 8px rgba(0,0,0,.42), -2px -2px 6px rgba(255,255,255,.05);
+  }
+  .modeHead b{ display:block; font-size:14.5px; font-weight:900; color:#fff; letter-spacing:.2px; }
+  .modeHead i{ display:block; font-style:normal; font-size:11.5px; font-weight:600;
+               color:#a49bcb; line-height:1.45; margin-top:1px; }
+  .modeGroup.solo .toggleSwitch{ grid-template-columns:1fr; }
+
+  .toggleBtn.lvCard{
+    display:flex; align-items:center; gap:11px; text-align:left;
+    padding:11px 13px; border:0 !important; border-radius:20px !important;
+    color:#08101f !important;
+    background:linear-gradient(152deg, var(--c1), var(--c2)) !important;
+    position:relative; overflow:hidden;
+  }
+  /* clay sheen — light falls from the top-left, same as every other tile */
+  .toggleBtn.lvCard::after{
+    content:''; position:absolute; inset:0; pointer-events:none;
+    background:linear-gradient(158deg, rgba(255,255,255,.36), rgba(255,255,255,0) 56%);
+  }
+  .toggleBtn.lvCard > *{ position:relative; z-index:1; }
+  /* the size, drawn as its own dot grid — 3×3 and 10×10 can't be confused */
+  .lvGrid{
+    width:36px; height:36px; flex:none; border-radius:10px; position:relative; overflow:hidden;
+    background:rgba(7,12,26,.28); box-shadow:inset 1px 1px 3px rgba(0,0,0,.38);
+  }
+  .lvGrid::before{
+    content:''; position:absolute; inset:4px;
+    background-image:radial-gradient(circle at 50% 50%, rgba(255,255,255,.95) 30%, transparent 33%);
+    background-size:calc(100% / var(--n)) calc(100% / var(--n));
+  }
+  .lvGlyph{
+    width:36px; height:36px; flex:none; border-radius:10px; display:grid; place-items:center;
+    font-size:18px; background:rgba(7,12,26,.28); box-shadow:inset 1px 1px 3px rgba(0,0,0,.38);
+  }
+  .lvText{ flex:1; min-width:0; }
+  .lvName{ display:block; font-size:16px; font-weight:900; line-height:1.15; }
+  .lvDiff{ display:block; font-size:11.5px; font-weight:800; color:#0d1830; margin-top:1px; }
+  .lvMeta{ display:block; font-size:10.5px; font-weight:700; color:#1a2740; margin-top:2px; line-height:1.35; }
+  .lvNow{ display:none; }
+  /* out-specifies .toggleBtn.active so the card keeps its gradient when chosen */
+  .toggleBtn.lvCard.active{
+    background:linear-gradient(152deg, var(--c1), var(--c2)) !important;
+    color:#08101f !important;
+    outline:3px solid rgba(255,255,255,.92); outline-offset:-3px;
+    box-shadow:0 0 0 4px rgba(255,255,255,.16), 6px 8px 20px rgba(0,0,0,.5),
+               inset 1px 1px 2px rgba(255,255,255,.3) !important;
+  }
+  .toggleBtn.lvCard.active .lvNow{
+    display:inline-block; margin-top:4px; font-size:9.5px; font-weight:900; letter-spacing:.7px;
+    background:#08101f; color:#fff; padding:2px 8px; border-radius:999px;
+  }
+
   /* clay depth — light from top-left, shadow beneath, soft inner rim */
   .cell, .toggleBtn, .kp, .btnRow button, #timerBox, .binCard, .comingChip, .convBit, .convDec{
     box-shadow: 4px 4px 10px rgba(0,0,0,.42), -3px -3px 8px rgba(255,255,255,.05),
@@ -1076,19 +1143,82 @@
 <section class="screen on" data-screen="scHome">
 <!-- Difficulty selector — every level open, pick any grade any time -->
 <div class="difficultyBar">
-  <div class="diffRow">
   <span class="diffLabel">Choose Difficulty</span>
-  <div class="toggleSwitch">
-    <button class="toggleBtn active" data-size="3x3" style="color:#60a5fa; border-color:#3b82f6;">3×3 (Easy)</button>
-    <button class="toggleBtn" data-size="4x4" style="color:#c084fc; border-color:#a855f7;">4×4 (Hard)</button>
-    <button class="toggleBtn" data-size="5x5" style="color:#4ade80; border-color:#22c55e;">5×5 (Master)</button>
-    <button class="toggleBtn" data-size="6x6" style="color:#22d3ee; border-color:#06b6d4;">6×6 (Expert)</button>
-    <button class="toggleBtn" data-size="8x8" style="color:#818cf8; border-color:#6366f1;">8×8 (Champion)</button>
-    <button class="toggleBtn" data-size="10x10" style="color:#e879f9; border-color:#c026d3;">10×10 (Grandmaster)</button>
-    <button class="toggleBtn" id="mult3Tab" data-size="3cube" style="color:#fbbf24; border-color:#f59e0b;">3³ (×)</button>
-    <button class="toggleBtn" data-size="ramanujan" style="color:#fb7185; border-color:#e11d48;">🎂 Sir Ramanujan MathMagic</button>
-    <button class="toggleBtn" data-size="binary" style="color:#fcd34d; border-color:#84cc16;">🔢 Binary Number Guess</button>
+
+  <!-- ➕ ADD MODE — the six size puzzles, an easy→hard ladder -->
+  <div class="modeGroup">
+    <div class="modeHead" style="--m1:#7dd3fc; --m2:#38bdf8;">
+      <span class="mIco">➕</span>
+      <span><b>Add Magic</b><i>every row, column and diagonal adds up to the same total</i></span>
+    </div>
+    <div class="toggleSwitch">
+      <button class="toggleBtn lvCard active" data-size="3x3" data-name="3×3 Easy" style="color:#60a5fa; border-color:#3b82f6; --c1:#9ec7ff; --c2:#60a5fa;">
+        <span class="lvGrid" style="--n:3" aria-hidden="true"></span>
+        <span class="lvText"><b class="lvName">3×3</b><span class="lvDiff">Easy</span><span class="lvMeta">uses 1–9 · count-down</span><span class="lvNow">PLAYING</span></span>
+      </button>
+      <button class="toggleBtn lvCard" data-size="4x4" data-name="4×4 Hard" style="color:#c084fc; border-color:#a855f7; --c1:#ddb8ff; --c2:#c084fc;">
+        <span class="lvGrid" style="--n:4" aria-hidden="true"></span>
+        <span class="lvText"><b class="lvName">4×4</b><span class="lvDiff">Hard</span><span class="lvMeta">uses 1–16 · fill &amp; swap</span><span class="lvNow">PLAYING</span></span>
+      </button>
+      <button class="toggleBtn lvCard" data-size="5x5" data-name="5×5 Master" style="color:#4ade80; border-color:#22c55e; --c1:#9cf0bd; --c2:#4ade80;">
+        <span class="lvGrid" style="--n:5" aria-hidden="true"></span>
+        <span class="lvText"><b class="lvName">5×5</b><span class="lvDiff">Master</span><span class="lvMeta">uses 1–25 · count-down</span><span class="lvNow">PLAYING</span></span>
+      </button>
+      <button class="toggleBtn lvCard" data-size="6x6" data-name="6×6 Expert" style="color:#22d3ee; border-color:#06b6d4; --c1:#86e9f7; --c2:#22d3ee;">
+        <span class="lvGrid" style="--n:6" aria-hidden="true"></span>
+        <span class="lvText"><b class="lvName">6×6</b><span class="lvDiff">Expert</span><span class="lvMeta">uses 1–36 · four blocks</span><span class="lvNow">PLAYING</span></span>
+      </button>
+      <button class="toggleBtn lvCard" data-size="8x8" data-name="8×8 Champion" style="color:#818cf8; border-color:#6366f1; --c1:#b3bcff; --c2:#818cf8;">
+        <span class="lvGrid" style="--n:8" aria-hidden="true"></span>
+        <span class="lvText"><b class="lvName">8×8</b><span class="lvDiff">Champion</span><span class="lvMeta">uses 1–64 · fill &amp; flip</span><span class="lvNow">PLAYING</span></span>
+      </button>
+      <button class="toggleBtn lvCard" data-size="10x10" data-name="10×10 Grandmaster" style="color:#e879f9; border-color:#c026d3; --c1:#f5aefb; --c2:#e879f9;">
+        <span class="lvGrid" style="--n:10" aria-hidden="true"></span>
+        <span class="lvText"><b class="lvName">10×10</b><span class="lvDiff">Grandmaster</span><span class="lvMeta">uses 1–100 · four blocks</span><span class="lvNow">PLAYING</span></span>
+      </button>
+    </div>
   </div>
+
+  <!-- ✖️ MULTIPLY MODE -->
+  <div class="modeGroup solo">
+    <div class="modeHead" style="--m1:#fcd98a; --m2:#f59e0b;">
+      <span class="mIco">✖️</span>
+      <span><b>Multiply Magic</b><i>the lines multiply to the same answer instead of adding</i></span>
+    </div>
+    <div class="toggleSwitch">
+      <button class="toggleBtn lvCard" id="mult3Tab" data-size="3cube" data-name="3³ Multiply" style="color:#fbbf24; border-color:#f59e0b; --c1:#fcd98a; --c2:#fbbf24;">
+        <span class="lvGlyph" aria-hidden="true">✖️</span>
+        <span class="lvText"><b class="lvName">3³ Multiply</b><span class="lvDiff">Powers of two</span><span class="lvMeta">uses 1, 2, 4 … 256 · every line makes the same product</span><span class="lvNow">PLAYING</span></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 🎂 BIRTHDAY MODE -->
+  <div class="modeGroup solo">
+    <div class="modeHead" style="--m1:#ffb3bf; --m2:#e11d48;">
+      <span class="mIco">🎂</span>
+      <span><b>Birthday Magic</b><i>type any date of birth and the square builds itself</i></span>
+    </div>
+    <div class="toggleSwitch">
+      <button class="toggleBtn lvCard" data-size="ramanujan" data-name="🎂 Sir Ramanujan MathMagic" style="color:#fb7185; border-color:#e11d48; --c1:#ffb3bf; --c2:#fb7185;">
+        <span class="lvGlyph" aria-hidden="true">🎂</span>
+        <span class="lvText"><b class="lvName">Sir Ramanujan MathMagic</b><span class="lvDiff">Your own birthday</span><span class="lvMeta">4×4 · 18 magic groups · works with any date</span><span class="lvNow">PLAYING</span></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 🔢 BINARY MODE — cards, not a grid -->
+  <div class="modeGroup solo">
+    <div class="modeHead" style="--m1:#f0e58a; --m2:#84cc16;">
+      <span class="mIco">🔢</span>
+      <span><b>Binary Magic</b><i>no grid at all — eight cards read your mind</i></span>
+    </div>
+    <div class="toggleSwitch">
+      <button class="toggleBtn lvCard" data-size="binary" data-name="🔢 Binary Number Guess" style="color:#fcd34d; border-color:#84cc16; --c1:#f0e58a; --c2:#fcd34d;">
+        <span class="lvGlyph" aria-hidden="true">🔢</span>
+        <span class="lvText"><b class="lvName">Binary Number Guess</b><span class="lvDiff">Think a number</span><span class="lvMeta">8 cards · guesses anything from 1 to 99</span><span class="lvNow">PLAYING</span></span>
+      </button>
+    </div>
   </div>
 
   <div class="comingWrap">
@@ -3040,7 +3170,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     var lvl = activeLevelBtn();
     var title = document.getElementById('appBarTitle');
     var chip  = document.getElementById('appBarChip');
-    if (title) title.textContent = (id === 'scPlay' && lvl) ? lvl.textContent.trim() : SCREEN_TITLE[id];
+    // data-name, not textContent — the cards now hold several lines of copy
+    var lvlName = lvl ? (lvl.dataset.name || lvl.textContent.trim()) : '';
+    if (title) title.textContent = (id === 'scPlay' && lvl) ? lvlName : SCREEN_TITLE[id];
     if (chip){
       chip.textContent = (id === 'scPlay' && lvl) ? 'playing' : SCREEN_CHIP[id];
       chip.style.display = 'inline-block';
@@ -3190,7 +3322,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'v135';
+  var BUILD_VER = 'v136';
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
