@@ -1426,6 +1426,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     if (peekIv)  { clearInterval(peekIv);  peekIv  = null; }
     watching = false;
     peeking = false;
+    clearTimeout(ramIdle); ramIdle = null;   // a pending birthday auto-fill must not hit the next board
     prevComplete = 0; prevDup = 0;   // reset chime counters for the rebuilt/cleared board
     Object.keys(badges).forEach(function(k){          // drop any leftover SHOW tint if a demo was cancelled mid-way
       badges[k].forEach(function(b){ b.classList.remove('peek'); });
@@ -1809,20 +1810,22 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
   // Ramanujan's rule: the 12 cells under the typed date follow fixed offsets whose
   // sum is zero on every line, so each line returns to DD+MM+CC+YY.
-  function fillRamanujan(){
+  var ramIdle = null;   // idle grace: a finished-looking last box completes by itself
+  function fillRamanujan(force){
     var DD = val(0,0), MM = val(0,1), CC = val(0,2), YY = val(0,3);
     // A box counts as finished when it has TWO digits (the DD·MM·CC·YY date
     // format) OR it has a value and the cursor has MOVED OFF it — so single-digit
     // and negative entries like -5 commit as soon as you tap the next box, while
     // the "8" of "87" still can't pop the square early (it is still the active box).
+    // `force` (the idle timer) overrides the active-box wait after ~1.2s of no typing.
     function done(c){
       var el = cells[0][c];
       var d = (el.value.match(/\d/g) || []).length;
       if (d >= 2) return true;
-      return d >= 1 && activeCell !== el;
+      return d >= 1 && (force || activeCell !== el);
     }
-    var ready = DD !== null && MM !== null && CC !== null && YY !== null &&
-                done(0) && done(1) && done(2) && done(3);
+    var allFour = DD !== null && MM !== null && CC !== null && YY !== null;
+    var ready = allFour && done(0) && done(1) && done(2) && done(3);
     var rows = ready ? [
       [YY+1, CC-1, MM-3, DD+3],
       [MM-2, DD+2, YY+2, CC-2],
@@ -1833,6 +1836,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       cells[r][c].value = ready ? String(rows[r-1][c]) : '';
       cells[r][c].classList.toggle('derived', ready);
     }
+    // All four typed but the active box is holding things up (e.g. a final "-4"):
+    // give it a moment — if no more typing arrives, complete the square anyway.
+    clearTimeout(ramIdle); ramIdle = null;
+    if (allFour && !ready && !force){
+      ramIdle = setTimeout(function(){ if (isBirthday()){ fillRamanujan(true); update(); } }, 1200);
+    }
+    return ready;
   }
   function lineValue(arr){
     return isMul() ? arr.reduce(function(a, b){ return a * b; }, 1)
@@ -2966,7 +2976,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'v128';
+  var BUILD_VER = 'v129';
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
