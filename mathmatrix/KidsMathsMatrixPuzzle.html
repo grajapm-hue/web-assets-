@@ -1263,7 +1263,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     }, 60);
   }
   function ensureMusic(){
-    if (!musicOn) return;
+    if (!musicOn || !soundOn) return;   // 🔊 Sound is the MASTER: off = total silence (night play)
     if (!bgm){
       bgm = new Audio('bgm-monkeys.mp3');
       bgm.loop = true; bgm.preload = 'auto'; bgm.volume = 0;
@@ -2793,7 +2793,14 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     soundOn = !soundOn;
     localStorage.setItem('mmSound', soundOn ? 'on' : 'off');
     refreshSoundBtn();
-    if (soundOn){ ensureAudio(); sfx('line'); }   // little confirmation blip when turned on
+    if (soundOn){
+      ensureAudio(); sfx('line');   // little confirmation blip when turned on
+      if (musicOn) ensureMusic();   // music resumes if its own toggle is still ON
+    } else if (bgm){
+      // 🔊 is the master switch: turning it OFF silences the music too (night play)
+      fadeMusicTo(0);
+      setTimeout(function(){ if (bgm && !soundOn) bgm.pause(); }, 1000);
+    }
   });
 
   // Music on/off (separate from the effects toggle, remembered across visits)
@@ -2895,7 +2902,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'v124';
+  var BUILD_VER = 'v125';
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
