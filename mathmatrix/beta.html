@@ -1434,6 +1434,14 @@ body.binaryMode #binaryPanel{ display:flex !important; }
 .mrNums span{ background:#120C34; border-radius:6px; padding:3px 1px; text-align:center; font-size:10.5px;
   font-weight:800; font-variant-numeric:tabular-nums; box-shadow:var(--sunk); color:var(--bink);
   line-height:1.35; }
+/* Advance shows 128 numbers per card instead of at most 50 — tighter columns
+   so they all fit, with the same internal scroll as a safety net. */
+.mrNums.dense{ grid-template-columns:repeat(auto-fill, minmax(24px, 1fr)); gap:2px; }
+.mrNums.dense span{ font-size:8.5px; padding:2px 0; border-radius:4px; line-height:1.3; }
+.mrNote{ background:color-mix(in srgb, var(--mode) 16%, transparent); border-radius:10px;
+  padding:8px 10px; margin-top:9px; font-size:11px; color:var(--bink2); line-height:1.5;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--mode) 38%, transparent); }
+.mrNote b{ color:var(--bink); }
 .mrMore{ flex:none; text-align:center; font-size:9.5px; color:var(--bink3); margin-top:6px; font-weight:700; }
 .mrYN{ flex:none; display:flex; gap:8px; margin-top:9px; }
 .mrYN button{ flex:1; border:0; font-family:inherit; cursor:pointer; font-size:15px; font-weight:900;
@@ -1700,9 +1708,13 @@ body.binaryMode #binaryPanel{ display:flex !important; }
       <span><b>Binary Magic</b><i>no grid at all — eight cards read your mind</i></span>
     </div>
     <div class="toggleSwitch">
-      <button class="toggleBtn lvCard" data-size="binary" data-name="🔢 Binary Number Guess" style="color:#fcd34d; border-color:#84cc16; --c1:#f0e58a; --c2:#fcd34d;">
+      <button class="toggleBtn lvCard" data-size="binary" data-name="🔢 Guess My Number · Junior" style="color:#fcd34d; border-color:#84cc16; --c1:#f0e58a; --c2:#fcd34d;">
         <span class="lvGlyph" aria-hidden="true">🔢</span>
-        <span class="lvText"><b class="lvName">Binary Number Guess</b><span class="lvDiff">Think a number</span><span class="lvMeta">8 cards · guesses anything from 1 to 99</span><span class="lvNow">PLAYING</span></span>
+        <span class="lvText"><b class="lvName">Guess My Number · Junior</b><span class="lvDiff">1 to 99</span><span class="lvMeta">8 cards · tens and units, four bits each</span><span class="lvNow">PLAYING</span></span>
+      </button>
+      <button class="toggleBtn lvCard" data-size="binary2" data-name="🔢 Guess My Number · Advance" style="color:#a3e635; border-color:#4d7c0f; --c1:#d9f99d; --c2:#a3e635;">
+        <span class="lvGlyph" aria-hidden="true">🔢</span>
+        <span class="lvText"><b class="lvName">Guess My Number · Advance</b><span class="lvDiff">1 to 255</span><span class="lvMeta">the same 8 cards · real binary, nothing wasted</span><span class="lvNow">PLAYING</span></span>
       </button>
     </div>
   </div>
@@ -2244,13 +2256,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       this.classList.add('active');
       applyAccent();                      // this puzzle's colour takes over the whole app
       goScreen('scPlay');                 // picking a level takes you straight to the board
-      if (newSize === 'binary'){          // card game, not a grid puzzle
+      if (newSize === 'binary' || newSize === 'binary2'){   // card games, not grid puzzles
         currentSize = newSize;
         showBinaryMode(true);
         highlightNowPlaying();
         return;
       }
-      if (currentSize === 'binary') showBinaryMode(false);   // coming back to the grids
+      if (currentSize === 'binary' || currentSize === 'binary2') showBinaryMode(false);   // back to the grids
       if (newSize !== currentSize) {
         currentSize = newSize;
         initBoard();
@@ -4276,16 +4288,39 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     }
     return v;
   })();
+
+  /* ── Two editions of the card game ──────────────────────────────────────
+     JUNIOR  1-99   four bits for the tens digit, four for the units. Only 99
+                    of the 256 answer patterns are real numbers, so an
+                    impossible answer must be caught and explained.
+     ADVANCE 1-255  plain binary, weights 128…1. EVERY pattern except all-no
+                    is a real number, so nothing can be impossible. The same
+                    eight cards, two and a half times the range — which is
+                    the whole lesson.
+     Eight cards reach 2^8 − 1 = 255, not 256: the 256th pattern is all-no,
+     which is zero. Reaching 256 would need a ninth card. ──────────────── */
+  var MR_ADV_VALUES = [128, 64, 32, 16, 8, 4, 2, 1];
+  function mrAdv(){ return currentSize === 'binary2'; }
+  function mrMax(){ return mrAdv() ? 255 : 99; }
+  function mrVals(){ return mrAdv() ? MR_ADV_VALUES : MR_VALUES; }
+  function mrMembers(card){                       // card is 1..8
+    if (!mrAdv()) return binMembers(card);
+    var w = MR_ADV_VALUES[card - 1], out = [];
+    for (var n = 1; n <= 255; n++) if (n & w) out.push(n);
+    return out;
+  }
   function mrEl(){ return document.getElementById('binaryPanel'); }
 
   function mrStart(){
     MR.step = 0; MR.answers = []; MR.secret = '';
-    kimo('Think of any number from <b>1 to 99</b>. Keep it in your head — <b>do not tell me</b>.', 'think', true);
+    kimo('Think of any number from <b>1 to ' + mrMax() + '</b>. Keep it in your head — <b>do not tell me</b>.', 'think', true);
     mrEl().innerHTML =
       '<div class="mrWrap"><div class="mrCard">' +
         '<h3>🤫 Keep it secret</h3>' +
         '<p>Hold your number in your head. I will ask <b>eight questions</b> — just yes or no — ' +
         'and then tell you exactly what it is.</p>' +
+        (mrAdv() ? '<p class="mrNote">Advance: the same eight cards, but now they reach ' +
+          '<b>all the way to 255</b>. Nothing is wasted, so no answer can be impossible.</p>' : '') +
         '<div class="mrThink"><span class="mrQ">?</span>' +
           '<span>Your number lives here.<br><b>Only you know it.</b></span></div>' +
         '<button class="mrGo" id="mrGo">I have one — start asking →</button>' +
@@ -4298,17 +4333,19 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // EVERY number must be visible. Card 4 and card 8 hold 50 numbers each; showing
     // a subset made children answer "no" for a number that was simply off-screen,
     // which is why the guess came out wrong every time.
-    var i = MR.step, list = binMembers(i + 1), show = list;
+    var i = MR.step, list = mrMembers(i + 1), show = list;
     kimo('Is your number on <b>this</b> card?', 'think', true);
     mrEl().innerHTML =
       '<div class="mrWrap">' +
         '<div class="mrDots">' + [0,1,2,3,4,5,6,7].map(function(k){
             return '<i class="' + (k < MR.answers.length ? (MR.answers[k] ? 'y' : 'n')
                                  : (k === i ? 'now' : '')) + '"></i>'; }).join('') + '</div>' +
-        '<div class="mrGrp">' + (i < 4 ? 'Tens group · cards 1–4' : 'Units group · cards 5–8') + '</div>' +
+        '<div class="mrGrp">' + (mrAdv() ? ('Card ' + (i + 1) + ' of 8 · 1 to 255')
+                                    : (i < 4 ? 'Tens group · cards 1–4' : 'Units group · cards 5–8')) + '</div>' +
         '<div class="mrCard mrQcard" id="mrCard">' +
           '<div class="mrHead"><b>Card ' + (i + 1) + '</b><span>value hidden 🔒</span></div>' +
-          '<div class="mrNums">' + show.map(function(n){ return '<span>' + n + '</span>'; }).join('') + '</div>' +
+          '<div class="mrNums' + (mrAdv() ? ' dense' : '') + '">' +
+             show.map(function(n){ return '<span>' + n + '</span>'; }).join('') + '</div>' +
           '<div class="mrMore">all ' + list.length + ' numbers on this card</div>' +
         '</div>' +
         '<div class="mrYN"><button class="mrNo" data-a="0">✗ No</button>' +
@@ -4329,7 +4366,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
   function mrGuess(){
     var t = 0;
-    for (var i = 0; i < 8; i++) if (MR.answers[i]) t += MR_VALUES[i];
+    var V = mrVals();
+    for (var i = 0; i < 8; i++) if (MR.answers[i]) t += V[i];
     return t;
   }
   /* The tens cards and the units cards each build ONE digit, so each group can
@@ -4340,11 +4378,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     var t = 0, u = 0, i;
     for (i = 0; i < 4; i++) if (MR.answers[i]) t += MR_VALUES[i];   // 80 40 20 10
     for (i = 4; i < 8; i++) if (MR.answers[i]) u += MR_VALUES[i];   //  8  4  2  1
+    if (mrAdv()) return { tensDigit: 0, units: 0, n: mrGuess() };    // advance can never overflow
     return { tensDigit: t / 10, units: u, n: t + u };
   }
   function mrTooMany(group, digit){
     var picked = [], i0 = group === 'tens' ? 0 : 4;
     for (var i = i0; i < i0 + 4; i++) if (MR.answers[i]) picked.push(MR_VALUES[i] / (group === 'tens' ? 10 : 1));
+    if (mrAdv()) return;
     kimo('That cannot be right — <b>no digit is bigger than 9</b>. Shall we go again?', 'oops', true);
     sfx('dup');
     mrEl().innerHTML = '<div class="mrWrap">' +
@@ -4372,7 +4412,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     if (g === 0){
       kimo('Every answer was <b>no</b> — that only works for zero!', 'oops', true);
       mrEl().innerHTML = '<div class="mrWrap"><div class="mrBig">0</div>' +
-        '<p class="mrVerdict bad">A number from 1 to 99 sits on at least one card.</p>' +
+        '<p class="mrVerdict bad">A number from 1 to ' + mrMax() + ' sits on at least one card.</p>' +
         '<button class="mrGo" id="mrAgain">↺ Try again</button></div>';
       document.getElementById('mrAgain').addEventListener('click', mrStart);
       return;
@@ -4408,23 +4448,23 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     document.getElementById('mrKp').addEventListener('click', function(e){
       var b = e.target.closest('button'); if (!b) return;
       if (b.dataset.k === 'del') MR.secret = MR.secret.slice(0, -1);
-      else if (MR.secret.length < 2) MR.secret += b.dataset.k;
+      else if (MR.secret.length < String(mrMax()).length) MR.secret += b.dataset.k;
       var n = parseInt(MR.secret, 10);
       document.getElementById('mrVal').textContent = MR.secret || '– –';
-      document.getElementById('mrFind').disabled = !(n >= 1 && n <= 99);
+      document.getElementById('mrFind').disabled = !(n >= 1 && n <= mrMax());
       sfx('tick');
     });
     document.getElementById('mrSkip').addEventListener('click', mrStart);
     document.getElementById('mrFind').addEventListener('click', function(){
       var s = parseInt(MR.secret, 10), bad = -1;
       for (var i = 0; i < 8; i++){
-        var should = binMembers(i + 1).indexOf(s) >= 0 ? 1 : 0;
+        var should = mrMembers(i + 1).indexOf(s) >= 0 ? 1 : 0;
         if (should !== MR.answers[i]){ bad = i; break; }
       }
       var txt = bad < 0 ? 'Odd — every answer matches. Shall we try again?'
         : 'Card ' + (bad + 1) + ' should have been “' +
-          (binMembers(bad + 1).indexOf(s) >= 0 ? 'yes' : 'no') + '”. Look again — ' + s + ' is ' +
-          (binMembers(bad + 1).indexOf(s) >= 0 ? '' : 'not ') + 'on it.';
+          (mrMembers(bad + 1).indexOf(s) >= 0 ? 'yes' : 'no') + '”. Look again — ' + s + ' is ' +
+          (mrMembers(bad + 1).indexOf(s) >= 0 ? '' : 'not ') + 'on it.';
       kimo(bad < 0 ? txt : 'Found it — <b>card ' + (bad + 1) + '</b>. Answer that one again and I will be right.', 'think', true);
       mrEl().innerHTML = '<div class="mrWrap"><div class="mrBig" style="font-size:40px">' + s + '</div>' +
         '<p class="mrVerdict bad">' + txt + '</p>' +
@@ -4444,12 +4484,12 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   ];
   function mrLesson(){
     mrEl().innerHTML = '<div class="mrWrap mrLearn">' +
-      '<div class="mrWLab">Tens cards</div><div class="mrWRow">' +
-        MR_VALUES.slice(0,4).map(function(v,i){
+      '<div class="mrWLab">' + (mrAdv() ? 'Cards 1 to 4' : 'Tens cards') + '</div><div class="mrWRow">' +
+        mrVals().slice(0,4).map(function(v,i){
           return '<div class="mrW" data-i="' + i + '"><b>' + v + '</b><span>CARD ' + (i+1) + '</span></div>';
         }).join('') + '</div>' +
-      '<div class="mrWLab">Units cards</div><div class="mrWRow">' +
-        MR_VALUES.slice(4).map(function(v,i){
+      '<div class="mrWLab">' + (mrAdv() ? 'Cards 5 to 8' : 'Units cards') + '</div><div class="mrWRow">' +
+        mrVals().slice(4).map(function(v,i){
           return '<div class="mrW" data-i="' + (i+4) + '"><b>' + v + '</b><span>CARD ' + (i+5) + '</span></div>';
         }).join('') + '</div>' +
       '<div class="mrSum" id="mrSum">…</div><div class="mrBin" id="mrBin"></div>' +
@@ -4479,7 +4519,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     });
     if (MR.learn >= 2){
       var picked = [];
-      for (var i = 0; i < 8; i++) if (MR.answers[i]) picked.push(MR_VALUES[i]);
+      var VV = mrVals();
+      for (var i = 0; i < 8; i++) if (MR.answers[i]) picked.push(VV[i]);
       sum.innerHTML = picked.map(function(v, k){
         return (k ? '<span class="t">+</span>' : '') + '<span class="t">' + v + '</span>'; }).join('') +
         (MR.learn >= 3 ? '<span class="t eq">= ' + mrGuess() + '</span>' : '');
@@ -4668,8 +4709,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-7 (card game bugs fixed)';
-  window.BETA_VER = 'beta-7';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-8 (Junior 1-99 + Advance 1-255)';
+  window.BETA_VER = 'beta-8';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
