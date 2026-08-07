@@ -1555,14 +1555,64 @@ body.binaryMode #binaryPanel{ display:flex !important; }
 .splash.out{ animation:splashOut .42s ease forwards; pointer-events:none; }
 @keyframes splashOut{ to{ opacity:0; transform:scale(1.05); } }
 .splashInner{ position:relative; z-index:1; text-align:center; padding:0 26px; }
-.splashFace{ width:112px; height:112px; margin:0 auto 4px; border-radius:50%; display:grid;
-  place-items:center; font-size:62px; position:relative;
+.splashStage{ position:relative; width:170px; height:150px; margin:0 auto;
+  display:grid; place-items:center; }
+.splashFace{ width:118px; height:118px; margin:0 auto 4px; border-radius:50%; display:grid;
+  place-items:center; font-size:64px; position:relative;
   background:linear-gradient(160deg,#FFD675,var(--gold));
   box-shadow:0 10px 0 rgba(0,0,0,.3), 0 16px 34px rgba(0,0,0,.45),
              inset 2px 4px 5px rgba(255,255,255,.34);
-  animation:splashPop .55s cubic-bezier(.2,1.5,.5,1) both; }
-.splashDice{ position:absolute; right:-6px; bottom:2px; font-size:36px;
-  animation:splashDice .5s .12s cubic-bezier(.2,1.5,.5,1) both; }
+  animation:splashPop .55s cubic-bezier(.2,1.5,.5,1) both,
+            monkeySwing 2.6s .6s ease-in-out infinite; }
+/* the monkey keeps moving — it is a waiting screen now, not a timed one */
+@keyframes monkeySwing{
+  0%,100%{ transform:translateY(0) rotate(0deg) }
+  22%    { transform:translateY(-9px) rotate(-7deg) }
+  46%    { transform:translateY(0) rotate(0deg) }
+  62%    { transform:translateY(-5px) rotate(6deg) }
+  80%    { transform:translateY(0) rotate(-2deg) }
+}
+/* A real rolling die. The Unicode die characters render as a hollow outlined
+   box in the system font — poor beside the 3D monkey — so the pips are drawn
+   as actual dots on a 3x3 grid and switched on and off per face. */
+.splashDice{ position:absolute; right:-14px; bottom:-6px; width:54px; height:54px;
+  border-radius:14px; padding:8px; box-sizing:border-box;
+  display:grid; grid-template:repeat(3,1fr)/repeat(3,1fr); gap:2px;
+  background:linear-gradient(155deg,#FFFDF6,#E9DFC6);
+  box-shadow:0 5px 0 rgba(0,0,0,.32), 0 9px 16px rgba(0,0,0,.4),
+             inset 1px 2px 3px rgba(255,255,255,.95);
+  animation:splashDice .5s .12s cubic-bezier(.2,1.5,.5,1) both,
+            diceRoll 2.6s .6s ease-in-out infinite; }
+.splashDice i{ border-radius:50%; background:#2E2208; opacity:0;
+  box-shadow:inset 0 -1px 1px rgba(255,255,255,.25); transition:opacity .1s linear; }
+.splashDice i.on{ opacity:1; }
+@keyframes diceRoll{
+  0%,100%{ transform:rotate(0deg) scale(1) }
+  18%    { transform:rotate(-24deg) scale(1.08) }
+  34%    { transform:rotate(18deg) scale(1.04) }
+  50%    { transform:rotate(-10deg) scale(1) }
+  66%    { transform:rotate(6deg) scale(1.02) }
+}
+/* sparkles drifting up behind the monkey */
+.splashSpark{ position:absolute; font-size:15px; opacity:0; pointer-events:none;
+  animation:sparkFloat 3.4s ease-in-out infinite; }
+@keyframes sparkFloat{
+  0%  { opacity:0; transform:translateY(14px) scale(.6) }
+  22% { opacity:.85 }
+  70% { opacity:.5 }
+  100%{ opacity:0; transform:translateY(-58px) scale(1.05) }
+}
+/* the way in */
+.splashPlay{ display:inline-flex; align-items:center; gap:9px; margin-top:24px;
+  border:0; font-family:inherit; cursor:pointer; font-size:17px; font-weight:900;
+  padding:15px 34px; border-radius:999px; color:#1a1204;
+  background:linear-gradient(160deg,#FFD675,var(--gold));
+  box-shadow:0 6px 0 rgba(0,0,0,.32), 0 12px 24px rgba(0,0,0,.42),
+             inset 1px 3px 3px rgba(255,255,255,.5);
+  animation:playPulse 1.9s ease-in-out infinite; }
+.splashPlay:active{ transform:translateY(4px);
+  box-shadow:0 2px 0 rgba(0,0,0,.32), 0 5px 12px rgba(0,0,0,.4); }
+@keyframes playPulse{ 0%,100%{ transform:scale(1) } 50%{ transform:scale(1.055) } }
 @keyframes splashPop{ from{ opacity:0; transform:scale(.3) translateY(26px) } to{ opacity:1; transform:none } }
 @keyframes splashDice{ from{ opacity:0; transform:scale(.2) rotate(-160deg) } to{ opacity:1; transform:none } }
 .splashName{ font-size:31px; font-weight:900; letter-spacing:-.6px; color:#fff; margin-top:12px;
@@ -4794,28 +4844,60 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     s.setAttribute('aria-label', 'Start');
     s.innerHTML =
       '<div class="splashInner">' +
-        '<div class="splashFace">🐒<span class="splashDice">🎲</span></div>' +
+        '<div class="splashStage">' +
+          '<span class="splashSpark" style="left:6%;  top:44%; animation-delay:.0s">✨</span>' +
+          '<span class="splashSpark" style="left:82%; top:30%; animation-delay:.9s">⭐</span>' +
+          '<span class="splashSpark" style="left:20%; top:16%; animation-delay:1.7s">✨</span>' +
+          '<span class="splashSpark" style="left:70%; top:60%; animation-delay:2.4s">⭐</span>' +
+          '<div class="splashFace">🐒<span class="splashDice" id="splashDie">' +
+            '<i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></div>' +
+        '</div>' +
         '<div class="splashName">' + name + '</div>' +
         '<div class="splashTag">' + (tag ? tag.textContent : '') + '</div>' +
-        '<div class="splashHint">tap to start</div>' +
+        '<button class="splashPlay" type="button" id="splashPlay">▶ Tap to play</button>' +
       '</div>';
     shell.appendChild(s);
+
+    // the die really rolls — which pips are lit changes while it tumbles.
+    // grid slots are numbered 0..8 across the 3x3 face.
+    var FACES = [
+      [4],                    // 1
+      [0, 8],                 // 2
+      [0, 4, 8],              // 3
+      [0, 2, 6, 8],           // 4
+      [0, 2, 4, 6, 8],        // 5
+      [0, 2, 3, 5, 6, 8]      // 6
+    ];
+    var die = s.querySelector('#splashDie');
+    var pips = die ? die.querySelectorAll('i') : [];
+    var fi = 4;
+    function showFace(n){
+      for (var i = 0; i < pips.length; i++) pips[i].classList.remove('on');
+      FACES[n].forEach(function(i){ if (pips[i]) pips[i].classList.add('on'); });
+    }
+    showFace(fi);
+    var rolling = setInterval(function(){
+      var next; do { next = Math.floor(Math.random() * 6); } while (next === fi);
+      fi = next; showFace(fi);
+    }, 230);
 
     var gone = false;
     function dismiss(byTap){
       if (gone) return;
       gone = true;
-      if (byTap){ try { ensureAudio(); sfx('card'); } catch(e){} }   // a tap can unlock sound
+      clearInterval(rolling);
+      if (byTap){ try { ensureAudio(); sfx('card'); } catch(e){} }   // the tap unlocks sound
       s.classList.add('out');
       setTimeout(function(){ if (s.parentNode) s.parentNode.removeChild(s); }, 440);
     }
     s.addEventListener('click', function(){ dismiss(true); });
-    s.addEventListener('touchstart', function(){ dismiss(true); }, { passive:true });
-    // Everything has settled by ~680ms; holding to 2600 leaves about 1.9
-    // seconds of properly readable time. Raja's note was right: 1.4s closed
-    // before you could take in what it said. A longer hold costs nothing
-    // because a tap skips it - which answers my own earlier objection.
-    setTimeout(function(){ dismiss(false); }, 2600);
+    s.addEventListener('touchstart', function(e){ e.preventDefault(); dismiss(true); }, { passive:false });
+
+    /* It now WAITS for the child rather than counting down — Raja's call, and
+       the better one: no timing to get wrong, and it guarantees the gesture
+       that unlocks audio. The 20s fallback exists only so the screen can
+       never become a dead end if nobody taps. */
+    setTimeout(function(){ dismiss(false); }, 20000);
   })();
 
   /* ---- 12. THE APPLAUSE SCREEN ----
@@ -4986,8 +5068,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-13 (opening screen holds longer)';
-  window.BETA_VER = 'beta-13';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-14 (welcome screen waits for you)';
+  window.BETA_VER = 'beta-14';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
