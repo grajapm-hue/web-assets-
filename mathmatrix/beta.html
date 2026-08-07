@@ -1205,9 +1205,37 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
 
 .appShell{ height:100dvh; height:100vh; max-height:100dvh; width:100%;
   display:flex !important; flex-direction:column; overflow:hidden !important; position:relative; }
+/* ══ BACKGROUND DECORATION ══════════════════════════════════════════════
+   Three layers, all pure CSS so nothing extra downloads and it still works
+   with no signal:
+     1. a vertical wash — deeper at the top, lifting toward the bottom
+     2. soft diagonal light rays drifting slowly across
+     3. a glow low down that reads as depth, tinted by the puzzle's colour
+   Kept at 4–6% white so it gives the screen air without competing with the
+   board. Every layer sits at z-index 0 behind the app.                    */
+.appShell{
+  background:
+    radial-gradient(130% 55% at 50% 106%, color-mix(in srgb, var(--accent) 24%, transparent), transparent 72%),
+    linear-gradient(180deg, #100B33 0%, var(--gr) 42%, #1D1550 100%) !important;
+}
 .appShell::before{ content:''; position:absolute; inset:0; z-index:0; pointer-events:none;
   background:radial-gradient(72% 34% at 50% -4%, color-mix(in srgb, var(--accent) 38%, transparent), transparent 70%); }
+/* the light rays */
+.appShell::after{
+  content:''; position:absolute; inset:-30% -40%; z-index:0; pointer-events:none;
+  background:repeating-linear-gradient(19deg,
+    rgba(255,255,255,0)    0px,
+    rgba(255,255,255,.055) 46px,
+    rgba(255,255,255,0)    104px,
+    rgba(255,255,255,0)    178px);
+  animation:rayDrift 26s ease-in-out infinite;
+}
+@keyframes rayDrift{
+  0%,100%{ transform:translate3d(0,0,0); opacity:.85; }
+  50%    { transform:translate3d(26px,-18px,0); opacity:1; }
+}
 .appShell > *{ position:relative; z-index:1; }
+@media(prefers-reduced-motion:reduce){ .appShell::after{ animation:none !important; } }
 
 .appBar{ flex:none; height:46px; padding:0 11px !important; position:static !important;
   display:flex; align-items:center; gap:8px;
@@ -4716,8 +4744,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-9 (3x3 hint says the offsets)';
-  window.BETA_VER = 'beta-9';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-10 (background decoration)';
+  window.BETA_VER = 'beta-10';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
