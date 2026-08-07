@@ -1537,8 +1537,49 @@ body.binaryMode #binaryPanel{ display:flex !important; }
 .hintDots i{ width:5px; height:5px; border-radius:50%; background:rgba(255,255,255,.22); }
 .hintDots i.used{ background:var(--gold); }
 
+/* ══ THE APPLAUSE SCREEN ══════════════════════════════════════════════
+   The win was a plain "Congratulations" line. A child who has just done
+   real mathematics deserves the moment to land. Stars are earned by how
+   little help was needed, so they mean something. */
+.winWrap{ text-align:center; }
+.winKimo{ width:66px; height:66px; margin:0 auto 8px; border-radius:50%; display:grid;
+  place-items:center; font-size:36px; background:linear-gradient(160deg,#FFD675,var(--gold));
+  box-shadow:var(--clay); animation:kParty 1s var(--spring); }
+.winStars{ display:flex; justify-content:center; gap:7px; margin-bottom:6px; }
+/* ★ is a text glyph, not an emoji — a grayscale filter does nothing to it,
+   so the stars have to be coloured directly or they come out plain white. */
+.winStars i{ font-style:normal; font-size:33px; line-height:1; transform:scale(.82);
+  color:rgba(255,255,255,.18); transition:color .35s ease, transform .45s var(--spring); }
+.winStars i.lit{ transform:scale(1); color:var(--gold);
+  text-shadow:0 0 14px rgba(247,179,43,.55), 0 2px 3px rgba(0,0,0,.4);
+  animation:starPop .5s var(--spring) backwards; }
+.winStars i.lit:nth-child(1){ animation-delay:.15s } .winStars i.lit:nth-child(2){ animation-delay:.32s }
+.winStars i.lit:nth-child(3){ animation-delay:.49s }
+@keyframes starPop{ 0%{ transform:scale(.2) rotate(-40deg); opacity:0 }
+  60%{ transform:scale(1.28) rotate(9deg) } 100%{ transform:scale(1); opacity:1 } }
+.winTitle{ font-size:22px; font-weight:900; letter-spacing:-.4px; color:var(--bink); margin-bottom:2px; }
+.winLine{ font-size:12px; color:var(--bink2); line-height:1.5; }
+.winStats{ display:flex; gap:6px; margin:12px 0 0; }
+.winStat{ flex:1; background:var(--sf); border-radius:14px; padding:8px 4px; box-shadow:var(--clay); }
+.winStat b{ display:block; font-size:17px; font-variant-numeric:tabular-nums; color:var(--bink); }
+.winStat span{ display:block; font-size:8px; color:var(--bink3); font-weight:800;
+  letter-spacing:.6px; text-transform:uppercase; }
+.winStat.g b{ color:var(--gold) } .winStat.w b{ color:var(--wingreen) }
+.winSticker{ display:flex; align-items:center; gap:10px; background:var(--sf); border-radius:16px;
+  padding:10px 12px; margin-top:10px; box-shadow:var(--clay); text-align:left;
+  animation:stickIn .55s var(--spring) .5s backwards; }
+@keyframes stickIn{ from{ opacity:0; transform:translateY(14px) scale(.9) } to{ opacity:1; transform:none } }
+.winSticker .s{ width:40px; height:40px; flex:none; border-radius:13px; display:grid; place-items:center;
+  font-size:22px; background:color-mix(in srgb, var(--gold) 28%, transparent); }
+.winSticker b{ display:block; font-size:12px; color:var(--bink); }
+.winSticker span{ display:block; font-size:10px; color:var(--bink3); }
+.congratsBox h2{ display:none !important; }        /* the old 🎉👏 line */
+#congratsText{ display:none !important; }          /* replaced by the block above */
+
 /* congrats becomes a sheet, not a full-screen modal */
 .congratsModal{ position:absolute !important; z-index:90 !important; }
+.congratsBox{ background:var(--gr) !important; border-radius:24px !important;
+  box-shadow:0 -8px 34px rgba(0,0,0,.55) !important; padding:18px 15px 16px !important; }
 @media(prefers-reduced-motion:reduce){ *{ animation:none !important; } }
 </style>
 </head>
@@ -4694,6 +4735,124 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     }
   };
 
+  /* ---- 12. THE APPLAUSE SCREEN ----
+     The win was one line of text. Stars are earned by how little help was
+     needed, so three stars actually mean something, and the sticker gives a
+     child something to collect and show someone. */
+  var STICKERS = {
+    '3x3':'🥇 Count-down Master', '4x4':'🧩 Fill & Swap Master', '5x5':'🌟 Big Square Master',
+    '6x6':'🧱 Four-Block Master', '8x8':'🏅 Flip Master', '10x10':'🏆 Grandmaster',
+    '3cube':'✖️ Powers of Two', 'ramanujan':'🎂 Birthday Magician'
+  };
+  function stickerStore(){
+    try { return JSON.parse(localStorage.getItem('mmStickers') || '[]'); } catch(e){ return []; }
+  }
+  // the achievement line the app already tracks, said plainly
+  function progressLine(){
+    var el = document.getElementById('solvedCounter');
+    var raw = el ? el.textContent : '';
+    var m = raw.match(/(\d+)\s*\/\s*(\d+)/);
+    if (!m) return 'Solve one more to master this level';
+    var need = Math.max(0, (+m[2]) - (+m[1]));
+    return need > 0 ? ('Solve ' + need + ' more to master this level')
+                    : 'This level is mastered';
+  }
+  function earnSticker(size){
+    var s = stickerStore();
+    if (s.indexOf(size) < 0){ s.push(size); try { localStorage.setItem('mmStickers', JSON.stringify(s)); } catch(e){} }
+    return s.length;
+  }
+
+  function decorateCongrats(mastered){
+    var box = document.querySelector('.congratsBox');
+    if (!box) return;
+    var old = box.querySelector('.winWrap');
+    if (old) old.remove();
+
+    var pz = PUZZLES[currentSize] || {};
+    var lines = pz.lines ? pz.lines.length : (pz.rows ? pz.rows * 2 + 2 : 8);
+    var target = (document.getElementById('targetVal') || {}).textContent || '—';
+    var time = (document.getElementById('timerBox') || {}).textContent || '—';
+    // stars are the reward for needing little help
+    var stars = hintsUsed === 0 ? 3 : hintsUsed <= 2 ? 2 : 1;
+    var total = earnSticker(currentSize);
+    var stk = (STICKERS[currentSize] || '⭐ Puzzle Master').split(' ');
+    var icon = stk.shift(), name = stk.join(' ');
+    var praise = stars === 3 ? 'Not a single hint. That is the good one.'
+               : stars === 2 ? 'With a little help — still yours.'
+               : 'You got there. Next time, fewer hints!';
+
+    var el = document.createElement('div');
+    el.className = 'winWrap';
+    el.innerHTML =
+      '<div class="winKimo">🐒</div>' +
+      '<div class="winStars">' +
+        [1,2,3].map(function(i){ return '<i class="' + (i <= stars ? 'lit' : '') + '">★</i>'; }).join('') +
+      '</div>' +
+      '<div class="winTitle">Solved it!</div>' +
+      '<p class="winLine">' + praise + '</p>' +
+      '<div class="winStats">' +
+        '<div class="winStat g"><b>' + target + '</b><span>Every line</span></div>' +
+        '<div class="winStat"><b>' + time + '</b><span>Time</span></div>' +
+        '<div class="winStat w"><b>' + lines + '/' + lines + '</b><span>Lines</span></div>' +
+      '</div>' +
+      (mastered
+        ? '<div class="winSticker"><span class="s">' + icon + '</span>' +
+            '<span><b>' + name + '</b><span>sticker ' + total + ' of ' +
+            Object.keys(STICKERS).length + ' collected</span></span></div>'
+        // the "one more, with a different total" guidance used to live in a
+        // hidden element; it belongs here where the child is actually looking
+        : '<div class="winSticker"><span class="s">🎯</span><span><b>' + progressLine() +
+            '</b><span>a different total earns the sticker</span></span></div>');
+    box.insertBefore(el, box.firstChild);
+
+    kimo(stars === 3 ? '<b>Three stars!</b> No hints at all. 🐒'
+                     : 'Solved! <b>' + stars + ' star' + (stars > 1 ? 's' : '') + '</b> — fewer hints next time.',
+         'party', true);
+    // the stars land one after another, each with its own chime
+    for (var i = 0; i < stars; i++) (function(k){ setTimeout(function(){ sfx('star'); }, 250 + k * 180); })(i);
+    setTimeout(function(){ sfx('sparkle'); }, 250 + stars * 180);
+  }
+
+  var _showCongrats = showCongrats;
+  showCongrats = function(title, subtitle, nextSize){
+    _showCongrats(title, subtitle, nextSize);   // keeps the existing advance logic intact
+    try { decorateCongrats(true); } catch(e){}
+  };
+
+  /* Every win deserves the moment, not only the one that masters a level.
+     The original only opened the panel on the SECOND solve with a different
+     target; an ordinary win wrote a line into #msg — which this layout hides,
+     so a first win gave a child almost nothing back. */
+  function openApplause(){
+    var modal = document.getElementById('congratsModal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    decorateCongrats(false);
+    var next = document.getElementById('nextBtn');
+    var later = document.getElementById('chooseLaterBtn');
+    var cd = document.getElementById('congratsCountdown');
+    if (cd) cd.textContent = '';
+    if (next){
+      next.textContent = '↺ Try a different number';
+      next.onclick = function(){
+        modal.style.display = 'none';
+        var c = document.getElementById('clearBtn'); if (c) c.click();
+      };
+    }
+    if (later) later.textContent = '📋 Pick another puzzle ▼';
+  }
+
+  var _win = win;
+  win = function(actualTarget){
+    _win(actualTarget);
+    setTimeout(function(){
+      var modal = document.getElementById('congratsModal');
+      if (!modal) return;
+      if (modal.style.display !== 'flex') openApplause();   // ordinary win
+    }, 80);
+  };
+
   // hook the Mind Reader in wherever binary mode is entered.
   // The original showBinaryMode wires handlers onto elements INSIDE #binaryPanel, which
   // mrStart() replaces. On a second visit those lookups returned null and it threw before
@@ -4744,8 +4903,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-10 (background decoration)';
-  window.BETA_VER = 'beta-10';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-11 (applause screen)';
+  window.BETA_VER = 'beta-11';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
