@@ -1537,6 +1537,50 @@ body.binaryMode #binaryPanel{ display:flex !important; }
 .hintDots i{ width:5px; height:5px; border-radius:50%; background:rgba(255,255,255,.22); }
 .hintDots i.used{ background:var(--gold); }
 
+/* ══ OPENING SCREEN ═══════════════════════════════════════════════════
+   1.4 seconds, not three. Candy Crush needs three because it is loading
+   hundreds of megabytes; ours is already there, so a longer wait would be
+   manufacturing delay rather than covering it. Tap anywhere to skip, and
+   it only ever shows once per launch. */
+.splash{ position:absolute; inset:0; z-index:200; display:grid; place-items:center;
+  cursor:pointer; overflow:hidden;
+  background:
+    radial-gradient(130% 55% at 50% 108%, color-mix(in srgb, var(--gold) 22%, transparent), transparent 72%),
+    linear-gradient(180deg, #0D0929 0%, #171043 45%, #241A5C 100%); }
+.splash::after{ content:''; position:absolute; inset:-30% -40%; pointer-events:none;
+  background:repeating-linear-gradient(19deg,
+    rgba(255,255,255,0) 0px, rgba(255,255,255,.06) 46px,
+    rgba(255,255,255,0) 104px, rgba(255,255,255,0) 178px);
+  animation:rayDrift 26s ease-in-out infinite; }
+.splash.out{ animation:splashOut .38s ease forwards; pointer-events:none; }
+@keyframes splashOut{ to{ opacity:0; transform:scale(1.04); } }
+.splashInner{ position:relative; z-index:1; text-align:center; padding:0 26px; }
+.splashFace{ width:112px; height:112px; margin:0 auto 4px; border-radius:50%; display:grid;
+  place-items:center; font-size:62px; position:relative;
+  background:linear-gradient(160deg,#FFD675,var(--gold));
+  box-shadow:0 10px 0 rgba(0,0,0,.3), 0 16px 34px rgba(0,0,0,.45),
+             inset 2px 4px 5px rgba(255,255,255,.34);
+  animation:splashPop .7s cubic-bezier(.2,1.5,.5,1) both; }
+.splashDice{ position:absolute; right:-6px; bottom:2px; font-size:36px;
+  animation:splashDice .8s .18s cubic-bezier(.2,1.5,.5,1) both; }
+@keyframes splashPop{ from{ opacity:0; transform:scale(.3) translateY(26px) } to{ opacity:1; transform:none } }
+@keyframes splashDice{ from{ opacity:0; transform:scale(.2) rotate(-160deg) } to{ opacity:1; transform:none } }
+.splashName{ font-size:31px; font-weight:900; letter-spacing:-.6px; color:#fff; margin-top:12px;
+  text-shadow:0 3px 10px rgba(0,0,0,.5);
+  animation:splashUp .5s .26s both; }
+.splashTag{ font-size:12.5px; font-weight:700; line-height:1.55; margin-top:8px; max-width:22em;
+  background:linear-gradient(90deg,#FFD675,#FB7185,#A78BFA,#22D3EE,#3DD68C);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  animation:splashUp .5s .42s both; }
+.splashHint{ font-size:10.5px; font-weight:800; letter-spacing:1.6px; text-transform:uppercase;
+  color:rgba(255,255,255,.42); margin-top:26px; animation:splashBlink 1.5s .7s infinite; }
+@keyframes splashUp{ from{ opacity:0; transform:translateY(12px) } to{ opacity:1; transform:none } }
+@keyframes splashBlink{ 0%,100%{ opacity:.32 } 50%{ opacity:.85 } }
+@media(prefers-reduced-motion:reduce){
+  .splash *{ animation:none !important; }
+  .splash::after{ animation:none !important; }
+}
+
 /* ══ THE APPLAUSE SCREEN ══════════════════════════════════════════════
    The win was a plain "Congratulations" line. A child who has just done
    real mathematics deserves the moment to land. Stars are earned by how
@@ -4735,6 +4779,41 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     }
   };
 
+  /* ---- 12b. THE OPENING SCREEN ----
+     Shown once per launch, for 1.4s, and skippable with a tap. Tapping it
+     also unlocks WebAudio, so the very first game sound plays immediately
+     instead of being swallowed by the browser's autoplay rule. */
+  (function splashScreen(){
+    var shell = document.querySelector('.appShell');
+    if (!shell) return;
+    var tag = document.querySelector('#vault .tagline');
+    var name = (SCREEN_TITLE && SCREEN_TITLE.scHome) ? SCREEN_TITLE.scHome.replace(/^[^A-Za-z]+/, '') : 'MathMatrix';
+    var s = document.createElement('div');
+    s.className = 'splash';
+    s.setAttribute('role', 'button');
+    s.setAttribute('aria-label', 'Start');
+    s.innerHTML =
+      '<div class="splashInner">' +
+        '<div class="splashFace">🐒<span class="splashDice">🎲</span></div>' +
+        '<div class="splashName">' + name + '</div>' +
+        '<div class="splashTag">' + (tag ? tag.textContent : '') + '</div>' +
+        '<div class="splashHint">tap to start</div>' +
+      '</div>';
+    shell.appendChild(s);
+
+    var gone = false;
+    function dismiss(byTap){
+      if (gone) return;
+      gone = true;
+      if (byTap){ try { ensureAudio(); sfx('card'); } catch(e){} }   // a tap can unlock sound
+      s.classList.add('out');
+      setTimeout(function(){ if (s.parentNode) s.parentNode.removeChild(s); }, 400);
+    }
+    s.addEventListener('click', function(){ dismiss(true); });
+    s.addEventListener('touchstart', function(){ dismiss(true); }, { passive:true });
+    setTimeout(function(){ dismiss(false); }, 1400);
+  })();
+
   /* ---- 12. THE APPLAUSE SCREEN ----
      The win was one line of text. Stars are earned by how little help was
      needed, so three stars actually mean something, and the sticker gives a
@@ -4903,8 +4982,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-11 (applause screen)';
-  window.BETA_VER = 'beta-11';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-12 (opening screen)';
+  window.BETA_VER = 'beta-12';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
