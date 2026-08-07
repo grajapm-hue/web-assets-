@@ -1241,8 +1241,10 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
 /* Kimo — fixed height, two lines maximum, never pushes the board */
 .kimo{ flex:none; margin:0 0 6px !important; padding:0 !important; max-width:none !important; gap:8px !important; }
 .kimoFace{ width:36px !important; height:36px !important; font-size:20px !important; }
+/* three lines, not two: the hints now name every offset, and clipping a hint
+   mid-sentence is worse than giving up ~14px of board height */
 .kimoBub{ padding:6px 10px !important; font-size:11px !important; line-height:1.35 !important;
-  border-radius:13px !important; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+  border-radius:13px !important; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;
   overflow:hidden; }
 .kimoBub::before{ top:14px !important; }
 .betaFlag{ flex:none; margin:0 0 6px !important; padding:5px 10px !important; font-size:9.5px !important;
@@ -4543,9 +4545,14 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
      thing". This gives a stuck child the smallest push that unsticks them, and
      counts what was used so a no-hint win still means something. */
   var HINTS = {
-    '3x3':      ['The middle box is <b>the target ÷ 3</b>. Opposite boxes always add to twice the middle.',
-                 'Put <b>1</b> in the top middle. Count three down, then place to the right.'],
-    '5x5':      ['The middle box is <b>the target ÷ 5</b>. Same count-down trick as 3×3, just bigger.',
+    /* Raja's framing, and the better one: say what the numbers ARE, not just a
+       property to check afterwards. The eight outer boxes are the middle
+       −4 −3 −2 −1 +1 +2 +3 +4, and each opposite pair is a matching −k and +k
+       (which is *why* opposites add to twice the middle). It also generalises
+       to any sequence, not just 1–9. */
+    '3x3':      ['Middle = <b>target ÷ 3</b>. The rest are the middle <b>−1, +1, −2, +2, −3, +3, −4, +4</b>.',
+                 'Each −k faces its +k across the middle. To build it: <b>1</b> in the top middle, count three down, place right.'],
+    '5x5':      ['Middle = <b>target ÷ 5</b>. The rest step out from it: <b>−1 +1 −2 +2</b> … all the way to <b>±12</b>.',
                  'Put <b>1</b> in the top middle. Count three down, place to the right, wrapping round.'],
     '4x4':      ['Write <b>1 upwards in order</b> first, then swap a few pairs.',
                  'Keep the numbers on the two diagonals where they are. Every other box becomes <b>17 − its number</b>.'],
@@ -4709,8 +4716,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-8 (Junior 1-99 + Advance 1-255)';
-  window.BETA_VER = 'beta-8';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-9 (3x3 hint says the offsets)';
+  window.BETA_VER = 'beta-9';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
