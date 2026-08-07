@@ -1376,6 +1376,21 @@ body.onPlay .solvedCounter{ font-size:9px !important; padding:3px 9px !important
 .shScroll #logicBox{ display:block !important; background:var(--sf) !important; border:0 !important;
   max-width:none !important; }
 
+/* The grid MUST be hideable for the card game. The layout rules above use
+   display:…!important, and an !important stylesheet rule beats the plain inline
+   style the code sets — so el.style.display='none' silently did nothing and the
+   previous puzzle stayed on screen behind the cards. This wins it back. */
+body.binaryMode #boardWrap,
+body.binaryMode #playRow,
+body.binaryMode #keypad,
+body.binaryMode #rotateHint,
+body.binaryMode #learnRow,
+body.binaryMode #learnHint,
+body.binaryMode .keysChip,
+body.binaryMode .targetPill,
+body.binaryMode .solvedCounter{ display:none !important; }
+body.binaryMode #binaryPanel{ display:flex !important; }
+
 /* ══ MIND READER — one card at a time ══ */
 .mrWrap{ flex:1; min-height:0; display:flex; flex-direction:column; overflow:hidden; }
 .mrCard{ background:var(--sf); border-radius:18px; padding:13px 12px; box-shadow:var(--clay); flex:none; }
@@ -1434,6 +1449,8 @@ body.onPlay .solvedCounter{ font-size:9px !important; padding:3px 9px !important
   background-clip:text; color:transparent; animation:mrPop .55s var(--spring); }
 @keyframes mrPop{ 0%{ transform:scale(.2); opacity:0 } 60%{ transform:scale(1.14) } 100%{ transform:scale(1); opacity:1 } }
 .mrVerdict{ flex:none; text-align:center; font-size:12px; font-weight:800; color:var(--bink2); margin:5px 0 9px; }
+.mrOops{ flex:none; text-align:center; font-size:46px; margin:6px 0 2px;
+  animation:kOops .5s ease; }
 .mrVerdict.bad{ color:var(--warn); }
 .mrPill{ flex:none; background:#120C34; border-radius:13px; padding:11px; margin-top:10px; text-align:center;
   font-size:22px; font-weight:900; letter-spacing:5px; box-shadow:var(--sunk);
@@ -4315,8 +4332,43 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     for (var i = 0; i < 8; i++) if (MR.answers[i]) t += MR_VALUES[i];
     return t;
   }
+  /* The tens cards and the units cards each build ONE digit, so each group can
+     total at most 9. Saying yes to 8 and 4 in the same group already makes 12,
+     and no digit is 12 — that is how 165 appeared. Check the two halves
+     separately instead of blindly adding all eight. */
+  function mrParts(){
+    var t = 0, u = 0, i;
+    for (i = 0; i < 4; i++) if (MR.answers[i]) t += MR_VALUES[i];   // 80 40 20 10
+    for (i = 4; i < 8; i++) if (MR.answers[i]) u += MR_VALUES[i];   //  8  4  2  1
+    return { tensDigit: t / 10, units: u, n: t + u };
+  }
+  function mrTooMany(group, digit){
+    var picked = [], i0 = group === 'tens' ? 0 : 4;
+    for (var i = i0; i < i0 + 4; i++) if (MR.answers[i]) picked.push(MR_VALUES[i] / (group === 'tens' ? 10 : 1));
+    kimo('That cannot be right — <b>no digit is bigger than 9</b>. Shall we go again?', 'oops', true);
+    sfx('dup');
+    mrEl().innerHTML = '<div class="mrWrap">' +
+      '<div class="mrOops">🤔</div>' +
+      '<p class="mrVerdict bad">Those answers do not make a real number.</p>' +
+      '<div class="mrCard"><h3>Here is the snag</h3>' +
+        '<p>The ' + (group === 'tens' ? 'first four' : 'last four') + ' cards build the <b>' + group +
+        '</b> digit. You said yes to <b>' + picked.join(' + ') + '</b>, which is <b>' + digit + '</b> — ' +
+        'but a digit only goes up to <b>9</b>.</p>' +
+        '<p>Every number from 1 to 99 needs <b>at most three</b> yeses in each group. ' +
+        'If you said yes to <b>8</b>, you cannot also say yes to <b>4</b> or <b>2</b>.</p>' +
+      '</div>' +
+      '<button class="mrGo" id="mrRedo">↺ Let me answer again</button>' +
+      '<button class="mrGhost" id="mrBack1">← Change just my last answer</button></div>';
+    document.getElementById('mrRedo').addEventListener('click', mrStart);
+    document.getElementById('mrBack1').addEventListener('click', function(){
+      MR.step = 7; MR.answers.pop(); mrAsk();
+    });
+  }
   function mrReveal(){
-    var g = mrGuess();
+    var p = mrParts(), g = p.n;
+    // impossible answers must say so, not invent a number outside 1 to 99
+    if (p.tensDigit > 9) return mrTooMany('tens', p.tensDigit);
+    if (p.units > 9)     return mrTooMany('units', p.units);
     if (g === 0){
       kimo('Every answer was <b>no</b> — that only works for zero!', 'oops', true);
       mrEl().innerHTML = '<div class="mrWrap"><div class="mrBig">0</div>' +
@@ -4579,6 +4631,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     var p = document.getElementById('binaryPanel');
     if (p && on) p.innerHTML = BIN_ORIGINAL;
     try { _showBinaryMode(on); } catch(e){}
+    // the class does the hiding — inline styles lose to the layout's !important rules
+    document.body.classList.toggle('binaryMode', !!on);
     if (on) mrStart();
   };
   if (currentSize === 'binary') mrStart();
@@ -4614,8 +4668,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-6 (music + 10 new sounds)';
-  window.BETA_VER = 'beta-6';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-7 (card game bugs fixed)';
+  window.BETA_VER = 'beta-7';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
