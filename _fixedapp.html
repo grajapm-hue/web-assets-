@@ -1,0 +1,666 @@
+<title>📐 MathMatrix — one screen, no scrolling</title>
+<style>
+:root{--pg:#FBFAFE;--pg2:#FFF;--edge:#E8E3F3;--tx:#17122F;--tx2:#4E4674;--tx3:#8079A4;--mark:#6D3AE0;
+  --ok:#0F7A4E;--warn:#B45309;--sans:"Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,sans-serif}
+@media (prefers-color-scheme:dark){:root{--pg:#0B0A17;--pg2:#141126;--edge:#262046;--tx:#F4F1FC;
+  --tx2:#BCB4DE;--tx3:#8A82AE;--mark:#BB9DFF;--ok:#4ADE80;--warn:#FBBF24}}
+:root[data-theme="dark"]{--pg:#0B0A17;--pg2:#141126;--edge:#262046;--tx:#F4F1FC;--tx2:#BCB4DE;
+  --tx3:#8A82AE;--mark:#BB9DFF;--ok:#4ADE80;--warn:#FBBF24}
+:root[data-theme="light"]{--pg:#FBFAFE;--pg2:#FFF;--edge:#E8E3F3;--tx:#17122F;--tx2:#4E4674;
+  --tx3:#8079A4;--mark:#6D3AE0;--ok:#0F7A4E;--warn:#B45309}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--pg);color:var(--tx);font-family:var(--sans);line-height:1.6;padding:24px 16px 44px}
+.page{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+.eyebrow{font-size:11px;font-weight:800;letter-spacing:2.2px;text-transform:uppercase;color:var(--mark)}
+h1{font-size:clamp(23px,5vw,34px);line-height:1.15;font-weight:800;letter-spacing:-.6px}
+h2{font-size:19px;font-weight:800;letter-spacing:-.2px}
+.lede{font-size:15px;color:var(--tx2);max-width:66ch}
+.muted{font-size:13px;color:var(--tx2)}
+.panel{background:var(--pg2);border:1px solid var(--edge);border-radius:16px;padding:17px 18px}
+.split{display:grid;gap:20px;grid-template-columns:1fr}
+@media(min-width:880px){.split{grid-template-columns:minmax(0,390px) minmax(0,1fr)}}
+
+/* height budget diagram */
+.budget{display:flex;flex-direction:column;gap:3px;font-size:11px;font-weight:800}
+.bRow{display:flex;align-items:center;gap:9px}
+.bBar{height:26px;border-radius:6px;display:flex;align-items:center;padding:0 9px;color:#0b0725;
+  font-size:10.5px;letter-spacing:.3px;white-space:nowrap;overflow:hidden}
+.bName{width:112px;flex:none;color:var(--tx2);font-weight:700;font-size:11.5px;text-align:right}
+.bFlex{background:repeating-linear-gradient(45deg,#F7B32B,#F7B32B 8px,#ffca5c 8px,#ffca5c 16px)}
+.tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.6px;padding:2px 7px;
+  border-radius:999px;background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
+.tag.w{background:color-mix(in srgb,var(--warn) 20%,transparent);color:var(--warn)}
+
+/* feature table */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:560px}
+th{text-align:left;font-size:10px;letter-spacing:1.3px;text-transform:uppercase;color:var(--tx3);
+  padding:0 10px 7px 0;border-bottom:1px solid var(--edge)}
+td{padding:8px 10px 8px 0;border-bottom:1px solid var(--edge);color:var(--tx2);vertical-align:top}
+td b{color:var(--tx)}
+.где{white-space:nowrap}
+
+/* device */
+.stageRow{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap;justify-content:center}
+.device{border:1px solid var(--edge);border-radius:26px;overflow:hidden;box-shadow:0 20px 44px rgba(0,0,0,.18);
+  flex:none;background:#171043}
+.devLbl{text-align:center;font-size:11px;font-weight:800;color:var(--tx3);margin-top:7px}
+.sizeBtns{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin-bottom:4px}
+.sizeBtn{border:1px solid var(--edge);background:var(--pg2);color:var(--tx2);font-family:inherit;
+  font-size:11.5px;font-weight:800;padding:7px 12px;border-radius:999px;cursor:pointer}
+.sizeBtn.on{background:var(--mark);color:var(--pg2);border-color:var(--mark)}
+.scrollProof{font-size:11.5px;font-weight:800;text-align:center;margin-top:6px}
+.scrollProof.ok{color:var(--ok)}.scrollProof.bad{color:var(--warn)}
+
+/* ══════════════ THE APP — fixed height, zero page scroll ══════════════ */
+.app{--gr:#171043;--sf:#241A5C;--sf2:#33268C;--ink:#F6F3FF;--ink2:#C3B9F0;--ink3:#9A8FD6;
+  --gold:#F7B32B;--win:#3DD68C;--warn2:#FF7A6B;--mode:#5B9DF9;
+  --clay:0 3px 0 rgba(0,0,0,.34),0 4px 9px rgba(0,0,0,.38),inset 1px 2px 2px rgba(255,255,255,.13);
+  --sunk:inset 0 3px 7px rgba(0,0,0,.45);--spring:cubic-bezier(.34,1.56,.64,1);
+  background:var(--gr);color:var(--ink);width:100%;height:100%;
+  display:flex;flex-direction:column;overflow:hidden;position:relative;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:13px}
+.app.mBin{--mode:#22D3EE}
+.glow{position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(72% 34% at 50% -4%,color-mix(in srgb,var(--mode) 38%,transparent),transparent 70%)}
+.app>*:not(.glow){position:relative;z-index:1}
+
+/* fixed chrome */
+.hdr{flex:none;height:46px;display:flex;align-items:center;gap:8px;padding:0 11px;
+  background:rgba(0,0,0,.26);border-bottom:1px solid rgba(255,255,255,.09)}
+.hBtn{width:29px;height:29px;flex:none;border-radius:10px;background:var(--sf2);display:grid;
+  place-items:center;font-size:14px;border:0;color:var(--ink);box-shadow:var(--clay);cursor:pointer;
+  font-family:inherit}
+.hBtn:active{transform:translateY(2px);box-shadow:var(--sunk)}
+.hMonkey{width:29px;height:29px;flex:none;border-radius:50%;display:grid;place-items:center;font-size:17px;
+  background:linear-gradient(160deg,#FFD675,var(--gold));box-shadow:var(--clay);animation:bob 3s var(--spring) infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.hTtl{flex:1;min-width:0;font-size:13px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hTtl small{display:block;font-size:8.5px;font-weight:700;color:var(--ink3);letter-spacing:.3px}
+
+/* the ONE flexible region */
+.main{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+.scr{flex:1;min-height:0;display:none;flex-direction:column;overflow:hidden;padding:8px 11px 0}
+.scr.on{display:flex;animation:sIn .26s var(--spring)}
+@keyframes sIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+.tabs{flex:none;height:52px;display:flex;gap:3px;padding:5px 7px;background:rgba(0,0,0,.32);
+  border-top:1px solid rgba(255,255,255,.1)}
+.tabs button{flex:1;border:0;background:transparent;color:var(--ink3);font-size:8px;font-weight:800;
+  border-radius:11px;cursor:pointer;font-family:inherit;padding:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:1px}
+.tabs button span{font-size:15px;filter:grayscale(1) opacity(.55);transition:transform .2s var(--spring)}
+.tabs button.on{color:var(--gold);background:rgba(255,255,255,.08)}
+.tabs button.on span{filter:none;transform:translateY(-1px) scale(1.12)}
+
+/* Kimo strip — fixed height, never grows */
+.kimo{flex:none;display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.kFace{width:36px;height:36px;flex:none;border-radius:50%;display:grid;place-items:center;font-size:20px;
+  background:linear-gradient(160deg,#FFD675,var(--gold));box-shadow:var(--clay);animation:bob 3s var(--spring) infinite}
+.kBub{flex:1;min-width:0;background:var(--sf2);border-radius:13px;padding:6px 10px;font-size:11px;
+  line-height:1.35;box-shadow:var(--clay);font-weight:600;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.kBub b{color:var(--gold);font-weight:900}
+
+/* ── HOME ── */
+.homeScroll{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:5px}
+.mode{flex:none}
+.modeH{display:flex;align-items:center;gap:6px;margin:3px 0 4px}
+.modeH i{width:18px;height:18px;border-radius:6px;display:grid;place-items:center;font-size:9px;
+  font-style:normal;font-weight:900;background:color-mix(in srgb,var(--h) 26%,transparent);color:var(--h);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--h) 46%,transparent)}
+.modeH b{font-size:10px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:var(--ink3)}
+.lvGrid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.lvGrid.one{grid-template-columns:1fr}
+.lv{display:flex;align-items:center;gap:7px;padding:6px 7px 6px 9px;border-radius:12px;background:var(--sf);
+  box-shadow:var(--clay);border:0;color:var(--ink);text-align:left;font-family:inherit;cursor:pointer;
+  position:relative;overflow:hidden;transition:transform .12s var(--spring)}
+.lv:active{transform:translateY(2px);box-shadow:var(--sunk)}
+.lv::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--h)}
+.lv .w{width:22px;height:22px;flex:none;border-radius:6px;position:relative;overflow:hidden;
+  background:color-mix(in srgb,var(--h) 18%,#0c0a1e)}
+.lv .w::before{content:'';position:absolute;inset:2px;
+  background-image:radial-gradient(circle at 50% 50%,var(--h) 32%,transparent 35%);
+  background-size:calc(100%/var(--n)) calc(100%/var(--n))}
+.lv .g{width:22px;height:22px;flex:none;border-radius:6px;display:grid;place-items:center;font-size:11px;
+  background:color-mix(in srgb,var(--h) 18%,#0c0a1e);color:var(--h);font-weight:900}
+.lv em{font-style:normal;display:block;font-size:11px;font-weight:900;line-height:1.1}
+.lv small{display:block;font-size:8px;color:var(--ink3);font-weight:700}
+.lv.on{background:var(--sf2);box-shadow:var(--clay),inset 0 0 0 1.5px var(--h)}
+
+/* ── PLAY ── */
+.pTop{flex:none;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:6px}
+.tgt{display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:999px;font-size:12.5px;
+  font-weight:900;background:var(--sf2);color:var(--ink2);box-shadow:var(--clay)}
+.tgt.found{background:var(--gold);color:#1a1204}
+.tgt.done{background:var(--win);color:#04231a}
+.stars{display:flex;gap:1px;font-size:11px}
+.stars i{font-style:normal;filter:grayscale(1) opacity(.3)}
+.stars i.lit{filter:none}
+.boardBox{flex:1;min-height:0;display:grid;place-items:center;overflow:hidden}
+.bd{display:grid;gap:3px}
+.cl{border-radius:8px;background:var(--sf2);display:grid;place-items:center;font-weight:900;
+  color:var(--ink);font-variant-numeric:tabular-nums;box-shadow:var(--clay);border:0;font-family:inherit;
+  padding:0;cursor:pointer}
+.cl.em{background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px rgba(255,255,255,.09)}
+.cl.dg{background:color-mix(in srgb,var(--mode) 16%,var(--sf2))}
+.cl.em.dg{background:color-mix(in srgb,var(--mode) 12%,rgba(255,255,255,.05))}
+.cl.cur{box-shadow:0 0 0 2.5px var(--gold)}
+.cl.won{background:linear-gradient(160deg,#5BE8AB,var(--win));color:#04231a}
+.cl.bg{background:transparent!important;box-shadow:none!important;color:var(--ink3);font-weight:800;
+  cursor:default}
+.cl.bg.cor{border-radius:6px;background:color-mix(in srgb,var(--mode) 15%,transparent)!important;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--mode) 40%,transparent)!important;color:var(--mode)}
+.pRow{flex:none;display:flex;gap:5px;margin:6px 0}
+.pBtn{flex:1;border:0;border-radius:12px;padding:8px 4px;background:var(--sf2);color:var(--ink);
+  font-size:10.5px;font-weight:900;box-shadow:var(--clay);cursor:pointer;font-family:inherit}
+.pBtn:active{transform:translateY(2px);box-shadow:var(--sunk)}
+.pBtn.gold{background:var(--gold);color:#1a1204}
+.pad{flex:none;display:flex;flex-direction:column;gap:4px;padding-bottom:6px}
+.pRowK{display:flex;gap:4px}
+.k{flex:1;border:0;border-radius:10px;background:var(--sf2);color:var(--ink);font-weight:900;
+  box-shadow:var(--clay);cursor:pointer;font-family:inherit;font-variant-numeric:tabular-nums;
+  height:34px;font-size:15px}
+.k:active{transform:translateY(2px);box-shadow:var(--sunk)}
+.k.u{background:rgba(255,255,255,.07);color:var(--ink3);font-size:12px}
+
+/* ── paged content (Learn) ── */
+.pager{flex:1;min-height:0;display:flex;flex-direction:column}
+.pgBody{flex:1;min-height:0;display:flex;flex-direction:column;gap:6px;overflow:hidden}
+.card2{background:var(--sf);border-radius:14px;padding:10px 11px;box-shadow:var(--clay)}
+.card2 b{display:block;font-size:11.5px;color:var(--mode);margin-bottom:3px}
+.card2 p{font-size:11px;color:var(--ink2);line-height:1.5}
+.pgNav{flex:none;display:flex;align-items:center;gap:7px;padding:6px 0}
+.pgDots{flex:1;display:flex;gap:4px;justify-content:center}
+.pgDots i{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.2)}
+.pgDots i.on{background:var(--gold);transform:scale(1.35)}
+.pgB{border:0;border-radius:10px;background:var(--sf2);color:var(--ink);font-size:11px;font-weight:900;
+  padding:7px 12px;box-shadow:var(--clay);cursor:pointer;font-family:inherit}
+
+/* ── simple rows (App / Feedback) ── */
+.rowBtn{display:flex;align-items:center;gap:8px;width:100%;border:0;border-radius:13px;padding:10px 11px;
+  background:var(--sf);color:var(--ink);box-shadow:var(--clay);font-family:inherit;cursor:pointer;
+  text-align:left;margin-bottom:5px}
+.rowBtn i{font-style:normal;width:26px;height:26px;flex:none;border-radius:8px;display:grid;
+  place-items:center;font-size:14px;background:var(--sf2)}
+.rowBtn b{display:block;font-size:11.5px;font-weight:900}
+.rowBtn small{display:block;font-size:9px;color:var(--ink3);font-weight:700}
+.rowBtn.gold{background:var(--gold);color:#1a1204}
+.rowBtn.gold i{background:rgba(0,0,0,.13)}
+.rowBtn.gold small{color:#5c4405}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:7px}
+.chip{border:0;font-family:inherit;font-size:10.5px;font-weight:800;padding:7px 10px;border-radius:999px;
+  background:var(--sf2);color:var(--ink);box-shadow:var(--clay);cursor:pointer}
+.chip.on{background:var(--gold);color:#1a1204}
+.ta{width:100%;flex:1;min-height:0;background:#120C34;color:var(--ink);border:0;border-radius:12px;
+  padding:9px 10px;font-size:12px;font-family:inherit;box-shadow:var(--sunk);resize:none;line-height:1.5}
+.miniNote{font-size:9px;color:var(--ink3);line-height:1.5;margin-top:5px}
+
+/* ── bottom sheet: where long content lives ── */
+.sheet{position:absolute;left:0;right:0;bottom:0;top:0;z-index:40;display:none;flex-direction:column;
+  background:rgba(9,6,28,.66)}
+.sheet.on{display:flex}
+.shBody{margin-top:auto;background:var(--gr);border-radius:22px 22px 0 0;max-height:82%;
+  display:flex;flex-direction:column;box-shadow:0 -8px 30px rgba(0,0,0,.5);animation:up .3s var(--spring)}
+@keyframes up{from{transform:translateY(30px);opacity:.4}to{transform:none;opacity:1}}
+.shHead{flex:none;display:flex;align-items:center;gap:8px;padding:11px 13px 8px}
+.shHead b{flex:1;font-size:13px;font-weight:900}
+.shScroll{overflow-y:auto;padding:0 13px 15px;-webkit-overflow-scrolling:touch}
+.shScroll p{font-size:11.5px;color:var(--ink2);line-height:1.6;margin-bottom:8px}
+.shScroll p b{color:var(--ink)}
+.grab{width:34px;height:4px;border-radius:99px;background:rgba(255,255,255,.22);margin:7px auto 0}
+.congrats{text-align:center;padding:14px 13px 16px}
+.trophy{width:54px;height:54px;margin:0 auto 7px;border-radius:18px;display:grid;place-items:center;
+  font-size:28px;background:linear-gradient(150deg,#FFD675,var(--gold));box-shadow:var(--clay)}
+.congrats h4{font-size:17px;font-weight:900}
+.congrats p{font-size:11px;color:var(--ink2);margin-top:2px}
+.stats{display:flex;gap:5px;margin:10px 0}
+.stat{flex:1;background:var(--sf);border-radius:11px;padding:6px 3px;box-shadow:var(--clay)}
+.stat b{display:block;font-size:14px;font-variant-numeric:tabular-nums}
+.stat span{font-size:7.5px;color:var(--ink3);font-weight:800;letter-spacing:.4px;text-transform:uppercase}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="page">
+  <header>
+    <div class="eyebrow">MathMatrix · proposal · not built yet</div>
+    <h1>📐 One screen. Nothing scrolls. Everything still there.</h1>
+    <p class="lede">Today the app is a long document: title, target, board, keypad, buttons, math logic,
+    level list, credits — all stacked in one column you scroll through. This turns it into a fixed-height
+    app. The <b>board grows and shrinks to fill whatever space is left</b>, long content moves into
+    bottom sheets, and the Learn notes become pages instead of a scroll. Try the sizes below — the frame
+    never scrolls.</p>
+  </header>
+
+  <div class="sizeBtns" id="sizes"></div>
+  <div class="stageRow">
+    <div>
+      <div class="device" id="device" style="width:390px;height:750px"></div>
+      <div class="devLbl" id="devLbl">iPhone 14 · 390 × 750</div>
+      <div class="scrollProof" id="proof">checking…</div>
+    </div>
+  </div>
+
+  <div class="split">
+    <div class="panel">
+      <h2>The height budget</h2>
+      <p class="muted" style="margin:7px 0 12px">Fixed chrome is small and constant. Everything left over
+      goes to one flexible region — on the Play screen that is the board.</p>
+      <div class="budget">
+        <div class="bRow"><span class="bName">Header</span>
+          <span class="bBar" style="width:46px;background:#8079A4">46</span><span class="tag">fixed</span></div>
+        <div class="bRow"><span class="bName">Kimo strip</span>
+          <span class="bBar" style="width:50px;background:#F7B32B">50</span><span class="tag">fixed</span></div>
+        <div class="bRow"><span class="bName">Target + stars</span>
+          <span class="bBar" style="width:34px;background:#5B9DF9">34</span><span class="tag">fixed</span></div>
+        <div class="bRow"><span class="bName">Board</span>
+          <span class="bBar bFlex" style="width:210px">grows to fill — this is the fix</span>
+          <span class="tag">flexible</span></div>
+        <div class="bRow"><span class="bName">Clear/Hint/Watch</span>
+          <span class="bBar" style="width:40px;background:#3DD68C">40</span><span class="tag">fixed</span></div>
+        <div class="bRow"><span class="bName">Keypad</span>
+          <span class="bBar" style="width:118px;background:#A78BFA">118</span><span class="tag">fixed</span></div>
+        <div class="bRow"><span class="bName">Tab bar</span>
+          <span class="bBar" style="width:52px;background:#8079A4">52</span><span class="tag">fixed</span></div>
+      </div>
+      <p class="muted" style="margin-top:12px">Fixed chrome totals about <b>340px</b>. On a 640px phone
+      the board gets ~300px; on a 900px phone it gets ~560px and simply grows. Nothing is cut, and
+      nothing needs scrolling.</p>
+    </div>
+
+    <div class="panel">
+      <h2>Three techniques doing the work</h2>
+      <div class="muted" style="display:flex;flex-direction:column;gap:11px;margin-top:9px">
+        <div><b style="color:var(--tx)">1 · The board sizes to height, not just width.</b><br>
+        This is the actual bug behind the scrolling. Today the cell size is calculated from the screen
+        <em>width</em> alone, so on a short screen a 10×10 board is taller than the phone and the page
+        has to scroll. The fix is one line of arithmetic: take the <b>smaller</b> of the width-derived
+        and height-derived cell size.</div>
+        <div><b style="color:var(--tx)">2 · Long content moves into bottom sheets.</b><br>
+        Offline instructions, the formula sheets, credits, the provenance note and the win screen are
+        rare and wordy. They slide up over the app and scroll inside themselves. The screen behind them
+        never scrolls.</div>
+        <div><b style="color:var(--tx)">3 · Learn becomes pages, not a wall.</b><br>
+        The maths notes are the one thing genuinely too long for a phone screen. Instead of a scroll,
+        they become 4 short pages with dots and a Next — each one fits, and a child reads one idea at
+        a time.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Every live feature, and where it now lives</h2>
+    <p class="muted" style="margin:7px 0 12px">Nothing from the live app is dropped. This is the full
+    inventory of v131 mapped onto the fixed-height shell.</p>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Feature in the live app</th><th>New home</th><th>Scrolls?</th></tr></thead>
+        <tbody id="featTbl"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <p class="muted" style="text-align:center">Live is untouched on v131. Say the word and I build this
+  into <b>/beta</b>, headless-tested at 320 × 568 upward.</p>
+</div>
+
+<script>
+/* ═══════════ feature inventory ═══════════ */
+var FEATURES = [
+ ['9 puzzles + difficulty chooser','Puzzles tab — 2-column grid, mode grouped','no'],
+ ['Title, tagline, “Now playing”','Header (title + subtitle) — always visible','no'],
+ ['Target pill (? → preview → solved)','Play, fixed row above the board','no'],
+ ['Achievement / solved counter','Play, merged into the star row','no'],
+ ['Instruction card per level','Kimo strip — spoken, not a block of text','no'],
+ ['👁 SHOW / ▶ Watch Me Solve','Play, action row','no'],
+ ['Board + badge ring + diagonals','Play — <b>the flexible region</b>','no'],
+ ['On-screen keypad, ⌫, arrows, ±','Play, fixed under the actions','no'],
+ ['System-keyboard toggle','Play → ⋯ overflow','no'],
+ ['CLEAR + timer','Play, action row (timer in header)','no'],
+ ['🔊 sound / 🎵 music toggles','Header icon → quick panel','no'],
+ ['Spatial stereo audio','Unchanged — no UI needed','—'],
+ ['Rotate hint (big boards)','Removed — the board now fits without rotating','—'],
+ ['Show Math Logic (per level)','Learn tab — 4 pages, one idea each','paged'],
+ ['📋 Quick Formula Sheet images','Learn → sheet (image, pinch-zoomable)','in sheet'],
+ ['Binary 8 cards + readout','Play — one card at a time, full height','no'],
+ ['Binary → decimal converter','Learn page 4 of the binary game','no'],
+ ['Ramanujan DOB row','Play — top row highlighted, rest locked','no'],
+ ['📤 Share','Get App tab, first row','no'],
+ ['📥 Install App','Get App tab, gold primary row','no'],
+ ['📲 Play Offline instructions','Get App → bottom sheet','in sheet'],
+ ['🔄 Online Update','Get App tab, row','no'],
+ ['Journey note (paper → AI)','About sheet','in sheet'],
+ ['Credits, mail, version, music','About sheet','in sheet'],
+ ['Congratulations modal + next','Bottom sheet over Play','no'],
+ ['Coming Soon chips','Puzzles tab, last mode group','no'],
+ ['💬 Feedback + report issue','Feedback tab','no']
+];
+document.getElementById('featTbl').innerHTML = FEATURES.map(function(f){
+  var s = f[2]==='no' ? '<span class="tag">never</span>'
+        : f[2]==='—' ? '<span class="tag">n/a</span>'
+        : '<span class="tag w">'+f[2]+'</span>';
+  return '<tr><td><b>'+f[0]+'</b></td><td>'+f[1]+'</td><td>'+s+'</td></tr>';
+}).join('');
+
+/* ═══════════ the app ═══════════ */
+var SOL=[[8,1,6],[3,5,7],[4,9,2]];
+var LEVELS=[
+ {id:'3x3',n:3,h:'#93C5FD',nm:'3×3',mt:'Easy'},{id:'4x4',n:4,h:'#7DB3FB',nm:'4×4',mt:'Hard'},
+ {id:'5x5',n:5,h:'#60A5FA',nm:'5×5',mt:'Master'},{id:'6x6',n:6,h:'#4B93F5',nm:'6×6',mt:'Expert'},
+ {id:'8x8',n:8,h:'#3B82F6',nm:'8×8',mt:'Champion'},{id:'10x10',n:10,h:'#2563EB',nm:'10×10',mt:'Grand'}
+];
+var LEARN=[
+ ['The secret structure','The middle box is <b>target ÷ 3</b>. Opposite boxes always add to twice the middle — for 5 that is 10: 1+9, 2+8, 3+7, 4+6.'],
+ ['The count-down method','Put <b>1</b> in the top middle. Count three down, place to the right, wrapping round. Blocked? Drop straight below.'],
+ ['Eight lines, not six','Three rows, three columns and <b>both diagonals</b>. The corner badges track the diagonals so you never forget them.'],
+ ['Eight twins','Rotate or mirror a solved square — all <b>8</b> versions stay magic. The numbers move; the relationships never do.']
+];
+
+var APP = '<div class="glow"></div>'+
+'<div class="hdr">'+
+ '<button class="hBtn" id="back" style="display:none">←</button>'+
+ '<span class="hMonkey">🐒</span>'+
+ '<span class="hTtl" id="ttl">MathMatrix<small id="sub">🎲 maths that moves</small></span>'+
+ '<button class="hBtn" id="snd">🔊</button><button class="hBtn" id="more">⋯</button>'+
+'</div>'+
+'<div class="main">'+
+
+ /* HOME */
+ '<section class="scr on" id="s-home">'+
+  '<div class="kimo"><span class="kFace">🐒</span><span class="kBub" id="kb1">Pick a puzzle — <b>they\'re all open</b>, no locks.</span></div>'+
+  '<div class="homeScroll" id="homeList"></div>'+
+ '</section>'+
+
+ /* PLAY */
+ '<section class="scr" id="s-play">'+
+  '<div class="kimo"><span class="kFace">🐒</span><span class="kBub" id="kb2">Tap a box, then a number.</span></div>'+
+  '<div class="pTop"><span class="tgt" id="tgt">🎯 Target : ?</span><span class="stars" id="stars"></span></div>'+
+  '<div class="boardBox" id="boardBox"><div class="bd" id="bd"></div></div>'+
+  '<div class="pRow"><button class="pBtn" id="clr">↺ Clear</button>'+
+   '<button class="pBtn gold" id="hint">💡 Hint</button>'+
+   '<button class="pBtn" id="watch">▶ Watch</button></div>'+
+  '<div class="pad" id="pad"></div>'+
+ '</section>'+
+
+ /* LEARN */
+ '<section class="scr" id="s-learn">'+
+  '<div class="kimo"><span class="kFace">🐒</span><span class="kBub" id="kb3">One idea at a time — no long page to wade through.</span></div>'+
+  '<div class="pager"><div class="pgBody" id="pgBody"></div>'+
+   '<div class="pgNav"><button class="pgB" id="pgPrev">←</button>'+
+    '<span class="pgDots" id="pgDots"></span>'+
+    '<button class="pgB" id="pgNext">Next →</button></div></div>'+
+  '<button class="rowBtn" id="sheetBtn" style="margin-bottom:8px"><i>📋</i>'+
+   '<span><b>Quick formula sheet</b><small>the diagram, full screen</small></span></button>'+
+ '</section>'+
+
+ /* GET APP */
+ '<section class="scr" id="s-app">'+
+  '<div class="kimo"><span class="kFace">🐒</span><span class="kBub">Install once and it works with <b>no internet</b>.</span></div>'+
+  '<button class="rowBtn gold"><i>📥</i><span><b>Install app</b><small>adds the 🐒🎲 icon to your home screen</small></span></button>'+
+  '<button class="rowBtn"><i>📤</i><span><b>Share the puzzle</b><small>send the link to a friend</small></span></button>'+
+  '<button class="rowBtn" id="offBtn"><i>📲</i><span><b>Play offline</b><small>how to add it by hand</small></span></button>'+
+  '<button class="rowBtn"><i>🔄</i><span><b>Check for updates</b><small>only when you are online</small></span></button>'+
+  '<button class="rowBtn" id="aboutBtn"><i>📜</i><span><b>About this project</b><small>where these puzzles came from</small></span></button>'+
+ '</section>'+
+
+ /* FEEDBACK */
+ '<section class="scr" id="s-feed">'+
+  '<div class="kimo"><span class="kFace">🐒</span><span class="kBub">Found something odd? <b>Tell us.</b></span></div>'+
+  '<div class="chips">'+['😄 Fun','😵 Too hard','😴 Too easy','🐞 Bug','💡 Idea']
+    .map(function(c){ return '<button class="chip">'+c+'</button>'; }).join('')+'</div>'+
+  '<textarea class="ta" placeholder="What happened, or what would you change?"></textarea>'+
+  '<button class="rowBtn gold" style="margin-top:6px"><i>✉️</i><span><b>Send feedback</b>'+
+   '<small>opens your mail app — nothing sent automatically</small></span></button>'+
+  '<p class="miniNote">Version, puzzle and screen size are attached. No names, no scores.</p>'+
+ '</section>'+
+
+'</div>'+
+
+'<nav class="tabs">'+
+ '<button class="on" data-s="home"><span>🏠</span>Puzzles</button>'+
+ '<button data-s="play"><span>🎲</span>Play</button>'+
+ '<button data-s="learn"><span>💡</span>Learn</button>'+
+ '<button data-s="app"><span>📲</span>Get App</button>'+
+ '<button data-s="feed"><span>💬</span>Feedback</button>'+
+'</nav>'+
+
+/* sheets */
+'<div class="sheet" id="sheet"><div class="shBody"><div class="grab"></div>'+
+ '<div class="shHead"><b id="shTtl">Title</b><button class="hBtn" id="shClose">✕</button></div>'+
+ '<div class="shScroll" id="shBody"></div></div></div>'+
+'<div class="sheet" id="winSheet"><div class="shBody"><div class="grab"></div>'+
+ '<div class="congrats"><div class="trophy">🏆</div><h4>Solved it!</h4>'+
+  '<p>🐒 Every line came to fifteen — diagonals too.</p>'+
+  '<div class="stats"><div class="stat"><b>15</b><span>Target</span></div>'+
+   '<div class="stat"><b>01:38</b><span>Time</span></div>'+
+   '<div class="stat"><b>8/8</b><span>Lines</span></div></div>'+
+  '<button class="rowBtn gold" id="nextLv"><i>→</i><span><b>Next : 4×4</b>'+
+   '<small>bigger square, same trick</small></span></button>'+
+  '<button class="rowBtn" id="winClose"><i>↺</i><span><b>Play again</b><small>same puzzle</small></span></button>'+
+ '</div></div></div>';
+
+var dev = document.getElementById('device');
+dev.innerHTML = '<div class="app" id="app">' + APP + '</div>';
+
+/* ---- home list ---- */
+var homeHTML = '<div class="mode"><div class="modeH" style="--h:#5B9DF9"><i>+</i><b>Add Magic</b></div>'+
+ '<div class="lvGrid">'+ LEVELS.map(function(L,i){
+   return '<button class="lv'+(i===0?' on':'')+'" data-lv="'+L.id+'" style="--h:'+L.h+';--n:'+L.n+'">'+
+     '<span class="w"></span><span><em>'+L.nm+'</em><small>'+L.mt+'</small></span></button>';
+ }).join('') +'</div></div>'+
+ '<div class="mode"><div class="modeH" style="--h:#A78BFA"><i>×</i><b>Multiply</b></div>'+
+ '<div class="lvGrid one"><button class="lv" style="--h:#A78BFA"><span class="g">×</span>'+
+ '<span><em>3³ Multiply</em><small>powers of two</small></span></button></div></div>'+
+ '<div class="mode"><div class="modeH" style="--h:#FB7185"><i>🎂</i><b>Birthday</b></div>'+
+ '<div class="lvGrid one"><button class="lv" style="--h:#FB7185"><span class="g">🎂</span>'+
+ '<span><em>Sir Ramanujan MathMagic</em><small>your own date builds it</small></span></button></div></div>'+
+ '<div class="mode"><div class="modeH" style="--h:#22D3EE"><i>01</i><b>Mind Reader</b></div>'+
+ '<div class="lvGrid one"><button class="lv" style="--h:#22D3EE"><span class="g">🔮</span>'+
+ '<span><em>Kimo Reads Your Mind</em><small>8 questions, any number</small></span></button></div></div>'+
+ '<div class="mode"><div class="modeH" style="--h:#94A3B8"><i>🔜</i><b>Coming soon</b></div>'+
+ '<div class="lvGrid"><button class="lv" style="--h:#94A3B8;opacity:.6"><span class="g">📐</span>'+
+ '<span><em>Angle Magic</em><small>in preparation</small></span></button>'+
+ '<button class="lv" style="--h:#94A3B8;opacity:.6"><span class="g">🔀</span>'+
+ '<span><em>Logic Gates</em><small>in preparation</small></span></button></div></div>';
+document.getElementById('homeList').innerHTML = homeHTML;
+
+/* ---- keypad ---- */
+document.getElementById('pad').innerHTML =
+ '<div class="pRowK">'+[1,2,3,4,5].map(function(d){return '<button class="k">'+d+'</button>';}).join('')+'</div>'+
+ '<div class="pRowK">'+[6,7,8,9,0].map(function(d){return '<button class="k">'+d+'</button>';}).join('')+'</div>'+
+ '<div class="pRowK"><button class="k u">⌫</button><button class="k u">←</button>'+
+  '<button class="k u">↑</button><button class="k u">↓</button><button class="k u">→</button></div>';
+
+/* ---- board that sizes to the LEFTOVER BOX, width AND height ---- */
+var N = 3, filled = {};
+function drawBoard(){
+  var box = document.getElementById('boardBox'), bd = document.getElementById('bd');
+  var t = N + 2, gap = t >= 10 ? 2 : 3;
+  var w = box.clientWidth, h = box.clientHeight;
+  if (!w || !h) return;
+  // THE FIX: take the smaller of the width- and height-derived cell size
+  var cw = Math.floor((w - gap * (t - 1)) / t);
+  var ch = Math.floor((h - gap * (t - 1)) / t);
+  var cell = Math.max(12, Math.min(cw, ch, 74));
+  bd.style.gridTemplateColumns = 'repeat(' + t + ',' + cell + 'px)';
+  bd.style.gap = gap + 'px';
+  var html = '';
+  for (var r = 0; r < t; r++) for (var c = 0; c < t; c++){
+    var edge = (r===0||r===t-1||c===0||c===t-1);
+    var st = 'width:'+cell+'px;height:'+cell+'px;font-size:'+Math.max(8,Math.round(cell*0.42))+'px';
+    if (edge){
+      var corner = (r===0||r===t-1)&&(c===0||c===t-1);
+      if (corner){
+        var a = r===0 ? (c===0?'↘':'↙') : (c===0?'↗':'↖');
+        html += '<span class="cl bg cor" style="'+st+';font-size:'+Math.max(7,Math.round(cell*0.3))+'px">'+a+'</span>';
+      } else {
+        html += '<span class="cl bg" style="'+st+';font-size:'+Math.max(7,Math.round(cell*0.3))+'px">·</span>';
+      }
+    } else {
+      var i=r-1, j=c-1, dg=(i===j)||(i+j===N-1), key=i+','+j;
+      var v = filled[key];
+      html += '<button class="cl '+(v?'':'em ')+(dg?'dg ':'')+(i===0&&j===0?'cur':'')+'" style="'+st+'">'+
+              (v||'')+'</button>';
+    }
+  }
+  bd.innerHTML = html;
+}
+if (window.ResizeObserver){
+  new ResizeObserver(function(){ drawBoard(); }).observe(document.getElementById('boardBox'));
+}
+
+/* ---- learn pager ---- */
+var pg = 0;
+function drawPager(){
+  var b = document.getElementById('pgBody');
+  b.innerHTML = '<div class="card2"><b>'+LEARN[pg][0]+'</b><p>'+LEARN[pg][1]+'</p></div>';
+  document.getElementById('pgDots').innerHTML =
+    LEARN.map(function(_,i){ return '<i class="'+(i===pg?'on':'')+'"></i>'; }).join('');
+  document.getElementById('pgNext').textContent = pg===LEARN.length-1 ? 'Done' : 'Next →';
+}
+document.getElementById('pgNext').addEventListener('click',function(){
+  pg = (pg+1) % LEARN.length; drawPager();
+});
+document.getElementById('pgPrev').addEventListener('click',function(){
+  pg = (pg-1+LEARN.length) % LEARN.length; drawPager();
+});
+
+/* ---- nav ---- */
+var TITLES = {home:['MathMatrix','🎲 maths that moves'],play:['3×3 Easy','tap a box, then a number'],
+  learn:['How 3×3 works','one idea per page'],app:['Share & install','works with no internet'],
+  feed:['Feedback','this is a test version']};
+function go(s){
+  ['home','play','learn','app','feed'].forEach(function(k){
+    document.getElementById('s-'+k).classList.toggle('on', k===s);
+  });
+  document.querySelectorAll('.tabs button').forEach(function(b){
+    b.classList.toggle('on', b.dataset.s===s);
+  });
+  document.getElementById('back').style.display = s==='home' ? 'none' : 'grid';
+  document.getElementById('ttl').innerHTML = TITLES[s][0] + '<small>'+TITLES[s][1]+'</small>';
+  if (s==='play') setTimeout(drawBoard, 30);
+}
+document.querySelectorAll('.tabs button').forEach(function(b){
+  b.addEventListener('click', function(){ go(b.dataset.s); });
+});
+document.getElementById('back').addEventListener('click', function(){ go('home'); });
+document.getElementById('homeList').addEventListener('click', function(e){
+  var b = e.target.closest('.lv'); if (!b) return;
+  document.querySelectorAll('.lv').forEach(function(x){ x.classList.remove('on'); });
+  b.classList.add('on');
+  if (b.dataset.lv){ N = parseInt(b.dataset.lv,10); filled = {}; }
+  go('play');
+  TITLES.play = [b.querySelector('em').textContent, 'tap a box, then a number'];
+  document.getElementById('ttl').innerHTML = TITLES.play[0]+'<small>'+TITLES.play[1]+'</small>';
+});
+
+/* ---- sheets ---- */
+var SHEETS = {
+  off:['📲 Play offline','<p><b>iPhone / iPad (Safari)</b><br>1. Open this game in Safari<br>'+
+    '2. Tap the Share button ⬆️<br>3. Scroll down, tap “Add to Home Screen”<br>4. Tap “Add”.</p>'+
+    '<p><b>Android (Chrome)</b><br>1. Open in Chrome<br>2. Tap the ⋮ menu<br>'+
+    '3. Tap “Add to Home Screen”<br>4. Tap “Add”.</p>'+
+    '<p>✅ Once added, tap the icon anytime — no internet needed.</p>'],
+  about:['📜 About this project','<p><b>How these puzzles travelled.</b> Collected in school days on '+
+    'paper · kept through the 1990s in spreadsheets · rebuilt today with AI.</p>'+
+    '<p><em>If you keep them, in twenty years you may open them in a way none of us can imagine yet. '+
+    'Preserve · explore · pass them on.</em></p>'+
+    '<p>Created by G. RajaPathamuthu · Kids Puzzle Library<br>Guided by : JNT<br>'+
+    'Code coordinated by : Claude AI</p>'+
+    '<p>🎵 Music: “Monkeys Spinning Monkeys” by Kevin MacLeod · CC BY 3.0</p>'],
+  sheet:['📋 Quick formula sheet','<p>The step diagram for this puzzle opens here full-width, '+
+    'pinch-zoomable, over the top of the app — so the board behind it never has to move.</p>'+
+    '<p style="background:#241A5C;border-radius:12px;padding:22px;text-align:center;color:#9A8FD6">'+
+    '[ cheat-3x3.png ]</p>'],
+  more:['⚙️ Quick settings','<p>🔊 <b>Sound</b> — master switch. Turning it off silences the music too, '+
+    'for night play.</p><p>🎵 <b>Music</b> — the monkey tune, ducks while you type.</p>'+
+    '<p>🎧 <b>Spatial stereo</b> — sounds come from where things happen. Use earphones.</p>'+
+    '<p>⌨️ <b>System keyboard</b> — swap the built-in keypad for your phone’s own.</p>']
+};
+function openSheet(k){
+  document.getElementById('shTtl').textContent = SHEETS[k][0];
+  document.getElementById('shBody').innerHTML = SHEETS[k][1];
+  document.getElementById('sheet').classList.add('on');
+}
+document.getElementById('shClose').addEventListener('click',function(){
+  document.getElementById('sheet').classList.remove('on');
+});
+document.getElementById('sheet').addEventListener('click',function(e){
+  if (e.target === this) this.classList.remove('on');
+});
+document.getElementById('offBtn').addEventListener('click',function(){ openSheet('off'); });
+document.getElementById('aboutBtn').addEventListener('click',function(){ openSheet('about'); });
+document.getElementById('sheetBtn').addEventListener('click',function(){ openSheet('sheet'); });
+document.getElementById('more').addEventListener('click',function(){ openSheet('more'); });
+document.getElementById('snd').addEventListener('click',function(){
+  this.textContent = this.textContent==='🔊' ? '🔇' : '🔊';
+});
+document.getElementById('hint').addEventListener('click',function(){
+  document.getElementById('kb2').innerHTML = '<b>Hint 1 of 4.</b> The middle box is the target ÷ 3 — fill it first.';
+});
+document.getElementById('watch').addEventListener('click',function(){
+  var order=[]; for(var i=0;i<N;i++)for(var j=0;j<N;j++) order.push([i,j]);
+  if (N===3){
+    order = [];
+    for(var a=0;a<3;a++)for(var b2=0;b2<3;b2++) order.push([a,b2,SOL[a][b2]]);
+    order.sort(function(x,y){ return x[2]-y[2]; });
+    var k=0;
+    var iv=setInterval(function(){
+      if(k>=order.length){ clearInterval(iv);
+        document.getElementById('tgt').className='tgt done';
+        document.getElementById('tgt').textContent='🏆 Every line : 15';
+        document.getElementById('winSheet').classList.add('on'); return; }
+      var o=order[k++]; filled[o[0]+','+o[1]]=o[2]; drawBoard();
+    }, 320);
+  }
+});
+document.getElementById('clr').addEventListener('click',function(){
+  filled={}; drawBoard();
+  document.getElementById('tgt').className='tgt';
+  document.getElementById('tgt').textContent='🎯 Target : ?';
+});
+document.getElementById('winClose').addEventListener('click',function(){
+  document.getElementById('winSheet').classList.remove('on');
+  filled={}; drawBoard();
+  document.getElementById('tgt').className='tgt';
+  document.getElementById('tgt').textContent='🎯 Target : ?';
+});
+document.getElementById('nextLv').addEventListener('click',function(){
+  document.getElementById('winSheet').classList.remove('on');
+  N=4; filled={}; drawBoard();
+  document.getElementById('tgt').className='tgt';
+  document.getElementById('tgt').textContent='🎯 Target : ?';
+});
+document.getElementById('stars').innerHTML = '★★★☆☆'.split('').map(function(s,i){
+  return '<i class="'+(i<3?'lit':'')+'">★</i>'; }).join('');
+drawPager();
+drawBoard();
+
+/* ---- device size switcher + no-scroll proof ---- */
+var SIZES=[['iPhone SE',320,568],['Android small',360,640],['iPhone 14',390,750],
+           ['Pixel 7',412,800],['Tablet-ish',480,900]];
+document.getElementById('sizes').innerHTML = SIZES.map(function(s,i){
+  return '<button class="sizeBtn'+(i===2?' on':'')+'" data-i="'+i+'">'+s[0]+' · '+s[1]+'×'+s[2]+'</button>';
+}).join('');
+document.getElementById('sizes').addEventListener('click',function(e){
+  var b=e.target.closest('.sizeBtn'); if(!b) return;
+  document.querySelectorAll('.sizeBtn').forEach(function(x){ x.classList.remove('on'); });
+  b.classList.add('on');
+  var s=SIZES[+b.dataset.i];
+  dev.style.width=s[1]+'px'; dev.style.height=s[2]+'px';
+  document.getElementById('devLbl').textContent=s[0]+' · '+s[1]+' × '+s[2];
+  setTimeout(function(){ drawBoard(); checkScroll(); },80);
+});
+function checkScroll(){
+  var app=document.getElementById('app'), p=document.getElementById('proof');
+  var over=[];
+  if (app.scrollHeight > app.clientHeight+1) over.push('app '+app.scrollHeight+'>'+app.clientHeight);
+  document.querySelectorAll('.scr.on, .main, .homeScroll, .boardBox').forEach(function(el){
+    if (el.scrollHeight > el.clientHeight+1) over.push(el.className.split(' ')[0]);
+  });
+  if (over.length){ p.className='scrollProof bad'; p.textContent='⚠️ overflow: '+over.join(', '); }
+  else { p.className='scrollProof ok'; p.textContent='✓ nothing scrolls at this size'; }
+}
+window.checkScroll = checkScroll; window.go = go; window.drawBoard = drawBoard;
+setTimeout(checkScroll, 200);
+</script>

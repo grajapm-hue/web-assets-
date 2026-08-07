@@ -1,0 +1,378 @@
+<title>MathMatrix — how playful should it be?</title>
+<style>
+:root{
+  --pg:#FBFAFE; --pg2:#FFFFFF; --edge:#E8E3F3;
+  --tx:#17122F; --tx2:#4E4674; --tx3:#8079A4;
+  --mark:#6D3AE0; --ok:#0F7A4E; --warn:#B45309;
+  --sans:"Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root{--pg:#0B0A17;--pg2:#141126;--edge:#262046;
+  --tx:#F4F1FC;--tx2:#BCB4DE;--tx3:#8A82AE;--mark:#BB9DFF;--ok:#4ADE80;--warn:#FBBF24;}}
+:root[data-theme="dark"]{--pg:#0B0A17;--pg2:#141126;--edge:#262046;--tx:#F4F1FC;--tx2:#BCB4DE;
+  --tx3:#8A82AE;--mark:#BB9DFF;--ok:#4ADE80;--warn:#FBBF24;}
+:root[data-theme="light"]{--pg:#FBFAFE;--pg2:#FFFFFF;--edge:#E8E3F3;--tx:#17122F;--tx2:#4E4674;
+  --tx3:#8079A4;--mark:#6D3AE0;--ok:#0F7A4E;--warn:#B45309;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--pg);color:var(--tx);font-family:var(--sans);line-height:1.6;
+  padding:28px 18px 70px;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:32px}
+.eyebrow{font-size:11px;font-weight:800;letter-spacing:2.2px;text-transform:uppercase;color:var(--mark)}
+h1{font-size:clamp(25px,5.4vw,38px);line-height:1.14;font-weight:800;letter-spacing:-.7px;text-wrap:balance}
+h2{font-size:clamp(18px,3vw,24px);font-weight:800;letter-spacing:-.3px}
+.lede{font-size:15.5px;color:var(--tx2);max-width:66ch}
+.sec{display:flex;flex-direction:column;gap:15px}
+.rule{height:1px;background:var(--edge);border:0}
+.muted{color:var(--tx2);font-size:13.5px}
+.panel{background:var(--pg2);border:1px solid var(--edge);border-radius:16px;padding:19px 20px}
+
+.trio{display:grid;gap:18px;grid-template-columns:1fr}
+@media(min-width:780px){.trio{grid-template-columns:repeat(3,1fr)}}
+.duo{display:grid;gap:18px;grid-template-columns:1fr}
+@media(min-width:820px){.duo{grid-template-columns:repeat(3,1fr)}}
+.card{background:var(--pg2);border:1px solid var(--edge);border-radius:18px;overflow:hidden;
+  display:flex;flex-direction:column}
+.card.pick{border-color:var(--mark);box-shadow:0 0 0 3px color-mix(in srgb,var(--mark) 18%,transparent)}
+.cHead{padding:12px 15px;border-bottom:1px solid var(--edge)}
+.cHead b{font-size:14.5px;display:block}
+.cHead span{font-size:11.5px;color:var(--tx3)}
+.badgePick{float:right;font-size:9.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;
+  background:var(--mark);color:var(--pg2);padding:3px 8px;border-radius:999px}
+.cNote{padding:11px 15px 15px;font-size:12.5px;color:var(--tx2);border-top:1px solid var(--edge)}
+.cNote b{color:var(--tx)}
+
+/* ════════ THE APP — one structure, three temperatures ════════ */
+.app{--gr:#131228;--sf:#1E1C3C;--sf2:#2A2752;--ink:#F5F3FF;--ink2:#ADA5D2;--ink3:#6F6796;
+  --gold:#F7B32B;--win:#3DD68C;--mode:#5B9DF9;
+  --rC:9px;--rT:15px;--depth:none;--lift:0;
+  background:var(--gr);color:var(--ink);padding:0 0 13px;font-size:13px;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+
+/* PROFESSIONAL — flat-ish, restrained, small type */
+.t-pro{--gr:#131228;--rC:9px;--rT:15px;
+  --depth:inset 1px 1px 2px rgba(255,255,255,.06),inset -2px -2px 4px rgba(0,0,0,.22)}
+/* BALANCED — chunky clay, warmer ground, bigger type */
+.t-bal{--gr:#171043;--sf:#241a5c;--sf2:#33268C;--rC:14px;--rT:20px;--ink3:#9A8FD6;
+  --depth:0 3px 0 rgba(0,0,0,.32),0 5px 11px rgba(0,0,0,.4),
+          inset 1px 2px 2px rgba(255,255,255,.14)}
+/* PLAYFUL — candy stickers, hard drop shadow, loud */
+.t-fun{--gr:#2A1170;--sf:#3B1C93;--sf2:#5B2BD6;--ink3:#B7A6F5;--rC:17px;--rT:24px;
+  --gold:#FFC93C;--mode:#3FC9FF;--win:#4BE79B;
+  --depth:0 5px 0 rgba(0,0,0,.34),0 8px 14px rgba(0,0,0,.42),
+          inset 1px 3px 3px rgba(255,255,255,.22)}
+
+.bar{display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(0,0,0,.26);
+  border-bottom:1px solid rgba(255,255,255,.08)}
+.bk{width:29px;height:29px;flex:none;border-radius:calc(var(--rC) - 1px);background:var(--sf2);
+  display:grid;place-items:center;font-size:14px;color:var(--ink2)}
+.ti{flex:1;font-size:13.5px;font-weight:800}
+.t-fun .ti{font-size:15px;font-weight:900;letter-spacing:-.2px}
+.cp{font-size:9.5px;font-weight:800;padding:3px 8px;border-radius:999px;background:var(--mode);color:#07101d}
+.pad{padding:0 12px}
+
+/* mascot */
+.mas{display:flex;align-items:center;gap:9px;margin:11px 0 3px}
+.mFace{width:40px;height:40px;flex:none;border-radius:50%;display:grid;place-items:center;
+  font-size:22px;background:var(--sf2);box-shadow:var(--depth)}
+.t-fun .mFace{width:48px;height:48px;font-size:27px;background:linear-gradient(160deg,#FFC93C,#FF9E1F)}
+.bub{flex:1;background:var(--sf);border-radius:var(--rT);padding:8px 11px;font-size:11.5px;
+  color:var(--ink2);position:relative;line-height:1.45}
+.t-fun .bub{font-size:12.5px;font-weight:700;color:#fff;background:var(--sf2);box-shadow:var(--depth)}
+.bub b{color:var(--ink)}
+.t-fun .bub b{color:var(--gold)}
+
+/* target + progress */
+.top{display:flex;align-items:center;justify-content:center;gap:10px;margin:11px 0}
+.tgt{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:999px;
+  font-size:13px;font-weight:800;background:var(--sf2);color:var(--ink2);box-shadow:var(--depth)}
+.t-fun .tgt{font-size:16px;font-weight:900;padding:9px 18px}
+.t-bal .tgt{font-size:14.5px;padding:8px 16px}
+.stars{display:flex;gap:2px;font-size:13px}
+.t-fun .stars{font-size:16px}
+.stars i{font-style:normal;filter:grayscale(1) opacity(.32)}
+.stars i.lit{filter:none}
+.ring{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;
+  background:conic-gradient(var(--mode) calc(var(--p)*1%),rgba(255,255,255,.09) 0)}
+.ring i{width:31px;height:31px;border-radius:50%;background:var(--gr);display:grid;place-items:center;
+  font-style:normal;font-size:9px;font-weight:800}
+
+/* board */
+.bd{display:grid;gap:4px;justify-content:center;margin:0 auto}
+.t-bal .bd,.t-fun .bd{gap:6px}
+.cl{aspect-ratio:1;border-radius:var(--rC);background:var(--sf2);display:grid;place-items:center;
+  font-weight:800;font-size:12px;color:var(--ink);font-variant-numeric:tabular-nums;box-shadow:var(--depth)}
+.t-bal .cl{font-size:15px;font-weight:900}
+.t-fun .cl{font-size:17px;font-weight:900}
+.cl.bg{background:transparent!important;box-shadow:none!important;color:var(--mode);
+  font-size:8.5px;font-weight:800}
+.t-fun .cl.bg{font-size:9.5px;color:var(--mode)}
+.cl.cor{border-radius:8px;background:color-mix(in srgb,var(--mode) 15%,transparent)!important;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--mode) 42%,transparent)!important;font-size:8px}
+.cl.em{background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 1px rgba(255,255,255,.07)}
+.cl.dg{background:color-mix(in srgb,var(--mode) 15%,var(--sf2))}
+.cl.em.dg{background:color-mix(in srgb,var(--mode) 11%,rgba(255,255,255,.05))}
+.cl.cur{box-shadow:inset 0 0 0 2.5px var(--gold)}
+.t-fun .cl.cur{box-shadow:0 0 0 3px var(--gold),0 5px 0 rgba(0,0,0,.34)}
+.cl.won{background:color-mix(in srgb,var(--win) 30%,var(--sf2));color:var(--win)}
+
+/* keys */
+.npad{display:flex;flex-direction:column;gap:4px;max-width:238px;margin:10px auto 0}
+.t-fun .npad,.t-bal .npad{gap:6px;max-width:252px}
+.nrow{display:flex;gap:4px}
+.t-fun .nrow,.t-bal .nrow{gap:6px}
+.nk{flex:1;aspect-ratio:1.3;border-radius:var(--rC);background:var(--sf2);display:grid;place-items:center;
+  font-size:14px;font-weight:800;color:var(--ink);box-shadow:var(--depth)}
+.t-bal .nk{font-size:16px;font-weight:900}
+.t-fun .nk{font-size:18px;font-weight:900}
+.nk.util{background:rgba(255,255,255,.06);color:var(--ink3);font-size:12px}
+.t-fun .nk.util{font-size:14px}
+.row{display:flex;gap:7px;margin-top:10px}
+.bt{flex:1;text-align:center;padding:10px;border-radius:var(--rT);background:var(--sf2);
+  font-size:12px;font-weight:800;box-shadow:var(--depth)}
+.t-fun .bt{font-size:13.5px;font-weight:900;padding:12px}
+.bt.pri{background:var(--gold);color:#1a1204}
+
+/* win bits */
+.trophy{width:58px;height:58px;margin:0 auto 8px;border-radius:20px;display:grid;place-items:center;
+  font-size:29px;background:linear-gradient(150deg,#FFD675,var(--gold));box-shadow:var(--depth)}
+.t-fun .trophy{width:74px;height:74px;font-size:38px;border-radius:26px}
+.winTitle{text-align:center;font-size:18px;font-weight:900;letter-spacing:-.3px}
+.t-fun .winTitle{font-size:23px}
+.sub{text-align:center;font-size:11px;color:var(--ink2);margin-top:2px}
+.t-fun .sub{font-size:12.5px}
+.stats{display:flex;gap:6px;margin:11px 0}
+.stat{flex:1;background:var(--sf);border-radius:var(--rT);padding:8px 5px;text-align:center;
+  box-shadow:var(--depth)}
+.stat b{display:block;font-size:15px;font-variant-numeric:tabular-nums}
+.t-fun .stat b{font-size:19px}
+.stat span{font-size:8.5px;color:var(--ink3);font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+.stat.g b{color:var(--gold)}.stat.w b{color:var(--win)}
+.confetti{text-align:center;font-size:15px;letter-spacing:3px;margin-bottom:4px}
+.t-fun .confetti{font-size:20px}
+.sticker{display:flex;align-items:center;gap:9px;background:var(--sf);border-radius:var(--rT);
+  padding:9px 11px;margin-top:9px;box-shadow:var(--depth)}
+.sticker .s{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font-size:19px;
+  background:color-mix(in srgb,var(--gold) 26%,transparent)}
+.sticker b{display:block;font-size:12px}
+.sticker span{font-size:10px;color:var(--ink3)}
+
+/* level cards */
+.mh{display:flex;align-items:center;gap:8px;margin:12px 0 7px}
+.mh .ic{width:28px;height:28px;flex:none;border-radius:9px;display:grid;place-items:center;font-size:13px;
+  background:color-mix(in srgb,var(--h) 24%,transparent);color:var(--h);font-weight:900;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--h) 46%,transparent)}
+.t-fun .mh .ic{background:var(--h);color:#0b0725;box-shadow:var(--depth)}
+.mh b{display:block;font-size:12.5px;font-weight:800}
+.t-fun .mh b{font-size:14px;font-weight:900}
+.mh i{display:block;font-style:normal;font-size:10px;color:var(--ink3);line-height:1.4}
+.lvs{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.lvs.one{grid-template-columns:1fr}
+.lv{display:flex;align-items:center;gap:8px;padding:8px 9px 8px 11px;border-radius:var(--rT);
+  background:var(--sf);position:relative;overflow:hidden;box-shadow:var(--depth)}
+.lv::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--h)}
+.t-fun .lv{background:linear-gradient(155deg,color-mix(in srgb,var(--h) 34%,var(--sf)),var(--sf))}
+.t-fun .lv::before{width:6px}
+.lv .well{width:28px;height:28px;flex:none;border-radius:8px;position:relative;overflow:hidden;
+  background:color-mix(in srgb,var(--h) 17%,#0c0a1e)}
+.lv .well::before{content:'';position:absolute;inset:3px;
+  background-image:radial-gradient(circle at 50% 50%,var(--h) 32%,transparent 35%);
+  background-size:calc(100%/var(--n)) calc(100%/var(--n))}
+.lv .nm{display:block;font-size:12.5px;font-weight:800;line-height:1.2}
+.t-fun .lv .nm{font-size:14px;font-weight:900}
+.lv .mt{display:block;font-size:9px;font-weight:600;color:var(--ink3);margin-top:1px}
+.slab{font-size:10px;font-weight:800;letter-spacing:1.7px;text-transform:uppercase;color:var(--ink3);
+  margin:11px 0 6px}
+.tabs{display:flex;gap:4px;padding:6px 8px 3px;background:rgba(0,0,0,.3);
+  border-top:1px solid rgba(255,255,255,.09);margin-top:11px}
+.tabs div{flex:1;text-align:center;font-size:8.5px;font-weight:800;color:var(--ink3);padding:4px 2px;
+  border-radius:10px}
+.tabs div span{display:block;font-size:15px;margin-bottom:1px;filter:grayscale(1) opacity(.6)}
+.tabs div.on{color:var(--gold);background:rgba(255,255,255,.07)}
+.tabs div.on span{filter:none}
+.t-fun .tabs div.on span{font-size:17px}
+
+.chk{display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start;margin-bottom:12px}
+.chk .k{width:28px;height:28px;border-radius:9px;background:var(--mark);color:var(--pg2);
+  display:grid;place-items:center;font-size:14px;font-weight:800}
+.chk b{font-size:14px;display:block}
+.chk p{font-size:13px;color:var(--tx2)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+<header class="sec">
+  <div class="eyebrow">MathMatrix · direction check</div>
+  <h1>How playful should it be?</h1>
+  <p class="lede">I swung too far twice — first a rainbow, then something that looks like a banking app.
+  The mistake both times was treating <b>fun</b> and <b>colour</b> as the same thing. They are not.
+  Below is the identical Play screen at three temperatures. Same structure, same diagonals, same
+  number pad — only the personality changes. Point at one and I will build it.</p>
+</header>
+
+<hr class="rule">
+
+<section class="sec">
+  <h2>The same screen, three temperatures</h2>
+  <div class="trio" id="trio"></div>
+</section>
+
+<section class="sec">
+  <div class="panel">
+    <h2 style="margin-bottom:11px">What actually makes it fun — none of it is “more colour”</h2>
+    <div class="chk"><span class="k">🐒</span><div><b>A character who talks to you</b>
+      <p>The monkey reacts: cheers a finished line, points at the next box, looks puzzled when a
+      number repeats. One character carries more warmth than nine gradients ever did.</p></div></div>
+    <div class="chk"><span class="k">🍬</span><div><b>Chunk and depth</b>
+      <p>Fat rounded tiles that look pressable, with a hard shadow underneath so they read as physical
+      objects. Kids want to poke things that look like sweets, not rectangles.</p></div></div>
+    <div class="chk"><span class="k">⭐</span><div><b>Reward you can collect</b>
+      <p>Stars instead of a percentage ring, and a sticker earned per level. Progress a child can
+      <em>show someone</em> beats a progress bar.</p></div></div>
+    <div class="chk"><span class="k">🎉</span><div><b>Moments, not decoration</b>
+      <p>The screen stays calm while you think, then goes loud the instant you win — confetti, the
+      grid flipping green, the monkey celebrating. Contrast is what makes a win feel earned.</p></div></div>
+    <div class="chk"><span class="k">🔊</span><div><b>Feedback in the hand</b>
+      <p>Squish on every press, the candy plink you already tuned, and the spatial stereo you added.
+      That is felt, not seen — and it survives on a screen with almost no colour.</p></div></div>
+  </div>
+</section>
+
+<hr class="rule">
+
+<section class="sec">
+  <h2>My recommendation, across three screens</h2>
+  <p class="lede"><b>Balanced.</b> It keeps the structure and the meaning-carrying colour, but adds
+  the chunk, the mascot and the stars. Playful is genuinely fun but tips toward a toddler app —
+  and your audience runs from 10-year-olds to the adults in your group.</p>
+  <div class="duo" id="duo"></div>
+</section>
+
+<p class="muted" style="text-align:center">Live is safely on v131. Nothing is built until you pick.</p>
+</div>
+
+<script>
+var SOL=[[8,1,6],[3,5,7],[4,9,2]];
+function corners(total){return function(r,c,t){var top=(r===0),left=(c===0);
+  return (top?(left?'↘':'↙'):(left?'↗':'↖'))+(total||'');};}
+
+function board(n,cellPx,fill){
+  var t=n+2,html='<div class="bd" style="grid-template-columns:repeat('+t+','+cellPx+'px)">';
+  for(var r=0;r<t;r++)for(var c=0;c<t;c++){
+    var edge=(r===0||r===t-1||c===0||c===t-1);
+    if(edge){
+      var cor=(r===0||r===t-1)&&(c===0||c===t-1);
+      html+=cor?'<span class="cl bg cor">'+fill.corner(r,c,t)+'</span>'
+               :'<span class="cl bg">'+fill.badge()+'</span>';
+    }else{
+      var i=r-1,j=c-1;
+      html+=fill.cell(i,j,(i===j)||(i+j===n-1));
+    }
+  }
+  return html+'</div>';
+}
+
+var midBoard=function(px){return board(3,px,{
+  corner:corners(''),badge:function(){return '?';},
+  cell:function(r,c,dg){
+    var on=[[1,0],[1,1],[1,2],[0,1]].some(function(p){return p[0]===r&&p[1]===c;});
+    var cur=(r===0&&c===0);
+    return '<span class="cl '+(on?'':'em ')+(dg?'dg ':'')+(cur?'cur':'')+'">'+(on?SOL[r][c]:'')+'</span>';
+  }});};
+
+function stars(lit,total){var s='<span class="stars">';
+  for(var i=0;i<total;i++)s+='<i class="'+(i<lit?'lit':'')+'">★</i>';return s+'</span>';}
+
+/* ---- the Play screen, rendered once, skinned three ways ---- */
+function playScreen(kind){
+  var mascot = kind==='pro' ? '' :
+    '<div class="mas"><span class="mFace">🐒</span><span class="bub">'+
+    (kind==='fun'?'Nice! One line down — <b>keep going!</b>':'One line done. <b>Two more</b> and the target shows itself.')+
+    '</span></div>';
+  var progress = kind==='pro'
+    ? '<span class="ring" style="--p:44"><i>4/9</i></span>'
+    : stars(4,9);
+  return '<div class="bar"><span class="bk">←</span><span class="ti">3×3 Easy</span>'+
+         '<span class="cp">playing</span></div><div class="pad">'+
+         mascot+
+         '<div class="top"><span class="tgt">🎯 Target : ?</span>'+progress+'</div>'+
+         midBoard(kind==='pro'?30:32)+
+         '<div class="npad">'+
+         '<div class="nrow"><span class="nk">1</span><span class="nk">2</span><span class="nk">3</span><span class="nk">4</span><span class="nk">5</span></div>'+
+         '<div class="nrow"><span class="nk">6</span><span class="nk">7</span><span class="nk">8</span><span class="nk">9</span><span class="nk">0</span></div>'+
+         '<div class="nrow"><span class="nk util">⌫</span><span class="nk util">←</span><span class="nk util">↑</span><span class="nk util">↓</span><span class="nk util">→</span></div>'+
+         '</div></div>'+
+         '<div class="tabs"><div><span>🏠</span>Puzzles</div><div class="on"><span>🎲</span>Play</div>'+
+         '<div><span>💡</span>Learn</div><div><span>📲</span>Get App</div></div>';
+}
+
+var TEMPS=[
+  {k:'pro',cls:'t-pro',t:'Professional',s:'what you saw last',pick:false,
+   note:'<b>Calm and organised — and cold.</b> A data ring for progress, no character, small type. '+
+        'An adult would trust it; a nine-year-old would not open it twice.'},
+  {k:'bal',cls:'t-bal',t:'Balanced',s:'my recommendation',pick:true,
+   note:'<b>Same bones, warmer body.</b> Chunky pressable tiles, a mascot who says something useful, '+
+        'stars you collect instead of a percentage. Reads as a game, still reads as careful.'},
+  {k:'fun',cls:'t-fun',t:'Playful',s:'maximum fun',pick:false,
+   note:'<b>Candy stickers and a loud ground.</b> Big numbers, fat shadows, bright everything. Great '+
+        'for under-8s — but it undersells the maths, and the adults in your group may find it childish.'}
+];
+document.getElementById('trio').innerHTML = TEMPS.map(function(x){
+  return '<div class="card'+(x.pick?' pick':'')+'"><div class="cHead">'+
+    (x.pick?'<span class="badgePick">Pick</span>':'')+
+    '<b>'+x.t+'</b><span>'+x.s+'</span></div>'+
+    '<div class="app '+x.cls+'">'+playScreen(x.k)+'</div>'+
+    '<div class="cNote">'+x.note+'</div></div>';
+}).join('');
+
+/* ---- the recommended treatment across three screens ---- */
+function homeScreen(){
+  var L=[['#93C5FD',3,'3×3','Easy · 1–9'],['#7DB3FB',4,'4×4','Hard · 1–16'],
+         ['#60A5FA',5,'5×5','Master · 1–25'],['#4B93F5',6,'6×6','Expert · 1–36'],
+         ['#3B82F6',8,'8×8','Champion · 1–64'],['#2563EB',10,'10×10','Grandmaster · 1–100']];
+  return '<div class="bar"><span class="ti">🐒🎲 MathMatrix</span></div><div class="pad">'+
+   '<div class="mas"><span class="mFace">🐒</span><span class="bub">Pick a puzzle — '+
+   '<b>they are all open</b>, no locks.</span></div>'+
+   '<div class="slab">Choose difficulty</div>'+
+   '<div class="mh" style="--h:#5B9DF9"><span class="ic">+</span><span><b>Add Magic</b>'+
+   '<i>every row, column and diagonal reaches one total</i></span></div><div class="lvs">'+
+   L.map(function(x){return '<div class="lv" style="--h:'+x[0]+';--n:'+x[1]+'"><span class="well"></span>'+
+     '<span><span class="nm">'+x[2]+'</span><span class="mt">'+x[3]+'</span></span></div>';}).join('')+
+   '</div>'+
+   '<div class="mh" style="--h:#FB7185"><span class="ic">🎂</span><span><b>Birthday Magic</b>'+
+   '<i>your date builds the square</i></span></div>'+
+   '<div class="lvs one"><div class="lv" style="--h:#FB7185"><span class="well" style="--n:4"></span>'+
+   '<span><span class="nm">Sir Ramanujan MathMagic</span><span class="mt">4×4 · any date</span></span></div></div>'+
+   '</div><div class="tabs"><div class="on"><span>🏠</span>Puzzles</div><div><span>🎲</span>Play</div>'+
+   '<div><span>💡</span>Learn</div><div><span>📲</span>Get App</div></div>';
+}
+function winScreen(){
+  return '<div class="pad" style="padding-top:16px">'+
+   '<div class="confetti">⭐ 🎉 ✨ 🎊 ⭐</div>'+
+   '<div class="trophy">🏆</div><div class="winTitle">Solved it!</div>'+
+   '<p class="sub">🐒 Every line came to fifteen — diagonals too.</p>'+
+   '<div class="stats"><div class="stat g"><b>15</b><span>Target</span></div>'+
+   '<div class="stat"><b>01:38</b><span>Time</span></div>'+
+   '<div class="stat w"><b>8/8</b><span>Lines</span></div></div>'+
+   board(3,26,{corner:corners('15'),badge:function(){return '15';},
+     cell:function(r,c){return '<span class="cl won">'+SOL[r][c]+'</span>';}})+
+   '<div class="sticker"><span class="s">🥇</span><span><b>New sticker : Count-down Master</b>'+
+   '<span>3 of 12 collected</span></span></div>'+
+   '<div class="row"><span class="bt">↺ Again</span><span class="bt pri">Next : 4×4 →</span></div>'+
+   '</div><div class="tabs"><div><span>🏠</span>Puzzles</div><div class="on"><span>🎲</span>Play</div>'+
+   '<div><span>💡</span>Learn</div><div><span>📲</span>Get App</div></div>';
+}
+var REC=[
+  {t:'Puzzles',s:'the chooser',html:homeScreen(),
+   note:'<b>The monkey greets, the structure stays.</b> Cards are chunky and pressable; colour is '+
+        'still just the rail and the dot-grid, so nine puzzles never shout at once.'},
+  {t:'Play',s:'mid-puzzle',html:playScreen('bal'),
+   note:'<b>Calm while you think.</b> Stars show progress, the monkey nudges, the gold ring marks '+
+        'where your number lands. Diagonals stay lit in all four corners.'},
+  {t:'Result',s:'the payoff',html:winScreen(),
+   note:'<b>This is where it goes loud.</b> Confetti, the grid flipping green, a sticker to collect. '+
+        'Because the rest stayed quiet, this lands hard.'}
+];
+document.getElementById('duo').innerHTML = REC.map(function(x){
+  return '<div class="card"><div class="cHead"><b>'+x.t+'</b><span>'+x.s+'</span></div>'+
+    '<div class="app t-bal">'+x.html+'</div><div class="cNote">'+x.note+'</div></div>';
+}).join('');
+</script>

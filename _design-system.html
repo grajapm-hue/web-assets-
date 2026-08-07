@@ -1,0 +1,850 @@
+<title>MathMatrix — full screen design system</title>
+<style>
+/* ══════════════ PAGE CHROME (theme-aware) ══════════════ */
+:root{
+  --pg:#FAF9FC; --pg-2:#FFFFFF; --edge:#E6E2F0;
+  --tx:#171331; --tx-2:#4C4472; --tx-3:#837AA6;
+  --mark:#6D4AE0; --warn:#B45309; --ok:#0F7A4E;
+  --sans:"Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root{--pg:#0C0B18;--pg-2:#151228;--edge:#272144;--tx:#F3F1FA;--tx-2:#BAB2DC;--tx-3:#867DAC;
+        --mark:#B49BFF;--warn:#FBBF24;--ok:#4ADE80;}
+}
+:root[data-theme="dark"]{--pg:#0C0B18;--pg-2:#151228;--edge:#272144;--tx:#F3F1FA;--tx-2:#BAB2DC;
+  --tx-3:#867DAC;--mark:#B49BFF;--warn:#FBBF24;--ok:#4ADE80;}
+:root[data-theme="light"]{--pg:#FAF9FC;--pg-2:#FFFFFF;--edge:#E6E2F0;--tx:#171331;--tx-2:#4C4472;
+  --tx-3:#837AA6;--mark:#6D4AE0;--warn:#B45309;--ok:#0F7A4E;}
+
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--pg);color:var(--tx);font-family:var(--sans);line-height:1.6;
+  padding:28px 18px 70px;-webkit-font-smoothing:antialiased;}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:34px;}
+.eyebrow{font-size:11px;font-weight:800;letter-spacing:2.2px;text-transform:uppercase;color:var(--mark);}
+h1{font-size:clamp(25px,5.4vw,38px);line-height:1.15;font-weight:800;letter-spacing:-.7px;text-wrap:balance;}
+h2{font-size:clamp(18px,3vw,23px);font-weight:800;letter-spacing:-.3px;}
+h3{font-size:15px;font-weight:800;}
+.lede{font-size:15.5px;color:var(--tx-2);max-width:66ch;}
+.sec{display:flex;flex-direction:column;gap:16px;}
+.rule{height:1px;background:var(--edge);border:0;}
+.panel{background:var(--pg-2);border:1px solid var(--edge);border-radius:16px;padding:19px 20px;}
+code{font-family:var(--mono);font-size:12.5px;background:var(--pg);border:1px solid var(--edge);
+  padding:1px 6px;border-radius:5px;}
+.muted{color:var(--tx-2);font-size:13.5px;}
+
+/* token swatches */
+.sw{display:grid;grid-template-columns:repeat(auto-fill,minmax(122px,1fr));gap:10px;}
+.chip{border-radius:12px;overflow:hidden;border:1px solid var(--edge);}
+.chip .dab{height:52px;}
+.chip .lb{padding:7px 9px;font-size:10.5px;line-height:1.45;background:var(--pg-2);}
+.chip .lb b{display:block;font-size:11.5px;}
+.chip .lb span{font-family:var(--mono);color:var(--tx-3);font-size:10px;}
+.ladder{display:flex;border-radius:12px;overflow:hidden;border:1px solid var(--edge);}
+.ladder div{flex:1;height:46px;display:grid;place-items:end center;padding-bottom:5px;
+  font-size:9.5px;font-weight:800;color:#08101f;}
+
+/* screen gallery */
+.gal{display:grid;gap:22px;grid-template-columns:1fr;}
+@media(min-width:900px){ .gal{grid-template-columns:repeat(2,1fr);} }
+.shot{background:var(--pg-2);border:1px solid var(--edge);border-radius:18px;overflow:hidden;
+  display:flex;flex-direction:column;}
+.shotHead{padding:13px 16px;border-bottom:1px solid var(--edge);display:flex;align-items:center;gap:9px;}
+.shotHead .n{width:24px;height:24px;flex:none;border-radius:7px;background:var(--mark);color:var(--pg-2);
+  font-size:11.5px;font-weight:800;display:grid;place-items:center;}
+.shotHead b{font-size:14.5px;}
+.shotHead i{font-style:normal;font-size:11.5px;color:var(--tx-3);margin-left:auto;}
+.shotNote{padding:12px 16px 16px;font-size:13px;color:var(--tx-2);border-top:1px solid var(--edge);}
+.shotNote b{color:var(--tx);}
+
+/* ══════════════ THE APP ITSELF (single dark world, on purpose) ══════════════ */
+.app{
+  --gr:#131228;        /* ground: indigo-biased near-black, chosen not inherited */
+  --sf:#1E1C3C;        /* card surface  */
+  --sf2:#2A2752;       /* raised: cells, keys, inputs */
+  --ink:#F5F3FF; --ink2:#ADA5D2; --ink3:#6F6796;
+  --gold:#F7B32B;      /* THE accent — action + reward. The only bold colour. */
+  --win:#3DD68C;       /* semantic success only */
+  --mode:#5B9DF9;      /* per-screen mode hue */
+  background:var(--gr);color:var(--ink);padding:0 0 14px;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  font-size:14px;
+}
+.app.mMul{--mode:#A78BFA;} .app.mBir{--mode:#FB7185;} .app.mBin{--mode:#22D3EE;}
+.clay{box-shadow:3px 3px 9px rgba(0,0,0,.42),-2px -2px 7px rgba(255,255,255,.045),
+      inset 1px 1px 2px rgba(255,255,255,.07),inset -2px -2px 4px rgba(0,0,0,.2);}
+.pad{padding:0 13px;}
+
+/* app bar */
+.bar{display:flex;align-items:center;gap:9px;padding:11px 13px;background:rgba(8,7,20,.6);
+  border-bottom:1px solid rgba(255,255,255,.07);}
+.bar .bk{width:32px;height:32px;flex:none;border-radius:10px;background:var(--sf2);
+  display:grid;place-items:center;font-size:15px;color:var(--ink2);}
+.bar .ti{flex:1;font-size:14.5px;font-weight:800;letter-spacing:.2px;}
+.bar .cp{font-size:10px;font-weight:800;padding:4px 9px;border-radius:999px;
+  background:var(--mode);color:#08101f;}
+
+/* tab bar */
+.tabs{display:flex;gap:4px;padding:7px 9px 4px;background:rgba(8,7,20,.66);
+  border-top:1px solid rgba(255,255,255,.08);margin-top:12px;}
+.tabs div{flex:1;text-align:center;font-size:9px;font-weight:800;color:var(--ink3);padding:5px 2px;
+  border-radius:11px;}
+.tabs div span{display:block;font-size:16px;margin-bottom:1px;filter:grayscale(1) opacity(.65);}
+.tabs div.on{color:var(--gold);background:rgba(255,255,255,.06);}
+.tabs div.on span{filter:none;}
+
+/* section label */
+.slab{font-size:10.5px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;
+  color:var(--ink3);margin:13px 0 8px;}
+
+/* ── level cards: NEUTRAL surface, colour only in the rail + well ── */
+.mh{display:flex;align-items:center;gap:9px;margin:14px 0 8px;}
+.mh .ic{width:30px;height:30px;flex:none;border-radius:10px;display:grid;place-items:center;
+  font-size:14px;background:color-mix(in srgb,var(--h) 22%,transparent);
+  border:1px solid color-mix(in srgb,var(--h) 45%,transparent);color:var(--h);font-weight:900;}
+.mh b{display:block;font-size:13px;font-weight:800;}
+.mh i{display:block;font-style:normal;font-size:10.5px;color:var(--ink3);line-height:1.4;}
+.lvs{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.lvs.one{grid-template-columns:1fr;}
+.lv{display:flex;align-items:center;gap:9px;padding:9px 10px 9px 12px;border-radius:15px;
+  background:var(--sf);position:relative;overflow:hidden;}
+.lv::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--h);}
+.lv .well{width:30px;height:30px;flex:none;border-radius:8px;position:relative;overflow:hidden;
+  background:color-mix(in srgb,var(--h) 16%,#0d0b1c);}
+.lv .well::before{content:'';position:absolute;inset:3px;
+  background-image:radial-gradient(circle at 50% 50%,var(--h) 32%,transparent 35%);
+  background-size:calc(100%/var(--n)) calc(100%/var(--n));}
+.lv .gl{width:30px;height:30px;flex:none;border-radius:8px;display:grid;place-items:center;
+  font-size:14px;background:color-mix(in srgb,var(--h) 16%,#0d0b1c);color:var(--h);font-weight:900;}
+.lv .tx{min-width:0;flex:1;}
+.lv .nm{display:block;font-size:13.5px;font-weight:800;line-height:1.2;}
+.lv .mt{display:block;font-size:9.5px;font-weight:600;color:var(--ink3);margin-top:1px;line-height:1.35;}
+.lv.on{background:var(--sf2);box-shadow:inset 0 0 0 1.5px var(--h);}
+.lv.on .nm{color:var(--h);}
+
+/* ── board ── */
+.bd{display:grid;gap:5px;justify-content:center;margin:0 auto;}
+.cl{aspect-ratio:1;border-radius:9px;background:var(--sf2);display:grid;place-items:center;
+  font-weight:800;font-size:13px;color:var(--ink);font-variant-numeric:tabular-nums;}
+.cl.bg{background:transparent;color:var(--mode);font-size:9.5px;font-weight:800;box-shadow:none;}
+/* corner badges carry the two DIAGONAL totals — marked by arrow, not by a new hue */
+.cl.bg.cor{font-size:8.5px;font-weight:900;letter-spacing:-.2px;border-radius:8px;
+  background:color-mix(in srgb,var(--mode) 15%,transparent);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--mode) 42%,transparent);}
+/* the diagonal path stays faintly lit so it is never forgotten */
+.cl.dg{background:color-mix(in srgb,var(--mode) 14%,var(--sf2));
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--mode) 30%,transparent);}
+.cl.em.dg{background:color-mix(in srgb,var(--mode) 10%,rgba(255,255,255,.045));}
+.cl.em{background:rgba(255,255,255,.045);box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);}
+.cl.cur{box-shadow:inset 0 0 0 2.5px var(--gold);}
+.cl.won{background:color-mix(in srgb,var(--win) 26%,var(--sf2));color:var(--win);}
+.cl.lock{background:rgba(255,255,255,.035);color:var(--ink3);}
+.cl.dob{background:color-mix(in srgb,var(--mode) 26%,var(--sf2));color:#fff;
+  box-shadow:inset 0 0 0 1.5px var(--mode);}
+
+/* target + ring */
+.top{display:flex;align-items:center;justify-content:center;gap:11px;margin:12px 0 11px;}
+.tgt{display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border-radius:999px;
+  font-size:14px;font-weight:800;background:var(--sf2);color:var(--ink2);}
+.tgt.hunt{color:var(--ink3);} .tgt.found{background:var(--gold);color:#1a1204;}
+.tgt.solved{background:var(--win);color:#04231a;}
+.ring{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;
+  background:conic-gradient(var(--mode) calc(var(--p)*1%),rgba(255,255,255,.09) 0);}
+.ring i{width:34px;height:34px;border-radius:50%;background:var(--gr);display:grid;place-items:center;
+  font-style:normal;font-size:9.5px;font-weight:800;}
+
+/* ── on-screen number pad ── */
+.npad{display:flex;flex-direction:column;gap:5px;max-width:262px;margin:11px auto 0;}
+.nrow{display:flex;gap:5px;}
+.nk{flex:1;aspect-ratio:1.32;border-radius:11px;background:var(--sf2);display:grid;place-items:center;
+  font-size:16px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;}
+.nk.util{background:rgba(255,255,255,.05);color:var(--ink3);font-size:14px;font-weight:700;}
+.nk.mkey{color:var(--mode);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--mode) 55%,transparent);}
+.nk.down{background:#171533;color:var(--ink2);
+  box-shadow:inset 3px 3px 8px rgba(0,0,0,.5),inset -2px -2px 5px rgba(255,255,255,.04);
+  transform:scale(.93);}
+.nk.off{background:rgba(255,255,255,.03);color:#453E63;}
+.kbt{margin:9px auto 0;max-width:262px;text-align:center;font-size:11px;font-weight:700;
+  color:var(--ink3);padding:8px;border-radius:11px;box-shadow:inset 0 0 0 1.5px var(--sf2);}
+.anat{display:flex;align-items:center;gap:8px;font-size:10.5px;color:var(--ink3);margin-top:7px;}
+.anat i{width:15px;height:15px;border-radius:5px;flex:none;font-style:normal;}
+
+/* keypad + buttons */
+.kp{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;max-width:250px;margin:11px auto 0;}
+.k{aspect-ratio:1.25;border-radius:10px;background:var(--sf2);display:grid;place-items:center;
+  font-size:13px;font-weight:800;}
+.k.act{background:var(--gold);color:#1a1204;font-size:11px;}
+.k.sub{color:var(--ink3);font-size:11px;}
+.row{display:flex;gap:8px;margin:11px 0 0;}
+.bt{flex:1;text-align:center;padding:11px;border-radius:13px;background:var(--sf2);
+  font-size:12.5px;font-weight:800;}
+.bt.pri{background:var(--gold);color:#1a1204;}
+.bt.gh{background:transparent;box-shadow:inset 0 0 0 1.5px var(--sf2);color:var(--ink2);}
+
+/* misc app bits */
+.note{background:var(--sf);border-radius:14px;padding:12px 13px;margin-bottom:8px;}
+.note h4{font-size:12.5px;color:var(--mode);margin-bottom:4px;}
+.note p{font-size:11.5px;color:var(--ink2);line-height:1.6;}
+.step{display:grid;grid-template-columns:26px 1fr;gap:10px;align-items:start;margin-bottom:11px;}
+.step .sn{width:26px;height:26px;border-radius:9px;background:color-mix(in srgb,var(--mode) 22%,transparent);
+  color:var(--mode);font-size:11.5px;font-weight:900;display:grid;place-items:center;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--mode) 45%,transparent);}
+.step b{font-size:12.5px;display:block;}
+.step p{font-size:11px;color:var(--ink3);line-height:1.55;}
+.bins{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.bin{background:var(--sf);border-radius:12px;padding:8px 9px;}
+.bin.on{background:color-mix(in srgb,var(--mode) 20%,var(--sf));box-shadow:inset 0 0 0 1.5px var(--mode);}
+.bin b{display:block;font-size:10px;color:var(--mode);font-weight:800;margin-bottom:3px;}
+.bin span{font-family:var(--mono);font-size:9px;color:var(--ink2);line-height:1.5;word-spacing:1px;}
+.readout{margin-top:9px;padding:11px;border-radius:13px;background:var(--sf2);text-align:center;}
+.readout b{display:block;font-size:22px;color:var(--gold);font-variant-numeric:tabular-nums;}
+.readout span{font-size:10.5px;color:var(--ink3);}
+
+/* result overlay */
+.win{background:radial-gradient(120% 80% at 50% 0%,#241c4a,var(--gr) 70%);padding:22px 15px 16px;
+  text-align:center;}
+.trophy{width:66px;height:66px;margin:0 auto 10px;border-radius:22px;display:grid;place-items:center;
+  font-size:32px;background:linear-gradient(150deg,#FFD675,var(--gold));}
+.win h3{font-size:20px;font-weight:900;letter-spacing:-.3px;}
+.win .sub{font-size:12px;color:var(--ink2);margin-top:3px;}
+.stats{display:flex;gap:7px;margin:13px 0;}
+.stat{flex:1;background:var(--sf);border-radius:13px;padding:9px 6px;}
+.stat b{display:block;font-size:16px;font-variant-numeric:tabular-nums;}
+.stat span{font-size:9px;color:var(--ink3);font-weight:700;letter-spacing:.5px;text-transform:uppercase;}
+.stat.g b{color:var(--gold);} .stat.w b{color:var(--win);}
+
+.cmp{display:grid;gap:12px;grid-template-columns:1fr;}
+@media(min-width:620px){ .cmp{grid-template-columns:1fr 1fr;} }
+.cmpBox{border:1px solid var(--edge);border-radius:14px;padding:13px;background:var(--pg-2);}
+.cmpBox h3{margin-bottom:9px;font-size:13px;}
+.oldSwatch{display:flex;flex-wrap:wrap;gap:5px;}
+.oldSwatch i{width:38px;height:26px;border-radius:7px;display:block;}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+
+<header class="sec">
+  <div class="eyebrow">MathMatrix Pro++ · design system v2</div>
+  <h1>Less colour, more meaning — every screen in one system</h1>
+  <p class="lede">The last pass gave nine puzzles nine saturated gradients. That reads as a toy, and it
+  made every tile shout at the same volume. Here colour carries information instead of decoration:
+  <b>hue tells you the mode, depth tells you the difficulty</b>, and one warm gold carries every action
+  and reward. Playful shapes, generous radii and squishy feedback do the work of being kid-friendly.</p>
+</header>
+
+<hr class="rule">
+
+<!-- ══════ TOKENS ══════ -->
+<section class="sec">
+  <h2>1 · The palette, cut from nine hues to four</h2>
+  <div class="cmp">
+    <div class="cmpBox">
+      <h3 style="color:var(--warn)">Before — 9 competing gradients</h3>
+      <div class="oldSwatch">
+        <i style="background:linear-gradient(150deg,#9ec7ff,#60a5fa)"></i>
+        <i style="background:linear-gradient(150deg,#ddb8ff,#c084fc)"></i>
+        <i style="background:linear-gradient(150deg,#9cf0bd,#4ade80)"></i>
+        <i style="background:linear-gradient(150deg,#86e9f7,#22d3ee)"></i>
+        <i style="background:linear-gradient(150deg,#b3bcff,#818cf8)"></i>
+        <i style="background:linear-gradient(150deg,#f5aefb,#e879f9)"></i>
+        <i style="background:linear-gradient(150deg,#fcd98a,#fbbf24)"></i>
+        <i style="background:linear-gradient(150deg,#ffb3bf,#fb7185)"></i>
+        <i style="background:linear-gradient(150deg,#f0e58a,#fcd34d)"></i>
+      </div>
+      <p class="muted" style="margin-top:9px">Nine full-bleed fills. Nothing is emphasised because
+      everything is. No colour means anything — they are just labels.</p>
+    </div>
+    <div class="cmpBox">
+      <h3 style="color:var(--ok)">After — 4 mode hues + 1 accent</h3>
+      <div class="oldSwatch">
+        <i style="background:#5B9DF9"></i><i style="background:#A78BFA"></i>
+        <i style="background:#FB7185"></i><i style="background:#22D3EE"></i>
+        <i style="background:#F7B32B;width:56px"></i><i style="background:#3DD68C"></i>
+      </div>
+      <p class="muted" style="margin-top:9px">Blue = add · violet = multiply · rose = birthday ·
+      cyan = binary. Gold is action and reward, green is “solved”. One screen shows one mode,
+      so you rarely see more than two hues at once.</p>
+    </div>
+  </div>
+
+  <h3 style="margin-top:6px">Difficulty is depth, not a new colour</h3>
+  <div class="ladder">
+    <div style="background:#93C5FD">3×3</div><div style="background:#7DB3FB">4×4</div>
+    <div style="background:#60A5FA">5×5</div><div style="background:#4B93F5">6×6</div>
+    <div style="background:#3B82F6">8×8</div><div style="background:#2563EB;color:#fff">10×10</div>
+  </div>
+  <p class="muted">All six additive puzzles share one blue and deepen as they get harder. The ladder is
+  now legible <em>as a ladder</em> — which the six unrelated hues never were.</p>
+
+  <div class="sw" style="margin-top:6px">
+    <div class="chip"><div class="dab" style="background:#131228"></div>
+      <div class="lb"><b>Ground</b><span>#131228</span></div></div>
+    <div class="chip"><div class="dab" style="background:#1E1C3C"></div>
+      <div class="lb"><b>Surface</b><span>#1E1C3C</span></div></div>
+    <div class="chip"><div class="dab" style="background:#2A2752"></div>
+      <div class="lb"><b>Raised</b><span>#2A2752</span></div></div>
+    <div class="chip"><div class="dab" style="background:#F7B32B"></div>
+      <div class="lb"><b>Accent · gold</b><span>#F7B32B</span></div></div>
+    <div class="chip"><div class="dab" style="background:#3DD68C"></div>
+      <div class="lb"><b>Solved</b><span>#3DD68C</span></div></div>
+    <div class="chip"><div class="dab" style="background:#ADA5D2"></div>
+      <div class="lb"><b>Muted ink</b><span>#ADA5D2</span></div></div>
+  </div>
+  <p class="muted">The neutrals are indigo-biased, not grey — they belong to the same family as the
+  accent, which is what stops a dark UI looking like a dead browser default.</p>
+
+  <div class="panel">
+    <h3>Type &amp; rhythm</h3>
+    <p class="muted" style="margin-top:6px">The app is a single offline file with no CDN, so a webfont
+    is not available — hierarchy has to come from <b>weight and size</b>, not from a display face.
+    Scale: 22 / 16 / 14 / 12.5 / 10.5 px. Weights: 900 titles, 800 controls, 600 body.
+    All digits use <code>tabular-nums</code> so a timer or a grid never jitters.
+    Spacing runs on a 4px rhythm; radii are 10 (cells) / 15 (cards) / 20 (sheets).</p>
+  </div>
+</section>
+
+<hr class="rule">
+
+<!-- ══════ SCREENS ══════ -->
+<section class="sec">
+  <h2>2 · Every screen</h2>
+  <p class="lede">Nine screens at true phone width. Same tokens throughout — the only thing that changes
+  between games is the mode hue.</p>
+</section>
+
+<div class="gal">
+
+  <!-- 1 HOME -->
+  <div class="shot">
+    <div class="shotHead"><span class="n">1</span><b>Puzzles</b><i>home</i></div>
+    <div class="app">
+      <div class="bar"><span class="ti">🐒🎲 MathMatrix</span><span class="cp" style="background:var(--ink3);color:#fff">9 puzzles</span></div>
+      <div class="pad">
+        <div class="slab">Choose difficulty</div>
+        <div class="mh" style="--h:#5B9DF9"><span class="ic">+</span>
+          <span><b>Add Magic</b><i>every row, column and diagonal adds to one total</i></span></div>
+        <div class="lvs">
+          <div class="lv on clay" style="--h:#93C5FD;--n:3"><span class="well"></span>
+            <span class="tx"><span class="nm">3×3</span><span class="mt">Easy · 1–9</span></span></div>
+          <div class="lv clay" style="--h:#7DB3FB;--n:4"><span class="well"></span>
+            <span class="tx"><span class="nm">4×4</span><span class="mt">Hard · 1–16</span></span></div>
+          <div class="lv clay" style="--h:#60A5FA;--n:5"><span class="well"></span>
+            <span class="tx"><span class="nm">5×5</span><span class="mt">Master · 1–25</span></span></div>
+          <div class="lv clay" style="--h:#4B93F5;--n:6"><span class="well"></span>
+            <span class="tx"><span class="nm">6×6</span><span class="mt">Expert · 1–36</span></span></div>
+          <div class="lv clay" style="--h:#3B82F6;--n:8"><span class="well"></span>
+            <span class="tx"><span class="nm">8×8</span><span class="mt">Champion · 1–64</span></span></div>
+          <div class="lv clay" style="--h:#2563EB;--n:10"><span class="well"></span>
+            <span class="tx"><span class="nm">10×10</span><span class="mt">Grandmaster · 1–100</span></span></div>
+        </div>
+        <div class="mh" style="--h:#A78BFA"><span class="ic">×</span>
+          <span><b>Multiply Magic</b><i>lines multiply instead of adding</i></span></div>
+        <div class="lvs one"><div class="lv clay" style="--h:#A78BFA"><span class="gl">×</span>
+          <span class="tx"><span class="nm">3³ Multiply</span><span class="mt">Powers of two · 1 … 256</span></span></div></div>
+        <div class="mh" style="--h:#FB7185"><span class="ic">🎂</span>
+          <span><b>Birthday Magic</b><i>your date builds the square</i></span></div>
+        <div class="lvs one"><div class="lv clay" style="--h:#FB7185"><span class="gl">🎂</span>
+          <span class="tx"><span class="nm">Sir Ramanujan MathMagic</span><span class="mt">4×4 · 18 magic groups · any date</span></span></div></div>
+        <div class="mh" style="--h:#22D3EE"><span class="ic">01</span>
+          <span><b>Binary Magic</b><i>no grid — eight cards read your mind</i></span></div>
+        <div class="lvs one"><div class="lv clay" style="--h:#22D3EE"><span class="gl">01</span>
+          <span class="tx"><span class="nm">Binary Number Guess</span><span class="mt">8 cards · anything from 1 to 99</span></span></div></div>
+      </div>
+      <div class="tabs"><div class="on"><span>🏠</span>Puzzles</div><div><span>🎲</span>Play</div>
+        <div><span>💡</span>Learn</div><div><span>📲</span>Get App</div></div>
+    </div>
+    <div class="shotNote"><b>What changed.</b> The card is now a neutral surface. Colour survives only
+    as the 4px rail, the sunken dot-grid and the name when selected — roughly a tenth of the area it
+    used to cover. The dot grid still does the heavy lifting: 3×3 and 10×10 are unmistakable.</div>
+  </div>
+
+  <!-- 2 PLAY / ADD -->
+  <div class="shot">
+    <div class="shotHead"><span class="n">2</span><b>Play — Add Magic</b><i>target still hidden</i></div>
+    <div class="app">
+      <div class="bar"><span class="bk">←</span><span class="ti">3×3 Easy</span><span class="cp">playing</span></div>
+      <div class="pad">
+        <div class="top">
+          <span class="tgt hunt">🎯 Target : ?</span>
+          <span class="ring" style="--p:44"><i>4/9</i></span>
+        </div>
+        <div class="bd" id="bdAdd"></div>
+        <div class="row"><span class="bt gh">↺ Clear</span><span class="bt gh">⏱ 01:12</span></div>
+        <div class="npad">
+          <div class="nrow"><span class="nk">1</span><span class="nk">2</span><span class="nk">3</span><span class="nk">4</span><span class="nk">5</span></div>
+          <div class="nrow"><span class="nk">6</span><span class="nk">7</span><span class="nk">8</span><span class="nk">9</span><span class="nk">0</span></div>
+          <div class="nrow"><span class="nk util">⌫</span><span class="nk util">←</span><span class="nk util">↑</span><span class="nk util">↓</span><span class="nk util">→</span></div>
+        </div>
+        <div class="kbt">⌨️ Use system keyboard instead</div>
+      </div>
+      <div class="tabs"><div><span>🏠</span>Puzzles</div><div class="on"><span>🎲</span>Play</div>
+        <div><span>💡</span>Learn</div><div><span>📲</span>Get App</div></div>
+    </div>
+    <div class="shotNote"><b>The target stays “?”.</b> Gold is reserved for the cursor ring alone, so a
+    child's eye always lands on the box their next number goes into. The progress ring uses the mode
+    hue, never gold — progress is not a reward.</div>
+  </div>
+
+  <!-- NUMBER PAD -->
+  <div class="shot">
+    <div class="shotHead"><span class="n">3</span><b>Number pad</b><i>anatomy &amp; states</i></div>
+    <div class="app">
+      <div class="bar"><span class="bk">←</span><span class="ti">Number pad</span></div>
+      <div class="pad">
+        <div class="note" style="margin:11px 0"><h4>Why it exists</h4>
+          <p>A phone's own keyboard slides up and <b>covers the board</b>, and its keys are small.
+          The cells are set never to summon it — this pad is always in reach instead.</p></div>
+
+        <div class="npad" style="max-width:100%">
+          <div class="nrow"><span class="nk">1</span><span class="nk">2</span><span class="nk">3</span><span class="nk">4</span><span class="nk">5</span></div>
+          <div class="nrow"><span class="nk">6</span><span class="nk">7</span><span class="nk">8</span><span class="nk">9</span><span class="nk">0</span></div>
+          <div class="nrow"><span class="nk util">⌫</span><span class="nk util">←</span><span class="nk util">↑</span><span class="nk util">↓</span><span class="nk util">→</span></div>
+        </div>
+        <div class="anat"><i style="background:#2A2752"></i>Digits — land in the gold-ringed box</div>
+        <div class="anat"><i style="background:rgba(255,255,255,.06)"></i>⌫ rubs out · arrows move the ring</div>
+
+        <div class="slab" style="margin-top:15px">Key states</div>
+        <div class="nrow" style="max-width:200px;margin:0 auto">
+          <span class="nk">7</span><span class="nk down">7</span><span class="nk off">7</span>
+          <span class="nk mkey" style="--mode:#FB7185">±</span>
+        </div>
+        <div class="anat" style="justify-content:center;text-align:center">
+          rest · pressed · unavailable · mode key</div>
+
+        <div class="slab" style="margin-top:15px">Birthday Magic adds one key</div>
+        <div class="npad" style="max-width:100%">
+          <div class="nrow"><span class="nk">6</span><span class="nk">7</span><span class="nk">8</span><span class="nk">9</span><span class="nk">0</span></div>
+          <div class="nrow"><span class="nk mkey" style="--mode:#FB7185">±</span><span class="nk util">⌫</span>
+            <span class="nk util">←</span><span class="nk util">↑</span><span class="nk util">→</span></div>
+        </div>
+        <div class="anat"><i style="background:#FB7185"></i>January and February birthdays make cells go
+          negative — ± types the minus</div>
+
+        <div class="kbt" style="margin-top:15px">⌨️ Use system keyboard instead</div>
+      </div>
+      <div class="tabs"><div><span>🏠</span>Puzzles</div><div class="on"><span>🎲</span>Play</div>
+        <div><span>💡</span>Learn</div><div><span>📲</span>Get App</div></div>
+    </div>
+    <div class="shotNote"><b>Neutral on purpose.</b> Ten digits in gold would fight the cursor ring and
+    the child would not know where to look. The keys stay quiet so the one gold thing on screen is the
+    box waiting for a number. Utility keys sit a step back again — dimmer fill, lighter weight — because
+    ⌫ and the arrows are help, not the main job.<br><br>
+    <b>Sizing.</b> Keys are 1.32:1 and never below <b>44px</b> tall, with 5px between them, so a small
+    finger cannot hit two at once. The pressed state sinks the key inward rather than moving it, so
+    nothing shifts under the thumb. <b>±</b> only appears where negatives are possible, and it borrows
+    the mode hue rather than introducing a new one.</div>
+  </div>
+
+  <!-- 3 PLAY / TARGET FOUND -->
+  <div class="shot">
+    <div class="shotHead"><span class="n">4</span><b>Play — the target reveals itself</b><i>discovery</i></div>
+    <div class="app">
+      <div class="bar"><span class="bk">←</span><span class="ti">3×3 Easy</span><span class="cp">playing</span></div>
+      <div class="pad">
+        <div class="top">
+          <span class="tgt found">🎯 Target : 15</span>
+          <span class="ring" style="--p:78"><i>7/9</i></span>
+        </div>
+        <div class="bd" id="bdFound"></div>
+        <div class="note" style="margin-top:11px"><h4>Two lines agreed</h4>
+          <p>Both finished lines came to <b>15</b>, so that must be the target. Nobody told you —
+          the square did.</p></div>
+      </div>
+      <div class="tabs"><div><span>🏠</span>Puzzles</div><div class="on"><span>🎲</span>Play</div>
+        <div><span>💡</span>Learn</div><div><span>📲</span>Get App</div></div>
+    </div>
+    <div class="shotNote"><b>The one moment gold is earned.</b> The pill turns gold the instant two
+    completed lines agree. That colour change is the reward for a deduction, which is why gold is
+    spent nowhere else.</div>
+  </div>
+
+  <!-- LINES & DIAGONALS -->
+  <div class="shot">
+    <div class="shotHead"><span class="n">5</span><b>Lines &amp; diagonals</b><i>the eighth line</i></div>
+    <div class="app">
+      <div class="bar"><span class="bk">←</span><span class="ti">Every line must match</span>
+        <span class="cp">8 lines</span></div>
+      <div class="pad">
+        <div class="note" style="margin:11px 0"><h4>Three rows. Three columns. Two diagonals.</h4>
+          <p>Eight lines, one total. The diagonals are the ones children forget — so they are
+          <b>lit from the start</b> rather than mentioned once and hidden.</p></div>
+        <div class="bd" id="bdDiag"></div>
+        <div class="anat" style="margin-top:11px">
+          <i style="background:color-mix(in srgb,#5B9DF9 30%,#2A2752)"></i>
+          The two diagonal paths stay tinted, on every board, always</div>
+        <div class="anat">
+          <i style="background:color-mix(in srgb,#5B9DF9 15%,transparent);box-shadow:inset 0 0 0 1px #5B9DF9"></i>
+          All four corners hold a diagonal total — <b>↘ ↖</b> for one, <b>↙ ↗</b> for the other,
+          each arrow pointing along its own line</div>
+        <div class="anat">
+          <i style="background:transparent;box-shadow:inset 0 0 0 1px #6F6796"></i>
+          Edge badges hold the row and column totals, as before</div>
+        <div class="row"><span class="bt gh">↘ Trace this one</span><span class="bt gh">↙ And this</span></div>
+        <div class="note" style="margin-top:11px"><h4>The centre belongs to four lines</h4>
+          <p>The middle box sits on a row, a column <em>and</em> both diagonals. That is why it is
+          <b>target ÷ 3</b>, and why filling it first makes everything else easier.</p></div>
+      </div>
+      <div class="tabs"><div><span>🏠</span>Puzzles</div><div class="on"><span>🎲</span>Play</div>
+        <div><span>💡</span>Learn</div><div><span>📲</span>Get App</div></div>
+    </div>
+    <div class="shotNote"><b>This was missing and it mattered.</b> The corners of the badge ring were
+    blank, so two of the eight lines had no tracker at all — a child could fill every row and column
+    and still be wrong with nothing on screen to say why.<br><br>
+    <b>All four corners, both ends.</b> Every row and column total already shows at both ends of the
+    ring, so a diagonal marked only at the top would be the odd one out — and on a 10×10 board that
+    total is nowhere near the hand working the bottom. Each corner therefore carries its diagonal's
+    total, with the arrow pointing into the grid along that line. The app already marks four corners;
+    what changes is that they are tagged by <em>direction</em> rather than by a magenta that means
+    nothing. The green diagonal guide also only appears on 5×5 today — it belongs on every board.</div>
+  </div>
+
+  <!-- 4 PLAY / MULTIPLY -->
+  <div class="shot">
+    <div class="shotHead"><span class="n">6</span><b>Play — Multiply Magic</b><i>3³</i></div>
+    <div class="app mMul">
+      <div class="bar"><span class="bk">←</span><span class="ti">3³ Multiply</span><span class="cp">playing</span></div>
+      <div class="pad">
+        <div class="top"><span class="tgt hunt">✖️ Product : ?</span>
+          <span class="ring" style="--p:33"><i>3/9</i></span></div>
+        <div class="bd" id="bdMul"></div>
+        <div class="note" style="margin-top:11px"><h4>Same square, different rule</h4>
+          <p>Every number here is a power of two. The lines don't add — they <b>multiply</b> to the
+          same answer.</p></div>
+      </div>
+      <div class="tabs"><div><span>🏠</span>Puzzles</div><div class="on"><span>🎲</span>Play</div>
+        <div><span>💡</span>Learn</div><div><span>📲</span>Get App</div></div>
+    </div>
+    <div class="shotNote"><b>Only the hue moved.</b> Identical layout, spacing and components — violet
+    instead of blue. A child who learned the 3×3 screen already knows this one, which is exactly what
+    a shared system buys you.</div>
+  </div>
+
+  <!-- 5 PLAY / BIRTHDAY -->
+  <div class="shot">
+    <div class="shotHead"><span class="n">7</span><b>Play — Birthday Magic</b><i>Sir Ramanujan</i></div>
+    <div class="app mBir">
+      <div class="bar"><span class="bk">←</span><span class="ti">🎂 Sir Ramanujan MathMagic</span></div>
+      <div class="pad">
+        <div class="top"><span class="tgt found">🎯 Every line : 139</span></div>
+        <div class="bd" id="bdBir"></div>
+        <div class="note" style="margin-top:11px"><h4>You only type the top row</h4>
+          <p><b>DD · MM · CC · YY</b> — the other twelve boxes fill themselves and lock. Works with any
+          date, and with negative numbers too.</p></div>
+        <div class="row"><span class="bt pri">▶ Watch it build</span></div>
+      </div>
+      <div class="tabs"><div><span>🏠</span>Puzzles</div><div class="on"><span>🎲</span>Play</div>
+        <div><span>💡</span>Learn</div><div><span>📲</span>Get App</div></div>
+    </div>
+    <div class="shotNote"><b>Two cell states carry the whole idea.</b> The four you type are outlined in
+    the mode hue; the twelve the maths fills are flat and dimmed with no outline. You can see at a
+    glance which part is yours and which part is the trick.</div>
+  </div>
+
+  <!-- 6 PLAY / BINARY -->
+  <div class="shot">
+    <div class="shotHead"><span class="n">8</span><b>Play — Binary Magic</b><i>no grid</i></div>
+    <div class="app mBin">
+      <div class="bar"><span class="bk">←</span><span class="ti">🔢 Binary Number Guess</span></div>
+      <div class="pad">
+        <div class="note" style="margin:11px 0 9px"><h4>Think of a number from 1 to 99</h4>
+          <p>Tap every card your number appears on. Don't tell anyone.</p></div>
+        <div class="slab" style="margin:9px 0 6px">Tens · cards 1–4</div>
+        <div class="bins">
+          <div class="bin on"><b>Card 1 · 80</b><span>80 81 82 83 84 85 86 87 88 89 90…</span></div>
+          <div class="bin"><b>Card 2 · 40</b><span>40 41 42 43 44 45 46 47 48 49 60…</span></div>
+          <div class="bin"><b>Card 3 · 20</b><span>20 21 22 23 24 25 26 27 28 29 60…</span></div>
+          <div class="bin on"><b>Card 4 · 10</b><span>10 11 12 13 14 15 16 17 18 19 30…</span></div>
+        </div>
+        <div class="slab" style="margin:11px 0 6px">Units · cards 5–8</div>
+        <div class="bins">
+          <div class="bin"><b>Card 5 · 8</b><span>8 9 18 19 28 29 38 39 48 49…</span></div>
+          <div class="bin"><b>Card 6 · 4</b><span>4 5 6 7 14 15 16 17 24 25…</span></div>
+          <div class="bin on"><b>Card 7 · 2</b><span>2 3 6 7 12 13 16 17 22 23…</span></div>
+          <div class="bin"><b>Card 8 · 1</b><span>1 3 5 7 9 11 13 15 17 19…</span></div>
+        </div>
+        <div class="readout"><b>92</b><span>80 + 10 tens · 2 units — that's your number</span></div>
+      </div>
+      <div class="tabs"><div><span>🏠</span>Puzzles</div><div class="on"><span>🎲</span>Play</div>
+        <div><span>💡</span>Learn</div><div><span>📲</span>Get App</div></div>
+    </div>
+    <div class="shotNote"><b>A card game, so it looks like one.</b> No board, no keypad. Selected cards
+    are filled and outlined rather than recoloured, so the state reads even for a colour-blind child —
+    the rule “don't signal with colour alone” applies here more than anywhere.</div>
+  </div>
+
+  <!-- 7 HOW TO PLAY -->
+  <div class="shot">
+    <div class="shotHead"><span class="n">9</span><b>How to play</b><i>rules, before the first move</i></div>
+    <div class="app">
+      <div class="bar"><span class="bk">←</span><span class="ti">How to play 3×3</span></div>
+      <div class="pad">
+        <div class="note" style="margin:11px 0"><h4>The goal</h4>
+          <p>Fill every box with <b>1 to 9</b>, using each number once, so that every row, every column
+          and both diagonals add up to the same total.</p></div>
+        <div class="slab">The count-down method</div>
+        <div class="step"><span class="sn">1</span><div><b>Put 1 in the top middle</b>
+          <p>Always start there. The rest follows a single rule.</p></div></div>
+        <div class="step"><span class="sn">2</span><div><b>Count three down, place to the right</b>
+          <p>Wrap around to the top when you fall off the bottom.</p></div></div>
+        <div class="step"><span class="sn">3</span><div><b>Blocked? Drop straight below</b>
+          <p>If that box is taken, put the number under the last one instead.</p></div></div>
+        <div class="step"><span class="sn">4</span><div><b>Repeat until 9</b>
+          <p>The square finishes itself. Every line will match.</p></div></div>
+        <div class="row"><span class="bt gh">👁 Show me</span><span class="bt pri">▶ Watch it solve</span></div>
+      </div>
+      <div class="tabs"><div><span>🏠</span>Puzzles</div><div class="on"><span>🎲</span>Play</div>
+        <div><span>💡</span>Learn</div><div><span>📲</span>Get App</div></div>
+    </div>
+    <div class="shotNote"><b>Numbered steps because it is genuinely a sequence.</b> Numbering is only
+    honest when order matters — here it does. Two exits: read it, or watch it happen.</div>
+  </div>
+
+  <!-- 8 TUTORIAL -->
+  <div class="shot">
+    <div class="shotHead"><span class="n">10</span><b>Tutorial — Watch me solve</b><i>guided demo</i></div>
+    <div class="app">
+      <div class="bar"><span class="bk">←</span><span class="ti">Watch me solve</span><span class="cp">step 4 / 9</span></div>
+      <div class="pad">
+        <div class="top"><span class="tgt hunt">🎯 Target : ?</span>
+          <span class="ring" style="--p:44"><i>4/9</i></span></div>
+        <div class="bd" id="bdTut"></div>
+        <div class="note" style="margin-top:11px"><h4>Placing 4</h4>
+          <p>3 sat in the right column, so counting three down lands on a taken box —
+          <b>drop straight below</b> instead.</p></div>
+        <div class="row"><span class="bt gh">⏸ Pause</span><span class="bt gh">Skip →</span></div>
+      </div>
+      <div class="tabs"><div><span>🏠</span>Puzzles</div><div class="on"><span>🎲</span>Play</div>
+        <div><span>💡</span>Learn</div><div><span>📲</span>Get App</div></div>
+    </div>
+    <div class="shotNote"><b>Narrate, don't just animate.</b> The demo already existed but ran silently;
+    a caption naming the rule being applied at each step turns a screensaver into a lesson.
+    Pause and Skip because a demo that can't be stopped is a demo nobody trusts.</div>
+  </div>
+
+  <!-- 9 RESULT -->
+  <div class="shot">
+    <div class="shotHead"><span class="n">11</span><b>Result</b><i>solved</i></div>
+    <div class="app">
+      <div class="win">
+        <div class="trophy">🏆</div>
+        <h3>Solved it!</h3>
+        <p class="sub">🐒 Every line came to fifteen.</p>
+        <div class="stats">
+          <div class="stat g"><b>15</b><span>Target</span></div>
+          <div class="stat"><b>01:38</b><span>Time</span></div>
+          <div class="stat w"><b>8</b><span>Lines</span></div>
+        </div>
+        <div class="bd" id="bdWin" style="margin-bottom:12px"></div>
+        <div class="row" style="margin:0"><span class="bt gh">↺ Again</span>
+          <span class="bt pri">Next : 4×4 →</span></div>
+        <p class="sub" style="margin-top:10px;font-size:10.5px">Rotate or mirror this square —
+        all 8 twins stay magic.</p>
+      </div>
+      <div class="tabs"><div><span>🏠</span>Puzzles</div><div class="on"><span>🎲</span>Play</div>
+        <div><span>💡</span>Learn</div><div><span>📲</span>Get App</div></div>
+    </div>
+    <div class="shotNote"><b>Show the achievement, then the next step.</b> The solved grid stays on
+    screen — children want to look at the thing they made. One primary action (next level), one quiet
+    one (replay), and a line that turns the win into the next idea worth trying.</div>
+  </div>
+
+  <!-- 10 LEARN -->
+  <div class="shot">
+    <div class="shotHead"><span class="n">12</span><b>Learn</b><i>the maths behind it</i></div>
+    <div class="app">
+      <div class="bar"><span class="bk">←</span><span class="ti">💡 Math Logic</span></div>
+      <div class="pad">
+        <div class="note" style="margin-top:11px"><h4>The secret structure</h4>
+          <p>The middle box is always <b>target ÷ 3</b>. Opposite boxes always add to
+          <b>twice the middle</b> — for 5 that's 10: 1+9, 2+8, 3+7, 4+6.</p></div>
+        <div class="note"><h4>Eight twins</h4>
+          <p>Rotate or mirror a solved square and all eight versions stay magic. The numbers move;
+          the relationships never do.</p></div>
+        <div class="note"><h4>Why binary works</h4>
+          <p>Every digit 0–9 is built from <b>8, 4, 2 and 1</b>. That is the whole trick — the cards
+          are just those four weights, twice.</p></div>
+        <div class="slab">Try it — 4-bit converter</div>
+        <div class="kp" style="grid-template-columns:repeat(4,1fr);max-width:190px;margin:0 auto">
+          <span class="k act">1</span><span class="k">0</span><span class="k act">1</span><span class="k">0</span>
+        </div>
+        <div class="readout" style="margin-top:8px"><b>10</b><span>8 + 2 — tap a bit to change it</span></div>
+      </div>
+      <div class="tabs"><div><span>🏠</span>Puzzles</div><div><span>🎲</span>Play</div>
+        <div class="on"><span>💡</span>Learn</div><div><span>📲</span>Get App</div></div>
+    </div>
+    <div class="shotNote"><b>Explanation plus a thing to poke.</b> Reading how binary works is weaker
+    than flipping the bits yourself and watching the number change — the converter is the point of
+    this screen, not an extra.</div>
+  </div>
+
+  <!-- 11 GET APP -->
+  <div class="shot">
+    <div class="shotHead"><span class="n">13</span><b>Get App</b><i>share &amp; install</i></div>
+    <div class="app">
+      <div class="bar"><span class="bk">←</span><span class="ti">📲 Share &amp; Install</span></div>
+      <div class="pad">
+        <div class="note" style="margin:11px 0"><h4>Play with no internet</h4>
+          <p>Install it once and it works on a plane, a bus or a village with no signal. Nothing is
+          sent anywhere, and there are no adverts.</p></div>
+        <div class="row" style="margin:0 0 8px"><span class="bt pri">📥 Install app</span>
+          <span class="bt gh">📤 Share</span></div>
+        <div class="row" style="margin:0"><span class="bt gh">📲 Add to home screen</span>
+          <span class="bt gh">🔄 Update</span></div>
+        <div class="slab" style="margin-top:15px">On this device</div>
+        <div class="note"><h4 style="color:var(--win)">✓ Already installed</h4>
+          <p>Tap the 🐒🎲 icon on your home screen to play offline.</p></div>
+      </div>
+      <div class="tabs"><div><span>🏠</span>Puzzles</div><div><span>🎲</span>Play</div>
+        <div><span>💡</span>Learn</div><div class="on"><span>📲</span>Get App</div></div>
+    </div>
+    <div class="shotNote"><b>One primary action.</b> Four buttons of equal weight is the current problem;
+    only Install is gold. The status note tells the truth about what state the device is actually in
+    rather than offering an install that already happened.</div>
+  </div>
+
+</div>
+
+<hr class="rule">
+
+<section class="sec">
+  <h2>3 · Rules this system runs on</h2>
+  <div class="panel">
+    <div class="step"><span class="sn" style="--mode:#F7B32B">1</span><div><b>Gold is spent once per screen</b>
+      <p class="muted">One primary action, or one reward. If two things are gold, neither is primary.</p></div></div>
+    <div class="step"><span class="sn" style="--mode:#5B9DF9">2</span><div><b>Hue = mode, depth = difficulty</b>
+      <p class="muted">A new colour is only justified by a new kind of maths, never by a new size.</p></div></div>
+    <div class="step"><span class="sn" style="--mode:#3DD68C">3</span><div><b>Never signal with colour alone</b>
+      <p class="muted">Solved cells change fill <em>and</em> gain a tint; selected cards get an outline
+      as well as a wash. A colour-blind child loses nothing.</p></div></div>
+    <div class="step"><span class="sn" style="--mode:#FB7185">4</span><div><b>Every tap answers within 100ms</b>
+      <p class="muted">Squish to 93% on press, spring back. Motion is 150–300ms, and all of it stops
+      under <code>prefers-reduced-motion</code>.</p></div></div>
+    <div class="step"><span class="sn" style="--mode:#22D3EE">5</span><div><b>Touch targets ≥ 44px, always</b>
+      <p class="muted">Including the small cells on 10×10, which extend their hit area beyond their
+      visible box.</p></div></div>
+  </div>
+  <p class="muted">Kid-friendliness is carried by <b>form and feedback</b> — big radii, squishy presses,
+  a bouncing monkey, confetti on a win — rather than by saturation. That is the difference between
+  playful and noisy, and it is also what lets an adult use it without embarrassment.</p>
+</section>
+
+<p class="muted" style="text-align:center">Nothing here is built yet — this is the proposal.
+Tell me which screens to make real, and in what order.</p>
+</div>
+
+<script>
+// Boards are data, not markup — keeps the spec honest and short.
+var SOL = [[8,1,6],[3,5,7],[4,9,2]];
+var MUL = [[8,256,2],[4,16,64],[128,1,32]];
+var RAM = [[22,12,18,87],[88,17,9,25],[10,24,89,16],[19,86,23,11]];
+
+function board(id, n, cellPx, fill){
+  var el = document.getElementById(id); if(!el) return;
+  var t = n + 2;
+  el.style.gridTemplateColumns = 'repeat(' + t + ',' + cellPx + 'px)';
+  var html = '';
+  for (var r = 0; r < t; r++){
+    for (var c = 0; c < t; c++){
+      var edge = (r === 0 || r === t - 1 || c === 0 || c === t - 1);
+      if (edge){
+        var corner = (r === 0 || r === t - 1) && (c === 0 || c === t - 1);
+        if (corner){
+          // top-left starts the ↘ diagonal, top-right starts the ↙ one
+          var d = fill.corner ? fill.corner(r, c, t) : '';
+          html += d ? '<span class="cl bg cor">' + d + '</span>' : '<span class="cl bg"></span>';
+        } else {
+          html += '<span class="cl bg">' + fill.badge(r, c, t) + '</span>';
+        }
+      } else {
+        var i = r - 1, j = c - 1;
+        html += fill.cell(i, j, (i === j) || (i + j === n - 1));   // 3rd arg: on a diagonal
+      }
+    }
+  }
+  el.innerHTML = html;
+}
+// All four corners carry a diagonal total — each arrow points INTO the grid along its own
+// line, so the same total is readable from either end (matching the row/column badges).
+//   top-left ↘ / bottom-right ↖  = main diagonal
+//   top-right ↙ / bottom-left ↗  = anti-diagonal
+function corners(total){
+  return function(r, c, t){
+    var top = (r === 0), left = (c === 0);
+    var a = top ? (left ? '↘' : '↙') : (left ? '↗' : '↖');
+    return a + (total || '');
+  };
+}
+var arrows = corners('');
+var blank = { badge: function(){ return '?'; } };
+
+// mid-game, target unknown
+board('bdAdd', 3, 34, {
+  corner: arrows, badge: blank.badge,
+  cell: function(r, c, dg){
+    var shown = [[1,0],[1,1],[1,2],[0,1]];   // one full row + one more
+    var on = shown.some(function(p){ return p[0] === r && p[1] === c; });
+    var cur = (r === 0 && c === 0);
+    return '<span class="cl ' + (on ? '' : 'em ') + (dg ? 'dg ' : '') + (cur ? 'cur' : '') + '">' +
+           (on ? SOL[r][c] : '') + '</span>';
+  }
+});
+
+// two lines agree -> target found
+board('bdFound', 3, 34, {
+  corner: corners('15'),
+  badge: function(){ return '15'; },
+  cell: function(r, c, dg){
+    var missing = (r === 2 && c === 2) || (r === 2 && c === 0);
+    return '<span class="cl ' + (missing ? 'em ' : '') + (dg ? 'dg' : '') + '">' +
+           (missing ? '' : SOL[r][c]) + '</span>';
+  }
+});
+
+// every line, including both diagonals
+board('bdDiag', 3, 36, {
+  corner: corners('15'),
+  badge: function(){ return '15'; },
+  cell: function(r, c, dg){
+    return '<span class="cl ' + (dg ? 'dg' : '') + '">' + SOL[r][c] + '</span>';
+  }
+});
+
+// multiply
+board('bdMul', 3, 34, {
+  corner: arrows, badge: blank.badge,
+  cell: function(r, c, dg){
+    var on = (r === 1);
+    return '<span class="cl ' + (on ? '' : 'em ') + (dg ? 'dg' : '') + '">' +
+           (on ? MUL[r][c] : '') + '</span>';
+  }
+});
+
+// birthday — top row typed, rest locked. Target already on the pill, so arrows only.
+board('bdBir', 4, 28, {
+  corner: arrows, badge: function(){ return '139'; },
+  cell: function(r, c, dg){
+    return '<span class="cl ' + (r === 0 ? 'dob' : 'lock') + (dg ? ' dg' : '') + '">' +
+           RAM[r][c] + '</span>';
+  }
+});
+
+// tutorial, cursor on the cell being explained
+board('bdTut', 3, 34, {
+  corner: arrows, badge: blank.badge,
+  cell: function(r, c, dg){
+    var done = [[0,1],[1,2],[2,0]];
+    var on = done.some(function(p){ return p[0] === r && p[1] === c; });
+    var cur = (r === 2 && c === 0);
+    return '<span class="cl ' + (on ? '' : 'em ') + (dg ? 'dg ' : '') + (cur ? 'cur' : '') + '">' +
+           (on ? SOL[r][c] : '') + '</span>';
+  }
+});
+
+// win — diagonals land green with everything else
+board('bdWin', 3, 30, {
+  corner: corners('15'),
+  badge: function(){ return '15'; },
+  cell: function(r, c){ return '<span class="cl won">' + SOL[r][c] + '</span>'; }
+});
+</script>

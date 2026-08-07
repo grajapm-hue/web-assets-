@@ -1,0 +1,653 @@
+<title>🔮 Mind Reader — redesign of Binary Number Guess</title>
+<style>
+:root{--pg:#FBFAFE;--pg2:#FFF;--edge:#E8E3F3;--tx:#17122F;--tx2:#4E4674;--tx3:#8079A4;--mark:#6D3AE0;
+  --sans:"Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,sans-serif}
+@media (prefers-color-scheme:dark){:root{--pg:#0B0A17;--pg2:#141126;--edge:#262046;--tx:#F4F1FC;
+  --tx2:#BCB4DE;--tx3:#8A82AE;--mark:#BB9DFF}}
+:root[data-theme="dark"]{--pg:#0B0A17;--pg2:#141126;--edge:#262046;--tx:#F4F1FC;--tx2:#BCB4DE;
+  --tx3:#8A82AE;--mark:#BB9DFF}
+:root[data-theme="light"]{--pg:#FBFAFE;--pg2:#FFF;--edge:#E8E3F3;--tx:#17122F;--tx2:#4E4674;
+  --tx3:#8079A4;--mark:#6D3AE0}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--pg);color:var(--tx);font-family:var(--sans);line-height:1.6;padding:24px 16px 48px}
+.page{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+.eyebrow{font-size:11px;font-weight:800;letter-spacing:2.2px;text-transform:uppercase;color:var(--mark)}
+h1{font-size:clamp(23px,5vw,34px);line-height:1.15;font-weight:800;letter-spacing:-.6px}
+.lede{font-size:15px;color:var(--tx2);max-width:64ch}
+.panel{background:var(--pg2);border:1px solid var(--edge);border-radius:16px;padding:17px 18px}
+.panel h2{font-size:17px;font-weight:800;margin-bottom:9px}
+.muted{font-size:13px;color:var(--tx2)}
+.names{display:grid;gap:8px;grid-template-columns:1fr}
+@media(min-width:620px){.names{grid-template-columns:1fr 1fr}}
+.nameOpt{border:1px solid var(--edge);border-radius:12px;padding:11px 13px;background:var(--pg)}
+.nameOpt b{font-size:14.5px;display:block}
+.nameOpt span{font-size:12px;color:var(--tx3)}
+.nameOpt.lead{border-color:var(--mark);box-shadow:0 0 0 2px color-mix(in srgb,var(--mark) 16%,transparent)}
+.frame{max-width:400px;width:100%;margin:0 auto;border:1px solid var(--edge);border-radius:24px;
+  overflow:hidden;box-shadow:0 18px 40px rgba(0,0,0,.16)}
+.hint{font-size:12.5px;color:var(--tx3);text-align:center}
+
+/* ══════ APP (Balanced) ══════ */
+.app{--gr:#171043;--sf:#241A5C;--sf2:#33268C;--ink:#F6F3FF;--ink2:#C3B9F0;--ink3:#9A8FD6;
+  --gold:#F7B32B;--win:#3DD68C;--warn:#FF7A6B;--mode:#22D3EE;
+  --clay:0 3px 0 rgba(0,0,0,.34),0 5px 11px rgba(0,0,0,.4),inset 1px 2px 2px rgba(255,255,255,.14);
+  --sunk:inset 0 3px 7px rgba(0,0,0,.45);--spring:cubic-bezier(.34,1.56,.64,1);
+  background:var(--gr);color:var(--ink);min-height:660px;display:flex;flex-direction:column;
+  position:relative;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.glow{position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(70% 40% at 50% -6%,color-mix(in srgb,var(--mode) 40%,transparent),transparent 70%)}
+.app>*:not(.glow){position:relative;z-index:1}
+.bar{display:flex;align-items:center;gap:9px;padding:11px 13px;background:rgba(0,0,0,.26);
+  border-bottom:1px solid rgba(255,255,255,.09)}
+.bar .bk{width:30px;height:30px;flex:none;border-radius:11px;background:var(--sf2);display:grid;
+  place-items:center;font-size:15px;box-shadow:var(--clay);border:0;color:var(--ink);cursor:pointer}
+.bar .ti{flex:1;font-size:14px;font-weight:900}
+.bar .cp{font-size:9.5px;font-weight:800;padding:4px 9px;border-radius:999px;background:var(--mode);color:#07101d}
+.body{flex:1;padding:0 13px 14px;display:flex;flex-direction:column}
+
+/* Kimo */
+.kimo{display:flex;align-items:center;gap:10px;margin:11px 0 4px}
+.kFace{width:50px;height:50px;flex:none;border-radius:50%;display:grid;place-items:center;font-size:28px;
+  background:linear-gradient(160deg,#FFD675,var(--gold));box-shadow:var(--clay);position:relative;
+  animation:bob 3s var(--spring) infinite}
+.kFace .sp{position:absolute;top:-5px;right:-4px;font-size:15px;opacity:0;transition:opacity .2s}
+.kimo.k-think .kFace{animation:think 2.1s ease-in-out infinite}
+.kimo.k-party .kFace{animation:party .9s var(--spring)}
+.kimo.k-oops .kFace{animation:oops .45s ease}
+.kimo.k-think .sp,.kimo.k-party .sp,.kimo.k-oops .sp{opacity:1}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes think{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
+@keyframes party{0%{transform:scale(1) rotate(0)}45%{transform:scale(1.3) rotate(200deg)}100%{transform:scale(1) rotate(360deg)}}
+@keyframes oops{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}60%{transform:translateX(6px)}}
+.bub{flex:1;min-width:0;background:var(--sf2);border-radius:17px;padding:9px 12px;font-size:12.5px;
+  line-height:1.45;box-shadow:var(--clay);position:relative;font-weight:600}
+.bub::before{content:'';position:absolute;left:-6px;top:18px;width:12px;height:12px;background:var(--sf2);
+  transform:rotate(45deg)}
+.bub b{color:var(--gold);font-weight:900}
+.bub.flash{animation:bubIn .32s var(--spring)}
+@keyframes bubIn{from{opacity:.2;transform:translateX(-9px)}to{opacity:1;transform:none}}
+
+/* progress dots */
+.dots{display:flex;gap:5px;justify-content:center;margin:12px 0 4px}
+.dots i{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.16);font-style:normal;
+  transition:background .3s,transform .3s var(--spring)}
+.dots i.yes{background:var(--win);transform:scale(1.25)}
+.dots i.no{background:var(--warn);opacity:.65}
+.dots i.now{background:var(--gold);transform:scale(1.5)}
+.grp{text-align:center;font-size:9.5px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;
+  color:var(--ink3);margin-bottom:9px}
+
+/* the card being asked */
+.card{background:var(--sf);border-radius:22px;padding:14px 13px;box-shadow:var(--clay);
+  animation:cardIn .38s var(--spring)}
+@keyframes cardIn{from{opacity:0;transform:translateX(26px) rotate(2deg)}to{opacity:1;transform:none}}
+.card.out{animation:cardOut .26s ease forwards}
+@keyframes cardOut{to{opacity:0;transform:translateX(-26px) scale(.96)}}
+.cardHead{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:9px}
+.cardHead b{font-size:14px;font-weight:900}
+.cardHead span{font-size:10px;color:var(--ink3);font-weight:700}
+.nums{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+.nums span{background:#120C34;border-radius:9px;padding:6px 2px;text-align:center;font-size:12.5px;
+  font-weight:800;font-variant-numeric:tabular-nums;box-shadow:var(--sunk);color:var(--ink)}
+.more{text-align:center;font-size:10.5px;color:var(--ink3);margin-top:7px;font-weight:700}
+.yn{display:flex;gap:9px;margin-top:13px}
+.yn button{flex:1;border:0;font-family:inherit;cursor:pointer;font-size:16px;font-weight:900;
+  padding:15px;border-radius:18px;box-shadow:var(--clay);transition:transform .12s var(--spring)}
+.yn button:active{transform:translateY(3px);box-shadow:var(--sunk)}
+.bYes{background:var(--win);color:#04231a}
+.bNo{background:var(--sf2);color:var(--ink)}
+.undo{width:100%;margin-top:9px;background:transparent;border:0;color:var(--ink3);font-size:11.5px;
+  font-weight:700;font-family:inherit;cursor:pointer;padding:7px}
+
+/* setup */
+.secret{background:var(--sf);border-radius:22px;padding:15px 14px;box-shadow:var(--clay)}
+.secret h3{font-size:15px;font-weight:900;margin-bottom:5px}
+.secret p{font-size:12px;color:var(--ink2);line-height:1.6}
+.pill{display:flex;align-items:center;gap:9px;background:#120C34;border-radius:15px;padding:11px 13px;
+  margin-top:11px;box-shadow:var(--sunk)}
+.pill .val{flex:1;font-size:23px;font-weight:900;letter-spacing:5px;font-variant-numeric:tabular-nums}
+.pill .val.hid{letter-spacing:8px}
+.eye{background:transparent;border:0;font-size:17px;cursor:pointer;color:var(--ink3)}
+.kp{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:11px}
+.kp button{aspect-ratio:1.3;border:0;border-radius:13px;background:var(--sf2);color:var(--ink);
+  font-size:17px;font-weight:900;box-shadow:var(--clay);cursor:pointer;font-family:inherit;
+  transition:transform .1s var(--spring)}
+.kp button:active{transform:translateY(3px);box-shadow:var(--sunk)}
+.kp button.u{background:rgba(255,255,255,.07);color:var(--ink3);font-size:14px}
+.go{width:100%;margin-top:11px;border:0;border-radius:18px;padding:15px;background:var(--gold);
+  color:#1a1204;font-size:15.5px;font-weight:900;box-shadow:var(--clay);cursor:pointer;font-family:inherit}
+.go:disabled{opacity:.45}
+.skip{width:100%;margin-top:8px;background:transparent;border:0;color:var(--ink3);font-size:11.5px;
+  font-weight:700;cursor:pointer;font-family:inherit;padding:7px;text-decoration:underline}
+
+/* reveal */
+.reveal{text-align:center;padding:10px 0}
+.big{font-size:66px;font-weight:900;letter-spacing:-2px;line-height:1;font-variant-numeric:tabular-nums;
+  background:linear-gradient(160deg,#FFD675,var(--gold));-webkit-background-clip:text;
+  background-clip:text;color:transparent;animation:pop .6s var(--spring)}
+@keyframes pop{0%{transform:scale(.2);opacity:0}60%{transform:scale(1.16)}100%{transform:scale(1);opacity:1}}
+.verdict{font-size:12.5px;font-weight:800;margin-top:7px}
+.verdict.right{color:var(--win)}.verdict.wrong{color:var(--warn)}.verdict.ask{color:var(--ink2)}
+.ynBig{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.ynBig button{width:100%;border:0;font-family:inherit;cursor:pointer;font-size:15px;font-weight:900;
+  padding:14px;border-radius:18px;box-shadow:var(--clay)}
+.ynBig .bYes{background:var(--win);color:#04231a}
+.ynBig .bNo{background:var(--sf2);color:var(--ink)}
+.thinkBox{display:flex;align-items:center;gap:12px;background:#120C34;border-radius:16px;
+  padding:16px 15px;margin-top:12px;box-shadow:var(--sunk)}
+.qm{width:52px;height:52px;flex:none;border-radius:16px;display:grid;place-items:center;font-size:30px;
+  font-weight:900;background:linear-gradient(160deg,#FFD675,var(--gold));color:#1a1204;
+  box-shadow:var(--clay);animation:bob 2.6s var(--spring) infinite}
+.thinkTx{font-size:12.5px;color:var(--ink2);line-height:1.5}
+.thinkTx b{color:var(--gold)}
+.conf{position:absolute;font-size:17px;pointer-events:none;z-index:30}
+
+/* ── the teaching animation ── */
+.learn{margin-top:11px}
+.wRow{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}
+.w{background:var(--sf);border-radius:13px;padding:9px 4px;text-align:center;box-shadow:var(--clay);
+  opacity:.32;transition:opacity .4s,transform .4s var(--spring),background .4s}
+.w.shown{opacity:1}
+.w.on{background:color-mix(in srgb,var(--win) 26%,var(--sf));transform:translateY(-4px) scale(1.05)}
+.w.off{opacity:.28}
+.w b{display:block;font-size:17px;font-weight:900;font-variant-numeric:tabular-nums}
+.w span{display:block;font-size:8.5px;color:var(--ink3);font-weight:800;letter-spacing:.4px}
+.w.on b{color:var(--win)}
+.wLabel{font-size:9.5px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);
+  margin:9px 0 5px}
+.sum{background:#120C34;border-radius:15px;padding:12px;text-align:center;box-shadow:var(--sunk);
+  margin-top:10px;min-height:52px;display:flex;align-items:center;justify-content:center;gap:6px;
+  flex-wrap:wrap;font-size:19px;font-weight:900;font-variant-numeric:tabular-nums}
+.sum .t{opacity:0;transform:translateY(8px);transition:opacity .35s,transform .35s var(--spring)}
+.sum .t.in{opacity:1;transform:none}
+.sum .eq{color:var(--gold)}
+.bin{display:flex;gap:5px;justify-content:center;margin-top:10px;flex-wrap:wrap}
+.bit{width:26px;height:32px;border-radius:8px;background:var(--sf2);display:grid;place-items:center;
+  font-family:ui-monospace,Menlo,monospace;font-size:14px;font-weight:800;box-shadow:var(--clay);
+  opacity:0;transform:scale(.6);transition:opacity .3s,transform .3s var(--spring)}
+.bit.in{opacity:1;transform:none}
+.bit.one{background:var(--win);color:#04231a}
+.binGap{width:9px}
+.stepBtn{width:100%;margin-top:12px;border:0;border-radius:18px;padding:14px;background:var(--gold);
+  color:#1a1204;font-size:14.5px;font-weight:900;box-shadow:var(--clay);cursor:pointer;font-family:inherit}
+.stepBtn.ghost{background:var(--sf2);color:var(--ink)}
+.row2{display:flex;gap:8px;margin-top:9px}
+.row2 button{flex:1}
+/* ── part 2: hints & logic ── */
+.hintGrid{display:grid;gap:18px;grid-template-columns:1fr}
+@media(min-width:820px){.hintGrid{grid-template-columns:1fr 1fr}}
+.hCol{display:flex;flex-direction:column}
+.hHead{margin-bottom:9px}
+.hHead b{display:block;font-size:15px;font-weight:800}
+.hHead span{font-size:12px;color:var(--tx3)}
+.frame2{border:1px solid var(--edge);border-radius:20px;overflow:hidden;box-shadow:0 10px 26px rgba(0,0,0,.14)}
+.app.mini{min-height:0}
+.hintBar{display:flex;align-items:center;gap:5px;margin:9px 0 10px}
+.hStep{width:26px;height:5px;border-radius:99px;background:rgba(255,255,255,.16)}
+.hStep.on{background:var(--gold)}
+.hMore{margin-left:auto;font-size:9.5px;color:var(--ink3);font-weight:700}
+.miniBoard{display:grid;grid-template-columns:repeat(5,30px);gap:4px;justify-content:center}
+.mc{aspect-ratio:1;border-radius:9px;background:var(--sf2);box-shadow:var(--clay)}
+.mc.e{background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px rgba(255,255,255,.09)}
+.mc.bgc{background:transparent!important;box-shadow:none!important;display:grid;place-items:center;
+  font-size:8px;font-weight:900;color:var(--ink3)}
+.mc.pulse{box-shadow:0 0 0 3px var(--gold);animation:hp 1.5s ease-in-out infinite}
+@keyframes hp{0%,100%{box-shadow:0 0 0 3px var(--gold)}50%{box-shadow:0 0 0 6px rgba(247,179,43,.35)}}
+.btnRow3{display:flex;gap:6px;margin-top:11px}
+.b3{flex:1;text-align:center;padding:9px 4px;border-radius:14px;background:var(--sf2);font-size:11px;
+  font-weight:900;box-shadow:var(--clay);color:var(--ink)}
+.b3.gold{background:var(--gold);color:#1a1204}
+.ladderBox{background:var(--pg2);border:1px solid var(--edge);border-radius:18px;padding:16px 17px;flex:1}
+.lStep{display:grid;grid-template-columns:28px 1fr;gap:11px;align-items:start;margin-bottom:13px}
+.lNum{width:28px;height:28px;border-radius:9px;background:var(--mark);color:var(--pg2);display:grid;
+  place-items:center;font-size:13px;font-weight:800}
+.lStep b{font-size:14px;display:block}
+.lStep p{font-size:12.5px;color:var(--tx2)}
+.lStep i{color:var(--tx);font-style:italic}
+.lNote{font-size:12.5px;color:var(--tx2);background:var(--pg);border-radius:12px;padding:11px 12px;
+  border-left:3px solid var(--mark)}
+.tblWrap{overflow-x:auto}
+.hTbl{width:100%;border-collapse:collapse;font-size:12.5px;min-width:520px}
+.hTbl th{text-align:left;font-size:10px;letter-spacing:1.3px;text-transform:uppercase;color:var(--tx3);
+  padding:0 10px 7px 0;border-bottom:1px solid var(--edge)}
+.hTbl td{padding:9px 10px 9px 0;border-bottom:1px solid var(--edge);color:var(--tx2);vertical-align:top}
+.hTbl td b{color:var(--tx);white-space:nowrap}
+.switcher{display:flex;gap:5px;margin:11px 0 10px}
+.sw{font-size:10.5px;font-weight:800;padding:6px 11px;border-radius:999px;background:var(--sf2);
+  color:var(--ink3);box-shadow:var(--clay)}
+.sw.on{background:var(--gold);color:#1a1204}
+.lNote2{background:var(--sf);border-radius:14px;padding:10px 11px;margin-bottom:7px;box-shadow:var(--clay)}
+.lNote2 b{font-size:11.5px;color:var(--mode);display:block;margin-bottom:3px}
+.lNote2 p{font-size:11px;color:var(--ink2);line-height:1.55}
+.sheetBtn{display:block;text-align:center;padding:11px;border-radius:15px;background:var(--gold);
+  color:#1a1204;font-size:12px;font-weight:900;box-shadow:var(--clay);margin-top:9px}
+.sheetBtn.ghost{background:var(--sf2);color:var(--ink)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="page">
+  <header>
+    <div class="eyebrow">MathMatrix · proposal · not built yet</div>
+    <h1>🔮 One card at a time — and then the trick explained</h1>
+    <p class="lede">The current Binary Number Guess shows all eight cards at once and asks the child to
+    tap the ones containing their number. That is fast, but it gives away nothing: a child taps, a number
+    appears, and no-one learns why. This version asks <b>one question at a time</b>, then <b>animates the
+    logic</b> once it has guessed. Try it — it works.</p>
+    <p class="lede" style="margin-top:9px;padding:11px 13px;border-left:3px solid var(--mark);
+      background:var(--pg2);border-radius:0 10px 10px 0"><b>The number stays in your head.</b> Kimo
+    never asks for it up front — if he knew it, there would be no trick. He only asks <em>after</em>
+    he has guessed, and only if he got it wrong, so he can tell you which card slipped.</p>
+  </header>
+
+  <div class="panel">
+    <h2>First — the name</h2>
+    <p class="muted" style="margin-bottom:11px">“Binary Number Guess” describes the mechanism, not the
+    experience. A child does not want to play “binary”. Pick one:</p>
+    <div class="names">
+      <div class="nameOpt lead"><b>🔮 Kimo Reads Your Mind</b>
+        <span>My pick — ties the trick to the mascot, and promises magic rather than maths.</span></div>
+      <div class="nameOpt"><b>🔮 Mind Reader</b><span>Shorter, works for adults too, loses the brand link.</span></div>
+      <div class="nameOpt"><b>🕵️ The Number Detective</b><span>Leans on deduction — fits the 8-question format.</span></div>
+      <div class="nameOpt"><b>🎩 Guess My Number</b><span>Plainest. Says exactly what happens.</span></div>
+    </div>
+  </div>
+
+  <div class="frame">
+  <div class="app" id="app">
+    <div class="glow"></div>
+    <div class="bar">
+      <button class="bk" id="restart" title="Start again">↺</button>
+      <span class="ti" id="title">🔮 Kimo Reads Your Mind</span>
+      <span class="cp" id="chip">step 1</span>
+    </div>
+    <div class="body">
+      <div class="kimo" id="kimo"><span class="kFace">🐒<span class="sp" id="sp"></span></span>
+        <span class="bub" id="bub">Think of any number from 1 to 99.</span></div>
+      <div id="stage"></div>
+    </div>
+  </div>
+  </div>
+
+  <p class="hint">Answer honestly and Kimo always gets it. Answer one wrongly on purpose — he notices,
+  and tells you <b>which card</b> you slipped on.</p>
+
+  <hr style="border:0;height:1px;background:var(--edge);margin:8px 0">
+
+  <header>
+    <div class="eyebrow">Part 2 · every game</div>
+    <h1>💡 Hints and the explained logic — back, and better placed</h1>
+    <p class="lede">You are right that I dropped these. The old app had them: <b>Show Math Logic</b> per
+    size, the <b>📋 Quick Formula Sheet</b> images, and the instruction card. What it never had was help
+    <em>while you are stuck on the board</em> — you had to leave the puzzle to find it. Here is the
+    feature designed properly, for all nine games.</p>
+  </header>
+
+  <div class="hintGrid">
+    <div class="hCol">
+      <div class="hHead"><b>On the board</b><span>a 💡 button beside Clear and Watch</span></div>
+      <div class="frame2">
+        <div class="app mini">
+          <div class="glow"></div>
+          <div class="bar"><span class="ti">3×3 Easy</span><span class="cp">playing</span></div>
+          <div style="padding:0 13px 13px">
+            <div class="kimo" style="margin:11px 0 4px"><span class="kFace" style="width:44px;height:44px;font-size:24px">🐒<span class="sp" style="opacity:1">💭</span></span>
+              <span class="bub" style="font-size:11.5px"><b>Hint 1 of 4.</b> The middle box is special —
+              it is the target divided by 3. Fill it first.</span></div>
+            <div class="hintBar">
+              <span class="hStep on"></span><span class="hStep"></span><span class="hStep"></span><span class="hStep"></span>
+              <span class="hMore">Need more? tap 💡 again</span>
+            </div>
+            <div class="miniBoard">
+              <span class="mc bgc">↘</span><span class="mc bgc">·</span><span class="mc bgc">·</span><span class="mc bgc">·</span><span class="mc bgc">↙</span>
+              <span class="mc bgc">·</span><span class="mc e"></span><span class="mc e"></span><span class="mc e"></span><span class="mc bgc">·</span>
+              <span class="mc bgc">·</span><span class="mc e"></span><span class="mc e pulse"></span><span class="mc e"></span><span class="mc bgc">·</span>
+              <span class="mc bgc">·</span><span class="mc e"></span><span class="mc e"></span><span class="mc e"></span><span class="mc bgc">·</span>
+              <span class="mc bgc">↗</span><span class="mc bgc">·</span><span class="mc bgc">·</span><span class="mc bgc">·</span><span class="mc bgc">↖</span>
+            </div>
+            <div class="btnRow3">
+              <span class="b3">↺ Clear</span><span class="b3 gold">💡 Hint</span><span class="b3">▶ Watch</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="muted" style="margin-top:9px">The hint never leaves the board, and the fourth level is the
+      only one that touches your grid.</p>
+    </div>
+
+    <div class="hCol">
+      <div class="hHead"><b>The ladder</b><span>four levels, least help first</span></div>
+      <div class="ladderBox">
+        <div class="lStep"><span class="lNum">1</span><div><b>A principle</b>
+          <p>Why the puzzle works. No answer. <i>“The middle box is the target ÷ 3.”</i></p></div></div>
+        <div class="lStep"><span class="lNum">2</span><div><b>The next move</b>
+          <p>What to do, not what to write. <i>“Put 1 in the top middle, then count three down.”</i></p></div></div>
+        <div class="lStep"><span class="lNum">3</span><div><b>Kimo points</b>
+          <p>One box pulses gold. Still no number — you work it out.</p></div></div>
+        <div class="lStep"><span class="lNum">4</span><div><b>Kimo fills one in</b>
+          <p>Places a single correct number <em>and says why</em>. The last resort.</p></div></div>
+        <div class="lNote">Hints are counted, not punished. The result screen says
+          <b>“solved with 2 hints”</b> — honest, and it keeps a no-hint win worth something.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Every game gets its own ladder</h2>
+    <p class="muted" style="margin-bottom:12px">The hints are not generic encouragement — each is written
+    from that puzzle's actual method, the ones you verified.</p>
+    <div class="tblWrap">
+      <table class="hTbl">
+        <thead><tr><th>Game</th><th>Hint 1 — principle</th><th>Hint 2 — next move</th></tr></thead>
+        <tbody>
+          <tr><td><b>3×3 · 5×5</b></td><td>Middle box = target ÷ 3. Opposites add to twice the middle.</td>
+              <td>1 in the top middle, then count three down and place to the right.</td></tr>
+          <tr><td><b>4×4 · 8×8</b></td><td>Write 1 upwards in order, then swap a few pairs.</td>
+              <td>Keep the diagonal numbers where they are; flip the rest to 65 − n.</td></tr>
+          <tr><td><b>6×6 · 10×10</b></td><td>It is four smaller odd squares joined together.</td>
+              <td>Build the top-left block first, then swap whole columns.</td></tr>
+          <tr><td><b>3³ Multiply</b></td><td>Lines multiply, not add. Target = middle × middle × middle.</td>
+              <td>Set the middle box first — every other number is a power of two.</td></tr>
+          <tr><td><b>🎂 Ramanujan</b></td><td>Only the top row is yours. The maths does the other twelve.</td>
+              <td>Type DD · MM · CC · YY with two digits each.</td></tr>
+          <tr><td><b>🔮 Mind Reader</b></td><td>Each card is worth a number. Yes means add it.</td>
+              <td>Answer honestly — one wrong card and I land next door.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="hintGrid">
+    <div class="hCol">
+      <div class="hHead"><b>The whole method</b><span>Learn tab, per game — not one generic page</span></div>
+      <div class="frame2">
+        <div class="app mini">
+          <div class="glow"></div>
+          <div class="bar"><span class="ti">💡 How 3×3 works</span><span class="cp">method</span></div>
+          <div style="padding:0 13px 13px">
+            <div class="switcher"><span class="sw on">3×3</span><span class="sw">4×4</span>
+              <span class="sw">5×5</span><span class="sw">…</span></div>
+            <div class="lNote2"><b>Secret structure</b><p>Middle = target ÷ 3. Opposite boxes always add
+              to twice the middle — for 5 that is 10: 1+9, 2+8, 3+7, 4+6.</p></div>
+            <div class="lNote2"><b>The count-down method</b><p>1 in the top middle. Count three down,
+              place to the right. Blocked? Drop straight below. Repeat to 9.</p></div>
+            <div class="lNote2"><b>Eight twins</b><p>Rotate or mirror it — all eight versions stay magic.</p></div>
+            <span class="sheetBtn">📋 Open the formula sheet</span>
+            <span class="sheetBtn ghost">▶ Watch it built step by step</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="hCol">
+      <div class="hHead"><b>What changes from today</b><span>three fixes</span></div>
+      <div class="ladderBox">
+        <div class="lStep"><span class="lNum">1</span><div><b>Help reaches the board</b>
+          <p>Today the only help lives on another screen. A stuck child abandons the puzzle to find it,
+          and often does not come back. The 💡 button keeps them in the game.</p></div></div>
+        <div class="lStep"><span class="lNum">2</span><div><b>Graded, not all-or-nothing</b>
+          <p>Today it is “no help” or “Watch me solve the whole thing”. Nothing in between. Four levels
+          means a child can take the smallest push that unsticks them.</p></div></div>
+        <div class="lStep"><span class="lNum">3</span><div><b>Learn follows the puzzle you are on</b>
+          <p>The per-size logic already exists — it just is not obviously tied to the game in front of
+          you. A switcher at the top makes that explicit, and keeps the formula sheets one tap away.</p></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Why this is worth the extra taps</h2>
+    <p class="muted">Eight yes/no questions is the whole idea of binary — one bit per question. Asking
+    them one at a time <em>is</em> the lesson, not a slower version of it. The card values stay hidden
+    until the reveal, because that is where the surprise lives — the moment 80 + 10 + 2 lands on their
+    number.<br><br>
+    <b>An earlier draft asked the child to type the number first</b> so the app could verify itself.
+    That was wrong: if the app already knows, nothing is being read and nothing is surprising. Now the
+    number never leaves the child's head. Kimo guesses, asks “did I get it?”, and only when the answer
+    is <em>no</em> does he ask what it really was — purely so he can point at the card that was
+    answered the wrong way round. The self-check survives; the magic survives with it.</p>
+  </div>
+</div>
+
+<script>
+/* ═══ the eight cards: tens bits 8·4·2·1, then units bits 8·4·2·1 ═══ */
+var CARDS = [
+  {v:80, grp:'tens',  test:function(n){ return (Math.floor(n/10) & 8) > 0; }},
+  {v:40, grp:'tens',  test:function(n){ return (Math.floor(n/10) & 4) > 0; }},
+  {v:20, grp:'tens',  test:function(n){ return (Math.floor(n/10) & 2) > 0; }},
+  {v:10, grp:'tens',  test:function(n){ return (Math.floor(n/10) & 1) > 0; }},
+  {v:8,  grp:'units', test:function(n){ return ((n%10) & 8) > 0; }},
+  {v:4,  grp:'units', test:function(n){ return ((n%10) & 4) > 0; }},
+  {v:2,  grp:'units', test:function(n){ return ((n%10) & 2) > 0; }},
+  {v:1,  grp:'units', test:function(n){ return ((n%10) & 1) > 0; }}
+];
+function members(i){
+  var out=[]; for(var n=1;n<=99;n++) if(CARDS[i].test(n)) out.push(n); return out;
+}
+var secret='', hidden=true, step=0, answers=[], phase='setup', learnStep=0;
+
+var stage=document.getElementById('stage');
+function kimo(msg,mood){
+  var k=document.getElementById('kimo'), b=document.getElementById('bub');
+  b.innerHTML=msg; b.classList.remove('flash'); void b.offsetWidth; b.classList.add('flash');
+  k.className='kimo'+(mood?' k-'+mood:'');
+  document.getElementById('sp').textContent = mood==='party'?'🎉':mood==='think'?'💭':mood==='oops'?'❓':'';
+}
+function chip(t){ document.getElementById('chip').textContent=t; }
+
+/* ── SETUP — Kimo must NOT know the number. That is the whole trick. ── */
+function renderSetup(){
+  phase='setup'; chip('ready?'); secret='';
+  kimo('Think of any number from <b>1 to 99</b>. Keep it in your head — <b>do not tell me</b>.','think');
+  stage.innerHTML='<div class="secret">'+
+    '<h3>🤫 Keep it secret</h3>'+
+    '<p>Hold your number in your head. I will ask you <b>eight questions</b> — just yes or no — '+
+    'and then I will tell you exactly what it is.</p>'+
+    '<div class="thinkBox"><span class="qm">?</span>'+
+      '<span class="thinkTx">Your number lives here.<br><b>Only you know it.</b></span></div>'+
+    '<button class="go" id="go">I have one — start asking →</button>'+
+    '</div>';
+  document.getElementById('go').addEventListener('click',startAsking);
+}
+
+/* ── ASKING ── */
+function startAsking(){ step=0; answers=[]; phase='ask'; renderAsk(); }
+function renderAsk(){
+  chip('card '+(step+1)+' of 8');
+  var c=CARDS[step], list=members(step);
+  var show=list.slice(0,20);
+  kimo('Is your number on <b>this</b> card?', 'think');
+  stage.innerHTML=
+    '<div class="dots" id="dots"></div>'+
+    '<div class="grp">'+(c.grp==='tens'?'Tens group · cards 1–4':'Units group · cards 5–8')+'</div>'+
+    '<div class="card" id="card">'+
+      '<div class="cardHead"><b>Card '+(step+1)+'</b><span>secret value hidden 🔒</span></div>'+
+      '<div class="nums">'+show.map(function(n){ return '<span>'+n+'</span>'; }).join('')+'</div>'+
+      '<div class="more">…and '+(list.length-show.length)+' more numbers</div>'+
+      '<div class="yn"><button class="bNo" data-a="0">✗ No</button>'+
+        '<button class="bYes" data-a="1">✓ Yes</button></div>'+
+      (step>0?'<button class="undo" id="undo">← go back and change my last answer</button>':'')+
+    '</div>';
+  paintDots();
+  stage.querySelector('.yn').addEventListener('click',function(e){
+    var b=e.target.closest('button'); if(!b) return;
+    answers[step]=+b.dataset.a;
+    var card=document.getElementById('card');
+    card.classList.add('out');
+    setTimeout(function(){
+      step++;
+      if(step>=8) reveal(); else renderAsk();
+    },230);
+  });
+  var u=document.getElementById('undo');
+  if(u) u.addEventListener('click',function(){ step--; answers.pop(); renderAsk(); });
+}
+function paintDots(){
+  var d=document.getElementById('dots'); if(!d) return;
+  var h='';
+  for(var i=0;i<8;i++){
+    var cls = i<answers.length ? (answers[i]?'yes':'no') : (i===step?'now':'');
+    h+='<i class="'+cls+'"></i>';
+  }
+  d.innerHTML=h;
+}
+
+/* ── REVEAL ── */
+function guessed(){
+  var t=0; for(var i=0;i<8;i++) if(answers[i]) t+=CARDS[i].v; return t;
+}
+function reveal(){
+  phase='reveal'; chip('the answer');
+  var g=guessed();
+  if(g===0){
+    kimo('Every answer was <b>no</b> — that only works for zero! Shall we try again?','oops');
+    stage.innerHTML='<div class="reveal"><div class="big">0</div>'+
+      '<p class="verdict wrong">A number from 1 to 99 sits on at least one card.</p></div>'+
+      '<button class="stepBtn" id="again2">↺ Try again</button>';
+    document.getElementById('again2').addEventListener('click',renderSetup);
+    return;
+  }
+  kimo('Your number is… <b>'+g+'</b>','party');
+  stage.innerHTML='<div class="reveal"><div class="big">'+g+'</div>'+
+    '<p class="verdict ask">Did I get it right?</p></div>'+
+    '<div class="ynBig"><button class="bYes" id="yep">✓ Yes! How?</button>'+
+      '<button class="bNo" id="nope">✗ No — that\'s not it</button></div>';
+  boom();
+  document.getElementById('yep').addEventListener('click',function(){
+    kimo('I knew it. Now let me show you <b>how</b> — there is no magic in it.','party');
+    learnStep=0; renderLearn();
+  });
+  document.getElementById('nope').addEventListener('click',askWhat);
+}
+
+/* Only when Kimo is WRONG does he ask for the number — so he can find the slip */
+function askWhat(){
+  phase='check'; chip('what happened?');
+  kimo('Oh! Then one card was answered the wrong way. <b>What was your number?</b>','oops');
+  var d=[1,2,3,4,5,6,7,8,9,0];
+  stage.innerHTML='<div class="secret">'+
+    '<h3>Tell me now — I will find my mistake</h3>'+
+    '<p>With your real number I can work out <b>which card</b> tripped us up.</p>'+
+    '<div class="pill"><span class="val hid" id="val">– –</span></div>'+
+    '<div class="kp" id="kp">'+d.map(function(x){ return '<button data-k="'+x+'">'+x+'</button>'; }).join('')+
+      '<button class="u" data-k="del" style="grid-column:span 5">⌫ delete</button></div>'+
+    '<button class="go" id="go" disabled>Find the slip →</button>'+
+    '<button class="skip" id="skip">Never mind — play again</button></div>';
+  document.getElementById('kp').addEventListener('click',function(e){
+    var b=e.target.closest('button'); if(!b) return;
+    if(b.dataset.k==='del') secret=secret.slice(0,-1);
+    else if(secret.length<2) secret+=b.dataset.k;
+    var v=document.getElementById('val'), n=parseInt(secret,10);
+    v.textContent = secret.length?secret:'– –';
+    v.classList.toggle('hid', secret.length===0);
+    document.getElementById('go').disabled = !(n>=1 && n<=99);
+  });
+  document.getElementById('skip').addEventListener('click',renderSetup);
+  document.getElementById('go').addEventListener('click',function(){
+    var s=parseInt(secret,10);
+    kimo(mismatchKimo(s),'think');
+    stage.innerHTML='<div class="reveal"><div class="big" style="font-size:44px">'+s+'</div>'+
+      '<p class="verdict wrong">'+mismatchHint(s)+'</p></div>'+
+      '<button class="stepBtn" id="teach">✨ Show me the method anyway</button>'+
+      '<button class="stepBtn ghost" id="again">↺ Try again — I will get it</button>';
+    document.getElementById('teach').addEventListener('click',function(){ learnStep=0; renderLearn(); });
+    document.getElementById('again').addEventListener('click',renderSetup);
+  });
+}
+function mismatchKimo(s){
+  for(var i=0;i<8;i++) if((CARDS[i].test(s)?1:0)!==answers[i])
+    return 'Found it — <b>card '+(i+1)+'</b>. Answer that one again and I will be right.';
+  return 'Odd — the answers all match. Shall we try again?';
+}
+function mismatchHint(s){
+  for(var i=0;i<8;i++){
+    var should = CARDS[i].test(s) ? 1 : 0;
+    if(should !== answers[i])
+      return 'Card '+(i+1)+' should have been “'+(should?'yes':'no')+'”. Look again — '+s+' '+
+             (should?'is':'is not')+' on it.';
+  }
+  return 'Something did not line up.';
+}
+function boom(){
+  var e=['⭐','✨','🎉','🔮','🐒'], app=document.getElementById('app');
+  for(var i=0;i<22;i++){(function(i){
+    var s=document.createElement('span'); s.className='conf'; s.textContent=e[i%5];
+    s.style.left='50%'; s.style.top='42%';
+    s.style.transition='transform 1.1s cubic-bezier(.2,.7,.3,1),opacity 1.1s';
+    app.appendChild(s); void s.offsetWidth;
+    var a=Math.random()*6.283,d=80+Math.random()*150;
+    s.style.transform='translate('+Math.cos(a)*d+'px,'+(Math.sin(a)*d-25)+'px) rotate('+(Math.random()*600-300)+'deg)';
+    s.style.opacity='0'; setTimeout(function(){ s.remove(); },1200);
+  })(i);}
+}
+
+/* ── THE LESSON: animated, five beats ── */
+var LEARN=[
+  {say:'Each card has a <b>secret value</b>. Here they are.',    btn:'Next →'},
+  {say:'I ignore every card you said <b>no</b> to.',              btn:'Next →'},
+  {say:'Then I simply <b>add up</b> the ones you said yes to.',   btn:'Add them →'},
+  {say:'That sum <em>is</em> your number. No magic — just adding.',btn:'One more thing →'},
+  {say:'Those values are <b>8, 4, 2, 1</b> twice — for tens and units. That is <b>binary</b>, the way computers count.',btn:'↺ Play again'}
+];
+function renderLearn(){
+  phase='learn'; chip('how it works');
+  var g=guessed();
+  var tens=CARDS.slice(0,4), units=CARDS.slice(4);
+  function wrow(list,off){
+    return '<div class="wRow">'+list.map(function(c,i){
+      var idx=off+i;
+      return '<div class="w" data-i="'+idx+'"><b>'+c.v+'</b><span>CARD '+(idx+1)+'</span></div>';
+    }).join('')+'</div>';
+  }
+  stage.innerHTML='<div class="learn">'+
+    '<div class="wLabel">Tens cards</div>'+wrow(tens,0)+
+    '<div class="wLabel">Units cards</div>'+wrow(units,4)+
+    '<div class="sum" id="sum"><span class="t" id="t0">…</span></div>'+
+    '<div class="bin" id="bin"></div>'+
+    '<button class="stepBtn" id="nextStep">Next →</button>'+
+    '<div class="row2"><button class="stepBtn ghost" id="replay">↺ Replay</button>'+
+    '<button class="stepBtn ghost" id="done">Done</button></div>'+
+    '</div>';
+  document.getElementById('nextStep').addEventListener('click',advance);
+  document.getElementById('replay').addEventListener('click',function(){ learnStep=0; renderLearn(); });
+  document.getElementById('done').addEventListener('click',renderSetup);
+  applyLearn();
+}
+function applyLearn(){
+  var s=LEARN[learnStep];
+  kimo(s.say, learnStep===4?'party':'think');
+  document.getElementById('nextStep').textContent=s.btn;
+  var ws=stage.querySelectorAll('.w');
+  var sum=document.getElementById('sum'), bin=document.getElementById('bin');
+
+  ws.forEach(function(w){ w.classList.remove('shown','on','off'); });
+  sum.innerHTML='<span class="t" id="t0">…</span>'; bin.innerHTML='';
+
+  if(learnStep>=0) ws.forEach(function(w,i){ setTimeout(function(){ w.classList.add('shown'); }, i*70); });
+  if(learnStep>=1) ws.forEach(function(w){
+      var i=+w.dataset.i;
+      setTimeout(function(){ w.classList.add(answers[i]?'on':'off'); }, 560+ (+w.dataset.i)*60);
+    });
+  if(learnStep>=2){
+    var picked=[]; for(var i=0;i<8;i++) if(answers[i]) picked.push(CARDS[i].v);
+    sum.innerHTML = picked.map(function(v,i){
+      return (i? '<span class="t">+</span>' : '') + '<span class="t">'+v+'</span>';
+    }).join('') + (learnStep>=3 ? '<span class="t eq">= '+guessed()+'</span>' : '');
+    var parts=sum.querySelectorAll('.t');
+    parts.forEach(function(p,i){ setTimeout(function(){ p.classList.add('in'); }, 300+i*160); });
+  }
+  if(learnStep>=4){
+    var t=Math.floor(guessed()/10), u=guessed()%10, h='';
+    [8,4,2,1].forEach(function(w){ h+='<span class="bit'+((t&w)?' one':'')+'">'+((t&w)?1:0)+'</span>'; });
+    h+='<span class="binGap"></span>';
+    [8,4,2,1].forEach(function(w){ h+='<span class="bit'+((u&w)?' one':'')+'">'+((u&w)?1:0)+'</span>'; });
+    bin.innerHTML=h;
+    bin.querySelectorAll('.bit').forEach(function(b,i){ setTimeout(function(){ b.classList.add('in'); }, 200+i*110); });
+  }
+}
+function advance(){
+  if(learnStep>=LEARN.length-1){ renderSetup(); return; }
+  learnStep++; applyLearn();
+}
+
+document.getElementById('restart').addEventListener('click',renderSetup);
+renderSetup();
+</script>

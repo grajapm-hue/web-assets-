@@ -1,0 +1,3028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0d0d0d">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>🐒🎲 MathMatrix Pro++ — Magic Square Puzzles (3×3 · 4×4 · 5×5 · 3³ …)</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { height:100%; width:100%; touch-action:manipulation; }  /* manipulation = normal taps/scroll but no double-tap zoom */
+  
+  /* Markor App Optimization - Fix grey background spreading */
+  @supports (display: -webkit-box) {
+    body { 
+      -webkit-appearance: none;
+      -webkit-user-select: none;
+    }
+  }
+  
+  /* "Now playing" — highlight the level you're currently on */
+  #nowPlaying .np { transition: color .2s ease; }
+  #nowPlaying .np-active { color:#111 !important; background:#fde047; border-radius:5px; padding:0 6px; font-weight:800; box-shadow:0 0 8px rgba(253,224,71,.6); }
+
+  /* Force solid backgrounds in Markor */
+  .logicBox, .instCard, .difficultyBar, .targetPill, .titleCard {
+    -webkit-box-shadow: none !important;
+    box-shadow: none !important;
+    background-clip: padding-box !important;
+    -webkit-background-clip: padding-box !important;
+  }
+  
+  body {
+    background:#000000;
+    background:rgb(0, 0, 0);
+    color:#fff;
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display:flex; flex-direction:column; align-items:center;
+    min-height:100vh; padding:12px 8px 30px;
+    overflow-x:hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Difficulty Toggle */
+  .difficultyBar {
+    /* stacked: [vertical label | puzzle list] on top, Coming Soon underneath */
+    display:flex; flex-direction:column; gap:10px; margin-bottom:16px;
+    background:#1a1a2e; padding:12px 16px; border-radius:12px;
+    border:2px solid #2f7ff0;
+    width:100%; max-width:560px; margin-left:auto; margin-right:auto;
+    box-sizing:border-box;
+  }
+  .diffRow { display:flex; gap:12px; align-items:stretch; }
+  /* label turned on its side: reads bottom-to-top and costs almost no width,
+     leaving the whole row for the puzzle names */
+  .diffLabel {
+    writing-mode:vertical-rl; transform:rotate(180deg);
+    font-size:15px; font-weight:800; color:#f87171; letter-spacing:.5px;
+    flex:0 0 auto; text-align:center; padding:2px 0; white-space:nowrap;
+  }
+  .toggleSwitch {
+    /* two columns beside the vertical label — uses the full width and keeps the
+       list short as more puzzles arrive; rows grow taller when a name wraps */
+    display:grid; grid-template-columns:1fr 1fr; gap:8px;
+    flex:1 1 auto; min-width:0;
+  }
+  .toggleSwitch .toggleBtn {
+    width:100%; text-align:left;
+    padding:10px 12px; font-size:15px;
+    white-space:normal; overflow-wrap:break-word; line-height:1.3;
+    height:auto; min-height:0;          /* height follows the text, however long */
+    box-sizing:border-box;
+  }
+  /* one wide column on very narrow phones so names never get cramped */
+  @media (max-width:359px){ .toggleSwitch { grid-template-columns:1fr; } }
+  .toggleBtn {
+    border:2px solid #555; border-radius:8px;
+    padding:8px 16px;
+    font-size:16px; font-weight:900;
+    cursor:pointer;
+    transition:all .3s ease;
+    background:#222;
+    color:#888;
+  }
+  .toggleBtn.active {
+    /* White on bright blue was two bright colours fighting — the text washed out.
+       Deep navy behind white gives a far stronger contrast, with a glowing rim
+       to show which level is selected. !important beats the inline colours. */
+    background:#0a2a6e !important;
+    border-color:#60a5fa !important;
+    color:#ffffff !important;
+    box-shadow:0 0 10px rgba(96,165,250,.45);
+  }
+  
+  /* Solved Counter */
+  .solvedCounter {
+    background:linear-gradient(135deg,#667eea,#764ba2);
+    border-radius:10px;
+    padding:6px 14px;
+    font-size:12px; font-weight:700;
+    margin:0 auto 10px;
+    max-width:560px;
+    text-align:center;
+    line-height:1.3;
+  }
+  .solvedCounter.unlocked {
+    background:linear-gradient(135deg,#f093fb,#f5576c);
+    animation:pulse .6s ease;
+  }
+  @keyframes pulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.05); } }
+  
+  /* Title card */
+  .titleCard {
+    background:#101820;
+    border:3px solid #2f7ff0;
+    border-radius:14px;
+    padding:10px 26px;
+    margin-bottom:14px;
+  }
+  .titleCard h1 { font-size:24px; color:#2f9bf0; font-weight:800; display:flex; align-items:center; justify-content:center; gap:8px; line-height:1; }
+  
+  /* Target pill */
+  .targetPill {
+    border-radius:14px;
+    padding:10px 26px;
+    font-size:22px; font-weight:800; color:#fff;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    line-height:1;
+    margin-bottom:14px;
+    background:linear-gradient(135deg,#c62828,#ef4444);
+    box-shadow:0 2px 10px rgba(239,68,68,.35);
+    transition:all .4s ease;
+  }
+  .targetPill.solved {
+    background:linear-gradient(135deg,#15803d,#22c55e);
+    box-shadow:0 2px 14px rgba(34,197,94,.5);
+  }
+  
+  /* Instruction card */
+  .instCard {
+    background:#1e1e1e;
+    border-left:6px solid #2f7ff0;
+    border-radius:12px;
+    padding:12px 14px;
+    font-size:16px; font-weight:700; line-height:1.45;   /* bigger + bolder: it is the level's instruction */
+    max-width:560px;
+    margin-bottom:12px;
+  }
+  @media (min-width:480px){ .instCard { font-size:18px; } }
+  @media (min-width:760px){ .instCard { font-size:20px; } }
+  
+  
+  /* Board Container - keeps puzzle table compact */
+  .boardContainer {
+    display:inline-flex;
+    justify-content:center;
+    align-items:center;
+    padding:0;
+    margin:0 auto 30px;
+    background:transparent;
+    border-bottom:2px solid #333;
+    padding-bottom:20px;
+    width:100%;
+  }
+  
+  /* Board */
+  .board {
+    display:grid;
+    grid-gap:6px; gap:6px;
+    justify-content:center;
+    margin:0;
+    padding:0;
+    background:transparent;
+  }
+  /* 3x3 board */
+  .board.size3x3 {
+    grid-template-columns:repeat(5, 52px);
+    grid-template-rows:repeat(5, 52px);
+  }
+  /* 4x4 board */
+  .board.size4x4 {
+    grid-template-columns:repeat(6, 52px);
+    grid-template-rows:repeat(6, 52px);
+  }
+  
+  .board.size5x5 {
+    grid-template-columns:repeat(7, 40px);
+    grid-template-rows:repeat(7, 40px);
+  }
+  /* 6x6 board (8-track ring) */
+  .board.size6x6 {
+    grid-template-columns:repeat(8, 30px);
+    grid-template-rows:repeat(8, 30px);
+    grid-gap:3px; gap:3px;
+  }
+  /* 8x8 board (10-track ring) */
+  .board.size8x8 {
+    grid-template-columns:repeat(10, 26px);
+    grid-template-rows:repeat(10, 26px);
+    grid-gap:2px; gap:2px;
+  }
+  /* 10x10 board (12-track ring) */
+  .board.size10x10 {
+    grid-template-columns:repeat(12, 22px);
+    grid-template-rows:repeat(12, 22px);
+    grid-gap:2px; gap:2px;
+  }
+
+  @media (min-width:480px){
+    .board.size3x3 {
+      grid-template-columns:repeat(5, 68px);
+      grid-template-rows:repeat(5, 68px);
+      grid-gap:8px; gap:8px;
+    }
+    .board.size4x4 {
+      grid-template-columns:repeat(6, 68px);
+      grid-template-rows:repeat(6, 68px);
+      grid-gap:8px; gap:8px;
+    }
+    .board.size5x5 {
+      grid-template-columns:repeat(7, 56px);
+      grid-template-rows:repeat(7, 56px);
+      grid-gap:6px; gap:6px;
+    }
+    .board.size6x6 {
+      grid-template-columns:repeat(8, 44px);
+      grid-template-rows:repeat(8, 44px);
+      grid-gap:5px; gap:5px;
+    }
+    .board.size8x8 {
+      grid-template-columns:repeat(10, 38px);
+      grid-template-rows:repeat(10, 38px);
+      grid-gap:3px; gap:3px;
+    }
+    .board.size10x10 {
+      grid-template-columns:repeat(12, 34px);
+      grid-template-rows:repeat(12, 34px);
+      grid-gap:3px; gap:3px;
+    }
+  }
+  
+  @media (min-width:760px){
+    .board.size3x3 {
+      grid-template-columns:repeat(5, 92px);
+      grid-template-rows:repeat(5, 92px);
+    }
+    .board.size4x4 {
+      grid-template-columns:repeat(6, 92px);
+      grid-template-rows:repeat(6, 92px);
+    }
+    .board.size5x5 {
+      grid-template-columns:repeat(7, 72px);
+      grid-template-rows:repeat(7, 72px);
+    }
+    .board.size6x6 {
+      grid-template-columns:repeat(8, 60px);
+      grid-template-rows:repeat(8, 60px);
+    }
+    .board.size8x8 {
+      grid-template-columns:repeat(10, 50px);
+      grid-template-rows:repeat(10, 50px);
+    }
+    .board.size10x10 {
+      grid-template-columns:repeat(12, 46px);
+      grid-template-rows:repeat(12, 46px);
+    }
+  }
+  
+  .cell {
+    -webkit-appearance:none;   /* iOS Safari: drop default input chrome so our border/bg render */
+    appearance:none;
+    background:#1a1b22;         /* neutral dark tile — visible box; stays dimmer than the blue/teal/violet shades so those still pop */
+    border:2px solid #2aa5c9;  /* solid (was dashed) — dashes render sparse/faint on iOS */
+    border-radius:6px;
+    color:#fff;
+    font-weight:600;
+    text-align:center;
+    padding:0;
+    outline:none;
+    transition:all .2s ease;
+  }
+  /* 3x3 cell sizes */
+  .board.size3x3 .cell { width:52px; height:52px; font-size:24px; line-height:48px; }
+  /* 4x4 cell sizes */
+  .board.size4x4 .cell { width:52px; height:52px; font-size:28px; line-height:48px; }
+  /* 5x5 cell sizes */
+  .board.size5x5 .cell { width:40px; height:40px; font-size:20px; line-height:36px; }
+  /* 6x6 / 8x8 cell sizes (font auto-shrinks via fitCells) */
+  .board.size6x6 .cell { width:30px; height:30px; font-size:15px; line-height:26px; }
+  .board.size8x8 .cell { width:26px; height:26px; font-size:12px; line-height:22px; }
+  .board.size10x10 .cell { width:22px; height:22px; font-size:10px; line-height:18px; }
+
+  @media (min-width:480px){
+    .board.size3x3 .cell { width:68px; height:68px; font-size:28px; line-height:64px; }
+    .board.size4x4 .cell { width:68px; height:68px; font-size:34px; line-height:64px; }
+    .board.size5x5 .cell { width:56px; height:56px; font-size:24px; line-height:52px; }
+    .board.size6x6 .cell { width:44px; height:44px; font-size:20px; line-height:40px; }
+    .board.size8x8 .cell { width:38px; height:38px; font-size:17px; line-height:34px; }
+    .board.size10x10 .cell { width:34px; height:34px; font-size:15px; line-height:30px; }
+  }
+  @media (min-width:760px){
+    .board.size3x3 .cell { width:92px; height:92px; font-size:32px; line-height:88px; }
+    .board.size4x4 .cell { width:92px; height:92px; font-size:40px; line-height:88px; }
+    .board.size5x5 .cell { width:72px; height:72px; font-size:30px; line-height:68px; }
+    .board.size6x6 .cell { width:60px; height:60px; font-size:26px; line-height:56px; }
+    .board.size8x8 .cell { width:50px; height:50px; font-size:22px; line-height:46px; }
+    .board.size10x10 .cell { width:46px; height:46px; font-size:20px; line-height:42px; }
+  }
+  
+  .cell:focus { border-style:solid; border-color:#22d3ee; }
+  .cell.given { color:#67e8f9; }
+  .cell.dup { border-color:#ef4444; color:#f87171; }
+  .cell.win { 
+    border-style:solid; 
+    border-color:#10b981; 
+    color:#34d399; 
+    background:#051f1f;
+    font-weight:700;
+  }
+  /* Anchor boxes: 4 corners + 4 middle boxes - visual hint for beginners */
+  .cell.anchor {
+    background:#0a2e4a;
+    border-color:#1e5a96;
+  }
+  /* Swap-pair shading (6x6 / 10x10): two colours so kids see which group trades
+     with which. Teal = first group, violet = second group. (Avoids red=error / green=win.) */
+  .cell.swapA { background:#0c3b34; border-color:#2dd4bf; }
+  .cell.swapB { background:#331a45; border-color:#c084fc; }
+  /* 3x3 center anchor */
+  .board.size3x3 .cell.anchor {
+    background:#0a3a2a;
+    border-color:#1e8855;
+  }
+  /* 5x5 center grid shading (heart relationships) */
+  .board.size5x5 .cell.center-heart {
+    background:rgba(76, 175, 80, 0.3);
+    border-color:#4caf50;
+  }
+  .board.size5x5 .cell.center-ref {
+    background:rgba(33, 150, 243, 0.2);
+    border-color:#2196f3;
+  }
+  .cell.peek { /* Show/solved display - subtle background */ }
+  
+  /* SHOW display background colors - visible contrast */
+  .board.size3x3 .cell.peek { background: rgba(30, 64, 175, 0.15) !important; }
+  .board.size4x4 .cell.peek { background: rgba(124, 58, 237, 0.15) !important; }
+  .board.size5x5 .cell.peek { background: rgba(8, 145, 178, 0.15) !important; }
+  .board.size6x6 .cell.peek { background: rgba(13, 148, 136, 0.15) !important; }
+  .board.size8x8 .cell.peek { background: rgba(67, 56, 202, 0.15) !important; }
+  .board.size10x10 .cell.peek { background: rgba(190, 24, 93, 0.15) !important; }
+
+  /* Badge/target cells in SHOW display - more visible */
+  .board.size3x3 .badge.peek { background: rgba(30, 64, 175, 0.2) !important; }
+  .board.size4x4 .badge.peek { background: rgba(124, 58, 237, 0.2) !important; }
+  .board.size5x5 .badge.peek { background: rgba(8, 145, 178, 0.2) !important; }
+  .board.size6x6 .badge.peek { background: rgba(13, 148, 136, 0.2) !important; }
+  .board.size8x8 .badge.peek { background: rgba(67, 56, 202, 0.2) !important; }
+  .board.size10x10 .badge.peek { background: rgba(190, 24, 93, 0.2) !important; }
+  
+  .badge {
+    border:2px solid #22d3ee;   /* edge badges (row/column trackers) = cyan */
+    border-radius:6px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:15px; font-weight:700; color:#7fd8e8;
+    line-height:1;
+    transition:all .3s ease;
+  }
+  /* 3x3 badge sizes */
+  .board.size3x3 .badge { width:52px; height:52px; }
+  /* 4x4 badge sizes */
+  .board.size4x4 .badge { width:52px; height:52px; }
+  
+  /* 6x6 / 8x8 badges auto-fill their grid track; only tune the sum font so 3-digit totals fit */
+  .board.size6x6 .badge { font-size:11px; }
+  .board.size8x8 .badge { font-size:9px; }
+  .board.size10x10 .badge { font-size:8px; }
+
+  @media (min-width:480px){
+    .board.size3x3 .badge { width:68px; height:68px; font-size:17px; }
+    .board.size4x4 .badge { width:68px; height:68px; font-size:19px; }
+    .board.size6x6 .badge { font-size:14px; }
+    .board.size8x8 .badge { font-size:12px; }
+    .board.size10x10 .badge { font-size:11px; }
+  }
+  @media (min-width:760px){
+    .board.size3x3 .badge { width:92px; height:92px; font-size:20px; }
+    .board.size4x4 .badge { width:92px; height:92px; font-size:24px; }
+    .board.size6x6 .badge { font-size:18px; }
+    .board.size8x8 .badge { font-size:15px; }
+    .board.size10x10 .badge { font-size:14px; }
+  }
+  
+  .badge.corner { border-style:solid; border-color:#d946ef; color:#e59bf5; }  /* corner badges (diagonal trackers) = magenta */
+  .badge.partial { color:#aaa; }
+  .badge.full { border-color:#f59e0b; color:#fbbf24; }
+  .badge.peektone { border-color:#29a8e0; color:#29a8e0; }
+  .badge.win { 
+    border-color:#fbbf24; 
+    color:#fcd34d;
+    border-style:solid;
+    font-weight:700;
+  }
+  
+  /* Buttons */
+  .btnRow {
+    display:flex; gap:10px;
+    width:100%; max-width:600px;
+    margin:0 auto 12px;
+    padding:0 10px;
+    /* Markor app fix */
+    -webkit-box-shadow: none !important;
+    box-shadow: none !important;
+  }
+  .btnRow button {
+    flex:1;
+    border:2px solid; border-radius:8px;
+    height:48px; line-height:48px; padding:0;
+    font-size:17px; font-weight:800; cursor:pointer;
+    text-align:center;
+    transition:all .2s ease;
+    background:transparent;
+    /* Markor app fix */
+    -webkit-box-shadow: none !important;
+    box-shadow: none !important;
+  }
+  .btnRow button:active { transform:scale(0.98); }
+
+
+  #clearBtn { 
+    background:transparent;
+    border:2px solid #ef4444;
+    color:#ef4444;
+    -webkit-box-shadow: none !important;
+    box-shadow: none !important;
+  }
+  #peekBtn {
+    background:transparent;
+    border:2px solid #7c3aed;
+    color:#7c3aed;
+    -webkit-box-shadow: none !important;
+    box-shadow: none !important;
+  }
+  #watchBtn {
+    background:transparent;
+    border:2px solid #22c55e;
+    color:#4ade80;
+    -webkit-box-shadow: none !important;
+    box-shadow: none !important;
+  }
+  #watchBtn:disabled { opacity:.5; cursor:default; }
+  /* Watch Me Solve: number drops into place with a bounce */
+  @keyframes dropIn {
+    0%   { transform:scale(.25); opacity:0; }
+    60%  { transform:scale(1.18); opacity:1; }
+    100% { transform:scale(1); }
+  }
+  .cell.placing { animation: dropIn .42s ease; color:#4ade80 !important; }
+
+  #timerBox {
+    flex:1;
+    border:2px solid #22d3ee; border-radius:8px;   /* cyan clock — distinct from the green Watch Me Solve */
+    height:48px; line-height:44px; padding:0;
+    text-align:center;
+    font-size:20px; font-weight:700; color:#22d3ee;
+    font-variant-numeric:tabular-nums;
+    background:#000000;
+    background:rgb(0, 0, 0);
+    /* Markor app fix - prevent grey shadow spreading */
+    -webkit-box-shadow: none !important;
+    box-shadow: none !important;
+  }
+  
+  #msg {
+    min-height:30px;
+    font-size:18px; font-weight:700; color:#2f9bf0;
+    text-align:center; margin:20px 0 14px;
+    max-width:560px;
+  }
+  #msg.win { color:#2ecc71; }
+  
+  /* Congratulations Modal */
+  .congratsModal {
+    display:none;
+    position:fixed; top:0; left:0; right:0; bottom:0;
+    background:rgba(0,0,0,.9);
+    z-index:9999;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    animation:fadeIn .4s ease;
+  }
+  @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+  
+  .congratsBox {
+    background:linear-gradient(135deg,#667eea,#764ba2);
+    border-radius:20px;
+    padding:40px 30px;
+    text-align:center;
+    max-width:320px;
+    animation:bounceIn .6s ease;
+  }
+  @keyframes bounceIn { 
+    0% { transform:scale(0.3); opacity:0; }
+    50% { transform:scale(1.05); }
+    100% { transform:scale(1); opacity:1; }
+  }
+  
+  .congratsBox h2 {
+    font-size:32px;
+    margin-bottom:16px;
+    animation:float 2s ease-in-out infinite;
+  }
+  @keyframes float { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-10px); } }
+  
+  .congratsBox p {
+    font-size:18px;
+    margin-bottom:24px;
+    font-weight:600;
+  }
+  
+  .congratsBtn {
+    background:linear-gradient(135deg,#f093fb,#f5576c);
+    border:none;
+    border-radius:12px;
+    padding:14px 32px;
+    font-size:18px;
+    font-weight:800;
+    color:#fff;
+    cursor:pointer;
+    transition:all .3s ease;
+    margin:0 auto;
+    display:block;
+  }
+  .congratsBtn:active { transform:scale(0.95); }
+  
+  #logicBtn {
+    background:linear-gradient(135deg,#7c3aed,#a855f7);
+    border:none; border-radius:12px;
+    height:48px; line-height:48px; padding:0 20px;
+    text-align:center;
+    font-size:16px; font-weight:700; color:#fff; cursor:pointer;
+    width:100%; max-width:560px;
+    transition:all .2s ease;
+    margin:0 auto;
+    display:block;
+    /* Markor app fix - prevent grey shadow spreading */
+    -webkit-box-shadow: none !important;
+    box-shadow: none !important;
+  }
+  #logicBtn:active { transform:scale(0.98); }
+  #logicBtn:hover { 
+    background:linear-gradient(135deg,#a855f7,#d946ef); 
+    -webkit-box-shadow: none !important;
+    box-shadow: none !important;
+  }
+  
+  #logicBox {
+    display:none; max-width:560px; margin:12px auto;
+    border:2.5px solid #e91e8c; border-radius:14px;
+    background:#160d1a; padding:20px 18px;
+    font-size:15px; line-height:1.6;
+    animation:slideIn .3s ease;
+    width:100%;
+    /* Markor app fix - prevent background shadow spreading */
+    -webkit-box-shadow: 0 0 0 transparent !important;
+    box-shadow: 0 0 0 transparent !important;
+    background-clip: padding-box;
+    -webkit-background-clip: padding-box;
+  }
+  @keyframes slideIn { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
+  
+  #logicBox h3 { color:#a855f7; font-size:17px; margin-bottom:8px; }
+  #logicBox p { margin-bottom:8px; }
+  #logicBox b { color:#22d3ee; }
+  #logicBox ol { color:#e0e0e0; line-height:1.8; }
+  #logicBox li { margin-bottom:6px; }
+  #offlineBtn {
+    background:#000;
+    border:2px solid #22d3ee; border-radius:12px;
+    height:48px; line-height:44px; padding:0 20px;
+    text-align:center;
+    font-size:16px; font-weight:700; color:#22d3ee; cursor:pointer;
+    width:100%; max-width:560px;
+    margin:0 auto 12px auto;
+    display:block;
+    -webkit-box-shadow: none !important;
+    box-shadow: none !important;
+  }
+  #offlineBtn:active { transform:scale(0.98); }
+  #offlineBox {
+    display:none;
+    width:100%; max-width:560px;
+    margin:0 auto 12px auto; padding:14px 16px;
+    border:2px dashed #22d3ee; border-radius:12px;
+    background:#101828; color:#e0e0e0;
+    font-size:15px; line-height:1.6; text-align:left;
+    box-sizing:border-box;
+  }
+  #offlineBox h3 { color:#22d3ee; font-size:17px; margin-bottom:8px; }
+  #offlineBox b { color:#c084fc; }
+  #logicBox ul { color:#e0e0e0; line-height:1.8; }
+  
+  .credit { 
+    margin-top:24px; 
+    font-size:14px; 
+    font-weight:600; 
+    color:#ccc; 
+    text-align:center; 
+    opacity:0.85;
+    transition:opacity .3s ease;
+  }
+  .credit:hover { opacity:1; }
+
+  /* ═══════════════════════════════════════════════════════════════════════ */
+  /* SIZE-SPECIFIC COLOR THEMES - 3×3, 4×4, 5×5 UNIQUE COLORS */
+  /* ═══════════════════════════════════════════════════════════════════════ */
+
+  /* 3×3 - BLUE THEME */
+  .board.size3x3 .cell { border-color: #1e40af !important; }
+  .board.size3x3 .cell:focus { border-color: #3b82f6 !important; }
+  .board.size3x3 .badge.partial { border-color: #fbbf24 !important; color: #fbbf24 !important; }
+  .board.size3x3 .badge.full { border-color: #1e40af !important; color: #3b82f6 !important; }
+  .board.size3x3 .cell.win { background: #10b981 !important; color: #ffffff !important; }
+  .board.size3x3 .badge.win { border-color: #fbbf24 !important; color: #fbbf24 !important; }
+  .board.size3x3 .cell.anchor { background: rgba(30, 64, 175, 0.2) !important; border-color: #3b82f6 !important; }
+  .board.size3x3 .cell.center-heart { background: rgba(16, 185, 129, 0.3) !important; border-color: #10b981 !important; }
+  .targetPill.size3x3 { background: #1e40af !important; color: #ffffff !important; border-color: #3b82f6 !important; }
+
+  /* 4×4 - PURPLE THEME */
+  .board.size4x4 .cell { border-color: #7c3aed !important; }
+  .board.size4x4 .cell:focus { border-color: #a78bfa !important; }
+  .board.size4x4 .badge.partial { border-color: #f97316 !important; color: #f97316 !important; }
+  .board.size4x4 .badge.full { border-color: #7c3aed !important; color: #a78bfa !important; }
+  .board.size4x4 .cell.win { background: #06b6d4 !important; color: #ffffff !important; }
+  .board.size4x4 .badge.win { border-color: #f97316 !important; color: #f97316 !important; }
+  .board.size4x4 .cell.anchor { background: rgba(124, 58, 237, 0.2) !important; border-color: #a78bfa !important; }
+  .targetPill.size4x4 { background: #7c3aed !important; color: #ffffff !important; border-color: #a78bfa !important; }
+
+  /* 5×5 - TEAL THEME */
+  .board.size5x5 .cell { border-color: #6366f1 !important; }   /* indigo inner grid — distinct from cyan/magenta outer ring */
+  .board.size5x5 .cell:focus { border-color: #818cf8 !important; }
+  .board.size5x5 .badge.partial { border-color: #f59e0b !important; color: #f59e0b !important; }
+  .board.size5x5 .badge.full { border-color: #0891b2 !important; color: #06b6d4 !important; }
+  .board.size5x5 .cell.win { background: #059669 !important; color: #ffffff !important; }
+  .board.size5x5 .badge.win { border-color: #f59e0b !important; color: #f59e0b !important; }
+
+
+  .targetPill.size5x5 { background: #0891b2 !important; color: #ffffff !important; border-color: #06b6d4 !important; }
+  .targetPill.size6x6 { background: #0d9488 !important; color: #ffffff !important; border-color: #2dd4bf !important; }
+  .targetPill.size8x8 { background: #4338ca !important; color: #ffffff !important; border-color: #818cf8 !important; }
+  .targetPill.size10x10 { background: #9d174d !important; color: #ffffff !important; border-color: #ec4899 !important; }
+  .targetPill.size3cube { background: #b45309 !important; color: #ffffff !important; border-color: #f59e0b !important; }
+  .targetPill.sizeramanujan { background: #9f1239 !important; color: #ffffff !important; border-color: #fb7185 !important; }
+  /* Target preview (orange = center x 3 goal shown) and solved (green) — win over the per-size colours */
+  .targetPill.preview { background: linear-gradient(135deg,#f59e0b,#fb923c) !important; color: #ffffff !important; border-color: #fbbf24 !important; }
+  .targetPill.solved  { background: linear-gradient(135deg,#15803d,#22c55e) !important; color: #ffffff !important; border-color: #22c55e !important; }
+
+
+  /* DIAGONAL GUIDE CLASS - Green shade for 7 cells */
+  .diagonal-guide {
+    background: rgba(76, 175, 80, 0.3) !important;
+  }
+
+  /* 3³ Multiply — reuses the 3×3 board layout with a gold identity */
+  .board.size3cube { grid-template-columns:repeat(5, 52px); grid-template-rows:repeat(5, 52px); }
+  .board.size3cube .cell { width:52px; height:52px; font-size:24px; line-height:48px; border-color:#f59e0b; }
+  .board.size3cube .badge { width:52px; height:52px; }
+  @media (min-width:480px){
+    .board.size3cube { grid-template-columns:repeat(5, 68px); grid-template-rows:repeat(5, 68px); grid-gap:8px; gap:8px; }
+    .board.size3cube .cell { width:68px; height:68px; font-size:26px; line-height:64px; }
+    .board.size3cube .badge { width:68px; height:68px; font-size:17px; }
+  }
+  @media (min-width:760px){
+    .board.size3cube { grid-template-columns:repeat(5, 92px); grid-template-rows:repeat(5, 92px); }
+    .board.size3cube .cell { width:92px; height:92px; font-size:30px; line-height:88px; }
+    .board.size3cube .badge { width:92px; height:92px; font-size:20px; }
+  }
+  .board.size3cube .cell.anchor { background:#3a2e0a; border-color:#f59e0b; }
+  .board.size3cube .cell.peek { background: rgba(245,158,11,0.15) !important; }
+  .board.size3cube .badge.peek { background: rgba(245,158,11,0.2) !important; }
+
+  /* Built-in keypad */
+  #keypad { width:100%; max-width:440px; margin:2px auto 12px; padding:0 8px; }
+  .kprow { display:flex; gap:6px; margin-bottom:6px; }
+  .kp {
+    flex:1; min-height:46px; border:2px solid #2aa5c9; border-radius:8px;
+    background:#101828; color:#e8eefc; font-size:21px; font-weight:800;
+    cursor:pointer; -webkit-appearance:none; appearance:none;
+    -webkit-tap-highlight-color:transparent; user-select:none; -webkit-user-select:none;
+    transition:transform .06s ease, background .1s ease;
+  }
+  .kp:active { background:#1e3a5f; transform:scale(0.95); }
+  .kp.kpnav { border-color:#7c3aed; color:#c4b5fd; font-size:23px; }
+  .kp.kpsys { flex:none; min-height:34px; padding:4px 16px; font-size:13px; font-weight:700; border-color:#555; color:#9aa; }
+  .kp.kpsys.on { border-color:#f59e0b; color:#fbbf24; }
+  /* active cell highlight (keypad cursor) */
+  .cell.cursor { outline:3px solid #fde047; outline-offset:-2px; box-shadow:0 0 9px rgba(253,224,71,.55); }
+
+  /* Ramanujan birthday square: top row is yours to type, the rest is computed */
+  .board.sizeramanujan .cell.anchor { background:#3b0a1e; border-color:#f43f5e; color:#fecdd3; }
+  .board.sizeramanujan .cell::placeholder { color:#9f6b7d; opacity:.85; font-weight:700; }
+  .cell.locked { border-style:dashed; border-color:#3f3f52; color:#8b93a7; }
+  .cell.locked.derived { border-style:solid; border-color:#e11d48; color:#fda4af; background:#1b0810; }
+
+  /* "Coming Soon" preview strip — chips shimmer in glare mode until launch */
+  .comingWrap { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:8px; width:100%; margin-top:2px; padding-top:10px; border-top:1px dashed #333; box-sizing:border-box; }
+  .comingLabel { font-size:12.5px; font-weight:800; color:#9aa; letter-spacing:.3px; width:100%; text-align:center; margin-bottom:2px; }
+  .comingChip {
+    position:relative; overflow:hidden;
+    background:#171821; border:2px dashed #4a4a5a; color:#9aa;
+    border-radius:9px; padding:7px 13px; font-size:13.5px; font-weight:700; cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .comingChip::after {
+    content:''; position:absolute; top:0; left:-70%; width:60%; height:100%;
+    background:linear-gradient(120deg, transparent 0%, rgba(255,255,255,.28) 50%, transparent 100%);
+    transform:skewX(-18deg); pointer-events:none;
+    animation:glare 2.6s ease-in-out infinite;
+  }
+  .comingChip:nth-child(3)::after { animation-delay:.5s; }
+  .comingChip:nth-child(4)::after { animation-delay:1s; }
+  .comingChip:active { transform:scale(.97); }
+  @keyframes glare { 0% { left:-70%; } 55%, 100% { left:130%; } }
+  @media (prefers-reduced-motion: reduce){ .comingChip::after { animation:none; } }
+
+
+
+  /* ---- 4-bit bi-directional converter (inside the Binary Guess notes) ---- */
+  .convBox { border:2px solid #3b82f6; border-radius:14px; background:#101828; padding:12px; margin:12px 0; }
+  .convBox.b { border-color:#a855f7; }
+  .convTitle { font-size:13.5px; font-weight:900; letter-spacing:.6px; color:#60a5fa; text-transform:uppercase;
+               border-bottom:1px solid #253048; padding-bottom:7px; margin-bottom:10px; }
+  .convBox.b .convTitle { color:#c084fc; }
+  .convTitle span { font-weight:700; opacity:.75; text-transform:none; letter-spacing:0; }
+  .convBits { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+  .convBit {
+    height:52px; border:2px solid #35405c; border-radius:10px; background:#0b1120;
+    color:#93a3bd; font-size:22px; font-weight:900; cursor:pointer; font-family:inherit;
+    -webkit-tap-highlight-color:transparent; transition:all .15s ease;
+  }
+  .convBit.on { border-color:#22c55e; background:#06281a; color:#4ade80; box-shadow:0 0 9px rgba(34,197,94,.4); }
+  .convLabels { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:4px 0 12px; }
+  .convLabels span { text-align:center; font-size:12px; font-weight:700; color:#64748b; }
+  .convDecLabel { font-size:11.5px; font-weight:800; letter-spacing:.6px; color:#7c8aa5; text-transform:uppercase; margin-bottom:5px; }
+  .convDec {
+    width:100%; box-sizing:border-box; height:54px; text-align:center;
+    border:2px solid #35405c; border-radius:10px; background:#0b1120;
+    color:#fff; font-size:26px; font-weight:900; font-family:inherit;
+    -webkit-appearance:none; appearance:none; outline:none;
+  }
+  .convDec:focus { border-color:#60a5fa; }
+  .convClear {
+    width:100%; margin-top:10px; height:44px; border:none; border-radius:10px;
+    background:#334155; color:#e2e8f0; font-size:15px; font-weight:800; cursor:pointer; font-family:inherit;
+  }
+  .convClear:active { background:#475569; }
+
+  /* ---- Binary Number Guess ---- */
+  #binaryPanel { width:100%; max-width:560px; margin:0 auto 6px; padding:0 10px; box-sizing:border-box; }
+  .binBlock { border:2px solid #2f7ff0; border-radius:12px; background:#141a2e; padding:10px; margin-bottom:12px; }
+  .binBlockTitle { text-align:center; font-size:14px; font-weight:800; color:#8ab4f8; margin-bottom:8px; }
+  .binGrid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .binCard {
+    text-align:left; border:2px solid #3f3f52; border-radius:10px; background:#0f1424;
+    color:#9aa; padding:8px 9px; cursor:pointer; font-family:inherit;
+    -webkit-tap-highlight-color:transparent; transition:all .15s ease;
+  }
+  .binCard .binHead { display:block; font-size:13px; font-weight:900; color:#cbd5e1; margin-bottom:5px; }
+  .binCard .binNums { display:block; font-size:10.5px; line-height:1.45; color:#7f8aa3; word-spacing:1px; }
+  .binCard.on { border-color:#22c55e; background:#06281a; box-shadow:0 0 10px rgba(34,197,94,.35); }
+  .binCard.on .binHead { color:#4ade80; }
+  .binCard.on .binNums { color:#a7f3d0; }
+  #binaryReadout {
+    text-align:center; border:2px solid #f59e0b; border-radius:12px; background:#1a1206;
+    padding:12px; font-weight:800; color:#fbbf24; font-size:16px; line-height:1.6;
+  }
+  #binaryReadout .big { font-size:34px; color:#fde047; display:block; margin-top:4px; }
+  #binaryReadout .bits { font-family:ui-monospace,Menlo,Consolas,monospace; color:#8ab4f8; font-size:15px; }
+  @media (min-width:480px){
+    .binCard .binNums { font-size:12px; }
+    .binCard .binHead { font-size:14px; }
+  }
+
+
+  /* Provenance note — paper, spreadsheets, AI, and whatever a child invents next */
+  .journeyNote {
+    width:100%; max-width:560px; margin:6px auto 12px; padding:12px 14px; box-sizing:border-box;
+    border:1px dashed #3a4a6b; border-left:4px solid #8ab4f8; border-radius:10px;
+    background:#0e1526; color:#a7b4cc; font-size:12.5px; line-height:1.7; text-align:center;
+  }
+  .journeyNote b { color:#cbd5e1; }
+  .journeyCall {
+    display:block; margin-top:6px; font-style:italic; font-weight:700;
+    background:linear-gradient(90deg,#fbbf24,#f472b6,#a78bfa,#22d3ee,#fbbf24);
+    background-size:300% 100%;
+    -webkit-background-clip:text; background-clip:text;
+    -webkit-text-fill-color:transparent; color:transparent;
+    animation:tagShift 12s linear infinite;
+  }
+  @media (prefers-reduced-motion: reduce){ .journeyCall { animation:none; } }
+
+  /* Tagline — glowing gradient that drifts slowly across the words */
+  .tagline {
+    display:inline-block; max-width:100%;
+    font-size:15.5px; line-height:1.35; margin:5px 0 3px;
+    font-style:italic; font-weight:800; letter-spacing:.3px;
+    background:linear-gradient(90deg,#fbbf24,#f472b6,#a78bfa,#22d3ee,#4ade80,#fbbf24);
+    background-size:300% 100%;
+    -webkit-background-clip:text; background-clip:text;
+    -webkit-text-fill-color:transparent; color:transparent;
+    filter:drop-shadow(0 0 6px rgba(167,139,250,.55)) drop-shadow(0 0 14px rgba(34,211,238,.28));
+    animation:tagShift 9s linear infinite;
+  }
+  @keyframes tagShift { 0% { background-position:0% 50%; } 100% { background-position:300% 50%; } }
+  @media (prefers-reduced-motion: reduce){ .tagline { animation:none; } }
+  @media (min-width:480px){ .tagline { font-size:18px; } }
+  @media (min-width:760px){ .tagline { font-size:21px; } }
+
+  /* AUTO-FIT: JS sets --cell/--gap so the board always uses the full available
+     width in any orientation (never horizontal scroll). Turning the phone gives
+     a much wider viewport, so every board — especially 10×10 — gets bigger. */
+  .board.autofit {
+    grid-template-columns:repeat(var(--tracks), var(--cell)) !important;
+    grid-template-rows:repeat(var(--tracks), var(--cell)) !important;
+    grid-gap:var(--gap) !important; gap:var(--gap) !important;
+  }
+  .board.autofit .cell, .board.autofit .badge {
+    width:var(--cell) !important; height:var(--cell) !important;
+  }
+  .board.autofit .cell { line-height:calc(var(--cell) - 6px) !important; }
+  .board.autofit .badge { font-size:var(--badgeFont) !important; }
+
+  /* Rotate prompt — only shown in portrait on the big boards */
+  #rotateHint {
+    display:none; text-align:center; font-size:13px; font-weight:700;
+    color:#fbbf24; margin:6px auto 10px; max-width:560px; padding:0 10px;
+  }
+  @media (orientation:portrait){ #rotateHint.show { display:block; } }
+
+</style>
+</head>
+<body>
+
+<!-- Difficulty Toggle -->
+
+
+<div class="titleCard">
+  <h1>🐒🎲 MathMatrix Pro++</h1>
+  <div style="text-align:center; font-size:12px; font-weight:700; margin-top:4px; letter-spacing:.4px; line-height:1.5;">🐒 Kids Puzzle · for 5th grade &amp; up<br><span class="tagline">“Maths and monkeys — neither sits in one direction.”</span><br><span style="color:#4ade80;">Now playing:</span> <span id="nowPlaying" style="color:#8ab4f8;"><span class="np" data-np="3x3">3×3</span> · <span class="np" data-np="4x4">4×4</span> · <span class="np" data-np="5x5">5×5</span> · <span class="np" data-np="6x6">6×6</span> · <span class="np" data-np="8x8">8×8</span> · <span class="np" data-np="10x10">10×10</span> · <span class="np" data-np="3cube">3³</span> · <span class="np" data-np="ramanujan">🎂 Sir Ramanujan MathMagic</span> · <span class="np" data-np="binary">🔢 Binary Guess</span></span><br><span style="color:#4ade80;">👶 New here? Tap ▶ Watch Me Solve to see a sample, then pick any level in the table below.</span><br><span style="color:#fbbf24;">🔄 Once you know it: rotate or mirror any solution — 8 twins — for endless new puzzles!</span></div>
+</div>
+<div class="targetPill" id="targetPill">🎯 Target : <span id="targetVal">?</span></div>
+
+<!-- Merged progress + rule, per-size, set by refreshCounter() -->
+<div class="solvedCounter" id="solvedCounter">🏆 0/2 different targets · solve 2 to open the next →</div>
+
+<div class="instCard" id="instCard"></div>
+
+<!-- Learn-first row: sits ABOVE the table so a beginner sees "watch a sample" before playing -->
+<div class="btnRow" id="learnRow">
+  <button id="peekBtn">👁 SHOW</button>
+  <button id="watchBtn">▶ Watch Me Solve</button>
+</div>
+<div id="learnHint" style="text-align:center; font-size:14px; color:#888; margin:-4px 0 10px;">👶 New? Watch a sample first — SHOW reveals the solved table for 3 seconds</div>
+
+<div class="boardContainer" id="boardWrap">
+  <div class="board" id="board"></div>
+</div>
+
+<!-- Binary Number Guess: 8 switch cards, tens = bits 8·4·2·1, units = bits 8·4·2·1 -->
+<div id="binaryPanel" style="display:none;">
+  <div id="binaryBlocks"></div>
+  <div id="binaryReadout"></div>
+  <div style="text-align:center; margin:10px 0 4px;">
+    <button id="binaryClear" style="background:transparent; border:2px solid #ef4444; color:#ef4444; border-radius:10px; padding:8px 20px; font-size:15px; font-weight:800; cursor:pointer;">↺ Start again</button>
+  </div>
+</div>
+
+<div id="rotateHint">📱 Turn your phone sideways for a much bigger board (scroll down to see it all)</div>
+
+<!-- Built-in puzzle keypad: numbers + navigation, so the OS keyboard never covers the board -->
+<div id="keypad">
+  <div class="kprow">
+    <button class="kp" data-k="1">1</button><button class="kp" data-k="2">2</button><button class="kp" data-k="3">3</button><button class="kp" data-k="4">4</button><button class="kp" data-k="5">5</button>
+  </div>
+  <div class="kprow">
+    <button class="kp" data-k="6">6</button><button class="kp" data-k="7">7</button><button class="kp" data-k="8">8</button><button class="kp" data-k="9">9</button><button class="kp" data-k="0">0</button>
+  </div>
+  <div class="kprow">
+    <button class="kp kpnav" data-nav="sign">±</button><button class="kp kpnav" data-nav="back">⌫</button><button class="kp kpnav" data-nav="left">←</button><button class="kp kpnav" data-nav="up">↑</button><button class="kp kpnav" data-nav="down">↓</button><button class="kp kpnav" data-nav="right">→</button>
+  </div>
+  <div style="text-align:center; margin-top:2px;">
+    <button class="kp kpsys" data-nav="sys" onmousedown="event.preventDefault()">⌨️ System keyboard</button>
+  </div>
+</div>
+
+<div class="btnRow" id="playRow">
+  <button id="clearBtn">CLEAR</button>
+  <div id="timerBox">00:00</div>
+</div>
+
+<div style="text-align:center; margin:-2px 0 10px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+  <button id="soundBtn" style="background:transparent; border:2px solid #f59e0b; color:#fbbf24; border-radius:8px; padding:6px 16px; font-size:15px; font-weight:800; cursor:pointer;">🔊 Sound: ON</button>
+  <button id="musicBtn" style="background:transparent; border:2px solid #22c55e; color:#4ade80; border-radius:8px; padding:6px 16px; font-size:15px; font-weight:800; cursor:pointer;">🎵 Music: ON</button>
+</div>
+
+<div id="msg"></div>
+
+<!-- Share: the installed app has no address bar, so this is the way to pass the link on -->
+<div style="display:flex; gap:10px; width:100%; max-width:560px; margin:0 auto 10px; padding:0 10px; box-sizing:border-box;">
+  <button id="shareBtn" style="flex:1; background:#04231a; border:2px solid #22c55e; border-radius:12px; height:48px; font-size:15px; font-weight:800; color:#4ade80; cursor:pointer;">📤 Share</button>
+  <button id="installBtn" style="flex:1; background:#0a1a33; border:2px solid #38bdf8; border-radius:12px; height:48px; font-size:15px; font-weight:800; color:#7dd3fc; cursor:pointer;">📥 Install App</button>
+</div>
+
+<div style="display:flex; gap:10px; width:100%; max-width:560px; margin:0 auto 12px; padding:0 10px; box-sizing:border-box;">
+  <button id="offlineBtn" style="flex:1; width:auto; max-width:none; margin:0;">📲 Play Offline ▼</button>
+  <button id="updateBtn" style="flex:1; background:#000; border:2px solid #f59e0b; border-radius:12px; height:48px; line-height:44px; padding:0 10px; font-size:15px; font-weight:700; color:#fbbf24; cursor:pointer;">🔄 Online Update</button>
+</div>
+<div id="offlineBox">
+  <h3>📲 Play Offline — Add to Home Screen</h3>
+  <b>iPhone / iPad (Safari):</b><br>
+  1. Open this game in Safari<br>
+  2. Tap the Share button (square with arrow ⬆️)<br>
+  3. Scroll down, tap "Add to Home Screen"<br>
+  4. Tap "Add" — the game icon appears like an app!<br>
+  <b>Android (Chrome):</b><br>
+  1. Open this game in Chrome<br>
+  2. Tap the ⋮ menu (top right)<br>
+  3. Tap "Add to Home Screen" (or "Install App")<br>
+  4. Tap "Add" — done!<br>
+  <span style="color:#22c55e; font-weight:700;">✅ Once added, tap the icon anytime to play — no internet needed!</span>
+</div>
+
+<div style="display:flex; flex-direction:column; align-items:center; width:100%; margin-bottom:20px;">
+  <button id="logicBtn">📐 Show Math Logic ▼</button>
+  <div id="logicBox"></div>
+</div>
+
+<!-- Difficulty selector — every level open, pick any grade any time -->
+<div class="difficultyBar">
+  <div class="diffRow">
+  <span class="diffLabel">Choose Difficulty</span>
+  <div class="toggleSwitch">
+    <button class="toggleBtn active" data-size="3x3" style="color:#60a5fa; border-color:#3b82f6;">3×3 (Easy)</button>
+    <button class="toggleBtn" data-size="4x4" style="color:#c084fc; border-color:#a855f7;">4×4 (Hard)</button>
+    <button class="toggleBtn" data-size="5x5" style="color:#4ade80; border-color:#22c55e;">5×5 (Master)</button>
+    <button class="toggleBtn" data-size="6x6" style="color:#22d3ee; border-color:#06b6d4;">6×6 (Expert)</button>
+    <button class="toggleBtn" data-size="8x8" style="color:#818cf8; border-color:#6366f1;">8×8 (Champion)</button>
+    <button class="toggleBtn" data-size="10x10" style="color:#e879f9; border-color:#c026d3;">10×10 (Grandmaster)</button>
+    <button class="toggleBtn" id="mult3Tab" data-size="3cube" style="color:#fbbf24; border-color:#f59e0b;">3³ (×)</button>
+    <button class="toggleBtn" data-size="ramanujan" style="color:#fb7185; border-color:#e11d48;">🎂 Sir Ramanujan MathMagic</button>
+    <button class="toggleBtn" data-size="binary" style="color:#fcd34d; border-color:#84cc16;">🔢 Binary Number Guess</button>
+  </div>
+  </div>
+
+  <div class="comingWrap">
+    <span class="comingLabel">🔜 Coming Soon</span>
+    <button class="comingChip" data-soon="Angle Magic">📐 Angle Magic</button>
+    <button class="comingChip" data-soon="Logic Gates">🔀 Logic Gates</button>
+  </div>
+</div>
+
+
+
+<!-- The journey of these puzzles: paper -> spreadsheets -> AI -> whatever comes next -->
+<div class="journeyNote">
+  <b>📜 How these puzzles travelled</b><br>
+  Collected in <b>school days</b> on paper · kept through the <b>1990s</b> in spreadsheets ·
+  rebuilt today with <b>AI</b>.<br>
+  <span class="journeyCall">If you keep them, in twenty years you may open them in a way none of us can imagine yet.
+  Preserve · explore · pass them on.</span>
+</div>
+
+<div class="credit">Created by G.RajaPathamuthu · Kids Puzzle Library<br>Guided by : JNT<br>Code Coordinated by : Claude AI<br>
+  <i style="opacity:.85;">(What we get is all we ask for.)</i><br>
+  Mail To : <a href="mailto:grajapm@gmail.com?subject=MathMatrix%20Feedback%20%26%20Suggestion" style="color:#8ab4f8; text-decoration:underline;">✉️ Feedback &amp; Suggestion</a><br>
+  <span style="opacity:.7; font-size:12px;">App <span id="verLabel">…</span></span><br>
+  <span style="opacity:.75; font-size:11.5px; line-height:1.6;">🎵 Music: “Monkeys Spinning Monkeys” by Kevin MacLeod · <a href="https://incompetech.com/" style="color:#8ab4f8;">incompetech.com</a><br>
+  Promoted by <a href="https://www.chosic.com/free-music/all/" style="color:#8ab4f8;">Chosic</a> · <a href="https://creativecommons.org/licenses/by/3.0/" style="color:#8ab4f8;">CC BY 3.0</a> — thanks for sharing! 🙏</span>
+</div>
+
+<!-- Congratulations Modal -->
+<div class="congratsModal" id="congratsModal">
+  <div class="congratsBox">
+    <h2>🎉👏</h2>
+    <p id="congratsText">Congratulations! Ready for 4×4?</p>
+    <p id="congratsCountdown" style="font-size:14px; color:#fde68a; margin:-10px 0 14px; font-weight:700; letter-spacing:.5px;"></p>
+    <button class="congratsBtn" id="nextBtn" style="margin-bottom:12px;">Let's Go! →</button>
+    <br>
+    <button id="chooseLaterBtn" style="background:transparent; border:2px solid rgba(255,255,255,0.35); border-radius:10px; padding:10px 20px; font-size:15px; font-weight:700; color:rgba(255,255,255,0.8); cursor:pointer; display:block; margin:0 auto; width:100%;">📋 Choose from list below ▼</button>
+  </div>
+</div>
+
+<!-- (Supervisor PIN modal removed — every level is now open to free choice) -->
+
+<!-- Cheat Sheet Image Popup (generic — reused by 3x3 / 4x4 / 5x5) -->
+<div class="congratsModal" id="cheatModal" onclick="closeCheat()">
+  <img id="cheatImg" alt="Quick formula sheet"
+       style="max-width:94vw; max-height:88vh; border-radius:12px; box-shadow:0 8px 40px rgba(0,0,0,.6); animation:bounceIn .5s ease;">
+  <p style="color:#fff; margin-top:12px; font-size:14px; opacity:.85;">Tap anywhere to close</p>
+</div>
+
+<script>
+function openCheat(src){
+  var m=document.getElementById('cheatModal');
+  document.getElementById('cheatImg').src=src;
+  m.style.display='flex';
+}
+function closeCheat(){ document.getElementById('cheatModal').style.display='none'; }
+</script>
+
+<script>
+(function(){
+  // Puzzle definitions
+  var PUZZLES = {
+    '3x3': {
+      example: [
+        [8, 1, 6],
+        [3, 5, 7],
+        [4, 9, 2]
+      ],
+      lines: ['r0','r1','r2','c0','c1','c2','d1','d2'],
+      rows: 3,
+      cols: 3,
+      inst: '<b>Easy Level!</b> Fill 3×3 with any numbers in sequence — plus or minus — every row, column and diagonal must total the SAME. 🐒🎲'
+    },
+    '4x4': {
+      example: [
+        [ 1, 15, 14,  4],
+        [12,  6,  7,  9],
+        [ 8, 10, 11,  5],
+        [13,  3,  2, 16]
+      ],
+      lines: ['r0','r1','r2','r3','c0','c1','c2','c3','d1','d2'],
+      rows: 4,
+      cols: 4,
+      inst: '<b>Hard Level!</b> Fill 4×4 with any numbers in sequence (+ or −) — rows, columns and diagonals total the SAME, and the four quarter-blocks, the centre four and the 4 corners match it too! 🎯'
+    },
+    '5x5': {
+      example: [
+        [17, 24,  1,  8, 15],
+        [23,  5,  7, 14, 16],
+        [ 4,  6, 13, 20, 22],
+        [10, 12, 19, 21,  3],
+        [11, 18, 25,  2,  9]
+      ],
+      lines: ['r0','r1','r2','r3','r4','c0','c1','c2','c3','c4','d1','d2'],
+      rows: 5,
+      cols: 5,
+      inst: '<b>Master Level!</b> Fill 5×5 with any numbers in sequence (+ or −) — every row, column and diagonal must total the SAME. 🌟'
+    },
+    '6x6': {
+      example: [
+        [35,  1,  6, 26, 19, 24],
+        [ 3, 32,  7, 21, 23, 25],
+        [31,  9,  2, 22, 27, 20],
+        [ 8, 28, 33, 17, 10, 15],
+        [30,  5, 34, 12, 14, 16],
+        [ 4, 36, 29, 13, 18, 11]
+      ],
+      lines: ['r0','r1','r2','r3','r4','r5','c0','c1','c2','c3','c4','c5','d1','d2'],
+      rows: 6,
+      cols: 6,
+      inst: '<b>Expert Level!</b> Fill 6×6 with any numbers in sequence (+ or −) — every row, column and diagonal must total the SAME. 🧩'
+    },
+    '8x8': {
+      example: [
+        [ 1, 63, 62,  4,  5, 59, 58,  8],
+        [56, 10, 11, 53, 52, 14, 15, 49],
+        [48, 18, 19, 45, 44, 22, 23, 41],
+        [25, 39, 38, 28, 29, 35, 34, 32],
+        [33, 31, 30, 36, 37, 27, 26, 40],
+        [24, 42, 43, 21, 20, 46, 47, 17],
+        [16, 50, 51, 13, 12, 54, 55,  9],
+        [57,  7,  6, 60, 61,  3,  2, 64]
+      ],
+      lines: ['r0','r1','r2','r3','r4','r5','r6','r7','c0','c1','c2','c3','c4','c5','c6','c7','d1','d2'],
+      rows: 8,
+      cols: 8,
+      inst: '<b>Champion Level!</b> Fill 8×8 with any numbers in sequence (+ or −) — rows, columns and diagonals total the SAME, and every aligned block of four totals half the target! 🏅'
+    },
+    '10x10': {
+      example: [
+        [92, 99,  1,  8, 15, 67, 74, 51, 58, 40],
+        [98, 80,  7, 14, 16, 73, 55, 57, 64, 41],
+        [ 4, 81, 88, 20, 22, 54, 56, 63, 70, 47],
+        [85, 87, 19, 21,  3, 60, 62, 69, 71, 28],
+        [86, 93, 25,  2,  9, 61, 68, 75, 52, 34],
+        [17, 24, 76, 83, 90, 42, 49, 26, 33, 65],
+        [23,  5, 82, 89, 91, 48, 30, 32, 39, 66],
+        [79,  6, 13, 95, 97, 29, 31, 38, 45, 72],
+        [10, 12, 94, 96, 78, 35, 37, 44, 46, 53],
+        [11, 18,100, 77, 84, 36, 43, 50, 27, 59]
+      ],
+      lines: ['r0','r1','r2','r3','r4','r5','r6','r7','r8','r9','c0','c1','c2','c3','c4','c5','c6','c7','c8','c9','d1','d2'],
+      rows: 10,
+      cols: 10,
+      inst: '<b>Grandmaster Level!</b> Fill 10×10 with any numbers in sequence (+ or −) — every row, column and diagonal must total the SAME. 🏆'
+    },
+    '3cube': {
+      mode: 'multiply',
+      example: [
+        [  8, 256,   2],
+        [  4,  16,  64],
+        [128,   1,  32]
+      ],
+      lines: ['r0','r1','r2','c0','c1','c2','d1','d2'],
+      rows: 3,
+      cols: 3,
+      inst: '<b>Multiply Magic!</b> Fill 3×3 — every row, column and diagonal must MULTIPLY to the SAME. Set the center first → target = center³. ✖️'
+    },
+    // Ramanujan's birthday square: you type only the TOP row (DD·MM·CC·YY) and the
+    // other 12 cells follow fixed offsets that all cancel out — so EVERY line lands
+    // on your own total. Verified for any first row.
+    'ramanujan': {
+      mode: 'birthday',
+      example: [
+        [22, 12, 18, 87],
+        [88, 17,  9, 25],
+        [10, 24, 89, 16],
+        [19, 86, 23, 11]
+      ],
+      lines: ['r0','r1','r2','r3','c0','c1','c2','c3','d1','d2'],
+      rows: 4,
+      cols: 4,
+      inst: '<b>Sir Ramanujan MathMagic!</b> Type any date of birth in the TOP row using <b>two digits each</b> — DD · MM · CC · YY (Ramanujan: 22 12 18 87) — and the rest of the square fills itself. Every row, column and diagonal becomes YOUR total. 🎂'
+    }
+  };
+  
+  var currentSize = '3x3';
+  var solvedCount3x3 = 0; // Track 3x3 solves
+  var solvedTargets3x3 = []; // Track different targets used
+  var solvedCount4x4 = 0; // Track 4x4 solves
+  var solvedTargets4x4 = []; // Track different targets used
+  var solvedCount5x5 = 0; // Track 5x5 solves
+  var solvedTargets5x5 = []; // Track different targets used
+  var solvedCount6x6 = 0; // Track 6x6 solves
+  var solvedTargets6x6 = []; // Track different targets used
+  var solvedCount8x8 = 0; // Track 8x8 solves
+  var solvedTargets8x8 = []; // Track different targets used
+  var solvedCount10x10 = 0; // Track 10x10 solves
+  var solvedTargets10x10 = []; // Track different targets used
+  var solvedCountRam = 0; // Track Ramanujan birthday squares made
+  var solvedTargetsRam = []; // different birthday totals
+  var solvedCount3cube = 0; // Track 3³ multiply solves
+  var solvedTargets3cube = []; // Track different targets used
+  var board = document.getElementById('board');
+  var targetPill = document.getElementById('targetPill');
+  var targetVal = document.getElementById('targetVal');
+  var msg = document.getElementById('msg');
+  var timerBox = document.getElementById('timerBox');
+  var instCard = document.getElementById('instCard');
+  var solvedCounter = document.getElementById('solvedCounter');
+  var cells = [];
+  var badges = {};
+  var solvedFlag = false;
+  var peeking = false;
+  var watching = false;   // true while the "Watch Me Solve" demo is running
+  var watchIv = null;     // handle to the running Watch demo interval (so a size switch can cancel it)
+  var peekIv = null;      // handle to the running SHOW countdown interval
+  var prevComplete = 0;   // # of complete lines last update (to detect a NEW line for the chime)
+  var prevDup = 0;        // # of duplicate values last update (to detect a NEW clash for the boop)
+  var activeCell = null;  // the cell the custom keypad writes into (highlighted with .cursor)
+  var useSysKb = false;   // false = custom in-page keypad (OS keyboard suppressed); true = system keyboard
+
+  // ---- Sound FX: playful/arcade tones generated in-code (WebAudio, no files, offline-safe) ----
+  var soundOn = (localStorage.getItem('mmSound') !== 'off');   // default ON
+  var audioCtx = null;
+  var audioUnlocked = false;
+  function ensureAudio(){
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      // iOS (esp. 14) needs a 1-sample SILENT buffer played inside the gesture to
+      // truly unlock WebAudio — resume() alone often leaves it muted.
+      if (!audioUnlocked) {
+        var b = audioCtx.createBuffer(1, 1, 22050);
+        var src = audioCtx.createBufferSource();
+        src.buffer = b;
+        src.connect(audioCtx.destination);
+        (src.start || src.noteOn).call(src, 0);
+        audioUnlocked = true;
+      }
+    } catch (e) { audioCtx = null; }
+  }
+  // one tone: freq(Hz), start offset(s), duration(s), wave, peak volume
+  // pan: -1 = left ear … 0 = centre … +1 = right ear (skipped on browsers without StereoPanner)
+  function tone(freq, start, dur, type, peak, pan){
+    if (!audioCtx) return;
+    var t0 = audioCtx.currentTime + start;
+    var osc = audioCtx.createOscillator();
+    var g = audioCtx.createGain();
+    osc.type = type || 'square';
+    if (Array.isArray(freq)){ osc.frequency.setValueAtTime(freq[0], t0); osc.frequency.exponentialRampToValueAtTime(freq[1], t0 + dur * 0.9); }
+    else osc.frequency.setValueAtTime(freq, t0);   // number = steady pitch; [from,to] = glide
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(peak || 0.18, t0 + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(g);
+    if (pan !== undefined && pan !== 0 && audioCtx.createStereoPanner){
+      var p = audioCtx.createStereoPanner();
+      p.pan.value = Math.max(-1, Math.min(1, pan));
+      g.connect(p); p.connect(audioCtx.destination);
+    } else {
+      g.connect(audioCtx.destination);
+    }
+    osc.start(t0); osc.stop(t0 + dur + 0.03);
+  }
+  // Where does this cell sit on the board? → its stereo position (left col = left ear)
+  function panForCell(cell){
+    if (!cell || !cell.dataset) return 0;
+    var pz = PUZZLES[currentSize];
+    if (!pz || pz.cols < 2) return 0;
+    var c = +cell.dataset.c;
+    if (isNaN(c)) return 0;
+    return ((c / (pz.cols - 1)) * 2 - 1) * 0.8;
+  }
+  function sfx(kind, pan){
+    if (!soundOn) return;
+    ensureAudio();
+    if (!audioCtx) return;
+    switch (kind){
+      case 'place':  tone([700,1150], 0, 0.10, 'triangle', 0.20, pan); tone(1400, 0.02, 0.08, 'sine', 0.10, pan); break;   // F · candy plink, at the cell's position
+      case 'line':   [784,1047,1319].forEach(function(fr,i){ tone(fr, i*0.05, 0.12, 'triangle', 0.15, -0.7 + i*0.7); }); break; // shimmer sweeps L→C→R
+      case 'dup':    tone(150, 0, 0.16, 'sawtooth', 0.10, pan); break;                                 // gentle low boop
+      case 'win':    [523,587,659,784,880,1047,1319].forEach(function(fr,i){ var pw = -0.8 + i*(1.6/6); tone(fr, i*0.06, 0.16, 'triangle', 0.16, pw); tone(fr*2, i*0.06, 0.10, 'sine', 0.05, pw); }); break; // cascade sweeps across
+      case 'unlock': [392,523,659,784,1047].forEach(function(fr,i){ tone(fr, i*0.08, 0.18, 'triangle', 0.18, -0.5 + i*0.25); }); break; // power-up rises L→R
+      case 'tick':   tone(700, 0, 0.045, 'square', 0.08, pan); break;                                  // tick from the revealed cell's side
+      case 'clap':
+        // Applause burst — filtered noise pulses spaced like real clapping
+        (function(){
+          var bursts = 9;
+          for (var ci = 0; ci < bursts; ci++) {
+            (function(i){
+              var delay = i * 110 + Math.random() * 40;
+              setTimeout(function(){
+                try {
+                  var bufLen = Math.floor(audioCtx.sampleRate * 0.07);
+                  var buf = audioCtx.createBuffer(1, bufLen, audioCtx.sampleRate);
+                  var data = buf.getChannelData(0);
+                  for (var j = 0; j < bufLen; j++) data[j] = (Math.random() * 2 - 1) * Math.exp(-j / (bufLen * 0.35));
+                  var nSrc = audioCtx.createBufferSource();
+                  var flt = audioCtx.createBiquadFilter();
+                  flt.type = 'bandpass'; flt.frequency.value = 1100 + Math.random() * 400; flt.Q.value = 0.9;
+                  var gn = audioCtx.createGain(); gn.gain.value = 0.22;
+                  nSrc.buffer = buf;
+                  nSrc.connect(flt); flt.connect(gn);
+                  if (audioCtx.createStereoPanner){
+                    var pp = audioCtx.createStereoPanner();
+                    pp.pan.value = Math.random() * 1.6 - 0.8;   // audience clapping all around you
+                    gn.connect(pp); pp.connect(audioCtx.destination);
+                  } else { gn.connect(audioCtx.destination); }
+                  nSrc.start();
+                } catch(e){}
+              }, delay);
+            })(ci);
+          }
+        })();
+        break;
+    }
+  }
+  // ---- Background music: "Monkeys Spinning Monkeys" by Kevin MacLeod (CC BY 3.0, incompetech.com) ----
+  // Plays softly while the child thinks; fades down while they enter numbers so the
+  // puzzle sounds stay clear, then rises again after a short pause.
+  var musicOn = (localStorage.getItem('mmMusic') !== 'off');   // default ON
+  var bgm = null, bgmFadeIv = null, bgmDuckTimer = null;
+  var BGM_IDLE = 0.20, BGM_DUCK = 0.06;
+
+  function fadeMusicTo(target){
+    if (!bgm) return;
+    clearInterval(bgmFadeIv);
+    bgmFadeIv = setInterval(function(){
+      if (!bgm){ clearInterval(bgmFadeIv); bgmFadeIv = null; return; }
+      var d = target - bgm.volume;
+      if (Math.abs(d) < 0.013){
+        bgm.volume = Math.max(0, Math.min(1, target));
+        clearInterval(bgmFadeIv); bgmFadeIv = null;
+        return;
+      }
+      bgm.volume = Math.max(0, Math.min(1, bgm.volume + (d > 0 ? 0.013 : -0.013)));
+    }, 60);
+  }
+  var bgmPanTried = false, bgmTipShown = false;
+  // The monkey drifts slowly left↔right: route the music through a StereoPanner
+  // swung by a very slow LFO (~12s per crossing). Best effort — if the browser
+  // lacks the nodes the music simply plays centred as before.
+  function wireBgmPan(){
+    if (bgmPanTried || !audioCtx || !audioCtx.createStereoPanner || !audioCtx.createMediaElementSource) return;
+    bgmPanTried = true;   // createMediaElementSource is once-per-element; never retry
+    try {
+      var src = audioCtx.createMediaElementSource(bgm);
+      var pan = audioCtx.createStereoPanner();
+      var lfo = audioCtx.createOscillator();
+      var lfoGain = audioCtx.createGain();
+      lfo.type = 'sine'; lfo.frequency.value = 0.08;   // one full left↔right swing ≈ 12s
+      lfoGain.gain.value = 0.45;                        // gentle drift, never hard-panned
+      lfo.connect(lfoGain); lfoGain.connect(pan.pan);
+      src.connect(pan); pan.connect(audioCtx.destination);
+      lfo.start();
+    } catch (e) {}
+  }
+  function ensureMusic(){
+    if (!musicOn || !soundOn) return;   // 🔊 Sound is the MASTER: off = total silence (night play)
+    if (!bgm){
+      bgm = new Audio('bgm-monkeys.mp3');
+      bgm.loop = true; bgm.preload = 'auto'; bgm.volume = 0;
+    }
+    wireBgmPan();
+    if (bgm.paused){
+      var p = bgm.play();
+      if (p && p.then) p.then(function(){
+        if (!bgmTipShown && msg){
+          bgmTipShown = true;
+          msg.innerHTML = '🎧 Tip: wear earphones — the sounds play in stereo and the monkey music drifts side to side!';
+          msg.className = '';
+        }
+      }, function(){});   // browsers block autoplay until a real gesture
+      else if (p && p.catch) p.catch(function(){});
+    }
+    fadeMusicTo(BGM_IDLE);
+  }
+  function duckMusic(){
+    if (!musicOn || !bgm || bgm.paused) return;
+    fadeMusicTo(BGM_DUCK);
+    clearTimeout(bgmDuckTimer);
+    bgmDuckTimer = setTimeout(function(){ fadeMusicTo(BGM_IDLE); }, 2500);
+  }
+  function refreshMusicBtn(){
+    var b = document.getElementById('musicBtn');
+    if (!b) return;
+    if (!soundOn){
+      // Master sound is OFF, so music cannot play — say so instead of a
+      // misleading "ON". The stored 🎵 preference is untouched underneath.
+      b.textContent = '🎵 Music: OFF';
+      b.style.borderColor = '#444'; b.style.color = '#666';
+      b.disabled = true; b.style.opacity = '.6';
+      b.title = 'Turn Sound on first';
+      return;
+    }
+    b.disabled = false; b.style.opacity = '1'; b.title = '';
+    b.textContent = musicOn ? '🎵 Music: ON' : '🎵 Music: OFF';
+    b.style.borderColor = musicOn ? '#22c55e' : '#666';
+    b.style.color = musicOn ? '#4ade80' : '#888';
+  }
+
+  function refreshSoundBtn(){
+    var b = document.getElementById('soundBtn');
+    if (!b) return;
+    b.textContent = soundOn ? '🔊 Sound: ON' : '🔇 Sound: OFF';
+    b.style.borderColor = soundOn ? '#f59e0b' : '#666';
+    b.style.color = soundOn ? '#fbbf24' : '#888';
+  }
+  // Mobile audio unlock: a real touch/click/key wakes the AudioContext. Typing a
+  // number only fires an 'input' event, which may NOT count as user-activation on
+  // phones — so without this the place-pop stays silent until some other tap.
+  ['pointerdown','touchstart','keydown'].forEach(function(evt){
+    document.addEventListener(evt, function(){
+      if (soundOn) ensureAudio();
+      if (musicOn) ensureMusic();   // autoplay is only allowed from a real gesture
+    }, { passive:true });
+  });
+
+  // Celebration burst on a win — emoji fly out + a quick flash. Works even when muted.
+  function celebrate(){
+    var emojis = ['⭐','✨','🎉','🎊','🌟','💫'];
+    var cx = window.innerWidth / 2, cy = window.innerHeight * 0.40;
+    for (var i = 0; i < 22; i++){
+      var s = document.createElement('span');
+      s.textContent = emojis[i % emojis.length];
+      s.style.cssText = 'position:fixed;left:' + cx + 'px;top:' + cy + 'px;font-size:' +
+        (18 + Math.round(Math.random() * 22)) + 'px;pointer-events:none;z-index:9999;opacity:1;' +
+        'transition:transform 1s cubic-bezier(.2,.7,.3,1),opacity 1s ease;transform:translate(-50%,-50%)';
+      document.body.appendChild(s);
+      void s.offsetWidth;   // reflow so the transition runs
+      var ang = Math.random() * Math.PI * 2, dist = 90 + Math.random() * 170;
+      var dx = Math.cos(ang) * dist, dy = Math.sin(ang) * dist - 40;   // slight upward bias
+      s.style.transform = 'translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px)) rotate(' + (Math.random() * 720 - 360) + 'deg)';
+      s.style.opacity = '0';
+      (function(el){ setTimeout(function(){ el.remove(); }, 1150); })(s);
+    }
+    var fl = document.createElement('div');
+    fl.style.cssText = 'position:fixed;inset:0;background:radial-gradient(circle at 50% 40%, rgba(255,220,120,.30), transparent 60%);pointer-events:none;z-index:9998;transition:opacity .5s ease;opacity:1';
+    document.body.appendChild(fl);
+    void fl.offsetWidth; fl.style.opacity = '0';
+    setTimeout(function(){ fl.remove(); }, 560);
+  }
+  var timerInt = null, startTime = null;
+  // Difficulty toggle — every level is open to free choice (grade labels are the guide).
+  // Reward/applause on solving stays; there is no lock.
+  document.querySelectorAll('.toggleBtn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      // If a congrats countdown is running, cancel it — player chose their own level
+      if (_congratsAutoTimer){ clearInterval(_congratsAutoTimer); _congratsAutoTimer = null; }
+      var cdEl = document.getElementById('congratsCountdown');
+      if (cdEl) cdEl.textContent = '';
+      var cm = document.getElementById('congratsModal');
+      if (cm && cm.style.display === 'flex') cm.style.display = 'none';
+      var newSize = this.dataset.size;
+      document.querySelectorAll('.toggleBtn').forEach(function(b){ b.classList.remove('active'); });
+      this.classList.add('active');
+      if (newSize === 'binary'){          // card game, not a grid puzzle
+        currentSize = newSize;
+        showBinaryMode(true);
+        highlightNowPlaying();
+        return;
+      }
+      if (currentSize === 'binary') showBinaryMode(false);   // coming back to the grids
+      if (newSize !== currentSize) {
+        currentSize = newSize;
+        initBoard();
+        applyTheme(); // Apply colors and diagonal guide
+      }
+    });
+  });
+
+  // Cancel any in-flight SHOW/Watch demo and return both buttons to active.
+  // initBoard (size switch) and CLEAR both route through here, so the board can
+  // never stay stuck (watching/peeking true, buttons disabled) — the bug that
+  // previously needed a full page reload (via the 3³ page) to clear.
+  function stopDemos(){
+    if (watchIv) { clearInterval(watchIv); watchIv = null; }
+    if (peekIv)  { clearInterval(peekIv);  peekIv  = null; }
+    watching = false;
+    peeking = false;
+    clearTimeout(ramIdle); ramIdle = null;   // a pending birthday auto-fill must not hit the next board
+    prevComplete = 0; prevDup = 0;   // reset chime counters for the rebuilt/cleared board
+    Object.keys(badges).forEach(function(k){          // drop any leftover SHOW tint if a demo was cancelled mid-way
+      badges[k].forEach(function(b){ b.classList.remove('peek'); });
+    });
+    var _wbtn = document.getElementById('watchBtn'); if (_wbtn) _wbtn.disabled = false;
+    var _pbtn = document.getElementById('peekBtn'); if (_pbtn){ _pbtn.disabled = false; _pbtn.textContent = '👁 SHOW'; }
+  }
+
+  // Mark the persistent guide/shade cells for the current size (used by both
+  // initBoard and resetVisuals so CLEAR keeps the shading on every size).
+  function markAnchors(){
+    var puzzle = PUZZLES[currentSize];
+    var n = puzzle.rows;
+    if (currentSize === '4x4') {
+      [[0,0],[0,3],[3,0],[3,3],[1,1],[1,2],[2,1],[2,2]].forEach(function(p){ cells[p[0]][p[1]].classList.add('anchor'); });
+    } else if (currentSize === '3x3') {
+      cells[1][1].classList.add('anchor');
+    } else if (currentSize === '3cube') {
+      cells[1][1].classList.add('anchor');   // center = heart (target is center³)
+    } else if (currentSize === '5x5') {
+      cells[2][2].classList.add('anchor');
+      cells[2][2].classList.add('center-heart');
+      cells[0][2].classList.add('center-ref');
+      cells[4][2].classList.add('center-ref');
+    } else if (currentSize === 'ramanujan') {
+      // only the date row is typed; the 12 cells below are computed and locked
+      var hint = ['DD','MM','CC','YY'];
+      for (var bc = 0; bc < 4; bc++){
+        cells[0][bc].classList.add('anchor');
+        cells[0][bc].placeholder = hint[bc];    // show the expected format in the empty boxes
+      }
+      for (var br = 1; br < 4; br++) for (var bc2 = 0; bc2 < 4; bc2++){
+        cells[br][bc2].readOnly = true;
+        cells[br][bc2].classList.add('locked');
+      }
+    } else if (currentSize === '6x6') {
+      // swap PAIR groups, two shades: block A cells (teal) ↔ block D cells (violet)
+      [[0,0],[1,1],[2,0]].forEach(function(p){ cells[p[0]][p[1]].classList.add('swapA'); });  // block A group
+      [[3,0],[4,1],[5,0]].forEach(function(p){ cells[p[0]][p[1]].classList.add('swapB'); });  // block D group
+    } else if (currentSize === '8x8') {
+      // "start sequence" cells that keep their natural 1..N value
+      for (var ar = 0; ar < n; ar++) for (var ac = 0; ac < n; ac++){
+        if (puzzle.example[ar][ac] === ar * n + ac + 1) cells[ar][ac].classList.add('anchor');
+      }
+    } else if (currentSize === '10x10') {
+      // swap PAIR groups, two shades. Top half (rows 0-4) = block A left + block C
+      // right-column (teal); bottom half (rows 5-9) = block D left + block B
+      // right-column (violet). Each teal cell trades with its violet partner.
+      [[0,0],[0,1],[1,0],[1,1],[2,1],[2,2],[3,0],[3,1],[4,0],[4,1],[0,9],[1,9],[2,9],[3,9],[4,9]].forEach(function(p){
+        cells[p[0]][p[1]].classList.add('swapA');
+      });
+      [[5,0],[5,1],[6,0],[6,1],[7,1],[7,2],[8,0],[8,1],[9,0],[9,1],[5,9],[6,9],[7,9],[8,9],[9,9]].forEach(function(p){
+        cells[p[0]][p[1]].classList.add('swapB');
+      });
+    }
+  }
+
+  function initBoard(){
+    stopDemos();      // clear any running demo + re-enable buttons before rebuild
+
+    board.innerHTML = '';
+    cells = [];
+    badges = {};
+    solvedFlag = false;
+    peeking = false;
+    prevComplete = 0; prevDup = 0;
+    // Reset the Target on every fresh board so a previous level's value can't linger
+    targetVal.textContent = '?';
+    targetPill.classList.remove('preview', 'solved');
+    resetTimer();
+
+    var puzzle = PUZZLES[currentSize];
+    board.className = 'board size' + currentSize;
+    
+    // Update instruction
+    instCard.innerHTML = puzzle.inst;
+    
+    // Update logic box
+    if (currentSize === '3x3') {
+      document.getElementById('logicBox').innerHTML = `
+        <h3>📐 Beginner Tip for 3×3 - The Classical Magic Square!</h3>
+        <button onclick="openCheat('cheat-3x3.png')" style="background:linear-gradient(135deg,#f093fb,#f5576c); color:#fff; border:none; border-radius:10px; padding:10px 18px; font-size:15px; font-weight:700; cursor:pointer; margin:6px 0 12px;">📋 Quick Formula Sheet</button>
+        <p><b>The Secret Structure:</b></p>
+        <ol style="margin: 10px 0; padding-left: 20px;">
+          <li><b>Center = Target ÷ 3</b>, and the same rule backwards: <b>Target = Center × 3</b> (shown in blue) - The heart of the magic! Since you place the center box first, the target is simply your center × 3. For center 5, target = 5 × 3 = 15.</li>
+          <li><b>Opposite boxes add up to double the center:</b> each pair through the center = 2 × center. For center 5 that is 10: 1+9, 2+8, 3+7, 4+6.</li>
+          <li><b>All 8 lines total = 15</b> (rows, columns, diagonals)</li>
+          <li><b>Numbers are arranged in a special pattern</b> - Not simple counting!</li>
+        </ol>
+        <p><b>How to Learn It:</b></p>
+        <ol style="margin: 10px 0; padding-left: 20px;">
+          <li>Click 👁 <b>SHOW</b> to see where each number goes</li>
+          <li>Study the pattern carefully</li>
+          <li>Notice how opposite boxes add to double the center</li>
+          <li>Try rebuilding it yourself!</li>
+          <li>Once you master it, try with different target numbers</li>
+        </ol>
+        <p><b>💡 The Magic:</b> This pattern works for ANY numbers! You can change the target from 15 to anything - the structure stays the same!</p>
+        <p><b>🎮 Advanced Challenge:</b> Try using <b>0 as a number</b> to create new combinations! (e.g., 0, 1, 2... or negative numbers for bigger targets)</p>
+
+        <p style="background:rgba(50, 50, 50, 0.8); padding:12px; border-radius:6px; margin:10px 0; border-left:4px solid #ffb300;">
+          <b>🪜 Build It Yourself - The "Count Down 3" Method</b><br>
+          <br>
+          A simple way to place <b>1 to 9</b> in the right order. Two rules only:<br>
+          <br>
+          <b>Move rule:</b> From the box you just filled, count <b>3 boxes downward</b> in the same column (the box you start on is "one"). If you reach the bottom, wrap around to the top and keep counting. Now place the next number in the box <b>immediately to the right</b> of where the count ended. If there is no box on the right, wrap around to the first column.<br>
+          <br>
+          <b>Blocked rule:</b> If that right-side box is <b>already filled</b>, place the next number <b>directly below the number you just placed</b> instead (wrapping bottom to top).
+        </p>
+
+        <p><b>Step by step</b> (R = row, C = column, 1 to 3):</p>
+        <ol style="margin: 10px 0; padding-left: 20px;">
+          <li><b>1</b> → R1, C2 (top middle). Your free starting box.</li>
+          <li><b>2</b> → count down 3 from 1 (ends R3, C2); go right → <b>R3, C3</b>.</li>
+          <li><b>3</b> → count down 3 from 2 (wraps, ends R2, C3); right wraps → <b>R2, C1</b>.</li>
+          <li><b>4</b> → count down 3 from 3 (ends R1, C1); right box is filled → blocked → below 3 → <b>R3, C1</b>.</li>
+          <li><b>5</b> → count down 3 from 4 (ends R2, C1); go right → <b>R2, C2</b> (the center).</li>
+          <li><b>6</b> → count down 3 from 5 (ends R1, C2); go right → <b>R1, C3</b>.</li>
+          <li><b>7</b> → count down 3 from 6 (ends R3, C3); right box is filled → blocked → below 6 → <b>R2, C3</b>.</li>
+          <li><b>8</b> → count down 3 from 7 (ends R1, C3); right wraps → <b>R1, C1</b>.</li>
+          <li><b>9</b> → count down 3 from 8 (ends R3, C1); go right → <b>R3, C2</b>. Done!</li>
+        </ol>
+        <p style="font-size:0.9em; opacity:0.85;">Tip: the count only picks a <i>landing</i> box - you always place to its <b>right</b>. It is fine if the landing box itself is already filled; only a filled <b>right-side</b> box triggers the blocked rule.</p>
+      `;
+    } else if (currentSize === '5x5') {
+      document.getElementById('logicBox').innerHTML = `
+        <h3>🧮 5×5 Master Tips - Hack Shaw Teeth Method!</h3>
+        <button onclick="openCheat('cheat-5x5.png')" style="background:linear-gradient(135deg,#f093fb,#f5576c); color:#fff; border:none; border-radius:10px; padding:10px 18px; font-size:15px; font-weight:700; cursor:pointer; margin:6px 0 12px;">📋 Quick Formula Sheet</button>
+
+        <p style="background:rgba(50, 50, 50, 0.8); padding:12px; border-radius:6px; margin:10px 0; border-left:4px solid #00bcd4;">
+          <b>🧠 The Secret Structure</b><br>
+          <br>
+          <b>Center = Target ÷ 5</b>, and backwards <b>Target = Center × 5</b>. Place the center first, then the target is just center × 5. For center 13, target = 65.<br>
+          <b>Opposite boxes</b> (through the center) add up to <b>2 × center</b>. For center 13 that is 26.<br>
+          <b>A cross forms through the center:</b> top-middle = center − 12, bottom-middle = center + 12, left-middle = center − 9, right-middle = center + 9.
+        </p>
+
+        <p style="background:rgba(50, 50, 50, 0.8); padding:12px; border-radius:6px; margin:10px 0; border-left:4px solid #ffb300;">
+          <b>🪜 Build It Yourself - The "Count Down 5" Method</b><br>
+          <br>
+          Places <b>1 to 25</b> in order. Same idea as 3×3, just count 5. Two rules:<br>
+          <br>
+          <b>Move rule:</b> From the box you just filled, count <b>5 boxes downward</b> in the same column (the box you start on is "one"). If you reach the bottom, wrap to the top and keep counting. Place the next number in the box <b>immediately to the right</b> of where the count ends. No box on the right? Wrap to the first column.<br>
+          <br>
+          <b>Blocked rule:</b> If that right-side box is already filled, place the next number <b>directly below the number you just placed</b> instead (wrapping bottom to top).<br>
+          <br>
+          <b>Start:</b> put <b>1</b> in the top row, middle column [1,3]. Finish when 25 lands in the bottom row, middle column.
+        </p>
+
+        <p style="background:rgba(50, 50, 50, 0.8); padding:12px; border-radius:6px; font-family:monospace; margin:10px 0; border-left:4px solid #4caf50;">
+          <b>Result for 1 to 25 (Target = 65):</b><br>
+          17 24 &nbsp;1 &nbsp;8 15<br>
+          23 &nbsp;5 &nbsp;7 14 16<br>
+          &nbsp;4 &nbsp;6 <b>13</b> 20 22<br>
+          10 12 19 21 &nbsp;3<br>
+          11 18 25 &nbsp;2 &nbsp;9<br>
+          <br>
+          Every row, column and diagonal = 65. Center 13 × 5 = 65.
+        </p>
+
+        <p><b>🚀 Try Different Sequences!</b> The Count Down 5 method works for any counting sequence - the rules never change, only the numbers do:</p>
+        <ol style="margin: 10px 0; padding-left: 20px;">
+          <li>1 to 25 → Target 65 (center 13)</li>
+          <li>5 to 29 → Target 85 (center 17)</li>
+          <li>Steps of 3 (2, 5, 8, …) → center × 5</li>
+        </ol>
+      `;
+    } else if (currentSize === '4x4') {
+      document.getElementById('logicBox').innerHTML = `
+        <h3>📐 4×4 Master Tips - Extract the Magic with Center Grid Math!</h3>
+        <button onclick="openCheat('cheat-4x4.png')" style="background:linear-gradient(135deg,#f093fb,#f5576c); color:#fff; border:none; border-radius:10px; padding:10px 18px; font-size:15px; font-weight:700; cursor:pointer; margin:6px 0 12px;">📋 Quick Formula Sheet</button>
+
+        <p style="background:rgba(50, 50, 50, 0.8); padding:12px; border-radius:6px; margin:10px 0; border-left:4px solid #ffb300;">
+          <b>🔄 Easy Build Method - Fill &amp; Swap</b><br>
+          <br>
+          <b>Step 1:</b> Write <b>1 to 16 in order</b>, left to right, top to bottom (Row 1: 1,2,3,4 … Row 4: 13,14,15,16).<br>
+          <span style="font-size:0.9em; opacity:0.85;">Any counting <b>sequence</b> works - 1 to 16, 5 to 20, even steps like 2,5,8,… - as long as the numbers are <b>in sequence, not random</b>.</span><br>
+          <br>
+          <b>Step 2:</b> Make these <b>4 swaps</b> (each pair is opposite through the center):<br>
+          • Swap <b>R1,C2 ↔ R4,C3</b><br>
+          • Swap <b>R1,C3 ↔ R4,C2</b><br>
+          • Swap <b>R2,C1 ↔ R3,C4</b><br>
+          • Swap <b>R3,C1 ↔ R2,C4</b><br>
+          <br>
+          <b>Step 3:</b> Leave the rest untouched - the <b>4 corners</b> and the <b>4 middle boxes</b> stay where they are.<br>
+          <br>
+          <b>Done!</b> Every row, column and diagonal now equals the <b>Target</b>.
+        </p>
+
+        <p style="background:rgba(50, 50, 50, 0.8); padding:12px; border-radius:6px; font-family:monospace; margin:10px 0; border-left:4px solid #4caf50;">
+          <b>Result for 1 to 16 (Target = 34):</b><br>
+          &nbsp;1&nbsp; 15&nbsp; 14&nbsp;&nbsp; 4<br>
+          12&nbsp;&nbsp; 6&nbsp;&nbsp; 7&nbsp;&nbsp; 9<br>
+          &nbsp;8&nbsp; 10&nbsp; 11&nbsp;&nbsp; 5<br>
+          13&nbsp;&nbsp; 3&nbsp;&nbsp; 2&nbsp; 16<br>
+          <br>
+          <b>Target = sum of the 4 middle boxes</b> (6+7+10+11 = 34). The middle four never move, so they always tell you the target.
+        </p>
+
+        <p style="background:rgba(50, 50, 50, 0.8); padding:12px; border-radius:6px; margin:10px 0; border-left:4px solid #00bcd4;">
+          <b>🎯 Good to know:</b><br>
+          • The <b>4 middle boxes</b> and <b>4 corners</b> never move - they are your anchor skeleton.<br>
+          • The <b>target</b> is the sum of the 4 middle boxes, and every row, column and diagonal matches it.<br>
+          • <b>Center average = Target ÷ 4</b> (for target 34 that is 8.5).
+        </p>
+
+        <p><b>🚀 Try Different Sequences!</b> The Fill &amp; Swap method works for any counting sequence - the swaps never change, only the numbers do:</p>
+        <ol style="margin: 10px 0; padding-left: 20px;">
+          <li>1 to 16 → Target 34</li>
+          <li>5 to 20 → Target 50</li>
+          <li>Steps of 3 (2, 5, 8, …) → Target 98</li>
+        </ol>
+      `;
+    } else if (currentSize === '6x6') {
+      document.getElementById('logicBox').innerHTML = `
+        <h3>📐 Expert Tip for 6×6 — Four Blocks &amp; a Swap!</h3>
+        <button onclick="openCheat('cheat-6x6.png')" style="background:linear-gradient(135deg,#f093fb,#f5576c); color:#fff; border:none; border-radius:10px; padding:10px 18px; font-size:15px; font-weight:700; cursor:pointer; margin:6px 0 12px;">📋 Quick Formula Sheet</button>
+        <p><b>The Secret Structure:</b></p>
+        <ol style="margin: 10px 0; padding-left: 20px;">
+          <li><b>The target is not fixed — it appears once a full line is complete.</b> With the classic <b>1–36</b> every line totals <b>111</b> (all 36 numbers add to 666, and 666 ÷ 6 = 111).</li>
+          <li><b>Four little 3×3 magic blocks.</b> Each block is the same magic pattern, just shifted: block <b>A = 1–9</b>, then <b>+9</b>, <b>+18</b>, <b>+27</b> for the others.</li>
+          <li><b>Place them in the corners A · C · D · B</b> — A top-left, C top-right, D bottom-left, B bottom-right.</li>
+          <li><b>One swap finishes it:</b> swap <b>3 cells</b> of the top-left block with the matching 3 cells of the bottom-left block. Now every line matches! ✨</li>
+        </ol>
+        <p><b>🚀 Different start = different target!</b> Start at 2 and step by 2 (2, 4, 6, … 72) → every line totals <b>222</b>. The pattern never changes, only the numbers do.</p>
+        <p><b>💡 The Magic:</b> Big squares are just small squares stitched together — once you know 3×3, you already know 6×6! Tap 👁 <b>SHOW</b> to watch it build.</p>
+      `;
+    } else if (currentSize === '8x8') {
+      document.getElementById('logicBox').innerHTML = `
+        <h3>📐 Champion Tip for 8×8 — Fill &amp; Flip!</h3>
+        <button onclick="openCheat('cheat-8x8.png')" style="background:linear-gradient(135deg,#f093fb,#f5576c); color:#fff; border:none; border-radius:10px; padding:10px 18px; font-size:15px; font-weight:700; cursor:pointer; margin:6px 0 12px;">📋 Quick Formula Sheet</button>
+        <p><b>The Secret Structure:</b></p>
+        <ol style="margin: 10px 0; padding-left: 20px;">
+          <li><b>The target is not fixed — it shows once a full line is complete.</b> With the classic <b>1–64</b> every line totals <b>260</b> (all 64 numbers add to 2080, and 2080 ÷ 8 = 260).</li>
+          <li><b>Step 1 — count 1 to 64</b> straight across the rows, but only <b>write</b> the numbers that land on the shaded pattern (the diagonals of each 4×4 block).</li>
+          <li><b>Step 2 — fill each blank with its "flip" partner: (biggest + smallest) − n.</b> For 1–64 that is <b>65 − n</b>: 1↔64, 2↔63, 3↔62 … each pair adds to 65.</li>
+          <li>That one flip makes every line match. ✨</li>
+        </ol>
+        <p><b>🚀 Different start = different target!</b> Start at 2 and step by 2 (2, 4, … 128) → every line totals <b>520</b>. Same trick, new numbers.</p>
+        <p><b>💡 The Magic:</b> Same trick as 4×4, just bigger — keep the diagonal numbers, flip the rest! Tap 👁 <b>SHOW</b> to watch it build.</p>
+      `;
+    } else if (currentSize === '10x10') {
+      document.getElementById('logicBox').innerHTML = `
+        <h3>📐 Grandmaster Tip for 10×10 — Four Big Blocks &amp; Swaps!</h3>
+        <button onclick="openCheat('cheat-10x10.png')" style="background:linear-gradient(135deg,#f093fb,#f5576c); color:#fff; border:none; border-radius:10px; padding:10px 18px; font-size:15px; font-weight:700; cursor:pointer; margin:6px 0 12px;">📋 Quick Formula Sheet</button>
+        <p><b>The Secret Structure:</b></p>
+        <ol style="margin: 10px 0; padding-left: 20px;">
+          <li><b>The target appears once a full line is complete.</b> With the classic <b>1–100</b> every line totals <b>505</b> (all 100 numbers add to 5050, and 5050 ÷ 10 = 505).</li>
+          <li><b>Four 5×5 magic blocks.</b> Same idea as 6×6, just with bigger blocks: build a 5×5 magic square four times, shifted by +25 each, and place them in the corners <b>A · C · D · B</b>.</li>
+          <li><b>Then two swaps line everything up:</b> swap the marked cells between the left blocks (A ↔ D) and one column between the right blocks (B ↔ C). The Quick Formula Sheet shows the exact cells.</li>
+          <li>Now every row, column and diagonal matches! ✨</li>
+        </ol>
+        <p><b>🚀 Different start = different target!</b> Start at 2 and step by 2 (2, 4, … 200) → every line totals <b>1010</b>. Same method, new numbers.</p>
+        <p><b>💡 The Magic:</b> The biggest square is still just small squares stitched together — you have come all the way from 3×3! 🏆 Tap 👁 <b>SHOW</b> to watch it build.</p>
+      `;
+    } else if (currentSize === '3cube') {
+      document.getElementById('logicBox').innerHTML = `
+        <h3>📐 Multiply Magic — lines × instead of +!</h3>
+        <p><b>The Secret Structure:</b></p>
+        <ol style="margin: 10px 0; padding-left: 20px;">
+          <li><b>Every line MULTIPLIES to the same number</b> — rows, columns and both diagonals give the same product.</li>
+          <li><b>The target = center × center × center (center³).</b> Set the middle box first and the target appears. Center 16 → 16 × 16 × 16 = <b>4096</b>.</li>
+          <li><b>Opposite boxes multiply to center².</b> Each pair through the center = center × center. For center 16 that is 256: 8×32, 2×128, 4×64, 1×256.</li>
+          <li><b>Use a "times" family, not 1–9.</b> The easy one is <b>powers of 2</b>: 1, 2, 4, 8, 16, 32, 64, 128, 256 — tap 👁 <b>SHOW</b> to see them fall into place.</li>
+        </ol>
+        <p><b>🚀 Try other families!</b> Powers of 3 (1, 3, 9, 27, 81 …) or any geometric run work the same way — only the numbers change.</p>
+        <p><b>💡 The Magic:</b> It is the addition square's twin — swap "+" for "×" and "center × 3" for "center³". Same shape, new operation! ✖️</p>
+      `;
+    } else if (currentSize === 'ramanujan') {
+      document.getElementById('logicBox').innerHTML = `
+        <h3>📐 Sir Ramanujan MathMagic — his Birthday Square</h3>
+        <button onclick="openCheat('cheat-ramanujan.jpg')" style="background:linear-gradient(135deg,#f093fb,#f5576c); color:#fff; border:none; border-radius:10px; padding:10px 18px; font-size:15px; font-weight:700; cursor:pointer; margin:6px 0 12px;">📋 See the Full Formula</button>
+        <p>Srinivasa Ramanujan (1887–1920), India's self-taught genius, built a 4×4 square from his own birth date <b>22-12-1887</b> — and every line adds to <b>139</b>.</p>
+        <p><b>The Secret Structure:</b></p>
+        <ol style="margin: 10px 0; padding-left: 20px;">
+          <li><b>You type only the top row:</b> <b>DD · MM · CC · YY</b> (day, month, century, year), <b>two digits in each box</b> — so the 9th becomes <b>09</b>. For Ramanujan: 22 · 12 · 18 · 87.</li>
+          <li><b>The other 12 boxes follow a fixed recipe</b> — each is one of your four numbers, nudged up or down:
+            <br><span style="font-size:0.95em; opacity:.9;">Row 2: YY+1 · CC−1 · MM−3 · DD+3<br>Row 3: MM−2 · DD+2 · YY+2 · CC−2<br>Row 4: CC+1 · YY−1 · DD+1 · MM−1</span></li>
+          <li><b>Why it always works:</b> look at the nudges on each row — <b>+1−1−3+3 = 0</b>, <b>−2+2+2−2 = 0</b>, <b>+1−1+1−1 = 0</b>. They cancel out! So every line comes back to your own total, DD+MM+CC+YY.</li>
+          <li><b>It works for ANY four numbers</b> — your birthday, a friend's, any date at all. The magic is in the recipe, not the numbers.</li>
+        </ol>
+        <p><b>🎁 There is more!</b> Besides the 4 rows, 4 columns and 2 diagonals, the same total also hides in the <b>4 corners</b>, all four <b>2×2 corner blocks</b>, the <b>centre 2×2</b>, and the middle pairs of the outer rows and columns — <b>18 magic groups in all</b> (an ordinary 4×4 has only 10).</p>
+        <p><b>➖ Negative numbers are welcome!</b> A January or February birthday makes MM−3 go below zero — try <b>09-01-2015</b> and you will see <b>−2</b> and <b>−1</b> in the square, yet every line still totals 45. Tap the <b>±</b> key to type a minus yourself, then <b>tap the next box</b> — a single-digit entry completes the moment you move on. The magic holds for negatives, for zero, even for decimals. The recipe cares about the <i>differences</i>, never the size of the numbers.</p>
+        <p><b>💡 Try it:</b> type your own birthday, then your friend's — each person gets their own magic number. 🎂</p>
+      `;
+    }
+
+    var n = puzzle.rows;
+    
+    // Place badges and cells in grid
+    function place(el, row, col){
+      el.style.gridRow = row;
+      el.style.gridColumn = col;
+      board.appendChild(el);
+    }
+    
+    function makeBadge(key, isCorner){
+      var b = document.createElement('div');
+      b.className = 'badge' + (isCorner ? ' corner' : '');
+      b.textContent = '?';   /* open-screen placeholder, like the Target : ? pill */
+      if (!badges[key]) badges[key] = [];
+      badges[key].push(b);
+      return b;
+    }
+    
+    // Create grid with badges around 3x3 or 4x4
+    // For 3x3: 5x5 grid (badge borders + 3x3 center)
+    // For 4x4: 6x6 grid (badge borders + 4x4 center)
+    
+    var bSize = n + 2; // 5 or 6
+    
+    // Top row badges
+    place(makeBadge('d1', true), 1, 1);
+    for (var c = 0; c < n; c++) place(makeBadge('c' + c, false), 1, c + 2);
+    place(makeBadge('d2', true), 1, bSize);
+    
+    // Middle rows: cells + badges
+    for (var r = 0; r < n; r++){
+      place(makeBadge('r' + r, false), r + 2, 1);
+      cells.push([]);
+      for (var c2 = 0; c2 < n; c2++){
+        var inp = document.createElement('input');
+        inp.className = 'cell';
+        inp.type = 'text';
+        inp.inputMode = useSysKb ? 'numeric' : 'none';   // 'none' = use the custom keypad, no OS keyboard pops up
+        // Up to 4-digit numbers (up to 9999) on every size — future-proof for multiplicative targets (e.g. 4096)
+        inp.maxLength = 4;
+        inp.dataset.r = r; inp.dataset.c = c2;   // position, for auto-advance / navigation
+        inp.addEventListener('input', onInput);
+        inp.addEventListener('keydown', onKeyDown);
+        inp.addEventListener('focus', function(){ setActive(this); });
+        // Tapping a cell moves the yellow ring here. On touch in keypad mode we
+        // suppress the browser's native focus, because its scroll-into-view can
+        // shift the page mid-tap and land focus on a NEIGHBOURING cell (the
+        // intermittent first-tap ring jump). The keypad types into activeCell,
+        // so DOM focus isn't needed; system-keyboard mode and mouse keep it.
+        inp.addEventListener('pointerdown', function(e){
+          setActive(this);
+          if (!useSysKb && e.pointerType === 'touch') e.preventDefault();
+        });
+        cells[r].push(inp);
+        place(inp, r + 2, c2 + 2);
+      }
+      place(makeBadge('r' + r, false), r + 2, bSize);
+    }
+    
+    // Mark anchor / guide-shade cells (persistent hints), per size
+    markAnchors();
+
+    // Bottom row badges
+    place(makeBadge('d2', true), bSize, 1);
+    for (var c3 = 0; c3 < n; c3++) place(makeBadge('c' + c3, false), bSize, c3 + 2);
+    place(makeBadge('d1', true), bSize, bSize);
+
+    activeCell = null;
+    if (cells[0] && cells[0][0]) setActive(cells[0][0]);   // start the keypad cursor at the first cell
+  }
+  
+  function val(r, c){
+    if (!cells[r] || !cells[r][c]) return null;
+    var v = parseInt(cells[r][c].value, 10);
+    return isNaN(v) ? null : v;
+  }
+  
+  function lineVals(key){
+    var puzzle = PUZZLES[currentSize];
+    var n = puzzle.rows;
+    var out = [];
+    for (var i = 0; i < n; i++){
+      if (key[0] === 'r') out.push(val(+key[1], i));
+      else if (key[0] === 'c') out.push(val(i, +key[1]));
+      else if (key === 'd1') out.push(val(i, i));
+      else out.push(val(i, n - 1 - i));
+    }
+    return out;
+  }
+
+  // Mode-aware line total: ADD sizes sum a line; the 3³ MULTIPLY size takes the product.
+  function isMul(){ return PUZZLES[currentSize].mode === 'multiply'; }
+  function isBirthday(){ return PUZZLES[currentSize].mode === 'birthday'; }
+
+  // Ramanujan's rule: the 12 cells under the typed date follow fixed offsets whose
+  // sum is zero on every line, so each line returns to DD+MM+CC+YY.
+  var ramIdle = null;   // idle grace: a finished-looking last box completes by itself
+  function fillRamanujan(force){
+    var DD = val(0,0), MM = val(0,1), CC = val(0,2), YY = val(0,3);
+    // A box counts as finished when it has TWO digits (the DD·MM·CC·YY date
+    // format) OR it has a value and the cursor has MOVED OFF it — so single-digit
+    // and negative entries like -5 commit as soon as you tap the next box, while
+    // the "8" of "87" still can't pop the square early (it is still the active box).
+    // `force` (the idle timer) overrides the active-box wait after ~1.2s of no typing.
+    function done(c){
+      var el = cells[0][c];
+      var d = (el.value.match(/\d/g) || []).length;
+      if (d >= 2) return true;
+      return d >= 1 && (force || activeCell !== el);
+    }
+    var allFour = DD !== null && MM !== null && CC !== null && YY !== null;
+    var ready = allFour && done(0) && done(1) && done(2) && done(3);
+    var rows = ready ? [
+      [YY+1, CC-1, MM-3, DD+3],
+      [MM-2, DD+2, YY+2, CC-2],
+      [CC+1, YY-1, DD+1, MM-1]
+    ] : null;
+    for (var r = 1; r < 4; r++) for (var c = 0; c < 4; c++){
+      if (!cells[r] || !cells[r][c]) continue;
+      cells[r][c].value = ready ? String(rows[r-1][c]) : '';
+      cells[r][c].classList.toggle('derived', ready);
+    }
+    // All four typed but the active box is holding things up (e.g. a final "-4"):
+    // give it a moment — if no more typing arrives, complete the square anyway.
+    clearTimeout(ramIdle); ramIdle = null;
+    if (allFour && !ready && !force){
+      ramIdle = setTimeout(function(){ if (isBirthday()){ fillRamanujan(true); update(); } }, 1200);
+    }
+    return ready;
+  }
+  function lineValue(arr){
+    return isMul() ? arr.reduce(function(a, b){ return a * b; }, 1)
+                   : arr.reduce(function(a, b){ return a + b; }, 0);
+  }
+  
+  function setBadge(key, text, cls){
+    badges[key].forEach(function(b){
+      b.textContent = text;
+      b.classList.remove('partial','full','win','word','peektone');
+      if (cls) b.classList.add(cls);
+    });
+  }
+  
+  function applyTheme(){
+    // Apply size-specific color theme
+    var sizeClass = 'size' + currentSize.replace('x', 'x');
+    board.className = 'board ' + sizeClass;
+    targetPill.className = 'targetPill ' + sizeClass;
+    var _wb = document.getElementById('watchBtn');   // Watch Me Solve: 3x3 sample only for now
+    if (_wb) _wb.style.display = '';   // Watch Me Solve available on 3x3 / 4x4 / 5x5
+    
+    // Apply diagonal guide to 5×5 cells
+    if (currentSize === '5x5') {
+      // 7 cells: (0,2), (0,4), (1,3), (2,2), (3,1), (4,0), (4,2)
+      // Clear all first
+      for (var i = 0; i < 5; i++) {
+        for (var j = 0; j < 5; j++) {
+          cells[i][j].classList.remove('diagonal-guide');
+        }
+      }
+      // Add diagonal guide to exact cells
+      // Anti-diagonal only = green. Top-middle (R1C3) and bottom-middle (R5C3)
+      // stay BLUE (center-ref) so the diagonal reads distinct from them.
+      cells[0][4].classList.add('diagonal-guide'); // R1C5
+      cells[1][3].classList.add('diagonal-guide'); // R2C4
+      cells[2][2].classList.add('diagonal-guide'); // R3C3 HEART
+      cells[3][1].classList.add('diagonal-guide'); // R4C2
+      cells[4][0].classList.add('diagonal-guide'); // R5C1
+    }
+    fitBoard();   // size the board to the screen, then fit digit sizes
+    refreshCounter();
+    highlightNowPlaying();
+  }
+
+  // Highlight the current size in the "Now playing" header list
+  function highlightNowPlaying(){
+    var list = document.querySelectorAll('#nowPlaying .np');
+    for (var i = 0; i < list.length; i++){
+      list[i].classList.toggle('np-active', list[i].dataset.np === currentSize);
+    }
+  }
+
+  // Achievement badge for the current level (no lock — every level is open)
+  function refreshCounter(){
+    var n;
+    if (currentSize === '4x4') n = solvedCount4x4;
+    else if (currentSize === '5x5') n = solvedCount5x5;
+    else if (currentSize === '6x6') n = solvedCount6x6;
+    else if (currentSize === '8x8') n = solvedCount8x8;
+    else if (currentSize === '10x10') n = solvedCount10x10;
+    else if (currentSize === '3cube') n = solvedCount3cube;
+    else if (currentSize === 'ramanujan') n = solvedCountRam;
+    else n = solvedCount3x3;
+    solvedCounter.style.display = 'block';
+    solvedCounter.classList.toggle('unlocked', n >= 2);
+    solvedCounter.innerHTML = n >= 2
+      ? '🏆 <b>Level mastered!</b> ✨ Try a new target, or pick any level below.'
+      : '🏆 <b>' + n + '/2</b> different targets · solve 2 different ones to master this level!';
+  }
+
+  // Size the board to the available width so it always fills the screen without
+  // horizontal scrolling. In landscape the viewport is much wider, so every board
+  // (10×10 most of all) becomes far bigger; the page then scrolls vertically.
+  function fitBoard(){
+    var pz = PUZZLES[currentSize];
+    var tracks = pz.rows + 2;                       // grid cells + the badge ring
+    var gap = tracks >= 10 ? 2 : tracks >= 8 ? 3 : 6;
+    var vw = document.documentElement.clientWidth || window.innerWidth || 360;
+    var avail = Math.min(vw, 900) - 16;             // page padding; cap so desktop stays sane
+    var cell = Math.floor((avail - gap * (tracks - 1)) / tracks);
+    cell = Math.max(18, Math.min(cell, 92));        // readable floor, sensible ceiling
+    board.classList.add('autofit');
+    board.style.setProperty('--tracks', tracks);
+    board.style.setProperty('--cell', cell + 'px');
+    board.style.setProperty('--gap', gap + 'px');
+    board.style.setProperty('--badgeFont', Math.max(8, Math.round(cell * 0.30)) + 'px');
+
+    // Suggest rotating only where it actually helps (the big, cramped boards)
+    var hint = document.getElementById('rotateHint');
+    if (hint) hint.classList.toggle('show', tracks >= 8 && cell < 40);
+
+    fitCells();
+  }
+
+  // Auto-shrink each cell's font by its digit count so 1–4 digit numbers fit uniformly (no horizontal overflow)
+  function fitCells(){
+    if (!cells[0] || !cells[0][0]) return;
+    var w = cells[0][0].clientWidth;
+    if (!w) return;
+    var puzzle = PUZZLES[currentSize];
+    for (var r = 0; r < puzzle.rows; r++) for (var c = 0; c < puzzle.cols; c++){
+      var len = (cells[r][c].value || '').length || 1;
+      var frac = len <= 1 ? 0.50 : len === 2 ? 0.42 : len === 3 ? 0.32 : 0.26;
+      cells[r][c].style.fontSize = Math.round(w * frac) + 'px';
+    }
+  }
+
+  function update(){
+    if (solvedFlag) return;
+    var puzzle = PUZZLES[currentSize];
+    
+    // Duplicate detection — skipped for the birthday square, where a date can
+    // legitimately produce two equal numbers (e.g. DD+3 matching another cell).
+    var seen = {}, dups = {};
+    if (!isBirthday()){
+      for (var r = 0; r < puzzle.rows; r++) for (var c = 0; c < puzzle.cols; c++){
+        var v = val(r, c);
+        if (v === null) continue;
+        if (seen[v] !== undefined) dups[v] = true;
+        seen[v] = true;
+      }
+    }
+    
+    for (var r2 = 0; r2 < puzzle.rows; r2++) for (var c2 = 0; c2 < puzzle.cols; c2++){
+      var vv = val(r2, c2);
+      cells[r2][c2].classList.toggle('dup', !!(vv !== null && dups[vv]));
+    }
+    fitCells();   // keep digit sizes fitted on every change
+
+    // Badge updates
+    var completeSums = [];
+    puzzle.lines.forEach(function(k){
+      var vals = lineVals(k);
+      var filled = vals.filter(function(x){ return x !== null; });
+      var sum = lineValue(filled);   // sum (add sizes) or product (3³ multiply)
+      if (filled.length === 0){
+        setBadge(k, '?', null);        // no number entered yet in this line — keep the ? placeholder
+      } else if (filled.length < puzzle.rows){
+        setBadge(k, sum, 'partial');
+      } else {
+        setBadge(k, sum, peeking ? 'peektone' : 'full');
+        completeSums.push(sum);
+      }
+    });
+
+    // Target pill — EVIDENCE-BASED and uniform for every size: the target appears
+    // (orange) only once TWO or more complete lines/diagonals agree on the same
+    // value; until then it stays '?'. All lines matching → green (handled in win()).
+    if (!solvedFlag) {
+      var counts = {};
+      completeSums.forEach(function(s){ counts[s] = (counts[s] || 0) + 1; });
+      var candidate = null, best = 1;
+      for (var key in counts){ if (counts[key] >= 2 && counts[key] > best){ best = counts[key]; candidate = +key; } }
+      if (candidate !== null){
+        targetVal.textContent = candidate;
+        targetPill.classList.add('preview');   // orange = two-plus lines agree on this target
+      } else {
+        targetPill.classList.remove('preview');
+        targetVal.textContent = '?';
+      }
+    }
+    
+    // Win check
+    var allFilled = true;
+    for (var r3 = 0; r3 < puzzle.rows; r3++) for (var c4 = 0; c4 < puzzle.cols; c4++)
+      if (val(r3, c4) === null) allFilled = false;
+
+    var isWin = !peeking && !watching && allFilled && Object.keys(dups).length === 0 &&
+        completeSums.length === puzzle.lines.length &&
+        completeSums.every(function(s){ return s === completeSums[0]; });
+
+    // Playful feedback on real user moves only (not during SHOW/Watch, not on the winning move)
+    if (!peeking && !watching && !solvedFlag && !isWin){
+      var dupCount = Object.keys(dups).length;
+      if (completeSums.length > prevComplete) sfx('line');        // a new line just hit its target
+      else if (dupCount > prevDup && dupCount > 0) sfx('dup');    // a new duplicate clash appeared
+    }
+    prevComplete = completeSums.length;
+    prevDup = Object.keys(dups).length;
+
+    if (isWin){
+      win(completeSums[0]); // Use actual target from first line
+    } else {
+      msg.textContent = '';
+      msg.className = '';
+    }
+  }
+  
+
+  
+  function win(actualTarget){
+    solvedFlag = true;
+    sfx('win');          // 🎉 celebratory fanfare
+    celebrate();         // emoji burst + flash (works even when muted)
+    stopTimer();
+    var puzzle = PUZZLES[currentSize];
+    
+    targetPill.classList.remove('preview');
+    targetPill.classList.add('solved');
+    targetVal.textContent = actualTarget;
+    puzzle.lines.forEach(function(k){ setBadge(k, actualTarget, 'win'); });
+    
+    for (var r = 0; r < puzzle.rows; r++) for (var c = 0; c < puzzle.cols; c++){
+      cells[r][c].classList.remove('given','dup','anchor','swapA','swapB','cursor');
+      cells[r][c].classList.add('win');
+      cells[r][c].readOnly = true;
+    }
+    
+    msg.textContent = '🎉 Solved! ' + (isMul() ? 'Every line × = ' : 'Your target: ') + actualTarget;
+    msg.className = 'win';
+    
+    // Handle progression
+    if (currentSize === '3x3') {
+      // Check if this target is new
+      if (solvedTargets3x3.indexOf(actualTarget) === -1) {
+        solvedTargets3x3.push(actualTarget);
+        solvedCount3x3 = solvedTargets3x3.length;
+        refreshCounter();
+        
+        if (solvedCount3x3 >= 2) {
+          solvedCounter.classList.add('unlocked');
+          // Show 4x4 button
+          document.querySelector('[data-size="4x4"]').style.display = '';
+          showCongrats('🎉 Master of 3×3!', 'You solved with 2 different targets! Ready for 4×4?');
+        } else {
+          setTimeout(function(){
+            msg.textContent = '✨ ' + (2 - solvedCount3x3) + ' more with a DIFFERENT target to master 3×3!';
+          }, 1500);
+        }
+      } else {
+        setTimeout(function(){
+          msg.textContent = '⚠️ You already solved with target ' + actualTarget + '! Try a DIFFERENT number!';
+        }, 1500);
+      }
+    } else if (currentSize === '4x4') {
+      // Check if this target is new
+      if (solvedTargets4x4.indexOf(actualTarget) === -1) {
+        solvedTargets4x4.push(actualTarget);
+        solvedCount4x4 = solvedTargets4x4.length;
+        refreshCounter();
+        
+        if (solvedCount4x4 >= 2) {
+          // Show 5x5 button
+          document.querySelector('[data-size="5x5"]').style.display = '';
+          showCongrats('🏆 Master of 4×4!', 'You solved with 2 different targets! Ready for 5×5?');
+        } else {
+          setTimeout(function(){
+            msg.textContent = '✨ ' + (2 - solvedCount4x4) + ' more with a DIFFERENT target to master 4×4!';
+          }, 1500);
+        }
+      } else {
+        setTimeout(function(){
+          msg.textContent = '⚠️ You already solved with target ' + actualTarget + '! Try a DIFFERENT number!';
+        }, 1500);
+      }
+    } else if (currentSize === '5x5') {
+      // Check if this target is new
+      if (solvedTargets5x5.indexOf(actualTarget) === -1) {
+        solvedTargets5x5.push(actualTarget);
+        solvedCount5x5 = solvedTargets5x5.length;
+        refreshCounter();
+        
+        if (solvedCount5x5 >= 2) {
+          showCongrats('⭐ Master of 5×5!', 'You mastered 5×5 with 2 different targets! 🌟 Pick any level, or keep exploring 5×5.');
+        } else {
+          setTimeout(function(){
+            msg.textContent = '✨ ' + (2 - solvedCount5x5) + ' more with a DIFFERENT target to master 5×5!';
+          }, 1500);
+        }
+      } else {
+        setTimeout(function(){
+          msg.textContent = '⚠️ You already solved with target ' + actualTarget + '! Try a DIFFERENT number!';
+        }, 1500);
+      }
+    } else if (currentSize === '6x6') {
+      if (solvedTargets6x6.indexOf(actualTarget) === -1) {
+        solvedTargets6x6.push(actualTarget);
+        solvedCount6x6 = solvedTargets6x6.length;
+        refreshCounter();
+
+        if (solvedCount6x6 >= 2) {
+          showCongrats('🧩 Master of 6×6!', 'You mastered 6×6 with 2 different targets! 🌟 Try the 8×8 Champion whenever you like.');
+        } else {
+          setTimeout(function(){
+            msg.textContent = '✨ ' + (2 - solvedCount6x6) + ' more with a DIFFERENT target to master 6×6!';
+          }, 1500);
+        }
+      } else {
+        setTimeout(function(){
+          msg.textContent = '⚠️ You already solved with target ' + actualTarget + '! Try a DIFFERENT number!';
+        }, 1500);
+      }
+    } else if (currentSize === '8x8') {
+      if (solvedTargets8x8.indexOf(actualTarget) === -1) {
+        solvedTargets8x8.push(actualTarget);
+        solvedCount8x8 = solvedTargets8x8.length;
+        refreshCounter();
+
+        if (solvedCount8x8 >= 2) {
+          showCongrats('🏅 Champion of 8×8!', 'You mastered 8×8 with 2 different targets! 🚀 The final 10×10 Grandmaster awaits whenever you are ready.');
+        } else {
+          setTimeout(function(){
+            msg.textContent = '✨ ' + (2 - solvedCount8x8) + ' more with a DIFFERENT target to master 8×8!';
+          }, 1500);
+        }
+      } else {
+        setTimeout(function(){
+          msg.textContent = '⚠️ You already solved with target ' + actualTarget + '! Try a DIFFERENT number!';
+        }, 1500);
+      }
+    } else if (currentSize === '10x10') {
+      if (solvedTargets10x10.indexOf(actualTarget) === -1) {
+        solvedTargets10x10.push(actualTarget);
+        solvedCount10x10 = solvedTargets10x10.length;
+        refreshCounter();
+
+        if (solvedCount10x10 >= 2) {
+          showCongrats('🏆 GRANDMASTER!', 'Incredible — you have mastered every magic square from 3×3 to 10×10! 🎓✨');
+        } else {
+          setTimeout(function(){
+            msg.textContent = '✨ Solve once more with a DIFFERENT target to earn the Grandmaster crown! 🏆';
+          }, 1500);
+        }
+      } else {
+        setTimeout(function(){
+          msg.textContent = '⚠️ You already solved with target ' + actualTarget + '! Try a DIFFERENT number!';
+        }, 1500);
+      }
+    } else if (currentSize === '3cube') {
+      if (solvedTargets3cube.indexOf(actualTarget) === -1) {
+        solvedTargets3cube.push(actualTarget);
+        solvedCount3cube = solvedTargets3cube.length;
+        refreshCounter();
+
+        if (solvedCount3cube >= 2) {
+          showCongrats('✖️ Multiply Master!', 'You cracked 3³ Multiply Magic with 2 different center cubes! 🌟');
+        } else {
+          setTimeout(function(){
+            msg.textContent = '✨ Solve once more with a DIFFERENT center (new center³) to master Multiply Magic!';
+          }, 1500);
+        }
+      } else {
+        setTimeout(function(){
+          msg.textContent = '⚠️ You already solved with target ' + actualTarget + '! Try a DIFFERENT center!';
+        }, 1500);
+      }
+    } else if (currentSize === 'ramanujan') {
+      if (solvedTargetsRam.indexOf(actualTarget) === -1) {
+        solvedTargetsRam.push(actualTarget);
+        solvedCountRam = solvedTargetsRam.length;
+        refreshCounter();
+      }
+      setTimeout(function(){
+        msg.innerHTML = '🎂 Your magic number is <b>' + actualTarget + '</b> — and it hides in <b>18</b> places: ' +
+                        'every row, column, diagonal, the 4 corners, all four 2×2 blocks and the centre! ✨';
+        msg.className = 'win';
+      }, 1400);
+    }
+  }
+
+  // Next-level map: recommendation sequence
+  var NEXT_SIZE_MAP = {
+    '3x3':'4x4', '4x4':'5x5', '5x5':'6x6',
+    '6x6':'8x8', '8x8':'10x10', '10x10':'3x3',
+    '3cube':'ramanujan', 'ramanujan':'binary', 'binary':'3x3'
+  };
+
+  var _congratsAutoTimer = null; // global so difficulty-btn clicks can cancel it
+
+  function showCongrats(title, subtitle, nextSize){
+    var modal    = document.getElementById('congratsModal');
+    var countEl  = document.getElementById('congratsCountdown');
+    var nextBtn  = document.getElementById('nextBtn');
+    var chooseBtn= document.getElementById('chooseLaterBtn');
+
+    document.getElementById('congratsText').textContent = title + ' ' + subtitle;
+    modal.style.display = 'flex';
+
+    // Sounds: clap immediately, power-up chord at 700ms
+    sfx('clap');
+    setTimeout(function(){ sfx('unlock'); }, 700);
+
+    // Determine auto-advance target
+    var goTo = nextSize || NEXT_SIZE_MAP[currentSize] || null;
+
+    // Clear any previous running timer
+    if (_congratsAutoTimer){ clearInterval(_congratsAutoTimer); _congratsAutoTimer = null; }
+
+    var secs = 4;
+    function updateCount(){ countEl.textContent = 'Auto-advancing in ' + secs + '…'; }
+    updateCount();
+
+    _congratsAutoTimer = setInterval(function(){
+      secs--;
+      if (secs <= 0){
+        clearInterval(_congratsAutoTimer); _congratsAutoTimer = null;
+        doAdvance(goTo);
+      } else { updateCount(); }
+    }, 1000);
+
+    function doAdvance(size){
+      modal.style.display = 'none';
+      countEl.textContent = '';
+      if (size){
+        var btn = document.querySelector('.toggleBtn[data-size="' + size + '"]');
+        if (btn) { btn.click(); return; }
+      }
+      initBoard(); applyTheme();
+    }
+
+    // Let's Go — instant advance
+    nextBtn.onclick = function(){
+      clearInterval(_congratsAutoTimer); _congratsAutoTimer = null;
+      doAdvance(goTo);
+    };
+
+    // Choose from list — close modal, scroll to difficulty bar
+    chooseBtn.onclick = function(){
+      clearInterval(_congratsAutoTimer); _congratsAutoTimer = null;
+      modal.style.display = 'none';
+      countEl.textContent = '';
+      setTimeout(function(){
+        var bar = document.querySelector('.difficultyBar');
+        if (bar) bar.scrollIntoView({ behavior:'smooth', block:'center' });
+      }, 100);
+    };
+  }
+  
+  
+  
+  // Timer
+  function startTimer(){
+    if (timerInt) return;
+    startTime = Date.now();
+    timerInt = setInterval(function(){
+      var s = Math.floor((Date.now() - startTime) / 1000);
+      var m = Math.floor(s / 60); s = s % 60;
+      timerBox.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+    }, 500);
+  }
+  
+  function stopTimer(){ clearInterval(timerInt); timerInt = null; }
+  function resetTimer(){ stopTimer(); timerBox.textContent = '00:00'; startTime = null; }
+  
+  // Simple snapshot for peek
+  function snapshot(){
+    var puzzle = PUZZLES[currentSize];
+    var s = [];
+    for (var r = 0; r < puzzle.rows; r++) for (var c = 0; c < puzzle.cols; c++) s.push(cells[r][c].value);
+    return s;
+  }
+  
+
+
+
+  // ---- Install to home screen -------------------------------------------------
+  // Chrome/Edge fire beforeinstallprompt, so one tap can install. iOS Safari has
+  // no such API, so there we open the step-by-step panel instead.
+  (function(){
+    var iBtn = document.getElementById('installBtn');
+    if (!iBtn) return;
+    var deferred = null;
+
+    function markInstalled(){
+      iBtn.textContent = '✅ Installed';
+      iBtn.style.borderColor = '#22c55e'; iBtn.style.color = '#4ade80';
+      iBtn.disabled = true; iBtn.style.opacity = '.75';
+    }
+    function markHowTo(){                        // cannot install directly here
+      iBtn.textContent = '📲 How to Install';
+      iBtn.style.borderColor = '#64748b'; iBtn.style.color = '#cbd5e1';
+    }
+
+    var standalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
+    if (standalone || window.navigator.standalone){ markInstalled(); return; }   // running as the app
+
+    // Chrome can confirm the PWA is already installed even while browsing
+    if (navigator.getInstalledRelatedApps){
+      navigator.getInstalledRelatedApps().then(function(apps){
+        if (apps && apps.length) markInstalled();
+      }).catch(function(){});
+    }
+
+    window.addEventListener('beforeinstallprompt', function(e){
+      e.preventDefault();
+      deferred = e;
+      if (!iBtn.disabled){                       // a real one-tap install is available
+        iBtn.textContent = '📥 Install App';
+        iBtn.style.borderColor = '#38bdf8'; iBtn.style.color = '#7dd3fc';
+      }
+    });
+
+    // No install event (iPhone, unsupported browser, or already installed):
+    // stop promising a one-tap install and offer the instructions instead.
+    setTimeout(function(){ if (!deferred && !iBtn.disabled) markHowTo(); }, 2500);
+
+    window.addEventListener('appinstalled', function(){
+      deferred = null;
+      iBtn.textContent = '✅ Installed';
+      iBtn.style.borderColor = '#22c55e'; iBtn.style.color = '#4ade80';
+      sfx('unlock');
+    });
+
+    iBtn.addEventListener('click', function(){
+      if (soundOn) ensureAudio();
+      if (deferred){
+        deferred.prompt();
+        deferred.userChoice.then(function(res){
+          if (res && res.outcome === 'accepted'){ iBtn.textContent = '✅ Installing…'; }
+          deferred = null;
+        }).catch(function(){});
+        return;
+      }
+      // No install API (iPhone/iPad, or already dismissed): show how to do it by hand
+      var box = document.getElementById('offlineBox');
+      var btn = document.getElementById('offlineBtn');
+      if (box){
+        box.style.display = 'block';
+        if (btn) btn.textContent = '📲 Play Offline ▲';
+        try { box.scrollIntoView({ behavior:'smooth', block:'center' }); }
+        catch(e){ box.scrollIntoView(); }
+      }
+      var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+      msg.innerHTML = isIOS
+        ? '📲 On iPhone: tap <b>Share ⬆️</b> at the bottom of Safari, then <b>Add to Home Screen</b>.'
+        : '📲 Use your browser menu <b>⋮</b> → <b>Install app</b> / <b>Add to Home screen</b>.';
+      msg.className = '';
+    });
+  })();
+
+  // ---------- 4-bit bi-directional converter (Binary Guess notes) ----------
+  function convSystem(id, label, cls){
+    var w = [8,4,2,1], bits = '', labs = '';
+    for (var i = 0; i < 4; i++){
+      bits += '<button type="button" class="convBit" data-sys="' + id + '" data-i="' + i + '">0</button>';
+      labs += '<span>' + w[i] + '</span>';
+    }
+    return '<div class="convBox ' + cls + '">' +
+      '<div class="convTitle">Converter System ' + id + ' <span>(' + label + ')</span></div>' +
+      '<div class="convBits">' + bits + '</div>' +
+      '<div class="convLabels">' + labs + '</div>' +
+      '<div class="convDecLabel">Decimal value (0 – 15)</div>' +
+      '<input class="convDec" data-sys="' + id + '" inputmode="numeric" maxlength="2" value="0">' +
+      '<button type="button" class="convClear" data-sys="' + id + '">Clear System ' + id + '</button>' +
+    '</div>';
+  }
+
+  function convRefresh(sys, from){
+    var bitsEls = document.querySelectorAll('.convBit[data-sys="' + sys + '"]');
+    var dec = document.querySelector('.convDec[data-sys="' + sys + '"]');
+    if (!bitsEls.length || !dec) return;
+    var w = [8,4,2,1], v;
+    if (from === 'dec'){                       // decimal typed → light the bits
+      v = parseInt(dec.value, 10);
+      if (isNaN(v)) v = 0;
+      if (v > 15) { v = 15; dec.value = '15'; }
+      if (v < 0)  { v = 0;  dec.value = '0';  }
+      for (var i = 0; i < 4; i++){
+        var on = (v & w[i]) !== 0;
+        bitsEls[i].textContent = on ? '1' : '0';
+        bitsEls[i].classList.toggle('on', on);
+      }
+    } else {                                   // bits toggled → show the decimal
+      v = 0;
+      for (var j = 0; j < 4; j++) if (bitsEls[j].classList.contains('on')) v += w[j];
+      dec.value = String(v);
+    }
+  }
+
+  function wireConverter(){
+    var box = document.getElementById('logicBox');
+    if (!box || box.dataset.convWired) return;
+    box.dataset.convWired = '1';
+    box.addEventListener('click', function(e){
+      var b = e.target.closest ? e.target.closest('.convBit') : null;
+      if (b){
+        var on = !b.classList.contains('on');
+        b.classList.toggle('on', on);
+        b.textContent = on ? '1' : '0';
+        if (soundOn) ensureAudio();
+        sfx(on ? 'line' : 'place');
+        convRefresh(b.dataset.sys, 'bit');
+        return;
+      }
+      var c = e.target.closest ? e.target.closest('.convClear') : null;
+      if (c){
+        var dec = document.querySelector('.convDec[data-sys="' + c.dataset.sys + '"]');
+        if (dec) dec.value = '0';
+        convRefresh(c.dataset.sys, 'dec');
+        sfx('place');
+      }
+    });
+    box.addEventListener('input', function(e){
+      var d = e.target.classList && e.target.classList.contains('convDec') ? e.target : null;
+      if (!d) return;
+      d.value = d.value.replace(/[^0-9]/g, '');
+      convRefresh(d.dataset.sys, 'dec');
+    });
+  }
+
+  // ---------- Binary Number Guess ----------
+  // Switches 1-4 carry the TENS digit as binary bits 8,4,2,1; switches 5-8 do the
+  // same for the UNITS digit. Lists are GENERATED from that rule (the printed
+  // magazine table has typos: it shows 36 and 92 inside the odd-units switch).
+  var BIN_W = [8,4,2,1];
+  var binOn = [false,false,false,false,false,false,false,false];
+
+  function binMembers(sw){          // sw = 1..8
+    var w = BIN_W[(sw-1) % 4], tens = sw <= 4, out = [];
+    for (var n = 1; n <= 99; n++){
+      var d = tens ? Math.floor(n/10) : (n % 10);
+      if (d & w) out.push(n);
+    }
+    return out;
+  }
+
+  function buildBinary(){
+    var host = document.getElementById('binaryBlocks');
+    if (!host || host.dataset.built) return;
+    var html = '';
+    [[1,'FIRST digit (tens)'],[5,'SECOND digit (units)']].forEach(function(blk){
+      var start = blk[0];
+      html += '<div class="binBlock"><div class="binBlockTitle">' + blk[1] + ' — bits 8 · 4 · 2 · 1</div><div class="binGrid">';
+      for (var i = 0; i < 4; i++){
+        var sw = start + i, nums = binMembers(sw);
+        html += '<button type="button" class="binCard" data-sw="' + sw + '">' +
+                  '<span class="binHead">Box ' + sw + ' <span style="opacity:.7">(' + BIN_W[i] + ')</span></span>' +
+                  '<span class="binNums">' + nums.join(' ') + '</span>' +
+                '</button>';
+      }
+      html += '</div></div>';
+    });
+    host.innerHTML = html;
+    host.dataset.built = '1';
+    host.addEventListener('click', function(e){
+      var b = e.target.closest ? e.target.closest('.binCard') : null;
+      if (!b) return;
+      var sw = +b.dataset.sw;
+      binOn[sw-1] = !binOn[sw-1];
+      b.classList.toggle('on', binOn[sw-1]);
+      if (soundOn) ensureAudio();
+      sfx(binOn[sw-1] ? 'line' : 'place', (sw % 2 === 1) ? -0.6 : 0.6);   // left-column boxes in the left ear
+      binaryReadout();
+    });
+  }
+
+  function binaryReadout(){
+    var el = document.getElementById('binaryReadout');
+    if (!el) return;
+    var tens = 0, units = 0;
+    for (var i = 0; i < 4; i++) if (binOn[i]) tens  += BIN_W[i];
+    for (var j = 4; j < 8; j++) if (binOn[j]) units += BIN_W[j-4];
+    var n = tens * 10 + units;
+    var bits = function(v){ return ((v & 8)?1:0) + '' + ((v & 4)?1:0) + ((v & 2)?1:0) + ((v & 1)?1:0); };
+    if (n === 0){
+      el.innerHTML = 'Think of a number from <b>1 to 99</b>.<br>Tap every box <b>where your guess number appears</b>…';
+      return;
+    }
+    el.innerHTML = 'tens <span class="bits">' + bits(tens) + '</span> = ' + tens +
+                   ' &nbsp;·&nbsp; units <span class="bits">' + bits(units) + '</span> = ' + units +
+                   '<span class="big">Your number is ' + n + '! 🎉</span>';
+    if (n !== binaryReadout.last){
+      binaryReadout.last = n;
+      sfx('win'); celebrate();
+    }
+  }
+
+  function resetBinary(){
+    binOn = [false,false,false,false,false,false,false,false];
+    binaryReadout.last = null;
+    var cards = document.querySelectorAll('#binaryPanel .binCard');
+    for (var i = 0; i < cards.length; i++) cards[i].classList.remove('on');
+    binaryReadout();
+  }
+
+  // Swap the whole puzzle UI for the binary panel (and back)
+  function showBinaryMode(on){
+    ['targetPill','solvedCounter','learnRow','learnHint','boardWrap','rotateHint','keypad','playRow']
+      .forEach(function(id){
+        var el = document.getElementById(id);
+        if (el) el.style.display = on ? 'none' : '';
+      });
+    var bp = document.getElementById('binaryPanel');
+    if (bp) bp.style.display = on ? 'block' : 'none';
+    if (on){
+      stopDemos();
+      instCard.innerHTML = '<b>Binary Number Guess!</b> Think of a number from <b>1 to 99</b>, then tap every box <b>where your guess number appears</b> — the binary bits will name it. 🔢';
+      document.getElementById('logicBox').innerHTML =
+        '<h3>📐 Binary Number Guess — how the trick works</h3>' +
+        '<p>Every digit from <b>0 to 9</b> can be built from just four values: <b>8, 4, 2 and 1</b>. ' +
+        'For example <b>9 = 8 + 1</b> and <b>6 = 4 + 2</b>. Writing which ones you used gives the <b>binary</b> code: ' +
+        '9 becomes <b>1001</b> and 6 becomes <b>0110</b>.</p>' +
+        '<ol style="margin:10px 0; padding-left:20px;">' +
+          '<li><b>Boxes 1–4</b> hold the <b>tens</b> digit — box 1 lists every number whose tens digit contains 8, box 2 the 4, box 3 the 2, box 4 the 1.</li>' +
+          '<li><b>Boxes 5–8</b> do exactly the same for the <b>units</b> digit.</li>' +
+          '<li>So the boxes you pick <b>are</b> the binary code. Add their values back up and the number appears — no guessing at all!</li>' +
+          '<li><b>Example — 99:</b> tens 9 = 8+1 → boxes <b>1</b> and <b>4</b>; units 9 = 8+1 → boxes <b>5</b> and <b>8</b>. ✅</li>' +
+        '</ol>' +
+        '<p><b>💡 Why 4 bits?</b> Four switches make 16 combinations (0–15), which is more than the ten digits 0–9 — just enough to name every digit.</p>' +
+        '<h3 style="margin-top:16px;">🔢 4-Bit Converter — works both ways</h3>' +
+        '<p style="margin-bottom:2px;">Tap the bits to build a number, <i>or</i> type a decimal (0–15) and watch the bits light up. ' +
+        'System A is the <b>tens</b> digit, System B the <b>units</b> — together they make any number to 99.</p>' +
+        convSystem('A', 'tens digit', '') +
+        convSystem('B', 'units digit', 'b');
+      wireConverter();
+      buildBinary(); resetBinary();
+      document.getElementById('binaryClear').onclick = resetBinary;
+    }
+  }
+
+  // Mark a cell as the active keypad target (bright .cursor highlight)
+  function setActive(cell){
+    if (!cell) return;
+    activeCell = cell;
+    for (var r = 0; r < cells.length; r++){
+      var row = cells[r] || [];
+      for (var c = 0; c < row.length; c++) row[c].classList.toggle('cursor', row[c] === cell);
+    }
+    if (isBirthday()){ fillRamanujan(); update(); }   // leaving a date box may complete the square
+  }
+
+  // The cell the keypad should act on (active one, else first empty, else first cell)
+  function currentCell(){
+    if (activeCell && activeCell.parentNode && !activeCell.readOnly) return activeCell;
+    for (var r = 0; r < cells.length; r++) for (var c = 0; c < cells[r].length; c++)
+      if (cells[r][c].value === '' && !cells[r][c].readOnly) return cells[r][c];
+    return cells[0] && cells[0][0];
+  }
+
+  // Move the cursor to the next EMPTY cell (row-major, wrapping). Skips filled ones.
+  function focusNext(inp){
+    var pz = PUZZLES[currentSize];
+    var total = pz.rows * pz.cols;
+    var start = (+inp.dataset.r) * pz.cols + (+inp.dataset.c) + 1;
+    for (var k = 0; k < total; k++){
+      var idx = (start + k) % total;
+      var r = (idx / pz.cols) | 0, c = idx % pz.cols;
+      if (cells[r] && cells[r][c] && cells[r][c].value === '' && !cells[r][c].readOnly){
+        setActive(cells[r][c]);
+        if (useSysKb) cells[r][c].focus();
+        return;
+      }
+    }
+  }
+
+  function focusPrev(inp){
+    var pz = PUZZLES[currentSize];
+    var r = +inp.dataset.r, c = +inp.dataset.c - 1;
+    if (c < 0){ c = pz.cols - 1; r--; }
+    if (r >= 0 && cells[r] && cells[r][c]){ setActive(cells[r][c]); if (useSysKb) cells[r][c].focus(); }
+  }
+
+  // Core input processing — shared by the native input event and the custom keypad.
+  function processInput(cell){
+    // keep an optional leading minus: negative numbers make valid magic squares too
+    var neg = cell.value.charAt(0) === '-';
+    cell.value = (neg ? '-' : '') + cell.value.replace(/[^0-9]/g, '');
+    if (cell.value !== '') sfx('place', panForCell(cell));   // pop sounds from the cell's side of the board
+    duckMusic();                           // soften the music while numbers are being entered
+    if (isBirthday()) fillRamanujan();     // the rest of the square writes itself
+    startTimer();
+    update();
+    // The cursor STAYS on this cell so any number can be typed (22, 333, 4444…).
+    // It only leaves when the cell is full (4 digits); otherwise the player moves
+    // it themselves by tapping a cell or using the ← ↑ ↓ → keys.
+    if (cell.value.length >= 4) focusNext(cell);
+  }
+
+  function onInput(e){ setActive(e.target); processInput(e.target); }
+
+  function onKeyDown(e){
+    if (e.key === 'Enter') { focusNext(e.target); return; }
+    if (e.key === 'Backspace' && e.target.value === '') { focusPrev(e.target); return; }
+    if (e.key === 'ArrowRight'){ e.preventDefault(); kpMove(0, 1); }
+    else if (e.key === 'ArrowLeft'){ e.preventDefault(); kpMove(0, -1); }
+    else if (e.key === 'ArrowUp'){ e.preventDefault(); kpMove(-1, 0); }
+    else if (e.key === 'ArrowDown'){ e.preventDefault(); kpMove(1, 0); }
+  }
+
+  // ---- Custom keypad actions ----
+  function kpDigit(d){
+    var cell = currentCell();
+    if (!cell || cell.readOnly || cell.value.length >= 4) return;
+    setActive(cell);
+    cell.value += d;
+    processInput(cell);
+  }
+  function kpSign(){
+    var cell = currentCell();
+    if (!cell || cell.readOnly) return;
+    setActive(cell);
+    cell.value = cell.value.charAt(0) === '-' ? cell.value.slice(1) : ('-' + cell.value);
+    processInput(cell);
+  }
+  function kpBack(){
+    var cell = currentCell();
+    if (!cell || cell.readOnly) return;
+    setActive(cell);
+    if (cell.value.length > 0){ cell.value = cell.value.slice(0, -1); startTimer(); update(); }
+    else focusPrev(cell);
+  }
+  function kpMove(dr, dc){
+    var cell = currentCell(); if (!cell) return;
+    var pz = PUZZLES[currentSize];
+    var r = +cell.dataset.r + dr, c = +cell.dataset.c + dc;
+    if (r >= 0 && r < pz.rows && c >= 0 && c < pz.cols && cells[r] && cells[r][c]){
+      setActive(cells[r][c]);
+      if (useSysKb) cells[r][c].focus();
+    }
+  }
+  function toggleSysKb(btn){
+    useSysKb = !useSysKb;
+    var mode = useSysKb ? 'numeric' : 'none';
+    for (var r = 0; r < cells.length; r++) for (var c = 0; c < cells[r].length; c++) cells[r][c].inputMode = mode;
+    if (btn){
+      btn.classList.toggle('on', useSysKb);
+      // label reflects what a tap will DO next
+      btn.textContent = useSysKb ? '🎹 App keypad' : '⌨️ System keyboard';
+    }
+    var cell = currentCell();
+    if (useSysKb){
+      if (cell) cell.focus();   // pop the system keyboard on this single press
+    } else if (cell){
+      cell.blur();              // switching back to the app keypad dismisses the OS keyboard
+    }
+  }
+  
+
+  
+  // Reset
+  function resetVisuals(){
+    var puzzle = PUZZLES[currentSize];
+    solvedFlag = false;
+    targetPill.classList.remove('solved');
+    targetPill.classList.remove('preview');
+    for (var r = 0; r < puzzle.rows; r++) for (var c = 0; c < puzzle.cols; c++){
+      cells[r][c].value = '';
+      cells[r][c].className = 'cell';
+      cells[r][c].readOnly = false;
+    }
+    markAnchors();   // re-apply the guide shading for the current size (all sizes)
+    setActive(cells[0][0]);   // className reset wiped the cursor — put it back on cell 1
+    resetTimer();
+  }
+  
+  
+  // Clear button
+  document.getElementById('clearBtn').addEventListener('click', function(){
+    stopDemos();      // also cancels a running (or stuck) SHOW / Watch demo
+    resetVisuals();
+    msg.textContent = 'Board cleared — set your own target!';
+    msg.className = '';
+    update();
+  });
+  
+  // Peek button
+  // Bring the whole board into view (plus the keypad when it also fits) so the
+  // player never has to scroll while SHOW / Watch Me Solve is running.
+  function showWholeBoard(){
+    var bc = document.querySelector('.boardContainer');
+    if (!bc) return;
+    var vh = window.innerHeight || document.documentElement.clientHeight;
+    var sy = window.pageYOffset || document.documentElement.scrollTop || 0;
+    var top = bc.getBoundingClientRect().top + sy;
+    var boardBottom = bc.getBoundingClientRect().bottom + sy;
+    var kp = document.getElementById('keypad');
+    var bottom = boardBottom;
+    if (kp){
+      var kpBottom = kp.getBoundingClientRect().bottom + sy;
+      if (kpBottom - top <= vh - 12) bottom = kpBottom;   // keypad fits too — include it
+    }
+    var h = bottom - top;
+    var y = (h <= vh - 12) ? top - (vh - h) / 2 : top - 8;   // centre if it fits, else align top
+    try { window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' }); }
+    catch (e) { window.scrollTo(0, Math.max(0, y)); }
+  }
+
+  document.getElementById('peekBtn').addEventListener('click', function(){
+    if (peeking || solvedFlag) return;
+    showWholeBoard();
+    peeking = true;
+    var btn = this;
+    var puzzle = PUZZLES[currentSize];
+    var saved = snapshot();
+    
+    // Show solution
+    for (var r = 0; r < puzzle.rows; r++) for (var c = 0; c < puzzle.cols; c++){
+      // Show ENTIRE GRID for all sizes (not just anchors for 4x4)
+      cells[r][c].value = puzzle.example[r][c];
+      
+      cells[r][c].classList.remove('dup');
+      cells[r][c].classList.add('peek');  // Add peek class for background color
+      cells[r][c].readOnly = true;
+      cells[r][c].blur();
+    }
+    
+    // Also add peek class to badges for contrast (badges is keyed by line name,
+    // each value an array of badge elements — iterate keys, not .length)
+    Object.keys(badges).forEach(function(k){
+      badges[k].forEach(function(b){ b.classList.add('peek'); });
+    });
+    
+    
+    update();
+    // Just show the solution quietly - no message needed
+    var secs = 3;
+    btn.textContent = '👁 ' + secs;
+    peekIv = setInterval(function(){
+      secs--;
+      if (secs > 0){ btn.textContent = '👁 ' + secs; return; }
+      clearInterval(peekIv); peekIv = null;
+      var i = 0;
+      for (var r2 = 0; r2 < puzzle.rows; r2++) for (var c2 = 0; c2 < puzzle.cols; c2++){
+        cells[r2][c2].value = saved[i++];
+        cells[r2][c2].classList.remove('peek');
+        cells[r2][c2].readOnly = false;
+      }
+      Object.keys(badges).forEach(function(k){          // clear the badge tint added at SHOW start
+        badges[k].forEach(function(b){ b.classList.remove('peek'); });
+      });
+
+      btn.textContent = '👁 SHOW';
+      peeking = false;
+      update();
+    }, 1000);
+  });
+  
+  // Watch Me Solve — animated demo. 4×4/8×8 reveal in method order (keep down, then flip back up); other sizes reveal 1..N.
+  document.getElementById('watchBtn').addEventListener('click', function(){
+    if (watching || peeking || solvedFlag) return;
+    showWholeBoard();
+    watching = true;
+    var btn = this;
+    btn.disabled = true;
+    document.getElementById('peekBtn').disabled = true;
+    var puzzle = PUZZLES[currentSize];
+    var R = puzzle.rows, Cc = puzzle.cols, N = R * Cc;
+    resetVisuals();
+    update();
+    // Reveal ORDER teaches the method:
+    //  • 4×4 / 8×8 (keep-&-flip, doubly-even): Pass 1 = the "start sequence" cells
+    //    top→bottom, left→right (1,4,5,8 … 64); Pass 2 = the flip cells
+    //    bottom→top, right→left (2,3,6,7 … 62,63). Two opposite sweeps.
+    //  • other sizes: simple value order 1..N.
+    var order = [];
+    var keptCount = 0;
+    var dualPass = (currentSize === '4x4' || currentSize === '8x8');
+    if (isBirthday()) {
+      // type Ramanujan's own date across the top row; the 12 cells below appear by themselves
+      for (var bc = 0; bc < Cc; bc++) order.push([0, bc]);
+      N = Cc;
+    } else if (dualPass) {
+      for (var pr = 0; pr < R; pr++) for (var pc = 0; pc < Cc; pc++)
+        if (puzzle.example[pr][pc] === pr * Cc + pc + 1) { order.push([pr, pc]); keptCount++; }   // Pass 1: keep (top→bottom)
+      for (var fr = R - 1; fr >= 0; fr--) for (var fc = Cc - 1; fc >= 0; fc--)
+        if (puzzle.example[fr][fc] !== fr * Cc + fc + 1) order.push([fr, fc]);   // Pass 2: flip (bottom→top, right→left)
+    } else {
+      // reveal in ascending value order — works for 1..N grids AND the 3³ powers-of-2 grid
+      for (var r = 0; r < R; r++) for (var c = 0; c < Cc; c++) order.push([r, c]);
+      order.sort(function(a, b){ return puzzle.example[a[0]][a[1]] - puzzle.example[b[0]][b[1]]; });
+    }
+    var flipSum = N + 1;   // partner sum for the demo grid: 17 for 4×4, 65 for 8×8
+    // slow, mind-mapping pace on the small sizes; scale down on the big grids so the demo stays ~18–20s
+    var delay = isBirthday() ? 950 : currentSize === '10x10' ? 500 : currentSize === '8x8' ? 430 : currentSize === '6x6' ? 500 : 1100;
+    var i = 0;
+    msg.textContent = isBirthday()
+      ? '▶ Typing Ramanujan’s birthday 22-12-1887 — watch the rest appear…'
+      : dualPass
+        ? '▶ Step 1 — write the START sequence, keep these going down…'
+        : '▶ Watch how the ' + currentSize.replace('x','×') + ' builds itself…';
+    msg.className = '';
+    watchIv = setInterval(function(){
+      if (i >= N){
+        clearInterval(watchIv); watchIv = null;
+        for (var r = 0; r < R; r++) for (var c = 0; c < Cc; c++){ cells[r][c].classList.add('win'); cells[r][c].readOnly = true; }
+        msg.textContent = '✨ That is the pattern! Tap CLEAR and try it yourself.';
+        msg.className = 'win';
+        btn.disabled = false;
+        document.getElementById('peekBtn').disabled = false;
+        watching = false;
+        return;
+      }
+      if (dualPass && i === keptCount){
+        msg.textContent = '▶ Step 2 — FLIP-fill the rest, coming back up (' + flipSum + ' − n)…';
+      }
+      var rc = order[i];
+      if (rc){
+        var cell = cells[rc[0]][rc[1]];
+        cell.value = String(puzzle.example[rc[0]][rc[1]]);
+        cell.classList.remove('placing');
+        void cell.offsetWidth;       // restart the drop animation
+        cell.classList.add('placing');
+        sfx('tick', panForCell(cell));   // tick follows the cell being revealed — sweeps with the demo
+        if (isBirthday()) fillRamanujan();   // the square completes itself once all 4 dates are in
+        update();
+      }
+      i++;
+    }, delay);
+  });
+
+  // Offline panel toggle
+  document.getElementById('offlineBtn').addEventListener('click', function(){
+    var box = document.getElementById('offlineBox');
+    var open = box.style.display === 'block';
+    box.style.display = open ? 'none' : 'block';
+    this.textContent = open ? '\ud83d\udcf2 Play Offline \u25bc' : '\ud83d\udcf2 Play Offline \u25b2';
+  });
+  
+  // Logic toggle
+  document.getElementById('logicBtn').addEventListener('click', function(){
+    var box = document.getElementById('logicBox');
+    var open = box.style.display === 'block';
+    box.style.display = open ? 'none' : 'block';
+    this.textContent = open ? '📐 Show Math Logic ▼' : '📐 Hide Math Logic ▲';
+  });
+
+  // Sound on/off toggle (remembered across visits; the tap itself unlocks WebAudio)
+  refreshSoundBtn();
+  document.getElementById('soundBtn').addEventListener('click', function(){
+    soundOn = !soundOn;
+    localStorage.setItem('mmSound', soundOn ? 'on' : 'off');
+    refreshSoundBtn();
+    refreshMusicBtn();   // music label mirrors the master state instantly
+    if (soundOn){
+      ensureAudio(); sfx('line');   // little confirmation blip when turned on
+      if (musicOn) ensureMusic();   // music resumes if its own toggle is still ON
+    } else if (bgm){
+      // 🔊 is the master switch: turning it OFF silences the music too (night play)
+      fadeMusicTo(0);
+      setTimeout(function(){ if (bgm && !soundOn) bgm.pause(); }, 1000);
+    }
+  });
+
+  // Music on/off (separate from the effects toggle, remembered across visits)
+  refreshMusicBtn();
+  document.getElementById('musicBtn').addEventListener('click', function(){
+    musicOn = !musicOn;
+    localStorage.setItem('mmMusic', musicOn ? 'on' : 'off');
+    refreshMusicBtn();
+    if (musicOn) ensureMusic();
+    else if (bgm){
+      fadeMusicTo(0);
+      setTimeout(function(){ if (bgm && !musicOn) bgm.pause(); }, 1000);
+    }
+  });
+
+  // Share — the installed app has no address bar, so offer the phone's own share
+  // sheet; fall back to copying the link when the browser has no Web Share API.
+  (function(){
+    var sBtn = document.getElementById('shareBtn');
+    if (!sBtn) return;
+    var LINK = 'https://kidsmathsmatrixpuzzle.github.io';
+    var TEXT = '🐒🎲 MathMatrix Pro++ — magic square puzzles for kids (5th grade & up). '
+             + '3×3 to 10×10 plus 3³ Multiply Magic. Free, works offline, no ads.';
+    sBtn.addEventListener('click', function(){
+      var payload = { title: 'Kids Maths Matrix Puzzle', text: TEXT, url: LINK };
+      if (navigator.share){
+        navigator.share(payload).catch(function(){});   // user cancelling is not an error
+        return;
+      }
+      var done = function(ok){
+        sBtn.textContent = ok ? '✅ Link copied — paste it anywhere!' : '📤 ' + LINK;
+        setTimeout(function(){ sBtn.textContent = '📤 Share this puzzle'; }, 3000);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(TEXT + '\n' + LINK).then(function(){ done(true); }, function(){ done(false); });
+      } else { done(false); }
+    });
+  })();
+
+  // Custom keypad (numbers + navigation), so the OS keyboard never covers the board
+  var kpEl = document.getElementById('keypad');
+  if (kpEl){
+    kpEl.addEventListener('click', function(e){
+      var b = e.target.closest ? e.target.closest('button') : null;
+      if (!b) return;
+      if (soundOn) ensureAudio();
+      if (b.dataset.k !== undefined) kpDigit(b.dataset.k);
+      else if (b.dataset.nav === 'sign') kpSign();
+      else if (b.dataset.nav === 'back') kpBack();
+      else if (b.dataset.nav === 'up') kpMove(-1, 0);
+      else if (b.dataset.nav === 'down') kpMove(1, 0);
+      else if (b.dataset.nav === 'left') kpMove(0, -1);
+      else if (b.dataset.nav === 'right') kpMove(0, 1);
+      else if (b.dataset.nav === 'sys') toggleSysKb(b);
+    });
+  }
+
+  // "Coming Soon" preview chips — announce until the real puzzle launches
+  document.querySelectorAll('.comingChip').forEach(function(chip){
+    chip.addEventListener('click', function(){
+      msg.textContent = '🔜 ' + this.dataset.soon + ' — coming soon! Stay tuned ✨';
+      msg.className = '';
+    });
+  });
+  
+  // Re-fit digit sizes on orientation / breakpoint change
+  window.addEventListener('resize', fitBoard);
+  window.addEventListener('orientationchange', function(){ setTimeout(fitBoard, 250); });
+
+  // Init with 3x3
+  initBoard();
+  applyTheme(); // Apply colors and diagonal guide
+})();
+
+// PWA: register service worker for full offline play
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js');
+  });
+}
+
+// Ask the browser to keep our offline cache "persistent" (much less likely to be
+// evicted under storage pressure). Best-effort: may be granted silently, or not
+// at all on some mobile browsers — either way the game still works.
+if (navigator.storage && navigator.storage.persist) {
+  navigator.storage.persisted().then(function (already) {
+    if (!already) navigator.storage.persist();
+  }).catch(function () {});
+}
+
+// iOS Safari ignores user-scalable=no, so pinch-zoom still shifts the layout.
+// Block the zoom gestures directly so the grid stays put like on Android.
+['gesturestart','gesturechange','gestureend'].forEach(function(evt){
+  document.addEventListener(evt, function(e){ e.preventDefault(); }, { passive:false });
+});
+
+// Show the current cached build, and give a one-tap "clear cache & reload to newest"
+// button — the reliable escape hatch when a device is stuck on an old cached version.
+(function(){
+  // Build baked into this HTML — always reflects the exact version being run,
+  // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
+  var BUILD_VER = 'v131';
+  var verEl = document.getElementById('verLabel');
+  if (verEl) verEl.textContent = BUILD_VER;
+
+  var upBtn = document.getElementById('updateBtn');
+  // Reflect the network state on the button so users never trigger a destructive
+  // update while offline (which would wipe the cache and strand offline play).
+  function reflectNet(){
+    if (!upBtn) return;
+    if (navigator.onLine){
+      upBtn.textContent = '🔄 Online Update';
+      upBtn.style.borderColor = '#f59e0b'; upBtn.style.color = '#fbbf24';
+    } else {
+      upBtn.textContent = '📴 Offline';
+      upBtn.style.borderColor = '#555'; upBtn.style.color = '#888';
+    }
+  }
+  if (upBtn){
+    reflectNet();
+    window.addEventListener('online', reflectNet);
+    window.addEventListener('offline', reflectNet);
+    upBtn.addEventListener('click', function(){
+      if (!navigator.onLine){
+        // NEVER clear the cache offline — that breaks offline play. Just tell the user.
+        upBtn.textContent = '📴 No internet — connect first';
+        setTimeout(reflectNet, 2500);
+        return;
+      }
+      upBtn.textContent = '⏳ Updating…'; upBtn.disabled = true;
+      var jobs = [];
+      try {
+        if ('serviceWorker' in navigator && navigator.serviceWorker.getRegistrations){
+          jobs.push(navigator.serviceWorker.getRegistrations().then(function(rs){
+            return Promise.all(rs.map(function(r){ return r.unregister(); }));
+          }));
+        }
+        if (window.caches && caches.keys){
+          jobs.push(caches.keys().then(function(ks){
+            return Promise.all(ks.map(function(k){ return caches.delete(k); }));
+          }));
+        }
+      } catch (e) {}
+      var reload = function(){ location.reload(); };
+      Promise.all(jobs).then(reload).catch(reload);
+    });
+  }
+})();
+</script>
+</body>
+</html>

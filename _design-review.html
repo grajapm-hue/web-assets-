@@ -1,0 +1,270 @@
+<title>MathMatrix — level chooser, before & after</title>
+<style>
+:root{
+  --ground:#FBFAFD; --panel:#FFFFFF; --edge:#E7E2F2;
+  --ink:#1A1533; --ink-2:#4A4270; --ink-3:#7C74A0;
+  --mark:#7C3AED; --warn:#B45309;
+  --app-bg:#12102A; --app-bg2:#1A1640; --app-ink:#F6F4FF; --app-dim:#A49BCB;
+  --r:16px;
+  --sans:"Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root{ --ground:#0E0C1B; --panel:#171331; --edge:#2A2350;
+         --ink:#F3F0FF; --ink-2:#BDB4E4; --ink-3:#8B82B4; --mark:#C4B5FD; --warn:#FCD34D; }
+}
+:root[data-theme="dark"]{ --ground:#0E0C1B; --panel:#171331; --edge:#2A2350;
+  --ink:#F3F0FF; --ink-2:#BDB4E4; --ink-3:#8B82B4; --mark:#C4B5FD; --warn:#FCD34D; }
+:root[data-theme="light"]{ --ground:#FBFAFD; --panel:#FFFFFF; --edge:#E7E2F2;
+  --ink:#1A1533; --ink-2:#4A4270; --ink-3:#7C74A0; --mark:#7C3AED; --warn:#B45309; }
+
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--ground);color:var(--ink);font-family:var(--sans);
+  line-height:1.6;padding:26px 18px 60px;-webkit-font-smoothing:antialiased;}
+.wrap{max-width:960px;margin:0 auto;display:flex;flex-direction:column;gap:26px;}
+
+.eyebrow{font-size:11.5px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--mark);}
+h1{font-size:clamp(23px,5vw,33px);line-height:1.2;font-weight:800;text-wrap:balance;letter-spacing:-.4px;}
+.lede{font-size:15.5px;color:var(--ink-2);max-width:62ch;}
+
+.cols{display:grid;gap:18px;grid-template-columns:1fr;}
+@media(min-width:760px){ .cols{grid-template-columns:1fr 1fr;align-items:start;} }
+
+.pane{background:var(--panel);border:1px solid var(--edge);border-radius:var(--r);overflow:hidden;}
+.paneHead{display:flex;align-items:center;gap:9px;padding:12px 15px;border-bottom:1px solid var(--edge);}
+.tag{font-size:10.5px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;
+  padding:4px 9px;border-radius:999px;}
+.tag.old{background:#F1E9FF;color:#5B21B6;}
+.tag.new{background:#DCFCE7;color:#14532D;}
+@media (prefers-color-scheme:dark){ .tag.old{background:#2E2258;color:#DDD0FF;} .tag.new{background:#123524;color:#A7F3D0;} }
+:root[data-theme="dark"] .tag.old{background:#2E2258;color:#DDD0FF;}
+:root[data-theme="dark"] .tag.new{background:#123524;color:#A7F3D0;}
+.paneHead b{font-size:14px;font-weight:700;}
+
+/* ── the phone: renders the real app CSS ── */
+.phone{background:linear-gradient(180deg,var(--app-bg2),var(--app-bg) 60%);
+  padding:14px 12px 18px;color:var(--app-ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
+.clay{box-shadow:4px 4px 10px rgba(0,0,0,.42),-3px -3px 8px rgba(255,255,255,.05),
+      inset 1px 1px 2px rgba(255,255,255,.08),inset -2px -2px 4px rgba(0,0,0,.22);}
+
+/* OLD chooser */
+.oldBar{background:#1a1a2e;border:2px solid #2f7ff0;border-radius:12px;padding:12px 14px;}
+.oldRow{display:flex;gap:12px;align-items:stretch;}
+.oldLabel{writing-mode:vertical-rl;transform:rotate(180deg);font-size:14px;font-weight:800;
+  color:#f87171;letter-spacing:.5px;flex:0 0 auto;text-align:center;white-space:nowrap;}
+.oldGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;flex:1 1 auto;min-width:0;}
+.ob{border:2px solid #555;border-radius:16px;padding:8px 10px;font-size:14px;font-weight:900;
+  background:#222;color:#888;text-align:center;overflow-wrap:break-word;}
+.ob.act{background:#0a2a6e;color:#fff;}
+
+/* NEW chooser — copied from the shipped stylesheet */
+.newLabel{font-size:12.5px;letter-spacing:1.7px;text-transform:uppercase;color:#f87171;
+  font-weight:800;display:block;margin-bottom:2px;}
+.mHead{display:flex;align-items:center;gap:10px;margin:14px 0 9px;}
+.mIco{width:36px;height:36px;flex:none;border-radius:12px;display:grid;place-items:center;
+  font-size:17px;background:linear-gradient(150deg,var(--m1),var(--m2));
+  box-shadow:3px 3px 8px rgba(0,0,0,.42),-2px -2px 6px rgba(255,255,255,.05);}
+.mHead b{display:block;font-size:14px;font-weight:900;color:#fff;}
+.mHead i{display:block;font-style:normal;font-size:11px;font-weight:600;color:var(--app-dim);line-height:1.45;}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.cards.solo{grid-template-columns:1fr;}
+.lv{display:flex;align-items:center;gap:11px;text-align:left;padding:11px 13px;border:0;
+  border-radius:20px;color:#08101f;position:relative;overflow:hidden;
+  background:linear-gradient(152deg,var(--c1),var(--c2));}
+.lv::after{content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(158deg,rgba(255,255,255,.36),rgba(255,255,255,0) 56%);}
+.lv > *{position:relative;z-index:1;}
+.lvGrid{width:36px;height:36px;flex:none;border-radius:10px;position:relative;overflow:hidden;
+  background:rgba(7,12,26,.28);box-shadow:inset 1px 1px 3px rgba(0,0,0,.38);}
+.lvGrid::before{content:'';position:absolute;inset:4px;
+  background-image:radial-gradient(circle at 50% 50%,rgba(255,255,255,.95) 30%,transparent 33%);
+  background-size:calc(100% / var(--n)) calc(100% / var(--n));}
+.lvGlyph{width:36px;height:36px;flex:none;border-radius:10px;display:grid;place-items:center;
+  font-size:18px;background:rgba(7,12,26,.28);box-shadow:inset 1px 1px 3px rgba(0,0,0,.38);}
+.lvText{flex:1;min-width:0;}
+.lvName{display:block;font-size:15px;font-weight:900;line-height:1.15;}
+.lvDiff{display:block;font-size:11px;font-weight:800;color:#0d1830;margin-top:1px;}
+.lvMeta{display:block;font-size:10px;font-weight:700;color:#1a2740;margin-top:2px;line-height:1.35;}
+.lv.act{outline:3px solid rgba(255,255,255,.92);outline-offset:-3px;
+  box-shadow:0 0 0 4px rgba(255,255,255,.16),6px 8px 20px rgba(0,0,0,.5);}
+.lvNow{display:none;}
+.lv.act .lvNow{display:inline-block;margin-top:4px;font-size:9px;font-weight:900;letter-spacing:.7px;
+  background:#08101f;color:#fff;padding:2px 8px;border-radius:999px;}
+
+/* ── notes ── */
+.card{background:var(--panel);border:1px solid var(--edge);border-radius:var(--r);padding:18px 19px;}
+h2{font-size:18px;font-weight:800;letter-spacing:-.2px;margin-bottom:11px;}
+.list{display:flex;flex-direction:column;gap:13px;}
+.item{display:grid;grid-template-columns:26px 1fr;gap:11px;align-items:start;}
+.num{width:26px;height:26px;border-radius:8px;background:var(--mark);color:#fff;
+  font-size:12px;font-weight:800;display:grid;place-items:center;}
+@media (prefers-color-scheme:dark){ .num{color:#1A1533;} }
+:root[data-theme="dark"] .num{color:#1A1533;}
+.item b{font-size:14.5px;}
+.item p{font-size:13.5px;color:var(--ink-2);}
+.flag{border-left:3px solid var(--warn);background:color-mix(in srgb,var(--warn) 8%,transparent);
+  padding:13px 15px;border-radius:0 10px 10px 0;}
+.flag b{color:var(--warn);font-size:13.5px;display:block;margin-bottom:3px;}
+.flag p{font-size:13.5px;color:var(--ink-2);}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;
+  background:var(--ground);border:1px solid var(--edge);padding:1px 5px;border-radius:5px;}
+.foot{font-size:12.5px;color:var(--ink-3);text-align:center;padding-top:6px;}
+a{color:var(--mark);}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">MathMatrix · v136 · design review</div>
+    <h1>The level chooser, before and after</h1>
+    <p class="lede">Six of the nine tiles carried nothing but their size, so “3×3 / 4×4 / 5×5” all read
+      as the same tile. Here is what changed — shown at phone width, using the real stylesheet.</p>
+  </header>
+
+  <div class="cols">
+
+    <!-- BEFORE -->
+    <div class="pane">
+      <div class="paneHead"><span class="tag old">Before</span><b>v135 — one flat list</b></div>
+      <div class="phone">
+        <div class="oldBar clay">
+          <div class="oldRow">
+            <span class="oldLabel">Choose Difficulty</span>
+            <div class="oldGrid">
+              <div class="ob act">3×3 (Easy)</div>
+              <div class="ob" style="color:#c084fc;border-color:#a855f7;">4×4 (Hard)</div>
+              <div class="ob" style="color:#4ade80;border-color:#22c55e;">5×5 (Master)</div>
+              <div class="ob" style="color:#22d3ee;border-color:#06b6d4;">6×6 (Expert)</div>
+              <div class="ob" style="color:#818cf8;border-color:#6366f1;">8×8 (Champion)</div>
+              <div class="ob" style="color:#e879f9;border-color:#c026d3;">10×10 (Grandmaster)</div>
+              <div class="ob" style="color:#fbbf24;border-color:#f59e0b;">3³ (×)</div>
+              <div class="ob" style="color:#fb7185;border-color:#e11d48;">🎂 Sir Ramanujan MathMagic</div>
+              <div class="ob" style="color:#fcd34d;border-color:#84cc16;">🔢 Binary Number Guess</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AFTER -->
+    <div class="pane">
+      <div class="paneHead"><span class="tag new">After</span><b>v136 — grouped by mode</b></div>
+      <div class="phone">
+        <span class="newLabel">Choose Difficulty</span>
+
+        <div class="mHead" style="--m1:#7dd3fc;--m2:#38bdf8;">
+          <span class="mIco">➕</span>
+          <span><b>Add Magic</b><i>every row, column and diagonal adds up to the same total</i></span>
+        </div>
+        <div class="cards">
+          <div class="lv act clay" style="--c1:#9ec7ff;--c2:#60a5fa;">
+            <span class="lvGrid" style="--n:3"></span>
+            <span class="lvText"><b class="lvName">3×3</b><span class="lvDiff">Easy</span>
+              <span class="lvMeta">uses 1–9 · count-down</span><span class="lvNow">PLAYING</span></span>
+          </div>
+          <div class="lv clay" style="--c1:#ddb8ff;--c2:#c084fc;">
+            <span class="lvGrid" style="--n:4"></span>
+            <span class="lvText"><b class="lvName">4×4</b><span class="lvDiff">Hard</span>
+              <span class="lvMeta">uses 1–16 · fill &amp; swap</span></span>
+          </div>
+          <div class="lv clay" style="--c1:#9cf0bd;--c2:#4ade80;">
+            <span class="lvGrid" style="--n:5"></span>
+            <span class="lvText"><b class="lvName">5×5</b><span class="lvDiff">Master</span>
+              <span class="lvMeta">uses 1–25 · count-down</span></span>
+          </div>
+          <div class="lv clay" style="--c1:#86e9f7;--c2:#22d3ee;">
+            <span class="lvGrid" style="--n:6"></span>
+            <span class="lvText"><b class="lvName">6×6</b><span class="lvDiff">Expert</span>
+              <span class="lvMeta">uses 1–36 · four blocks</span></span>
+          </div>
+          <div class="lv clay" style="--c1:#b3bcff;--c2:#818cf8;">
+            <span class="lvGrid" style="--n:8"></span>
+            <span class="lvText"><b class="lvName">8×8</b><span class="lvDiff">Champion</span>
+              <span class="lvMeta">uses 1–64 · fill &amp; flip</span></span>
+          </div>
+          <div class="lv clay" style="--c1:#f5aefb;--c2:#e879f9;">
+            <span class="lvGrid" style="--n:10"></span>
+            <span class="lvText"><b class="lvName">10×10</b><span class="lvDiff">Grandmaster</span>
+              <span class="lvMeta">uses 1–100 · four blocks</span></span>
+          </div>
+        </div>
+
+        <div class="mHead" style="--m1:#fcd98a;--m2:#f59e0b;">
+          <span class="mIco">✖️</span>
+          <span><b>Multiply Magic</b><i>the lines multiply to the same answer instead of adding</i></span>
+        </div>
+        <div class="cards solo">
+          <div class="lv clay" style="--c1:#fcd98a;--c2:#fbbf24;">
+            <span class="lvGlyph">✖️</span>
+            <span class="lvText"><b class="lvName">3³ Multiply</b><span class="lvDiff">Powers of two</span>
+              <span class="lvMeta">uses 1, 2, 4 … 256 · every line makes the same product</span></span>
+          </div>
+        </div>
+
+        <div class="mHead" style="--m1:#ffb3bf;--m2:#e11d48;">
+          <span class="mIco">🎂</span>
+          <span><b>Birthday Magic</b><i>type any date of birth and the square builds itself</i></span>
+        </div>
+        <div class="cards solo">
+          <div class="lv clay" style="--c1:#ffb3bf;--c2:#fb7185;">
+            <span class="lvGlyph">🎂</span>
+            <span class="lvText"><b class="lvName">Sir Ramanujan MathMagic</b><span class="lvDiff">Your own birthday</span>
+              <span class="lvMeta">4×4 · 18 magic groups · works with any date</span></span>
+          </div>
+        </div>
+
+        <div class="mHead" style="--m1:#f0e58a;--m2:#84cc16;">
+          <span class="mIco">🔢</span>
+          <span><b>Binary Magic</b><i>no grid at all — eight cards read your mind</i></span>
+        </div>
+        <div class="cards solo">
+          <div class="lv clay" style="--c1:#f0e58a;--c2:#fcd34d;">
+            <span class="lvGlyph">🔢</span>
+            <span class="lvText"><b class="lvName">Binary Number Guess</b><span class="lvDiff">Think a number</span>
+              <span class="lvMeta">8 cards · guesses anything from 1 to 99</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>What makes each tile different now</h2>
+    <div class="list">
+      <div class="item"><span class="num">1</span>
+        <div><b>A dot grid at its real size</b>
+        <p>Look at the small square on the left of each card. 3×3 is nine fat dots; 10×10 is a fine mesh.
+        That alone separates the six tiles that used to look identical — no reading required.</p></div></div>
+      <div class="item"><span class="num">2</span>
+        <div><b>The numbers it uses</b>
+        <p>1–9, 1–16, 1–25, 1–36, 1–64, 1–100. Different on every card, and it tells a child
+        how big the job is before they start.</p></div></div>
+      <div class="item"><span class="num">3</span>
+        <div><b>Its method</b>
+        <p>count-down · fill &amp; swap · four blocks · fill &amp; flip. This also quietly teaches that
+        3×3 and 5×5 share a method, and 6×6 and 10×10 share another.</p></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>One thing I left off on purpose</h2>
+    <div class="flag">
+      <b>No target numbers on the cards</b>
+      <p>Printing “every line = 15” would have been the easiest way to make the tiles look different —
+      and it would have wrecked the discovery the game is built on. The target stays
+      <code>?</code> until two lines agree and the player works it out. There is now a test that fails
+      if 15, 34, 65, 111, 260 or 505 ever appears on the chooser.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Your call on one detail</h2>
+    <p class="lede" style="margin-bottom:0;">“Choose Difficulty” used to be the red vertical label down the
+    side. With four separate mode groups it had nothing to stand beside, so I kept the words and moved
+    them to the top as a heading. If you want the vertical label back, it can return on the
+    <b>Add Magic</b> group only — that six-rung ladder is the only place “difficulty” really applies.</p>
+  </div>
+
+  <p class="foot">Rendered with the shipped stylesheet · live at kidsmathsmatrixpuzzle.github.io</p>
+</div>
