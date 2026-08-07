@@ -2023,6 +2023,27 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       case 'win':    [523,587,659,784,880,1047,1319].forEach(function(fr,i){ var pw = -0.8 + i*(1.6/6); tone(fr, i*0.06, 0.16, 'triangle', 0.16, pw); tone(fr*2, i*0.06, 0.10, 'sine', 0.05, pw); }); break; // cascade sweeps across
       case 'unlock': [392,523,659,784,1047].forEach(function(fr,i){ tone(fr, i*0.08, 0.18, 'triangle', 0.18, -0.5 + i*0.25); }); break; // power-up rises L→R
       case 'tick':   tone(700, 0, 0.045, 'square', 0.08, pan); break;                                  // tick from the revealed cell's side
+
+      /* ── beta: a distinct voice for each kind of touch, so a child learns
+            the app by ear as well as by eye. All generated, no files. ── */
+      case 'tab':    tone([520, 660], 0, 0.07, 'sine', 0.11); break;                    // moving between screens — soft lift
+      case 'back':   tone([660, 460], 0, 0.08, 'sine', 0.10); break;                    // going back — the same shape, downward
+      case 'card':   tone([420, 780], 0, 0.10, 'triangle', 0.16);                       // choosing a puzzle — a bright pop
+                     tone(1180, 0.05, 0.07, 'sine', 0.07); break;
+      case 'select': tone(880, 0, 0.035, 'sine', 0.07, pan); break;                     // landing on a box — barely there
+      case 'hint':   [660, 880, 1180].forEach(function(f, i){                           // a hint arriving — small shimmer
+                       tone(f, i * 0.055, 0.13, 'sine', 0.10 - i * 0.015); }); break;
+      case 'sheetUp':tone([300, 620], 0, 0.13, 'sine', 0.10); break;                    // a panel sliding up
+      case 'sheetDn':tone([620, 300], 0, 0.11, 'sine', 0.08); break;                    // and sliding away
+      case 'yes':    tone([600, 900], 0, 0.11, 'triangle', 0.15);                       // Mind Reader — a yes rises
+                     tone(1320, 0.06, 0.08, 'sine', 0.07); break;
+      case 'no':     tone([560, 380], 0, 0.12, 'triangle', 0.13); break;                // and a no falls
+      case 'reveal': [392, 523, 659, 880].forEach(function(f, i){                       // the number appears — little fanfare
+                       tone(f, i * 0.07, 0.20, 'triangle', 0.15, -0.6 + i * 0.4);
+                       tone(f * 2, i * 0.07, 0.12, 'sine', 0.05); }); break;
+      case 'star':   tone([1320, 1760], 0, 0.09, 'sine', 0.11); break;                  // a star lighting up
+      case 'sparkle':[1760, 2093, 2637].forEach(function(f, i){                         // confetti flying
+                       tone(f, i * 0.04, 0.09, 'sine', 0.06, -0.7 + i * 0.7); }); break;
       case 'clap':
         // Applause burst — filtered noise pulses spaced like real clapping
         (function(){
@@ -2100,6 +2121,14 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     if (!musicOn || !soundOn) return;   // 🔊 Sound is the MASTER: off = total silence (night play)
     if (!bgm){
       bgm = new Audio(ASSET('bgm-monkeys.mp3'));
+      // last resort: if the relative path fails, try the site root once
+      bgm.addEventListener('error', function(){
+        if (bgm.dataset.retried) return;
+        bgm.dataset.retried = '1';
+        bgm.src = '/bgm-monkeys.mp3';
+        bgm.load();
+        if (musicOn && soundOn) { var p = bgm.play(); if (p && p.catch) p.catch(function(){}); }
+      });
       bgm.loop = true; bgm.preload = 'auto'; bgm.volume = 0;
     }
     wireBgmPan();
@@ -2159,6 +2188,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
   // Celebration burst on a win — emoji fly out + a quick flash. Works even when muted.
   function celebrate(){
+    try { sfx('sparkle'); } catch(e){}
     var emojis = ['⭐','✨','🎉','🎊','🌟','💫'];
     var cx = window.innerWidth / 2, cy = window.innerHeight * 0.40;
     for (var i = 0; i < 22; i++){
@@ -3712,10 +3742,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
   ['scHome','scPlay','scLearn','scApp'].forEach(function(s){
     var tb = document.getElementById('tab-' + s);
-    if (tb) tb.addEventListener('click', function(){ sfx('tick'); goScreen(s); });
+    if (tb) tb.addEventListener('click', function(){ sfx('tab'); goScreen(s); });
   });
   var _back = document.getElementById('navBack');
-  if (_back) _back.addEventListener('click', function(){ goScreen('scHome'); });
+  if (_back) _back.addEventListener('click', function(){ sfx('back'); goScreen('scHome'); });
 
   applyAccent();
   goScreen('scHome');
@@ -3789,7 +3819,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       var b = e.target.closest ? e.target.closest('button') : null;
       if (!b) return;
       if (soundOn) ensureAudio();
-      if (b.dataset.k !== undefined) kpDigit(b.dataset.k);
+      if (b.dataset.k !== undefined) { sfx('select'); kpDigit(b.dataset.k); }
       else if (b.dataset.nav === 'sign') kpSign();
       else if (b.dataset.nav === 'back') kpBack();
       else if (b.dataset.nav === 'up') kpMove(-1, 0);
@@ -3887,6 +3917,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   // Kimo introduces each puzzle as you pick it
   document.querySelectorAll('.toggleBtn').forEach(function(btn){
     btn.addEventListener('click', function(){
+      sfx('card');
       var nm = this.dataset.name || this.textContent.trim();
       kimo('<b>' + nm + '</b> — tap a box, then a number. I\'ll watch the lines.', 'cheer');
     });
@@ -4060,7 +4091,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     });
     shScroll.scrollTop = 0;
     shHost.classList.add('on');
-    sfx('tick');
+    sfx('sheetUp');
   }
   function openSheetExtra(html){
     if (shScroll) shScroll.insertAdjacentHTML('beforeend', html);
@@ -4070,6 +4101,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     (SHEET_NODES[sheetOpenKey] || []).forEach(function(el){ vault.appendChild(el); });
     sheetOpenKey = null;
     shHost.classList.remove('on');
+    sfx('sheetDn');
   }
 
   /* ---- 6. the board fills the leftover box — width AND height ---- */
@@ -4269,7 +4301,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     mrEl().querySelector('.mrYN').addEventListener('click', function(e){
       var b = e.target.closest('button'); if (!b) return;
       MR.answers[MR.step] = +b.dataset.a;
-      sfx('place');
+      sfx(+b.dataset.a ? 'yes' : 'no');
       var c = document.getElementById('mrCard');
       if (c) c.classList.add('out');
       setTimeout(function(){ MR.step++; mrAsk(); }, 200);
@@ -4294,7 +4326,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       return;
     }
     kimo('Your number is… <b>' + g + '</b>', 'party', true);
-    sfx('win');
+    sfx('reveal');
     mrEl().innerHTML = '<div class="mrWrap"><div class="mrBig">' + g + '</div>' +
       '<p class="mrVerdict">Did I get it right?</p>' +
       '<button class="mrGo" id="mrYep">✓ Yes! How did you do that?</button>' +
@@ -4465,6 +4497,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     var pair = HINTS[currentSize];
     hintLevel++; hintsUsed++;
     paintHintDots();
+    sfx('hint');
     if (hintLevel === 1 && pair){ kimo('<b>Hint 1 of 4.</b> ' + pair[0], 'think'); return; }
     if (hintLevel === 2 && pair){ kimo('<b>Hint 2 of 4.</b> ' + pair[1], 'think'); return; }
 
@@ -4581,8 +4614,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-5 (music + formula sheets fixed)';
-  window.BETA_VER = 'beta-5';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-6 (music + 10 new sounds)';
+  window.BETA_VER = 'beta-6';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
