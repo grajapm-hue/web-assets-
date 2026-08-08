@@ -1876,6 +1876,181 @@ body.binaryMode #binaryPanel{ display:flex !important; }
   .hintChip, .binHint{ background:rgba(247,179,43,.18); box-shadow:inset 0 0 0 1px rgba(247,179,43,.42); }
 }
 
+/* ══ SANDALWOOD ═══════════════════════════════════════════════════════════
+   Raja found the tone and picked the full light version. It suits the project
+   better than anything I proposed: these puzzles were collected on paper at
+   school, and a wooden board is where they belong.
+
+   This is a theme inversion, not a background swap — every surface below was
+   built for a dark ground, so each one is restated here rather than left to
+   inherit something that no longer applies. It sits last in the stylesheet so
+   it wins without having to fight specificity everywhere.
+
+   The play-row chips keep their orange, pink and cyan: they were chosen to be
+   loud, and they are just as loud on wood.                                  */
+
+/* the board itself */
+.appShell{ background:linear-gradient(176deg,#E4CFAC 0%,#CDAE83 38%,#DCC49E 66%,#C9A87C 100%) !important; }
+.appShell::before, .appShell::after{ opacity:.35 !important; }
+body{ background:#C9A87C !important; }
+
+/* top bar */
+.appBar{ background:rgba(94,64,32,.18) !important;
+  border-bottom:1px solid rgba(94,64,32,.30) !important; }
+.appBarTitle{ color:#33220F !important; }
+.appBarTitle small{ color:#6B5334 !important; }
+.appBarChip{ background:#8A5E31 !important; color:#FFF3E0 !important; }
+.barBtn, .navBack{ background:#8A5E31 !important; color:#FFF6E7 !important; }
+.barBtn.barWord span{ color:#FFE6C2 !important; }
+
+/* Kimo */
+.kimoFace{ box-shadow:0 3px 0 rgba(94,64,32,.35) !important; }
+.kimoBub{ background:#FFF6E7 !important; color:#33220F !important;
+  box-shadow:0 2px 0 rgba(94,64,32,.30) !important; }
+.kimoBub::before{ border-right-color:#FFF6E7 !important; }
+.kimoBub b{ color:#9A3412 !important; }
+.betaFlag{ background:rgba(255,246,231,.72) !important; color:#4A331A !important;
+  box-shadow:inset 0 0 0 1px rgba(94,64,32,.35) !important; }
+.betaFlag b{ color:#9A3412 !important; }
+
+/* the puzzle list */
+.modeHead b{ color:#5E3D1C !important; }
+.toggleBtn.lvCard{ background:#FFF6E7 !important; color:#33220F !important;
+  box-shadow:0 3px 0 rgba(94,64,32,.28) !important; }
+.lvName{ color:#241708 !important; }
+.lvDiff{ color:#6B5334 !important; }
+.toggleBtn.lvCard.active{ background:#5E3D1C !important; color:#FFF6E7 !important; }
+.toggleBtn.lvCard.active .lvName{ color:#FFFFFF !important; }
+.toggleBtn.lvCard.active .lvDiff{ color:#FFD9A0 !important; }
+.lvGrid, .lvGlyph{ background:#EADCC0 !important; }
+.comingLabel{ color:#5E3D1C !important; }
+.comingChip{ background:#A9793F !important; color:#FFF6E7 !important; }
+
+/* the grid */
+.cell{ background:#FFFAF0 !important; color:#241708 !important;
+  box-shadow:0 2px 0 rgba(94,64,32,.28) !important; }
+.cell::placeholder{ color:#A98F6A !important; }
+.cell.given{ background:#EFE0C4 !important; color:#4A331A !important; }
+.cell.win{ background:#2FA36B !important; color:#FFFFFF !important; }
+.cell.hintGiven{ background:#FFD98A !important; color:#3A2606 !important; }
+.badge{ color:#432E15 !important; }
+.badge.full{ color:#9A3412 !important; }
+.badge.win{ color:#166534 !important; }
+/* the four corner badges carry the puzzle's accent, which was picked to glow on
+   a dark ground and washes out on wood — .badge.corner outranks .badge, so the
+   diagonals have to be restated here */
+.badge.corner{ color:#432E15 !important;
+  background:rgba(94,64,32,.10) !important;
+  box-shadow:inset 0 0 0 1.5px rgba(94,64,32,.42) !important; }
+.badge.corner.full{ color:#9A3412 !important; }
+.badge.corner.win{ color:#166534 !important; }
+/* The win badges carried the brand gold, which vanishes on wood. The per-size
+   rules (.board.size3x3 .badge.win) carry four classes, so these have to as
+   well — .boardContainer .board .badge.win matches that weight and comes later. */
+.badge.win, .badge.corner.win, .badge.full, .badge.corner.full,
+.boardContainer .board .badge.win,
+.boardContainer .board .badge.full,
+.boardContainer .board .badge.partial{
+  color:#0F5132 !important; background:rgba(17,107,68,.14) !important;
+  border-color:rgba(17,107,68,.55) !important;
+  box-shadow:inset 0 0 0 1.5px rgba(17,107,68,.45) !important; }
+.targetPill{ background:#5E3D1C !important; color:#FFF6E7 !important; }
+.targetPill *{ color:inherit !important; }
+/* white on the mid green was 3.2:1 — a deeper green takes it past 7 */
+.targetPill.solved{ background:#116B44 !important; color:#FFFFFF !important; }
+.solvedCounter{ background:rgba(94,64,32,.16) !important; color:#4A331A !important; }
+
+/* keypad */
+.kp{ background:#8A5E31 !important; color:#FFF6E7 !important; }
+.kp.kpnav{ background:#A9793F !important; }
+/* cream on #A9793F was only 3.57:1 — the darker wood takes it to 6.4:1 */
+#keypad > div:last-child button{ background:#6B4522 !important; color:#FFF6E7 !important;
+  box-shadow:inset 0 0 0 1px rgba(255,246,231,.45) !important; }
+#keypad > div:last-child button.on{ background:#E08A00 !important; color:#241708 !important; }
+.comingLabel{ color:#4A331A !important; }
+
+/* bottom tabs */
+.tabBar{ background:rgba(94,64,32,.22) !important;
+  border-top:1px solid rgba(94,64,32,.30) !important; }
+.tabBtn{ background:#8A5E31 !important; color:#FFE6C2 !important; }
+.tabBtn.on{ background:#5E3D1C !important; color:#FFD166 !important; }
+
+/* sheets — Logic, the formula sheet, settings, About */
+.sheet .shBody{ background:#F3E4C9 !important; }
+.shHead b{ color:#33220F !important; }
+.grab{ background:rgba(94,64,32,.35) !important; }
+#shScroll{ color:#33220F !important; }
+#shScroll p, #shScroll li, #shScroll td{ color:#3A2A14 !important; }
+#shScroll b, #shScroll strong, #shScroll h3, #shScroll h4{ color:#5E2A0A !important; }
+#shScroll a{ color:#0F5C8C !important; }
+.rowBtn{ background:#FFF6E7 !important; color:#241708 !important;
+  box-shadow:0 2px 0 rgba(94,64,32,.26) !important; }
+.rowBtn b{ color:#241708 !important; }
+.rowBtn small{ color:#6B5334 !important; }
+.rowBtn i{ background:#EADCC0 !important; }
+#logicBox, .logicBox{ background:#FFF6E7 !important; color:#33220F !important; }
+/* inside a sheet these are re-backgrounded by .shScroll .journeyNote, which
+   carries two classes and outranks a single one — so match that shape */
+.shScroll .journeyNote, .shScroll .credit,
+.shScroll #offlineBox, .shScroll #logicBox{ background:#FFF6E7 !important; color:#3A2A14 !important; }
+.shScroll .credit i, .shScroll .credit span{ color:#4A331A !important; }
+.journeyNote{ background:#FFF6E7 !important; color:#4A331A !important;
+  border-color:#B08D5F !important; border-left-color:#8A5E31 !important; }
+.journeyNote b{ color:#5E2A0A !important; }
+.journeyCall{ color:#9A3412 !important; }
+.credit{ color:#4A331A !important; }
+.credit a{ color:#0F5C8C !important; }
+
+/* the number games */
+#binaryPanel{ color:#33220F !important; }
+.mrCard{ background:#FFF6E7 !important; color:#33220F !important;
+  box-shadow:0 3px 0 rgba(94,64,32,.28) !important; }
+/* the card's own headings and paragraphs kept their light-on-dark colours */
+.mrCard h3{ color:#241708 !important; }
+.mrCard p{ color:#4A331A !important; }
+.mrCard b, .mrCard strong{ color:#5E2A0A !important; }
+/* the "keep it secret" panel is a dark tile inside a now-cream card */
+.mrThink{ background:#EADCC0 !important; color:#33220F !important; }
+.mrThink b{ color:#9A3412 !important; }
+.mrQ{ background:#8A5E31 !important; color:#FFF6E7 !important; }
+.mrHead b{ color:#241708 !important; }
+.mrHead span{ color:#6B5334 !important; }
+.mrGrp{ color:#432E15 !important; }
+.mrMore{ color:#6B5334 !important; }
+.mrNums span{ background:#5E3D1C !important; color:#FFF6E7 !important; }
+.mrNote{ background:rgba(94,64,32,.12) !important; color:#3A2A14 !important;
+  box-shadow:inset 0 0 0 1px rgba(94,64,32,.30) !important; }
+.mrNote b{ color:#5E2A0A !important; }
+.mrDots i{ background:rgba(94,64,32,.22) !important; }
+.mrNo{ background:#8A5E31 !important; color:#FFF6E7 !important; }
+.mrGo, .mrAgain, .mrRedo, .mrSkip, .mrGhost, .mrDone, .mrNope, .mrAgain2, .mrUndo{
+  background:#8A5E31 !important; color:#FFF6E7 !important; }
+.mrBig{ color:#9A3412 !important; -webkit-text-fill-color:#9A3412 !important; }
+
+/* applause */
+.congratsBox{ background:#F3E4C9 !important; color:#33220F !important; }
+.winTitle{ color:#241708 !important; }
+.winLine{ color:#4A331A !important; }
+/* every number in the applause kept a colour picked for a dark panel */
+.winStat{ background:#EADCC0 !important; color:#241708 !important; }
+.winStat b{ color:#241708 !important; }
+.winStat.g b{ color:#0F5132 !important; }
+.winStat span{ color:#5E4326 !important; }
+#nextBtn{ background:#116B44 !important; color:#FFFFFF !important; }
+#chooseLaterBtn{ background:#8A5E31 !important; color:#FFF6E7 !important; }
+#congratsCountdown{ color:#5E4326 !important; }
+.winStars i{ color:rgba(94,64,32,.25) !important; }
+.winStars i.lit{ color:#A85A00 !important; }
+
+/* feedback and get-app */
+.fbChip{ background:#FFF6E7 !important; color:#241708 !important; }
+.fbChip.on{ background:#5E3D1C !important; color:#FFF6E7 !important; }
+#fbText, #fbWho{ background:#FFFAF0 !important; color:#241708 !important;
+  border:1px solid #B08D5F !important; }
+#fbText::placeholder, #fbWho::placeholder{ color:#A98F6A !important; }
+#fbCopy{ background:#8A5E31 !important; color:#FFF6E7 !important; }
+#offlineBox{ background:#FFF6E7 !important; color:#33220F !important; }
+
 @media(prefers-reduced-motion:reduce){ *{ animation:none !important; } }
 </style>
 </head>
@@ -5584,8 +5759,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-35 (bigger About, no byline out front)';
-  window.BETA_VER = 'beta-35';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-36 (sandalwood theme)';
+  window.BETA_VER = 'beta-36';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
