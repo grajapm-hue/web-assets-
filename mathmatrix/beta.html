@@ -1385,6 +1385,8 @@ body.onPlay .solvedCounter{ font-size:9px !important; padding:3px 9px !important
 /* ── LEARN: rows that open sheets, so the screen itself never scrolls ── */
 #logicBtn,#logicBox{ display:none !important; }
 .learnRows{ flex:1; min-height:0; display:flex; flex-direction:column; gap:5px; overflow:hidden; }
+/* the same rows inside the 💡 sheet: sized by content, never clipped */
+.sheetLearn{ flex:none !important; overflow:visible !important; gap:7px; }
 
 /* shared row button */
 .rowBtn{ display:flex; align-items:center; gap:8px; width:100%; border:0; border-radius:13px;
@@ -4183,6 +4185,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   goScreen = function(id){
     _goScreen(id);
     document.body.classList.toggle('onPlay', id === 'scPlay');
+    // the 💡 belongs on the board, not on the Learn tab where it duplicates itself
+    var lb = document.getElementById('barLearn');
+    if (lb) lb.style.display = (id === 'scPlay') ? '' : 'none';
     setTimeout(function(){
       try { fitBoard(); } catch(e){}
       if (id === 'scHome') try { fitHome(); } catch(e){}
@@ -4199,12 +4204,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
            · Eight twins         → explained rotating a square there isn't one of
          Offer a row only when it leads somewhere. Angle Magic and Logic Gates
          will arrive the same way, so this is the rule, not a patch. */
-      var isGrid = !!PUZZLES[currentSize];
-      [['sheet', isGrid && !!CHEAT[currentSize]], ['watch', isGrid], ['twins', isGrid]]
-        .forEach(function(p){
-          var r = document.querySelector('.learnRows [data-learn="' + p[0] + '"]');
-          if (r) r.style.display = p[1] ? '' : 'none';
-        });
+      var rows = document.querySelector('.learnRows');
+      if (rows) rows.innerHTML = learnRowsHtml();
     }
     if (id === 'scFeed')  kimo('Found something odd? <b>Tell us</b> — that\'s what a beta is for.', 'think');
     if (id === 'scApp')   kimo('Install it once and it works with <b>no internet</b>.', null);
@@ -4506,24 +4507,38 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
      "undefined". Both made the Learn tab offer a formula sheet and then tell the
      child the diagram is not in the app. A missing entry now hides the row
      instead; the number games explain themselves fully under "The method". */
+  /* The four learn rows, as markup. Two places render them now — the Learn tab
+     and the 💡 button on the board — so they are built from one source rather
+     than typed twice and drifting apart. `only` filters to the rows that lead
+     somewhere for the puzzle in play. */
+  function learnRowsHtml(){
+    var isGrid = !!PUZZLES[currentSize];
+    var all = [
+      ['logic', '📐', 'The method', 'how this puzzle works', true],
+      ['sheet', '📋', 'Quick formula sheet', 'the step diagram, full width', isGrid && !!CHEAT[currentSize]],
+      ['watch', '▶', 'Watch it built', 'step by step on the board', isGrid],
+      ['twins', '🔄', 'Eight twins', 'rotate or mirror — all 8 stay magic', isGrid]
+    ];
+    return all.filter(function(r){ return r[4]; }).map(function(r){
+      return '<button class="rowBtn" data-learn="' + r[0] + '"><i>' + r[1] + '</i>' +
+             '<span><b>' + r[2] + '</b><small' + (r[0] === 'logic' ? ' id="learnSub"' : '') + '>' +
+             r[3] + '</small></span></button>';
+    }).join('');
+  }
+
   (function buildLearn(){
     var sec = document.querySelector('[data-screen="scLearn"]');
     if (!sec) return;
     var rows = document.createElement('div');
     rows.className = 'learnRows';
-    rows.innerHTML =
-      '<button class="rowBtn" data-learn="logic"><i>📐</i><span><b>The method</b>' +
-        '<small id="learnSub">how this puzzle works</small></span></button>' +
-      '<button class="rowBtn" data-learn="sheet"><i>📋</i><span><b>Quick formula sheet</b>' +
-        '<small>the step diagram, full width</small></span></button>' +
-      '<button class="rowBtn" data-learn="watch"><i>▶</i><span><b>Watch it built</b>' +
-        '<small>step by step on the board</small></span></button>' +
-      '<button class="rowBtn" data-learn="twins"><i>🔄</i><span><b>Eight twins</b>' +
-        '<small>rotate or mirror — all 8 stay magic</small></span></button>';
+    rows.innerHTML = learnRowsHtml();
     sec.appendChild(rows);
-    rows.addEventListener('click', function(e){
-      var b = e.target.closest('.rowBtn'); if (!b) return;
+    // delegated on the document, so the copy inside the 💡 sheet works too
+    document.addEventListener('click', function(e){
+      var b = e.target.closest('.rowBtn[data-learn]'); if (!b) return;
       var k = b.dataset.learn;
+      // tapped from the sheet over the board? get out of the way first
+      if (b.closest('#sheetHost')) closeSheet();
       var lvl = document.querySelector('.toggleBtn.active');
       var nm = lvl ? (lvl.dataset.name || 'this puzzle') : 'this puzzle';
       if (k === 'logic') openSheet('logic', '📐 How ' + nm + ' works');
@@ -4572,6 +4587,23 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   (function barButtons(){
     var bar = document.querySelector('.appBar');
     if (!bar) return;
+
+    /* Everything about HOW to play used to be above the board; the fixed-height
+       shell hid it to buy board height, which left a child on 3x3 with no route
+       to the method except leaving the board for the Learn tab. This puts it
+       back within reach — beside the settings button, opening over the board so
+       you keep your place. Play screen only: on the Learn tab it is redundant. */
+    var lb = document.createElement('button');
+    lb.className = 'barBtn'; lb.id = 'barLearn'; lb.type = 'button';
+    lb.textContent = '💡'; lb.setAttribute('aria-label', 'How to play this puzzle');
+    bar.appendChild(lb);
+    lb.addEventListener('click', function(){
+      var lvl = document.querySelector('.toggleBtn.active');
+      var nm = lvl ? (lvl.dataset.name || 'this puzzle') : 'this puzzle';
+      openSheet('learnNow', '💡 How to play — ' + nm,
+        '<div class="learnRows sheetLearn">' + learnRowsHtml() + '</div>');
+    });
+
     var b = document.createElement('button');
     b.className = 'barBtn'; b.id = 'barMore'; b.type = 'button';
     b.textContent = '⋯'; b.setAttribute('aria-label', 'Quick settings');
