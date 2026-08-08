@@ -970,27 +970,19 @@
     background:#0e1526; color:#a7b4cc; font-size:12.5px; line-height:1.7; text-align:center;
   }
   .journeyNote b { color:#cbd5e1; }
+  /* fixed colour, not the drifting gradient — see .splashTag for why */
   .journeyCall {
     display:block; margin-top:6px; font-style:italic; font-weight:700;
-    background:linear-gradient(90deg,#fbbf24,#f472b6,#a78bfa,#22d3ee,#fbbf24);
-    background-size:300% 100%;
-    -webkit-background-clip:text; background-clip:text;
-    -webkit-text-fill-color:transparent; color:transparent;
-    animation:tagShift 12s linear infinite;
+    color:#FFD166;
   }
-  @media (prefers-reduced-motion: reduce){ .journeyCall { animation:none; } }
 
   /* Tagline — glowing gradient that drifts slowly across the words */
+  /* fixed colour, not the drifting gradient — see .splashTag for why */
   .tagline {
     display:inline-block; max-width:100%;
     font-size:15.5px; line-height:1.35; margin:5px 0 3px;
     font-style:italic; font-weight:800; letter-spacing:.3px;
-    background:linear-gradient(90deg,#fbbf24,#f472b6,#a78bfa,#22d3ee,#4ade80,#fbbf24);
-    background-size:300% 100%;
-    -webkit-background-clip:text; background-clip:text;
-    -webkit-text-fill-color:transparent; color:transparent;
-    filter:drop-shadow(0 0 6px rgba(167,139,250,.55)) drop-shadow(0 0 14px rgba(34,211,238,.28));
-    animation:tagShift 9s linear infinite;
+    color:#FFD166; text-shadow:0 2px 8px rgba(0,0,0,.5);
   }
   @keyframes tagShift { 0% { background-position:0% 50%; } 100% { background-position:300% 50%; } }
   @media (prefers-reduced-motion: reduce){ .tagline { animation:none; } }
@@ -1687,11 +1679,19 @@ body.binaryMode #binaryPanel{ display:flex !important; }
    hundreds of megabytes; ours is already there, so a longer wait would be
    manufacturing delay rather than covering it. Tap anywhere to skip, and
    it only ever shows once per launch. */
+/* Sample D, the one Raja picked: four soft blobs of pink and cyan bleeding
+   into one another over a violet ground. Candy Crush does not use a single
+   linear sweep — it overlaps glows so the eye never lands on an edge, and
+   that is what this is. Plain rgb/rgba throughout: no color-mix, so it
+   renders the same on an older iPhone as on a new one. */
 .splash{ position:absolute; inset:0; z-index:200; display:grid; place-items:center;
   cursor:pointer; overflow:hidden;
   background:
-    radial-gradient(130% 55% at 50% 108%, color-mix(in srgb, var(--gold) 22%, transparent), transparent 72%),
-    linear-gradient(180deg, #0D0929 0%, #171043 45%, #241A5C 100%); }
+    radial-gradient(58% 42% at 18% 16%, #FF5FA8 0%, rgba(255,95,168,0) 70%),
+    radial-gradient(64% 46% at 84% 24%, #35D9F0 0%, rgba(53,217,240,0) 72%),
+    radial-gradient(70% 50% at 26% 88%, #48E0F2 0%, rgba(72,224,242,0) 70%),
+    radial-gradient(66% 48% at 88% 84%, #FF3D86 0%, rgba(255,61,134,0) 72%),
+    linear-gradient(160deg, #C13FB0 0%, #7E4BD4 100%); }
 .splash::after{ content:''; position:absolute; inset:-30% -40%; pointer-events:none;
   background:repeating-linear-gradient(19deg,
     rgba(255,255,255,0) 0px, rgba(255,255,255,.06) 46px,
@@ -1791,10 +1791,20 @@ body.binaryMode #binaryPanel{ display:flex !important; }
 .splashName{ font-size:31px; font-weight:900; letter-spacing:-.6px; color:#fff; margin-top:12px;
   text-shadow:0 3px 10px rgba(0,0,0,.5);
   animation:splashUp .4s .18s both; }
-.splashTag{ font-size:12.5px; font-weight:700; line-height:1.55; margin-top:8px; max-width:22em;
-  background:linear-gradient(90deg,#FFD675,#FB7185,#A78BFA,#22D3EE,#3DD68C);
-  -webkit-background-clip:text; background-clip:text; color:transparent;
+/* Solid white, not the drifting rainbow. A multi-colour gradient over a
+   multi-colour background has nowhere to stand out — on the new candy
+   background the tagline simply dissolved. One fixed colour and a shadow
+   reads on every part of it. */
+.splashTag{ font-size:12.5px; font-weight:800; line-height:1.55; margin-top:8px; max-width:22em;
+  color:#FFFFFF; text-shadow:0 2px 8px rgba(0,0,0,.55), 0 0 2px rgba(0,0,0,.45);
   animation:splashUp .4s .28s both; }
+/* quieter than Tap to play — a way in, not a competing call to action */
+.splashAbout{ margin-top:18px; display:inline-block; font-family:inherit; cursor:pointer;
+  font-size:11.5px; font-weight:800; letter-spacing:.3px; color:#FFFFFF;
+  background:rgba(0,0,0,.30); border:0; border-radius:999px; padding:9px 16px;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.30);
+  animation:splashUp .4s .34s both; }
+.splashAbout:active{ transform:translateY(2px); background:rgba(0,0,0,.44); }
 .splashHint{ font-size:10.5px; font-weight:800; letter-spacing:1.6px; text-transform:uppercase;
   color:rgba(255,255,255,.42); margin-top:26px; animation:splashBlink 1.6s .55s infinite; }
 @keyframes splashUp{ from{ opacity:0; transform:translateY(12px) } to{ opacity:1; transform:none } }
@@ -5329,6 +5339,12 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         '<div class="splashName">' + name + '</div>' +
         '<div class="splashTag">' + (tag ? tag.textContent : '') + '</div>' +
         '<button class="splashPlay" type="button" id="splashPlay">▶ Tap to play</button>' +
+        /* Where these puzzles came from — Raja asked for it on the opening
+           screen. It already exists as the About sheet: the journey from paper
+           through 1990s spreadsheets to today, the credit, the contact address
+           and the music licences. One way in, not a second copy. */
+        '<button class="splashAbout" type="button" id="splashAbout">' +
+          '📜 About this project · who made it</button>' +
       '</div>';
     shell.appendChild(s);
 
@@ -5366,6 +5382,21 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     }
     s.addEventListener('click', function(){ dismiss(true); });
     s.addEventListener('touchstart', function(e){ e.preventDefault(); dismiss(true); }, { passive:false });
+
+    /* About must not read as "start the game". It stops the tap reaching the
+       splash, closes the splash itself, then opens the sheet — the sheet lives
+       below the splash in the stack, so opening it underneath would put the
+       story behind the welcome screen. */
+    var ab = s.querySelector('#splashAbout');
+    if (ab){
+      ['click', 'touchstart'].forEach(function(evt){
+        ab.addEventListener(evt, function(e){
+          e.stopPropagation(); e.preventDefault();
+          dismiss(true);
+          setTimeout(function(){ try { openSheet('about', '📜 About this project'); } catch(err){} }, 420);
+        }, { passive:false });
+      });
+    }
 
     /* It now WAITS for the child rather than counting down — Raja's call, and
        the better one: no timing to get wrong, and it guarantees the gesture
@@ -5549,8 +5580,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-33 (Hint is orange too)';
-  window.BETA_VER = 'beta-33';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-34 (candy welcome screen, About on it)';
+  window.BETA_VER = 'beta-34';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
