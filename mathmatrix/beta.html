@@ -1770,6 +1770,24 @@ body.binaryMode #binaryPanel{ display:flex !important; }
 .congratsModal{ position:absolute !important; z-index:90 !important; }
 .congratsBox{ background:var(--gr) !important; border-radius:24px !important;
   box-shadow:0 -8px 34px rgba(0,0,0,.55) !important; padding:18px 15px 16px !important; }
+/* ══ OLDER SAFARI (iPhone / iPad / Mac on iOS 15 – 16.1) ══════════════════
+   color-mix() only arrived in Safari 16.2. An unsupported function makes the
+   WHOLE declaration invalid, so on an older iPhone the app would lose its
+   backdrop, the little grid icon on every puzzle card, and — worst — the
+   highlight that shows which cell a hint just filled.
+
+   Plain approximations of the same colours, applied only where the loss would
+   actually show. The glow layers are not restated: they are additive, and
+   losing a glow costs nothing.                                             */
+@supports not (background: color-mix(in srgb, red 50%, blue)){
+  .appShell{ background:linear-gradient(180deg,#100B33 0%,var(--gr) 42%,#1D1550 100%) !important; }
+  .lvGrid, .lvGlyph{ background:#1B1442 !important; }
+  .cell.hintGiven{ background:#6E506F !important; }        /* gold 30% over --sf2 */
+  .mrW.on{ background:#2B4B69 !important; }                /* wingreen 26% over --sf */
+  .mrNote{ background:rgba(255,255,255,.09); box-shadow:inset 0 0 0 1px rgba(255,255,255,.22); }
+  .hintChip, .binHint{ background:rgba(247,179,43,.18); box-shadow:inset 0 0 0 1px rgba(247,179,43,.42); }
+}
+
 @media(prefers-reduced-motion:reduce){ *{ animation:none !important; } }
 </style>
 </head>
@@ -5291,8 +5309,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-20 (bigger numbers, bigger buttons)';
-  window.BETA_VER = 'beta-20';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-21 (older iPhones covered)';
+  window.BETA_VER = 'beta-21';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
