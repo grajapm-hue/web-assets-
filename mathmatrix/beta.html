@@ -4188,7 +4188,24 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       if (id === 'scHome') try { fitHome(); } catch(e){}
     }, 40);
     if (id === 'scHome')  kimo('Pick a puzzle — <b>they\'re all open</b>, no locks.', null);
-    if (id === 'scLearn') kimo('This is the part I like. Here is <b>why</b> it works.', 'think');
+    if (id === 'scLearn'){
+      kimo('This is the part I like. Here is <b>why</b> it works.', 'think');
+      /* The Learn tab used to offer the same four rows for every puzzle, and
+         three of them are about grids. On the two number games — which are
+         cards, with no grid at all — that meant:
+           · Quick formula sheet → a diagram that has never existed
+           · Watch it built      → jumped to an empty board and threw
+                                   "Cannot read properties of undefined"
+           · Eight twins         → explained rotating a square there isn't one of
+         Offer a row only when it leads somewhere. Angle Magic and Logic Gates
+         will arrive the same way, so this is the rule, not a patch. */
+      var isGrid = !!PUZZLES[currentSize];
+      [['sheet', isGrid && !!CHEAT[currentSize]], ['watch', isGrid], ['twins', isGrid]]
+        .forEach(function(p){
+          var r = document.querySelector('.learnRows [data-learn="' + p[0] + '"]');
+          if (r) r.style.display = p[1] ? '' : 'none';
+        });
+    }
     if (id === 'scFeed')  kimo('Found something odd? <b>Tell us</b> — that\'s what a beta is for.', 'think');
     if (id === 'scApp')   kimo('Install it once and it works with <b>no internet</b>.', null);
   };
@@ -4481,8 +4498,14 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   /* ---- 7. Learn becomes rows that open sheets ---- */
   var CHEAT = { '3x3':'cheat-3x3.png', '4x4':'cheat-4x4.png', '5x5':'cheat-5x5.png',
                 '6x6':'cheat-6x6.png', '8x8':'cheat-8x8.png', '10x10':'cheat-10x10.png',
-                'ramanujan':'cheat-ramanujan.jpg', 'binary':'cheat-binary.png',
+                'ramanujan':'cheat-ramanujan.jpg',
                 '3cube':'cheat-3x3.png' };
+  /* No entry for 'binary' or 'binary2' on purpose. cheat-binary.png has never
+     existed — the slot was wired for a reference image that never arrived — and
+     binary2 was never added at all, so its src rendered as the literal string
+     "undefined". Both made the Learn tab offer a formula sheet and then tell the
+     child the diagram is not in the app. A missing entry now hides the row
+     instead; the number games explain themselves fully under "The method". */
   (function buildLearn(){
     var sec = document.querySelector('[data-screen="scLearn"]');
     if (!sec) return;
@@ -5191,8 +5214,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-17 (fits tablet, laptop and desktop)';
-  window.BETA_VER = 'beta-17';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-18 (Learn tab fixed)';
+  window.BETA_VER = 'beta-18';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
