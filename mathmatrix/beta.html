@@ -5405,6 +5405,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   var _win = win;
   win = function(actualTarget){
     _win(actualTarget);
+    /* Solving it ends the lesson-and-play cycle, so Logic and Watch come back.
+       Without this a child who watched, cleared and then WON was left with
+       neither — the tools stayed away through the applause and through "try a
+       different number" too, and the only way back was the puzzle list. The
+       win is the natural reset: if they watch again, the cycle just repeats. */
+    watchedHere = false;
+    document.body.classList.remove('toolsOff');
     setTimeout(function(){
       var modal = document.getElementById('congratsModal');
       if (!modal) return;
@@ -5462,8 +5469,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-27 (the app bar can never scroll away)';
-  window.BETA_VER = 'beta-27';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-28 (winning brings Logic and Watch back)';
+  window.BETA_VER = 'beta-28';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
