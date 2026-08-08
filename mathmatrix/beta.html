@@ -1403,6 +1403,15 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
   max-height:calc(86vh - 150px) !important; height:auto !important;
   margin-left:auto !important; margin-right:auto !important; }
 
+/* ══ THE SWAP PAIR, mid-demo ══
+   The two cells about to trade places, lit for one beat before they do. Strong
+   enough to find at a glance on a board of sixteen, and gone the moment they
+   swap — a child needs to see WHICH two, then see it happen. */
+.cell.swapPick{
+  background:#FFD166 !important; color:#3A2109 !important;
+  box-shadow:0 0 0 3px #C2410C inset, 0 0 14px rgba(194,65,12,.55) !important;
+  transform:scale(1.06); z-index:3; transition:transform .18s ease; }
+
 /* The back arrow: Raja called it tiny, and at 40px it was — below the floor
    and the smallest thing in a bar full of chunky buttons. It is the way out of
    every screen, so it should be at least as easy to hit as the way in. */
@@ -2970,6 +2979,11 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     Object.keys(badges).forEach(function(k){          // drop any leftover SHOW tint if a demo was cancelled mid-way
       badges[k].forEach(function(b){ b.classList.remove('peek'); });
     });
+    // and the pair-highlight, if the sheet demo was stopped between "these two"
+    // and the swap itself — otherwise two cells stay lit with nothing happening
+    [].forEach.call(document.querySelectorAll('.cell.swapPick'), function(c){
+      c.classList.remove('swapPick');
+    });
     var _wbtn = document.getElementById('watchBtn'); if (_wbtn) _wbtn.disabled = false;
     var _pbtn = document.getElementById('peekBtn'); if (_pbtn){ _pbtn.disabled = false; _pbtn.textContent = '👁 SHOW'; }
     /* The demo is the only thing that hides Logic and Watch, so whenever it
@@ -4357,6 +4371,102 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     var R = puzzle.rows, Cc = puzzle.cols, N = R * Cc;
     resetVisuals();
     update();
+
+    /* ═══ THE SHEET DEMO ═══
+       Raja: "the hints and show sample are give priority to mind mapping by
+       following cheat sheet". The hints were done; this is the sample.
+
+       The old demo revealed cells in value order, so a child watched numbers
+       appear in scattered places and saw no method at all. His sheet does it
+       the other way round: write the whole sequence straight across the way
+       you write a line of words, then make a handful of swaps. That is the
+       thing worth remembering, because it survives without the app.
+
+       These four swaps are not a guess — applied to 1..16 in reading order
+       they produce PUZZLES['4x4'].example exactly, all sixteen cells, every
+       row, column and diagonal 34, and the eight cells left alone are exactly
+       the four corners and four middles the sheet promises.
+
+       4x4 only for now: Raja asked to see one before the rest follow. */
+    var SHEET_SWAPS = {
+      '4x4': [ [[0,1],[3,2]], [[0,2],[3,1]], [[1,0],[2,3]], [[2,0],[1,3]] ]
+    };
+    function finishWatch(){
+      if (watchIv){ clearInterval(watchIv); watchIv = null; }
+      for (var fr = 0; fr < R; fr++) for (var fc = 0; fc < Cc; fc++){
+        cells[fr][fc].classList.remove('swapPick');
+        cells[fr][fc].classList.add('win');
+        cells[fr][fc].readOnly = true;
+      }
+      msg.textContent = '✨ That is the pattern! Tap CLEAR and try it yourself.';
+      msg.className = 'win';
+      btn.disabled = false;
+      document.getElementById('peekBtn').disabled = false;
+      watching = false;
+      document.body.classList.remove('toolsOff');
+      try { sana('That is the whole pattern. Tap <b>CLEAR</b> and it is your turn.', 'cheer'); } catch(e){}
+    }
+    var sheetPairs = isBirthday() ? null : SHEET_SWAPS[currentSize];
+    if (sheetPairs){
+      var rcName = function(p){ return 'R' + (p[0] + 1) + 'C' + (p[1] + 1); };
+      var steps = [];
+      steps.push({ hold: 2, run: function(){
+        msg.textContent = '▶ Step 1 — write 1 to ' + N + ' straight across, like reading a line.';
+        msg.className = '';
+        try { sana('Write <b>1 to ' + N + '</b> straight across — no thinking yet.', 'think', true); } catch(e){}
+      }});
+      for (var sr = 0; sr < R; sr++) for (var sc = 0; sc < Cc; sc++) (function(r0, c0){
+        steps.push({ hold: 1, run: function(){
+          var cell = cells[r0][c0];
+          cell.value = String(r0 * Cc + c0 + 1);
+          cell.classList.remove('placing'); void cell.offsetWidth; cell.classList.add('placing');
+          sfx('tick', panForCell(cell));
+          update();
+        }});
+      })(sr, sc);
+      steps.push({ hold: 4, run: function(){
+        msg.textContent = '▶ Step 2 — now only ' + sheetPairs.length + ' swaps. Watch the pairs.';
+        msg.className = '';
+        try { sana('Now just <b>' + sheetPairs.length + ' swaps</b>. Everything else stays put.', 'think', true); } catch(e){}
+      }});
+      sheetPairs.forEach(function(pair, n){
+        var a = pair[0], b = pair[1];
+        // two beats per swap: light both cells so the eye finds them, THEN exchange
+        steps.push({ hold: 5, run: function(){
+          cells[a[0]][a[1]].classList.add('swapPick');
+          cells[b[0]][b[1]].classList.add('swapPick');
+          msg.textContent = '▶ Swap ' + rcName(a) + ' ↔ ' + rcName(b) +
+                            '   (' + (n + 1) + ' of ' + sheetPairs.length + ')';
+          sfx('tick', panForCell(cells[a[0]][a[1]]));
+        }});
+        steps.push({ hold: 4, run: function(){
+          var ca = cells[a[0]][a[1]], cb = cells[b[0]][b[1]];
+          var t = ca.value; ca.value = cb.value; cb.value = t;
+          [ca, cb].forEach(function(x){
+            x.classList.remove('swapPick', 'placing'); void x.offsetWidth; x.classList.add('placing');
+          });
+          sfx('tick', panForCell(cb));
+          update();
+        }});
+      });
+      steps.push({ hold: 3, run: function(){
+        msg.textContent = '▶ Step 3 — the 4 corners and the 4 middle boxes never moved.';
+        try { sana('The <b>corners</b> and the <b>middle four</b> never move. That is the whole trick.', 'cheer', true); } catch(e){}
+      }});
+      /* One interval, and each step says how many ticks to hold for. A chain of
+         setTimeouts would pace just as well but would leave stopDemos with
+         several handles to cancel instead of the one it already clears. */
+      var TICK = 150, si = 0, waitTicks = 0;
+      watchIv = setInterval(function(){
+        if (waitTicks > 0){ waitTicks--; return; }
+        if (si >= steps.length){ finishWatch(); return; }
+        var st = steps[si++];
+        st.run();
+        waitTicks = st.hold;
+      }, TICK);
+      return;
+    }
+
     // Reveal ORDER teaches the method:
     //  • 4×4 / 8×8 (keep-&-flip, doubly-even): Pass 1 = the "start sequence" cells
     //    top→bottom, left→right (1,4,5,8 … 64); Pass 2 = the flip cells
@@ -4391,16 +4501,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     msg.className = '';
     watchIv = setInterval(function(){
       if (i >= N){
-        clearInterval(watchIv); watchIv = null;
-        for (var r = 0; r < R; r++) for (var c = 0; c < Cc; c++){ cells[r][c].classList.add('win'); cells[r][c].readOnly = true; }
-        msg.textContent = '✨ That is the pattern! Tap CLEAR and try it yourself.';
-        msg.className = 'win';
-        btn.disabled = false;
-        document.getElementById('peekBtn').disabled = false;
-        watching = false;
-        // demo over — the tools come back so the pattern can be re-read
-        document.body.classList.remove('toolsOff');
-        try { sana('That is the whole pattern. Tap <b>CLEAR</b> and it is your turn.', 'cheer'); } catch(e){}
+        finishWatch();     // one ending, shared with the sheet demo above
         return;
       }
       if (dualPass && i === keptCount){
@@ -5109,8 +5210,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   /* ---- 7. Learn becomes rows that open sheets ---- */
   var CHEAT = { '3x3':'cheat-3x3.png', '4x4':'cheat-4x4.png', '5x5':'cheat-5x5.png',
                 '6x6':'cheat-6x6.png', '8x8':'cheat-8x8.png', '10x10':'cheat-10x10.png',
-                'ramanujan':'cheat-ramanujan.jpg',
-                '3cube':'cheat-3x3.png' };
+                'ramanujan':'cheat-ramanujan.jpg' };
+  /* No '3cube' entry. It used to point at cheat-3x3.png, so a child on
+     Multiply Magic tapped "formula sheet" and got the ADDITION diagram — the
+     right nine positions, the wrong arithmetic. Raja is sending a 3³ scan;
+     until it arrives the row hides itself, the same way the number games do,
+     rather than offering the wrong method. Add '3cube':'cheat-3cube.png' here
+     when the file lands. */
   /* No entry for 'binary' or 'binary2' on purpose. cheat-binary.png has never
      existed — the slot was wired for a reference image that never arrived — and
      binary2 was never added at all, so its src rendered as the literal string
@@ -5983,8 +6089,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-45 (formula sheet opens big, like v131)';
-  window.BETA_VER = 'beta-45';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-46 (4x4 Watch follows the cheat sheet)';
+  window.BETA_VER = 'beta-46';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
