@@ -1258,10 +1258,19 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
   display:flex; align-items:center; gap:8px;
   background:rgba(0,0,0,.26) !important; border-bottom:1px solid rgba(255,255,255,.09) !important; }
 .appBarTitle{ font-size:13px !important; font-weight:900 !important; line-height:1.15; }
+/* The longest name, 🎂 Sir Ramanujan MathMagic, wants ~213px of bar. Below
+   390px there is not that much, so trim the type a little rather than cut the
+   name to "Guess My Number ·…". At 320 it still has to ellipsis — the name is
+   longer than the phone. */
+@media (max-width: 389px){ .appBarTitle{ font-size:11.5px !important; } }
 .appBarTitle small{ display:block; font-size:8.5px; font-weight:700; color:var(--bink3); letter-spacing:.3px; }
-.navBack{ width:29px !important; height:29px !important; border-radius:10px !important; font-size:14px !important; }
+.navBack{ width:40px !important; height:40px !important; border-radius:12px !important; font-size:17px !important; }
 .appBarChip{ font-size:9px !important; padding:3px 8px !important; }
-.barBtn{ width:29px; height:29px; flex:none; border-radius:10px; background:var(--sf2); display:grid;
+/* 40px, not 29. These three (← 💡 ⋯) are the whole navigation and a child's
+   fingertip is about 10mm; Apple asks for 44pt and Material for 48dp. The bar
+   is 46px tall so 40 is the most that fits without making it taller and
+   stealing board height — a clear improvement over 29 either way. */
+.barBtn{ width:40px; height:40px; flex:none; border-radius:12px; background:var(--sf2); display:grid;
   place-items:center; font-size:14px; border:0; color:var(--bink); box-shadow:var(--clay); cursor:pointer;
   font-family:inherit; }
 .barBtn:active{ transform:translateY(2px); box-shadow:var(--sunk); }
@@ -1277,7 +1286,9 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
 .screen.on[data-screen="scHome"]{ flex:none; }
 .screen.on[data-screen="scHome"].homeMain{ flex:1; min-height:0; }
 
-.tabBar{ position:static !important; flex:none; height:52px; padding:5px 7px !important;
+/* 52px bar with 3px padding gives 46px tabs — over the touch minimum, and it
+   costs no extra height because the bar itself is unchanged. */
+.tabBar{ position:static !important; flex:none; height:52px; padding:3px 7px !important;
   background:rgba(0,0,0,.32) !important; border-top:1px solid rgba(255,255,255,.1) !important; }
 .tabBtn{ font-size:8px !important; padding:0 !important; display:flex; flex-direction:column;
   align-items:center; justify-content:center; gap:1px; }
@@ -1356,9 +1367,15 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
 .cell{ border-radius:8px !important; }
 .badge{ font-weight:800 !important; }
 #playRow{ flex:none; display:flex !important; gap:5px !important; margin:6px 0 !important; }
+/* min-height 44 so Hint and CLEAR clear the touch minimum — they were 33px */
 #playRow button,#timerBox{ flex:1; padding:8px 4px !important; height:auto !important;
+  min-height:44px !important; display:flex !important; align-items:center; justify-content:center;
   line-height:1.2 !important; font-size:10.5px !important; border-radius:12px !important;
   max-width:none !important; width:auto !important; margin:0 !important; }
+/* the timer is a readout, not a control — the cyan button border made children
+   tap it. No border, no shadow, no button colour. */
+#timerBox{ background:rgba(255,255,255,.05) !important; border:0 !important;
+  box-shadow:none !important; color:var(--bink3) !important; font-variant-numeric:tabular-nums; }
 #keypad{ flex:none; max-width:none !important; margin:0 !important; padding:0 0 5px !important; }
 .kprow{ gap:3px !important; margin-bottom:3px !important; }
 .kp{ height:30px !important; font-size:14px !important; border-radius:9px !important;
@@ -1461,7 +1478,12 @@ body.binaryMode .solvedCounter{ display:none !important; }
 body.binaryMode #binaryPanel{ display:flex !important; }
 
 /* ══ MIND READER — one card at a time ══ */
-.mrWrap{ flex:1; min-height:0; display:flex; flex-direction:column; overflow:hidden; }
+/* safe center: on the reveal every child is flex:none, so the answer used to
+   sit at the top with 532px of nothing under it. Centring gathers it. On a
+   question card the flex:1 card eats the slack, so this changes nothing there.
+   "safe" keeps it top-aligned if the content is ever taller than the box. */
+.mrWrap{ flex:1; min-height:0; display:flex; flex-direction:column; overflow:hidden;
+  justify-content:safe center; }
 .mrCard{ background:var(--sf); border-radius:18px; padding:13px 12px; box-shadow:var(--clay); flex:none; }
 .mrCard h3{ font-size:14px; font-weight:900; color:var(--bink); margin-bottom:4px; }
 .mrCard p{ font-size:11px; color:var(--bink2); line-height:1.55; }
@@ -1498,15 +1520,25 @@ body.binaryMode #binaryPanel{ display:flex !important; }
 .mrHead span{ font-size:9px; color:var(--bink3); font-weight:700; }
 /* all 50 numbers must fit; auto-fit columns keep them legible on any width,
    and overflow-y is a safety net so a number can never be hidden */
-.mrNums{ flex:1; min-height:0; display:grid; gap:3px; align-content:start; overflow-y:auto;
-  grid-template-columns:repeat(auto-fill, minmax(30px, 1fr)); }
-.mrNums span{ background:#120C34; border-radius:6px; padding:3px 1px; text-align:center; font-size:10.5px;
-  font-weight:800; font-variant-numeric:tabular-nums; box-shadow:var(--sunk); color:var(--bink);
-  line-height:1.35; }
+/* Sized by --mrScale, which fitCard() raises until the numbers fill the card.
+   Card 1 holds 20 numbers and used to leave 472px of the card blank while a
+   child squinted at 10.5px digits; the space belongs to the numbers, since
+   scanning them for your own number IS the game. Cards with 50 or 128 numbers
+   simply stay at scale 1. */
+.mrNums{ flex:1; min-height:0; display:grid; align-content:start; overflow-y:auto;
+  gap:calc(3px * var(--mrScale, 1));
+  grid-template-columns:repeat(auto-fill, minmax(calc(30px * var(--mrScale, 1)), 1fr)); }
+.mrNums span{ background:#120C34; text-align:center; font-weight:800;
+  border-radius:calc(6px * var(--mrScale, 1));
+  padding:calc(3px * var(--mrScale, 1)) 1px;
+  font-size:calc(10.5px * var(--mrScale, 1));
+  font-variant-numeric:tabular-nums; box-shadow:var(--sunk); color:var(--bink); line-height:1.35; }
 /* Advance shows 128 numbers per card instead of at most 50 — tighter columns
    so they all fit, with the same internal scroll as a safety net. */
-.mrNums.dense{ grid-template-columns:repeat(auto-fill, minmax(24px, 1fr)); gap:2px; }
-.mrNums.dense span{ font-size:8.5px; padding:2px 0; border-radius:4px; line-height:1.3; }
+.mrNums.dense{ gap:calc(2px * var(--mrScale, 1));
+  grid-template-columns:repeat(auto-fill, minmax(calc(24px * var(--mrScale, 1)), 1fr)); }
+.mrNums.dense span{ font-size:calc(8.5px * var(--mrScale, 1));
+  padding:calc(2px * var(--mrScale, 1)) 0; border-radius:calc(4px * var(--mrScale, 1)); line-height:1.3; }
 .mrNote{ background:color-mix(in srgb, var(--mode) 16%, transparent); border-radius:10px;
   padding:8px 10px; margin-top:9px; font-size:11px; color:var(--bink2); line-height:1.5;
   box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--mode) 38%, transparent); }
@@ -3988,7 +4020,11 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     if (title) title.textContent = (id === 'scPlay' && lvl) ? lvlName : SCREEN_TITLE[id];
     if (chip){
       chip.textContent = (id === 'scPlay' && lvl) ? 'playing' : SCREEN_CHIP[id];
-      chip.style.display = 'inline-block';
+      /* No chip while playing. It only ever said "playing" — which the lit Play
+         tab and the puzzle name in the title already tell you — and its 49px
+         was truncating the longest names to "Guess My Number ·…". Dropping it
+         here fits every title, including 🎂 Sir Ramanujan MathMagic. */
+      chip.style.display = (id === 'scPlay') ? 'none' : 'inline-block';
     }
 
     if (id === 'scPlay'){ try { fitBoard(); } catch(e){} }
@@ -4689,7 +4725,31 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     });
     var u = document.getElementById('mrUndo');
     if (u) u.addEventListener('click', function(){ MR.step--; MR.answers.pop(); mrAsk(); });
+    requestAnimationFrame(fitCard);
   }
+
+  /* Grow the numbers until they fill the card they are given.
+     The grid is auto-fill, so a larger minmax means fewer columns and more
+     rows — raising the scale can only ever make the block taller, never
+     shorter. That monotonicity is what makes stepping up until the next step
+     would overflow a correct way to find the largest size that still fits.
+     A 20-number card ends up roughly twice the size; a 128-number Advance card
+     never leaves 1. */
+  function fitCard(){
+    var nums = document.querySelector('#mrCard .mrNums');
+    if (!nums) return;
+    nums.style.setProperty('--mrScale', 1);
+    var box = nums.clientHeight;
+    if (!box) return;
+    var s = 1;
+    for (var i = 0; i < 34 && s < 3.4; i++){
+      var next = Math.round((s + 0.06) * 100) / 100;
+      nums.style.setProperty('--mrScale', next);
+      if (nums.scrollHeight > box){ nums.style.setProperty('--mrScale', s); return; }
+      s = next;
+    }
+  }
+  window.addEventListener('resize', function(){ requestAnimationFrame(fitCard); });
 
   function mrGuess(){
     var t = 0;
@@ -5231,8 +5291,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-19 (Learn lives beside settings)';
-  window.BETA_VER = 'beta-19';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-20 (bigger numbers, bigger buttons)';
+  window.BETA_VER = 'beta-20';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
