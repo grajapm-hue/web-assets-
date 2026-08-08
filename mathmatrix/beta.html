@@ -1239,6 +1239,21 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
 .appShell > *{ position:relative; z-index:1; }
 @media(prefers-reduced-motion:reduce){ .appShell::after{ animation:none !important; } }
 
+/* ══ TABLET · LAPTOP · DESKTOP ═════════════════════════════════════════════
+   This is a portrait phone design. Left to stretch, a single puzzle row ran
+   945px across a 1920px desktop and Kimo's greeting hit 341 characters on one
+   line — four times a readable measure. So cap the app and centre it: above
+   this width everything inside is the phone layout that is already tested.
+
+   The min-height guard matters. A phone held sideways is 844x390 — wide
+   enough to trip a width-only query, but capping it there would letterbox the
+   game into a narrow strip. Landscape keeps the full width it needs.        */
+@media (min-width: 540px) and (min-height: 600px){
+  body{ background:radial-gradient(120% 65% at 50% 0%, #241A5C 0%, #0C0828 72%) !important; }
+  .appShell{ max-width:480px; margin-inline:auto;
+    box-shadow:0 0 0 1px rgba(255,255,255,.07), 0 18px 60px rgba(0,0,0,.55); }
+}
+
 .appBar{ flex:none; height:46px; padding:0 11px !important; position:static !important;
   display:flex; align-items:center; gap:8px;
   background:rgba(0,0,0,.26) !important; border-bottom:1px solid rgba(255,255,255,.09) !important; }
@@ -1273,9 +1288,13 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
 .kimoFace{ width:36px !important; height:36px !important; font-size:20px !important; }
 /* three lines, not two: the hints now name every offset, and clipping a hint
    mid-sentence is worse than giving up ~14px of board height */
+/* 64ch caps the reading line. A phone held sideways is 844px wide and ran
+   Kimo's greeting to 145 characters on one line — twice a readable measure.
+   Capping the bubble rather than the whole shell keeps the big landscape
+   board, which is the reason to turn the phone in the first place. */
 .kimoBub{ padding:6px 10px !important; font-size:11px !important; line-height:1.35 !important;
   border-radius:13px !important; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;
-  overflow:hidden; }
+  overflow:hidden; max-width:64ch; }
 .kimoBub::before{ top:14px !important; }
 .betaFlag{ flex:none; margin:0 0 6px !important; padding:5px 10px !important; font-size:9.5px !important;
   border-radius:10px !important; max-width:none !important; }
@@ -1286,7 +1305,13 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
    from the space actually left under the last group, so the list grows to fill
    a tall phone and shrinks itself when more puzzles are added later. The
    fallback of 1 keeps the old layout if the script never runs. */
+/* "safe" is doing real work here: plain `center` on a flex column that
+   overflows clips the top items and makes them unscrollable. safe center
+   falls back to flex-start the moment the list is taller than the box, so a
+   tall tablet gets the leftover split evenly and a short phone still starts
+   at the first puzzle. */
 .difficultyBar{ flex:1; min-height:0; overflow:hidden; display:flex; flex-direction:column;
+  justify-content:safe center;
   gap:calc(3px * var(--lvScale, 1));
   background:transparent !important; border:0 !important; padding:0 !important; margin:0 !important;
   max-width:none !important; }
@@ -4284,27 +4309,29 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     var bar = document.querySelector('.difficultyBar');
     if (!bar || !bar.clientHeight) return;
 
-    function slackAt(s){
+    // Measure the list top-to-bottom, not the gap underneath it. The list is
+    // centred now, so the slack is split above and below — reading only the
+    // bottom gap would see half the free space and under-grow the type.
+    function spanAt(s){
       bar.style.setProperty('--lvScale', s);
-      var last = null;
-      for (var i = bar.children.length - 1; i >= 0; i--){
-        if (bar.children[i].offsetHeight){ last = bar.children[i]; break; }
-      }
-      if (!last) return 0;
-      return bar.getBoundingClientRect().bottom - last.getBoundingClientRect().bottom;
+      var first = null, last = null, k = bar.children;
+      for (var i = 0; i < k.length; i++) if (k[i].offsetHeight){ first = k[i]; break; }
+      for (var j = k.length - 1; j >= 0; j--) if (k[j].offsetHeight){ last = k[j]; break; }
+      if (!first || !last) return 0;
+      return last.getBoundingClientRect().bottom - first.getBoundingClientRect().top;
     }
 
-    var free = slackAt(1);
-    var content = bar.clientHeight - free;
-    var s = content > 0 ? Math.max(LV_MIN, Math.min(LV_MAX, bar.clientHeight / content)) : 1;
+    var box = bar.clientHeight;
+    var natural = spanAt(1);
+    var s = natural > 0 ? Math.max(LV_MIN, Math.min(LV_MAX, box / natural)) : 1;
 
     // padding, gaps and line wrapping do not scale perfectly linearly, so settle
     // the estimate by measuring rather than trusting the ratio
-    for (var i = 0; i < 14 && slackAt(s) < 0 && s > LV_MIN; i++) s = Math.max(LV_MIN, s - 0.03);
+    for (var i = 0; i < 14 && spanAt(s) > box && s > LV_MIN; i++) s = Math.max(LV_MIN, s - 0.03);
     bar.style.setProperty('--lvScale', s.toFixed(3));
 
     // if even the smallest type will not fit, scrolling beats illegible text
-    bar.style.overflowY = slackAt(s) < -1 ? 'auto' : 'hidden';
+    bar.style.overflowY = spanAt(s) > box + 1 ? 'auto' : 'hidden';
   }
   /* The header pill said "9 puzzles" while ten were listed — it was typed by hand
      and the Advance number game never updated it. Count them instead, so it stays
@@ -5164,8 +5191,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-16 (bigger puzzle list)';
-  window.BETA_VER = 'beta-16';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-17 (fits tablet, laptop and desktop)';
+  window.BETA_VER = 'beta-17';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
