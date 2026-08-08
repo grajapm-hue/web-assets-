@@ -1299,8 +1299,13 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
    costs no extra height because the bar itself is unchanged. */
 .tabBar{ position:static !important; flex:none; height:52px; padding:3px 7px !important;
   background:rgba(0,0,0,.32) !important; border-top:1px solid rgba(255,255,255,.1) !important; }
+/* Every tab is a filled pill now, not a bare label. The active one is a shade
+   lighter with the gold text it already had, so which screen you are on still
+   reads instantly — the fill is uniform, the emphasis is not. */
 .tabBtn{ font-size:8px !important; padding:0 !important; display:flex; flex-direction:column;
-  align-items:center; justify-content:center; gap:1px; }
+  align-items:center; justify-content:center; gap:1px;
+  background:var(--sf) !important; border-radius:11px !important; margin:0 2px !important; }
+.tabBtn.on{ background:var(--sf3) !important; }
 .tabBtn .tabIco{ font-size:15px !important; margin:0 !important; }
 
 /* Kimo — fixed height, two lines maximum, never pushes the board */
@@ -1381,20 +1386,45 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
   min-height:44px !important; display:flex !important; align-items:center; justify-content:center;
   line-height:1.2 !important; font-size:10.5px !important; border-radius:12px !important;
   max-width:none !important; width:auto !important; margin:0 !important; }
-/* the timer is a readout, not a control — the cyan button border made children
-   tap it. No border, no shadow, no button colour. */
-#timerBox{ background:rgba(255,255,255,.05) !important; border:0 !important;
-  box-shadow:none !important; color:var(--bink3) !important; font-variant-numeric:tabular-nums; }
+/* ══ EVERY CONTROL CARRIES A FILL ═══════════════════════════════════════════
+   Raja asked for CLEAR and the timer to be filled, and for the same to be
+   applied everywhere it applies. Audited the lot: CLEAR was in fact already
+   filled, but in the same indigo as the keypad with only a red border, so
+   beside a solid gold Hint it read as an outline. Genuinely bare were the
+   timer, the System-keyboard key, all four bottom tabs and the two settings
+   toggles — eight controls in all.
+
+   The row now reads as three solid chips: gold Hint, red CLEAR, indigo timer.
+   The timer keeps no shadow and no border so it still reads as a readout
+   rather than something to press — filled, but not pretending to be a button. */
+#clearBtn{ background:var(--warn) !important; color:#3A0F09 !important;
+  border-color:transparent !important; font-weight:900 !important; }
+#timerBox{ background:var(--sf2) !important; border:0 !important;
+  box-shadow:none !important; color:var(--bink2) !important; font-variant-numeric:tabular-nums; }
+/* the System-keyboard key was the only transparent one in the keypad */
+.kp.kpsys{ background:var(--sf) !important; color:var(--bink2) !important;
+  border-color:var(--sf3) !important; }
+.kp.kpsys.on{ background:var(--gold) !important; color:#1a1204 !important;
+  border-color:transparent !important; }
+/* both settings toggles were bare outlines */
+#soundBtn, #musicBtn{ background:var(--sf2) !important; }
 #keypad{ flex:none; max-width:none !important; margin:0 !important; padding:0 0 5px !important; }
 .kprow{ gap:3px !important; margin-bottom:3px !important; }
 .kp{ height:30px !important; font-size:14px !important; border-radius:9px !important;
   aspect-ratio:auto !important; flex:1; padding:0 !important; }
-/* the system-keyboard toggle is a rare control — make it a thin strip, not a button block */
+/* The system-keyboard toggle stays a thin strip rather than a button block —
+   it is a rare control and should not compete with the digits. It was the last
+   transparent thing in the app though, so it is filled now like everything
+   else, just quieter: a darker fill instead of an outline on nothing.
+   (This selector carries an id, so it outranks the .kp.kpsys rule above —
+   which is exactly why the fill has to be set here.) */
 #keypad > div:last-child{ margin:0 !important; }
 #keypad > div:last-child button{ font-size:9.5px !important; padding:4px 10px !important;
   height:auto !important; line-height:1.3 !important; border-radius:8px !important;
-  background:transparent !important; box-shadow:inset 0 0 0 1px var(--sf2) !important;
-  color:var(--bink3) !important; }
+  background:var(--sf) !important; box-shadow:inset 0 0 0 1px var(--sf3) !important;
+  color:var(--bink2) !important; }
+#keypad > div:last-child button.on{ background:var(--gold) !important; color:#1a1204 !important;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.3) !important; }
 .kprow button{ height:30px !important; }
 /* When a big board on a short phone would leave unusably small cells, the keypad
    yields its space rather than the page starting to scroll. Recallable at any time. */
@@ -5493,8 +5523,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-30 (tools hide only while the demo runs)';
-  window.BETA_VER = 'beta-30';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-31 (every control carries a fill)';
+  window.BETA_VER = 'beta-31';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
