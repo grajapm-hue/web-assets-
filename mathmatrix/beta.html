@@ -1042,33 +1042,33 @@ body{ background:var(--gr) !important; color:var(--bink) !important; }
 .tabBtn.on .tabIco{ filter:none; }
 .screens{ padding-bottom:112px !important; }
 
-/* ── KIMO: the brand, reacting ── */
-.kimo{ display:flex; align-items:center; gap:10px; width:100%; max-width:560px;
+/* ── SANA: the brand, reacting ── */
+.sana{ display:flex; align-items:center; gap:10px; width:100%; max-width:560px;
   margin:10px auto 2px; padding:0 10px; box-sizing:border-box; }
-.kimoFace{ width:50px; height:50px; flex:none; border-radius:50%; display:grid; place-items:center;
+.sanaFace{ width:50px; height:50px; flex:none; border-radius:50%; display:grid; place-items:center;
   font-size:28px; background:linear-gradient(160deg,#FFD675,var(--gold)); box-shadow:var(--clay);
-  position:relative; animation:kBob 3s var(--spring) infinite; }
-.kimoFace .kSpark{ position:absolute; top:-5px; right:-4px; font-size:15px; opacity:0; transition:opacity .2s; }
-.kimo.k-cheer .kimoFace{ animation:kCheer .62s var(--spring); }
-.kimo.k-oops  .kimoFace{ animation:kOops .45s ease; }
-.kimo.k-think .kimoFace{ animation:kThink 2.1s ease-in-out infinite; }
-.kimo.k-party .kimoFace{ animation:kParty .9s var(--spring); }
-.kimo.k-cheer .kSpark,.kimo.k-oops .kSpark,.kimo.k-think .kSpark,.kimo.k-party .kSpark{ opacity:1; }
-@keyframes kBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
-@keyframes kCheer{0%{transform:scale(1)}30%{transform:scale(1.2) rotate(-11deg)}
+  position:relative; animation:sanaBob 3s var(--spring) infinite; }
+.sanaFace .sanaSpark{ position:absolute; top:-5px; right:-4px; font-size:15px; opacity:0; transition:opacity .2s; }
+.sana.sana-cheer .sanaFace{ animation:sanaCheer .62s var(--spring); }
+.sana.sana-oops  .sanaFace{ animation:sanaOops .45s ease; }
+.sana.sana-think .sanaFace{ animation:sanaThink 2.1s ease-in-out infinite; }
+.sana.sana-party .sanaFace{ animation:sanaParty .9s var(--spring); }
+.sana.sana-cheer .sanaSpark,.sana.sana-oops .sanaSpark,.sana.sana-think .sanaSpark,.sana.sana-party .sanaSpark{ opacity:1; }
+@keyframes sanaBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes sanaCheer{0%{transform:scale(1)}30%{transform:scale(1.2) rotate(-11deg)}
   62%{transform:scale(1.1) rotate(11deg)}100%{transform:scale(1)}}
-@keyframes kOops{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px) rotate(-6deg)}
+@keyframes sanaOops{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px) rotate(-6deg)}
   50%{transform:translateX(6px) rotate(6deg)}75%{transform:translateX(-3px)}}
-@keyframes kThink{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
-@keyframes kParty{0%{transform:scale(1) rotate(0)}45%{transform:scale(1.3) rotate(200deg)}
+@keyframes sanaThink{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
+@keyframes sanaParty{0%{transform:scale(1) rotate(0)}45%{transform:scale(1.3) rotate(200deg)}
   100%{transform:scale(1) rotate(360deg)}}
-.kimoBub{ flex:1; min-width:0; background:var(--sf2); border-radius:17px; padding:9px 12px;
+.sanaBub{ flex:1; min-width:0; background:var(--sf2); border-radius:17px; padding:9px 12px;
   font-size:12.5px; color:var(--bink); line-height:1.45; box-shadow:var(--clay); position:relative;
   font-weight:600; }
-.kimoBub::before{ content:''; position:absolute; left:-6px; top:18px; width:12px; height:12px;
+.sanaBub::before{ content:''; position:absolute; left:-6px; top:18px; width:12px; height:12px;
   background:var(--sf2); transform:rotate(45deg); }
-.kimoBub b{ color:var(--gold); font-weight:900; }
-.kimoBub.flash{ animation:kBubIn .34s var(--spring); }
+.sanaBub b{ color:var(--gold); font-weight:900; }
+.sanaBub.flash{ animation:kBubIn .34s var(--spring); }
 @keyframes kBubIn{from{opacity:.2;transform:translateX(-9px) scale(.96)}to{opacity:1;transform:none}}
 
 /* ── level cards: neutral surface, colour only in rail + well ── */
@@ -1181,7 +1181,7 @@ body{ background:var(--gr) !important; color:var(--bink) !important; }
   font-size:11px; font-weight:700; color:var(--bink2); text-align:center; }
 .betaFlag b{ color:var(--gold); }
 
-@media(prefers-reduced-motion:reduce){ .kimoFace,.kimoBub{ animation:none !important; } }
+@media(prefers-reduced-motion:reduce){ .sanaFace,.sanaBub{ animation:none !important; } }
 </style>
 
 <style>
@@ -1240,7 +1240,7 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
 
 /* ══ TABLET · LAPTOP · DESKTOP ═════════════════════════════════════════════
    This is a portrait phone design. Left to stretch, a single puzzle row ran
-   945px across a 1920px desktop and Kimo's greeting hit 341 characters on one
+   945px across a 1920px desktop and SaNa's greeting hit 341 characters on one
    line — four times a readable measure. So cap the app and centre it: above
    this width everything inside is the phone layout that is already tested.
 
@@ -1308,19 +1308,19 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
 .tabBtn.on{ background:var(--sf3) !important; color:#FFE9A8 !important; }
 .tabBtn .tabIco{ font-size:16px !important; margin:0 !important; }
 
-/* Kimo — fixed height, two lines maximum, never pushes the board */
-.kimo{ flex:none; margin:0 0 6px !important; padding:0 !important; max-width:none !important; gap:8px !important; }
-.kimoFace{ width:36px !important; height:36px !important; font-size:20px !important; }
+/* SaNa — fixed height, two lines maximum, never pushes the board */
+.sana{ flex:none; margin:0 0 6px !important; padding:0 !important; max-width:none !important; gap:8px !important; }
+.sanaFace{ width:36px !important; height:36px !important; font-size:20px !important; }
 /* three lines, not two: the hints now name every offset, and clipping a hint
    mid-sentence is worse than giving up ~14px of board height */
 /* 64ch caps the reading line. A phone held sideways is 844px wide and ran
-   Kimo's greeting to 145 characters on one line — twice a readable measure.
+   SaNa's greeting to 145 characters on one line — twice a readable measure.
    Capping the bubble rather than the whole shell keeps the big landscape
    board, which is the reason to turn the phone in the first place. */
-.kimoBub{ padding:6px 10px !important; font-size:11px !important; line-height:1.35 !important;
+.sanaBub{ padding:6px 10px !important; font-size:11px !important; line-height:1.35 !important;
   border-radius:13px !important; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;
   overflow:hidden; max-width:64ch; }
-.kimoBub::before{ top:14px !important; }
+.sanaBub::before{ top:14px !important; }
 .betaFlag{ flex:none; margin:0 0 6px !important; padding:5px 10px !important; font-size:9.5px !important;
   border-radius:10px !important; max-width:none !important; }
 
@@ -1393,7 +1393,7 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
 
 /* ── PLAY: the board is the flexible region ── */
 .solvedCounter{ flex:none; font-size:9.5px !important; padding:4px 10px !important; margin:0 0 5px !important; }
-.instCard{ display:none !important; }               /* Kimo speaks it instead */
+.instCard{ display:none !important; }               /* SaNa speaks it instead */
 .targetPill{ font-size:12.5px !important; padding:6px 13px !important; margin:0 !important; }
 #learnRow,#learnHint,#rotateHint,#msg{ display:none !important; }
 .playTop{ flex:none; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:5px; }
@@ -1578,7 +1578,7 @@ body.binaryMode #binaryPanel{ display:flex !important; }
 .mrThink b{ color:var(--gold); }
 .mrQ{ width:46px; height:46px; flex:none; border-radius:14px; display:grid; place-items:center;
   font-size:26px; font-weight:900; background:linear-gradient(160deg,#FFD675,var(--gold));
-  color:#1a1204; box-shadow:var(--clay); animation:kBob 2.6s var(--spring) infinite; }
+  color:#1a1204; box-shadow:var(--clay); animation:sanaBob 2.6s var(--spring) infinite; }
 .mrGo{ flex:none; width:100%; margin-top:10px; border:0; border-radius:16px; padding:13px;
   background:var(--gold); color:#1a1204; font-size:13.5px; font-weight:900; box-shadow:var(--clay);
   cursor:pointer; font-family:inherit; }
@@ -1644,7 +1644,7 @@ body.binaryMode #binaryPanel{ display:flex !important; }
 @keyframes mrPop{ 0%{ transform:scale(.2); opacity:0 } 60%{ transform:scale(1.14) } 100%{ transform:scale(1); opacity:1 } }
 .mrVerdict{ flex:none; text-align:center; font-size:12px; font-weight:800; color:var(--bink2); margin:5px 0 9px; }
 .mrOops{ flex:none; text-align:center; font-size:46px; margin:6px 0 2px;
-  animation:kOops .5s ease; }
+  animation:sanaOops .5s ease; }
 .mrVerdict.bad{ color:var(--warn); }
 .mrPill{ flex:none; background:#120C34; border-radius:13px; padding:11px; margin-top:10px; text-align:center;
   font-size:22px; font-weight:900; letter-spacing:5px; box-shadow:var(--sunk);
@@ -1685,7 +1685,7 @@ body.binaryMode #binaryPanel{ display:flex !important; }
 .mrRow2 button{ flex:1; }
 
 /* ══ HINT LADDER ══ */
-/* Orange, not the brand gold. Gold stays for the stars and Kimo's highlights;
+/* Orange, not the brand gold. Gold stays for the stars and SaNa's highlights;
    the Hint chip is one of the three play-row colours and wants its own hue.
    This rule sits after the chip block above and would otherwise win, which is
    why the colour has to be set here rather than there. */
@@ -1843,9 +1843,9 @@ body.binaryMode #binaryPanel{ display:flex !important; }
    real mathematics deserves the moment to land. Stars are earned by how
    little help was needed, so they mean something. */
 .winWrap{ text-align:center; }
-.winKimo{ width:66px; height:66px; margin:0 auto 8px; border-radius:50%; display:grid;
+.winSaNa{ width:66px; height:66px; margin:0 auto 8px; border-radius:50%; display:grid;
   place-items:center; font-size:36px; background:linear-gradient(160deg,#FFD675,var(--gold));
-  box-shadow:var(--clay); animation:kParty 1s var(--spring); }
+  box-shadow:var(--clay); animation:sanaParty 1s var(--spring); }
 .winStars{ display:flex; justify-content:center; gap:7px; margin-bottom:6px; }
 /* ★ is a text glyph, not an emoji — a grayscale filter does nothing to it,
    so the stars have to be coloured directly or they come out plain white. */
@@ -1926,12 +1926,12 @@ body{ background:#C9A87C !important; }
 .barBtn, .navBack{ background:#8A5E31 !important; color:#FFF6E7 !important; }
 .barBtn.barWord span{ color:#FFE6C2 !important; }
 
-/* Kimo */
-.kimoFace{ box-shadow:0 3px 0 rgba(94,64,32,.35) !important; }
-.kimoBub{ background:#FFF6E7 !important; color:#33220F !important;
+/* SaNa */
+.sanaFace{ box-shadow:0 3px 0 rgba(94,64,32,.35) !important; }
+.sanaBub{ background:#FFF6E7 !important; color:#33220F !important;
   box-shadow:0 2px 0 rgba(94,64,32,.30) !important; }
-.kimoBub::before{ border-right-color:#FFF6E7 !important; }
-.kimoBub b{ color:#9A3412 !important; }
+.sanaBub::before{ border-right-color:#FFF6E7 !important; }
+.sanaBub b{ color:#9A3412 !important; }
 .betaFlag{ background:rgba(255,246,231,.72) !important; color:#4A331A !important;
   box-shadow:inset 0 0 0 1px rgba(94,64,32,.35) !important; }
 .betaFlag b{ color:#9A3412 !important; }
@@ -2889,7 +2889,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       document.querySelectorAll('.toggleBtn').forEach(function(b){ b.classList.remove('active'); });
       this.classList.add('active');
       /* Fresh puzzle, fresh start: Logic and Watch are back, and the "already
-         watched" memory is wiped. This is the route Kimo tells a child about
+         watched" memory is wiped. This is the route SaNa tells a child about
          when the tools step aside. */
       watchedHere = false;
       document.body.classList.remove('toolsOff');
@@ -4238,7 +4238,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
      while the browser's address bar is showing, so window.scrollTo actually
      moves — carrying the app bar off the top. Raja hit exactly this: after
      Watch, the back arrow, the puzzle name, Logic, Watch and settings were all
-     gone, and Kimo was telling him to "tap ←" when no ← was on screen.
+     gone, and SaNa was telling him to "tap ←" when no ← was on screen.
      Reproduced by giving the document 80px of slack: the bar went to top:-19.
 
      So it now does the opposite — it makes sure we are at the top, undoing any
@@ -4354,7 +4354,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         watching = false;
         // demo over — the tools come back so the pattern can be re-read
         document.body.classList.remove('toolsOff');
-        try { kimo('That is the whole pattern. Tap <b>CLEAR</b> and it is your turn.', 'cheer'); } catch(e){}
+        try { sana('That is the whole pattern. Tap <b>CLEAR</b> and it is your turn.', 'cheer'); } catch(e){}
         return;
       }
       if (dualPass && i === keptCount){
@@ -4560,38 +4560,38 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   window.addEventListener('orientationchange', function(){ setTimeout(fitBoard, 250); });
 
   /* ══════════════════════════════════════════════════════════════════
-     BETA ADDITIONS — Kimo the mascot, diagonal arrows, feedback.
+     BETA ADDITIONS — SaNa the mascot, diagonal arrows, feedback.
      Written as a layer on top: it wraps existing functions rather than
      editing them, so the game logic is untouched.
      ══════════════════════════════════════════════════════════════════ */
 
-  /* ---- 1. Kimo ---- */
-  var KIMO_SPARK = { cheer:'✨', oops:'❓', think:'💭', party:'🎉' };
-  var kimoEl, kimoBub, kimoSpark, kimoTimer;
-  (function buildKimo(){
+  /* ---- 1. SaNa ---- */
+  var SANA_SPARK = { cheer:'✨', oops:'❓', think:'💭', party:'🎉' };
+  var sanaEl, sanaBub, sanaSpark, sanaTimer;
+  (function buildSaNa(){
     var bar = document.querySelector('.appBar');
     if (!bar) return;
-    kimoEl = document.createElement('div');
-    kimoEl.className = 'kimo';
-    kimoEl.innerHTML = '<span class="kimoFace">🐒<span class="kSpark"></span></span>' +
-                       '<span class="kimoBub">Hello! I\'m <b>Kimo</b>. Pick a puzzle and I\'ll help you.</span>';
-    bar.insertAdjacentElement('afterend', kimoEl);
+    sanaEl = document.createElement('div');
+    sanaEl.className = 'sana';
+    sanaEl.innerHTML = '<span class="sanaFace">🐒<span class="sanaSpark"></span></span>' +
+                       '<span class="sanaBub">Hello! I\'m <b>SaNa</b>. Pick a puzzle and I\'ll help you.</span>';
+    bar.insertAdjacentElement('afterend', sanaEl);
     var flag = document.createElement('div');
     flag.className = 'betaFlag';
     flag.innerHTML = '<b>BETA</b> — a test version. Tell us what breaks on the 💬 Feedback tab.';
-    kimoEl.insertAdjacentElement('afterend', flag);
-    kimoBub = kimoEl.querySelector('.kimoBub');
-    kimoSpark = kimoEl.querySelector('.kSpark');
+    sanaEl.insertAdjacentElement('afterend', flag);
+    sanaBub = sanaEl.querySelector('.sanaBub');
+    sanaSpark = sanaEl.querySelector('.sanaSpark');
   })();
-  function kimo(msg, mood, sticky){
-    if (!kimoBub) return;
-    kimoBub.innerHTML = msg;
-    kimoBub.classList.remove('flash'); void kimoBub.offsetWidth; kimoBub.classList.add('flash');
-    kimoEl.className = 'kimo' + (mood ? ' k-' + mood : '');
-    kimoSpark.textContent = KIMO_SPARK[mood] || '';
-    clearTimeout(kimoTimer);
+  function sana(msg, mood, sticky){
+    if (!sanaBub) return;
+    sanaBub.innerHTML = msg;
+    sanaBub.classList.remove('flash'); void sanaBub.offsetWidth; sanaBub.classList.add('flash');
+    sanaEl.className = 'sana' + (mood ? ' sana-' + mood : '');
+    sanaSpark.textContent = SANA_SPARK[mood] || '';
+    clearTimeout(sanaTimer);
     if (mood && mood !== 'think' && !sticky){
-      kimoTimer = setTimeout(function(){ kimoEl.className = 'kimo'; kimoSpark.textContent = ''; }, 1500);
+      sanaTimer = setTimeout(function(){ sanaEl.className = 'sana'; sanaSpark.textContent = ''; }, 1500);
     }
   }
 
@@ -4599,10 +4599,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   var _sfx = sfx;
   sfx = function(kind, pan){
     _sfx(kind, pan);
-    if (kind === 'line')      kimo('That line is finished — <b>nice!</b>', 'cheer');
-    else if (kind === 'dup')  kimo('That number is <b>already used</b>. Every number appears once.', 'oops');
-    else if (kind === 'win')  kimo('<b>You solved it!</b> Every row, column and diagonal matches.', 'party', true);
-    else if (kind === 'unlock') kimo('<b>Level mastered!</b> Try a bigger square.', 'party');
+    if (kind === 'line')      sana('That line is finished — <b>nice!</b>', 'cheer');
+    else if (kind === 'dup')  sana('That number is <b>already used</b>. Every number appears once.', 'oops');
+    else if (kind === 'win')  sana('<b>You solved it!</b> Every row, column and diagonal matches.', 'party', true);
+    else if (kind === 'unlock') sana('<b>Level mastered!</b> Try a bigger square.', 'party');
   };
 
   /* ---- 2. Diagonal arrows on all four corner badges ---- */
@@ -4631,12 +4631,12 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   initBoard = function(){ _initBoard.apply(null, arguments); tagCorners(); };
   tagCorners();
 
-  // Kimo introduces each puzzle as you pick it
+  // SaNa introduces each puzzle as you pick it
   document.querySelectorAll('.toggleBtn').forEach(function(btn){
     btn.addEventListener('click', function(){
       sfx('card');
       var nm = this.dataset.name || this.textContent.trim();
-      kimo('<b>' + nm + '</b> — tap a box, then a number. I\'ll watch the lines.', 'cheer');
+      sana('<b>' + nm + '</b> — tap a box, then a number. I\'ll watch the lines.', 'cheer');
     });
   });
   var _goScreen = goScreen;
@@ -4647,12 +4647,12 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       try { fitBoard(); } catch(e){}
       if (id === 'scHome') try { fitHome(); } catch(e){}
     }, 40);
-    if (id === 'scHome')  kimo('Pick a puzzle — <b>they\'re all open</b>, no locks.', null);
+    if (id === 'scHome')  sana('Pick a puzzle — <b>they\'re all open</b>, no locks.', null);
     /* scLearn is no longer reachable — Learn is the 💡 sheet beside settings.
        The section stays in the DOM only because #logicBox lives there and is
        parked into the sheet system from it. */
-    if (id === 'scFeed')  kimo('Found something odd? <b>Tell us</b> — that\'s what a beta is for.', 'think');
-    if (id === 'scApp')   kimo('Install it once and it works with <b>no internet</b>.', null);
+    if (id === 'scFeed')  sana('Found something odd? <b>Tell us</b> — that\'s what a beta is for.', 'think');
+    if (id === 'scApp')   sana('Install it once and it works with <b>no internet</b>.', null);
   };
   ['scHome','scPlay','scLearn','scApp','scFeed'].forEach(function(s){
     var tb = document.getElementById('tab-' + s);
@@ -4714,7 +4714,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     function guard(){
       if (!picked.length && !(txt.value || '').trim()){
         stat.textContent = '⚠️ Pick a face or write a line first — otherwise there is nothing to send.';
-        kimo('Tell me <b>something</b> first — even one word helps.', 'oops');
+        sana('Tell me <b>something</b> first — even one word helps.', 'oops');
         return false;
       }
       return true;
@@ -4725,14 +4725,14 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         encodeURIComponent('MathMatrix beta feedback') +
         '&body=' + encodeURIComponent(compose());
       stat.textContent = '✉️ Opening your mail app — nothing is sent until you press send there.';
-      kimo('Thank you! Your mail app should open now.', 'party');
+      sana('Thank you! Your mail app should open now.', 'party');
       window.location.href = url;
     });
     copy.addEventListener('click', function(){
       if (!guard()) return;
       var text = compose();
       function done(){ stat.textContent = '📋 Copied. Paste it into WhatsApp or email.';
-                       kimo('Copied — <b>paste it anywhere</b> you like.', 'cheer'); }
+                       sana('Copied — <b>paste it anywhere</b> you like.', 'cheer'); }
       if (navigator.clipboard && navigator.clipboard.writeText){
         navigator.clipboard.writeText(text).then(done, function(){ stat.textContent = '⚠️ Could not copy — select the text manually.'; });
       } else {
@@ -5057,7 +5057,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         'There are <b>eight</b> versions of every solution — four rotations, and each of those mirrored.</p>' +
         '<p>The numbers move. The relationships never do. That is why one solved square gives you eight ' +
         'puzzles to show your friends.</p>' +
-        '<p><b>🐒 Kimo says:</b> “Maths and monkeys — neither sits in one direction.”</p>');
+        '<p><b>🐒 SaNa says:</b> “Maths and monkeys — neither sits in one direction.”</p>');
     });
   })();
 
@@ -5184,7 +5184,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
   function mrStart(){
     MR.step = 0; MR.answers = []; MR.secret = '';
-    kimo('Think of any number from <b>1 to ' + mrMax() + '</b>. Keep it in your head — <b>do not tell me</b>.', 'think', true);
+    sana('Think of any number from <b>1 to ' + mrMax() + '</b>. Keep it in your head — <b>do not tell me</b>.', 'think', true);
     mrEl().innerHTML =
       '<div class="mrWrap"><div class="mrCard">' +
         '<h3>🤫 Keep it secret</h3>' +
@@ -5205,7 +5205,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // a subset made children answer "no" for a number that was simply off-screen,
     // which is why the guess came out wrong every time.
     var i = MR.step, list = mrMembers(i + 1), show = list;
-    kimo('Is your number on <b>this</b> card?', 'think', true);
+    sana('Is your number on <b>this</b> card?', 'think', true);
     mrEl().innerHTML =
       '<div class="mrWrap">' +
         '<div class="mrDots">' + [0,1,2,3,4,5,6,7].map(function(k){
@@ -5280,7 +5280,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     var picked = [], i0 = group === 'tens' ? 0 : 4;
     for (var i = i0; i < i0 + 4; i++) if (MR.answers[i]) picked.push(MR_VALUES[i] / (group === 'tens' ? 10 : 1));
     if (mrAdv()) return;
-    kimo('That cannot be right — <b>no digit is bigger than 9</b>. Shall we go again?', 'oops', true);
+    sana('That cannot be right — <b>no digit is bigger than 9</b>. Shall we go again?', 'oops', true);
     sfx('dup');
     mrEl().innerHTML = '<div class="mrWrap">' +
       '<div class="mrOops">🤔</div>' +
@@ -5305,14 +5305,14 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     if (p.tensDigit > 9) return mrTooMany('tens', p.tensDigit);
     if (p.units > 9)     return mrTooMany('units', p.units);
     if (g === 0){
-      kimo('Every answer was <b>no</b> — that only works for zero!', 'oops', true);
+      sana('Every answer was <b>no</b> — that only works for zero!', 'oops', true);
       mrEl().innerHTML = '<div class="mrWrap"><div class="mrBig">0</div>' +
         '<p class="mrVerdict bad">A number from 1 to ' + mrMax() + ' sits on at least one card.</p>' +
         '<button class="mrGo" id="mrAgain">↺ Try again</button></div>';
       document.getElementById('mrAgain').addEventListener('click', mrStart);
       return;
     }
-    kimo('Your number is… <b>' + g + '</b>', 'party', true);
+    sana('Your number is… <b>' + g + '</b>', 'party', true);
     sfx('reveal');
     mrEl().innerHTML = '<div class="mrWrap"><div class="mrBig">' + g + '</div>' +
       '<p class="mrVerdict">Did I get it right?</p>' +
@@ -5320,16 +5320,16 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       '<button class="mrGhost" id="mrNope">✗ No — that is not it</button></div>';
     try { celebrate(); } catch(e){}
     document.getElementById('mrYep').addEventListener('click', function(){
-      kimo('I knew it. Now let me show you <b>how</b> — there is no magic in it.', 'party', true);
+      sana('I knew it. Now let me show you <b>how</b> — there is no magic in it.', 'party', true);
       MR.learn = 0; mrLesson();
     });
     document.getElementById('mrNope').addEventListener('click', mrAskWhat);
   }
 
-  // Only when he is WRONG does Kimo ask for the number — the trick stays intact
+  // Only when he is WRONG does SaNa ask for the number — the trick stays intact
   function mrAskWhat(){
     MR.secret = '';
-    kimo('Oh! Then one card was answered the wrong way. <b>What was your number?</b>', 'oops', true);
+    sana('Oh! Then one card was answered the wrong way. <b>What was your number?</b>', 'oops', true);
     var d = [1,2,3,4,5,6,7,8,9,0];
     mrEl().innerHTML = '<div class="mrWrap"><div class="mrCard">' +
       '<h3>Tell me now — I will find my slip</h3>' +
@@ -5360,7 +5360,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         : 'Card ' + (bad + 1) + ' should have been “' +
           (mrMembers(bad + 1).indexOf(s) >= 0 ? 'yes' : 'no') + '”. Look again — ' + s + ' is ' +
           (mrMembers(bad + 1).indexOf(s) >= 0 ? '' : 'not ') + 'on it.';
-      kimo(bad < 0 ? txt : 'Found it — <b>card ' + (bad + 1) + '</b>. Answer that one again and I will be right.', 'think', true);
+      sana(bad < 0 ? txt : 'Found it — <b>card ' + (bad + 1) + '</b>. Answer that one again and I will be right.', 'think', true);
       mrEl().innerHTML = '<div class="mrWrap"><div class="mrBig" style="font-size:40px">' + s + '</div>' +
         '<p class="mrVerdict bad">' + txt + '</p>' +
         '<button class="mrGo" id="mrTeach">✨ Show me the method anyway</button>' +
@@ -5401,7 +5401,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   }
   function mrPaintLesson(){
     var s = MR_LESSON[MR.learn];
-    kimo(s[0], MR.learn === 4 ? 'party' : 'think', true);
+    sana(s[0], MR.learn === 4 ? 'party' : 'think', true);
     document.getElementById('mrNext').textContent = s[1];
     var ws = mrEl().querySelectorAll('.mrW');
     var sum = document.getElementById('mrSum'), bin = document.getElementById('mrBin');
@@ -5507,7 +5507,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
   function giveHint(){
     if (currentSize === 'binary'){
-      kimo('On this one the only hint is: <b>answer honestly</b>. One wrong card and I land next door.', 'think');
+      sana('On this one the only hint is: <b>answer honestly</b>. One wrong card and I land next door.', 'think');
       return;
     }
     /* The ladder used to assume exactly two text hints. The four-block methods
@@ -5521,13 +5521,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     paintHintDots();
     sfx('hint');
     if (hintLevel <= TEXT){
-      kimo('<b>Hint ' + hintLevel + ' of ' + TOTAL + '.</b> ' + pair[hintLevel - 1], 'think');
+      sana('<b>Hint ' + hintLevel + ' of ' + TOTAL + '.</b> ' + pair[hintLevel - 1], 'think');
       return;
     }
 
     var t = hintTarget();
     if (!t){
-      kimo('Every box is filled already — check the line totals around the edge.', 'think');
+      sana('Every box is filled already — check the line totals around the edge.', 'think');
       hintLevel = TOTAL; return;
     }
     if (hintLevel === TEXT + 1){
@@ -5536,7 +5536,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       var where = (t.r === t.c && t.r === Math.floor(PUZZLES[currentSize].rows / 2))
         ? 'the <b>middle</b> box — it sits on four lines at once'
         : 'this box, row ' + (t.r + 1) + ', column ' + (t.c + 1);
-      kimo('<b>Hint ' + hintLevel + ' of ' + TOTAL + '.</b> Try ' + where + '. I will not say the number — work it out.', 'think');
+      sana('<b>Hint ' + hintLevel + ' of ' + TOTAL + '.</b> Try ' + where + '. I will not say the number — work it out.', 'think');
       return;
     }
     // last rung: fill it in and say why
@@ -5545,7 +5545,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     t.el.dispatchEvent(new Event('input', { bubbles: true }));
     t.el.classList.add('hintGiven');
     sfx('place');
-    kimo('<b>Hint ' + TOTAL + ' of ' + TOTAL + '.</b> That box is <b>' + t.v + '</b>. Now the lines through it give you the rest.', 'cheer');
+    sana('<b>Hint ' + TOTAL + ' of ' + TOTAL + '.</b> That box is <b>' + t.v + '</b>. Now the lines through it give you the rest.', 'cheer');
     hintLevel = 0;   // ladder resets, so more help is available if they stall again
   }
 
@@ -5582,7 +5582,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     _sfx2(kind, pan);
     if (kind === 'win'){
       setTimeout(function(){
-        kimo(hintsUsed === 0
+        sana(hintsUsed === 0
           ? '<b>Solved with no hints at all.</b> That is the good one. 🐒'
           : 'Solved — with <b>' + hintsUsed + ' hint' + (hintsUsed > 1 ? 's' : '') + '</b>. Try the next one with fewer!',
           'party', true);
@@ -5742,7 +5742,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     var el = document.createElement('div');
     el.className = 'winWrap';
     el.innerHTML =
-      '<div class="winKimo">🐒</div>' +
+      '<div class="winSaNa">🐒</div>' +
       '<div class="winStars">' +
         [1,2,3].map(function(i){ return '<i class="' + (i <= stars ? 'lit' : '') + '">★</i>'; }).join('') +
       '</div>' +
@@ -5763,7 +5763,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
             '</b><span>a different total earns the sticker</span></span></div>');
     box.insertBefore(el, box.firstChild);
 
-    kimo(stars === 3 ? '<b>Three stars!</b> No hints at all. 🐒'
+    sana(stars === 3 ? '<b>Three stars!</b> No hints at all. 🐒'
                      : 'Solved! <b>' + stars + ' star' + (stars > 1 ? 's' : '') + '</b> — fewer hints next time.',
          'party', true);
     // the stars land one after another, each with its own chime
@@ -5867,8 +5867,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-40 (Share on the list, and you keep your place)';
-  window.BETA_VER = 'beta-40';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-41 (the helper is called SaNa now)';
+  window.BETA_VER = 'beta-41';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
