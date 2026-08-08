@@ -1090,11 +1090,18 @@ body{ background:var(--gr) !important; color:var(--bink) !important; }
 .toggleBtn.lvCard::before{ content:''; position:absolute; left:0; top:0; bottom:0; width:5px;
   background:var(--c2); }
 .toggleBtn.lvCard:active{ transform:translateY(3px) scale(.98) !important; box-shadow:var(--sunk) !important; }
+/* The card you are on had its name in the puzzle's own hue on the lighter
+   active background — 4.6:1, the weakest text in the app, and on the one card
+   a child is actually looking at. White reads at 12.6:1 and the hue still
+   marks the card through the inset ring, the left bar and the icon.
+   The button's own colour was near-black on indigo (1.63:1); no visible text
+   used it, but it was a trap for anything added to the card later. */
 .toggleBtn.lvCard.active{
   background:var(--sf2) !important; box-shadow:var(--clay), inset 0 0 0 1.5px var(--c2) !important;
-  outline:0 !important;
+  outline:0 !important; color:var(--bink) !important;
 }
-.toggleBtn.lvCard.active .lvName{ color:var(--c2) !important; }
+.toggleBtn.lvCard.active .lvName{ color:#FFFFFF !important; }
+.toggleBtn.lvCard.active .lvDiff{ color:var(--c1) !important; }
 .lvGrid{ background:color-mix(in srgb, var(--c2) 17%, #0c0a1e) !important; box-shadow:var(--sunk) !important; }
 .lvGrid::before{ background-image:radial-gradient(circle at 50% 50%, var(--c2) 32%, transparent 35%) !important; }
 .lvGlyph{ background:color-mix(in srgb, var(--c2) 17%, #0c0a1e) !important; color:var(--c2) !important;
@@ -1302,11 +1309,12 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
 /* Every tab is a filled pill now, not a bare label. The active one is a shade
    lighter with the gold text it already had, so which screen you are on still
    reads instantly — the fill is uniform, the emphasis is not. */
-.tabBtn{ font-size:8px !important; padding:0 !important; display:flex; flex-direction:column;
-  align-items:center; justify-content:center; gap:1px;
-  background:var(--sf) !important; border-radius:11px !important; margin:0 2px !important; }
-.tabBtn.on{ background:var(--sf3) !important; }
-.tabBtn .tabIco{ font-size:15px !important; margin:0 !important; }
+.tabBtn{ font-size:9.5px !important; padding:0 !important; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:1px; font-weight:800 !important;
+  background:var(--sf) !important; border-radius:11px !important; margin:0 2px !important;
+  color:var(--bink2) !important; }
+.tabBtn.on{ background:var(--sf3) !important; color:#FFE9A8 !important; }
+.tabBtn .tabIco{ font-size:16px !important; margin:0 !important; }
 
 /* Kimo — fixed height, two lines maximum, never pushes the board */
 .kimo{ flex:none; margin:0 0 6px !important; padding:0 !important; max-width:none !important; gap:8px !important; }
@@ -1382,9 +1390,12 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
 .badge{ font-weight:800 !important; }
 #playRow{ flex:none; display:flex !important; gap:5px !important; margin:6px 0 !important; }
 /* min-height 44 so Hint and CLEAR clear the touch minimum — they were 33px */
+/* 15px, not 10.5. Measured first: at 10.5 the longest label needed 42px in a
+   106px box — two and a half times the room it was using, in a chip 44px tall.
+   Sized to fill rather than to be safe. */
 #playRow button,#timerBox{ flex:1; padding:8px 4px !important; height:auto !important;
   min-height:44px !important; display:flex !important; align-items:center; justify-content:center;
-  line-height:1.2 !important; font-size:10.5px !important; border-radius:12px !important;
+  line-height:1.2 !important; font-size:15px !important; border-radius:12px !important;
   max-width:none !important; width:auto !important; margin:0 !important; }
 /* ══ EVERY CONTROL CARRIES A FILL ═══════════════════════════════════════════
    Raja asked for CLEAR and the timer to be filled, and for the same to be
@@ -1397,10 +1408,20 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
    The row now reads as three solid chips: gold Hint, red CLEAR, indigo timer.
    The timer keeps no shadow and no border so it still reads as a readout
    rather than something to press — filled, but not pretending to be a button. */
-#clearBtn{ background:var(--warn) !important; color:#3A0F09 !important;
+/* Raja: direct colours, not mid-tones; pink and orange in the mix; and the
+   text picked against the fill so it pops. So the row is three saturated
+   chips, each a different hue, all carrying near-black text — on a bright
+   fill dark type is far louder than white, and it measures that way too
+   (orange 8.9:1, pink 5.9:1, cyan 11.6:1 against these text colours).
+   The timer keeps no border and no shadow, so it is unmistakably a readout
+   even though it is now as colourful as the buttons either side. */
+#hintBtn{ background:#FF8A00 !important; color:#241000 !important;
   border-color:transparent !important; font-weight:900 !important; }
-#timerBox{ background:var(--sf2) !important; border:0 !important;
-  box-shadow:none !important; color:var(--bink2) !important; font-variant-numeric:tabular-nums; }
+#clearBtn{ background:#FF2D78 !important; color:#2B0512 !important;
+  border-color:transparent !important; font-weight:900 !important; }
+#timerBox{ background:#22D3EE !important; border:0 !important;
+  box-shadow:none !important; color:#062A30 !important; font-weight:900 !important;
+  font-variant-numeric:tabular-nums; }
 /* the System-keyboard key was the only transparent one in the keypad */
 .kp.kpsys{ background:var(--sf) !important; color:var(--bink2) !important;
   border-color:var(--sf3) !important; }
@@ -1410,8 +1431,9 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
 #soundBtn, #musicBtn{ background:var(--sf2) !important; }
 #keypad{ flex:none; max-width:none !important; margin:0 !important; padding:0 0 5px !important; }
 .kprow{ gap:3px !important; margin-bottom:3px !important; }
-.kp{ height:30px !important; font-size:14px !important; border-radius:9px !important;
-  aspect-ratio:auto !important; flex:1; padding:0 !important; }
+/* a digit needed 9px of a 71px key — the most wasted space in the app */
+.kp{ height:30px !important; font-size:19px !important; border-radius:9px !important;
+  aspect-ratio:auto !important; flex:1; padding:0 !important; font-weight:900 !important; }
 /* The system-keyboard toggle stays a thin strip rather than a button block —
    it is a rare control and should not compete with the digits. It was the last
    transparent thing in the app though, so it is filled now like everything
@@ -5523,8 +5545,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-31 (every control carries a fill)';
-  window.BETA_VER = 'beta-31';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-32 (direct colours, bigger type)';
+  window.BETA_VER = 'beta-32';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
