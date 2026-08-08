@@ -1994,6 +1994,18 @@ body{ background:#C9A87C !important; }
 .shScroll .journeyNote, .shScroll .credit,
 .shScroll #offlineBox, .shScroll #logicBox{ background:#FFF6E7 !important; color:#3A2A14 !important; }
 .shScroll .credit i, .shScroll .credit span{ color:#4A331A !important; }
+/* The title card was the one panel the contrast sweep could not catch: light
+   text on dark violet is perfectly readable, so nothing failed — it was simply
+   still wearing the old theme while sitting in a cream sheet. Its colours are
+   inline, so they are remapped by the value they carry. */
+.titleCard, .shScroll .titleCard{ background:#FFF6E7 !important; color:#3A2A14 !important;
+  box-shadow:0 3px 0 rgba(94,64,32,.26) !important; }
+.titleCard h1{ color:#5E2A0A !important; }
+.titleCard .tagline{ color:#9A3412 !important; text-shadow:none !important; }
+.titleCard [style*="4ade80"]{ color:#0F5132 !important; }   /* "Now playing:" */
+.titleCard [style*="8ab4f8"]{ color:#0F5C8C !important; }   /* the level list  */
+.titleCard [style*="fbbf24"]{ color:#8A4B00 !important; }   /* the twins line  */
+.titleCard .np{ color:#0F5C8C !important; }
 .journeyNote{ background:#FFF6E7 !important; color:#4A331A !important;
   border-color:#B08D5F !important; border-left-color:#8A5E31 !important; }
 .journeyNote b{ color:#5E2A0A !important; }
@@ -2074,7 +2086,11 @@ body{ background:#C9A87C !important; }
 <section class="screen on" data-screen="scHome">
 <div class="titleCard">
   <h1>🐒🎲 MathMatrix Pro++</h1>
-  <div style="text-align:center; font-size:12px; font-weight:700; margin-top:4px; letter-spacing:.4px; line-height:1.5;">🐒 Kids Puzzle · for 5th grade &amp; up<br><span class="tagline">“Maths and monkeys — neither sits in one direction.”</span><br><span style="color:#4ade80;">Now playing:</span> <span id="nowPlaying" style="color:#8ab4f8;"><span class="np" data-np="3x3">3×3</span> · <span class="np" data-np="4x4">4×4</span> · <span class="np" data-np="5x5">5×5</span> · <span class="np" data-np="6x6">6×6</span> · <span class="np" data-np="8x8">8×8</span> · <span class="np" data-np="10x10">10×10</span> · <span class="np" data-np="3cube">3³</span> · <span class="np" data-np="ramanujan">🎂 Sir Ramanujan MathMagic</span> · <span class="np" data-np="binary">🔢 Binary Guess</span></span><br><span style="color:#4ade80;">👶 New here? Tap ▶ Watch Me Solve to see a sample, then pick any level in the table below.</span><br><span style="color:#fbbf24;">🔄 Once you know it: rotate or mirror any solution — 8 twins — for endless new puzzles!</span></div>
+  <div style="text-align:center; font-size:12px; font-weight:700; margin-top:4px; letter-spacing:.4px; line-height:1.5;">🐒 Kids Puzzle · for 5th grade &amp; up<br><span class="tagline">“Maths and monkeys — neither sits in one direction.”</span><br><span style="color:#4ade80;">Now playing:</span> <span id="nowPlaying" style="color:#8ab4f8;"><span class="np" data-np="3x3">3×3</span> · <span class="np" data-np="4x4">4×4</span> · <span class="np" data-np="5x5">5×5</span> · <span class="np" data-np="6x6">6×6</span> · <span class="np" data-np="8x8">8×8</span> · <span class="np" data-np="10x10">10×10</span> · <span class="np" data-np="3cube">3³</span> · <span class="np" data-np="ramanujan">🎂 Sir Ramanujan MathMagic</span> · <span class="np" data-np="binary">🔢 Binary Guess</span></span><br><!-- The "New here? Tap ▶ Watch Me Solve … then pick any level in the table
+       below" line is gone. This card is only ever seen inside the About sheet
+       now, where there is no level table to point at, and Watch has its own
+       named button in the bar — so it was directing a child to something that
+       is not on the screen they are looking at. --><span style="color:#fbbf24;">🔄 Once you know it: rotate or mirror any solution — 8 twins — for endless new puzzles!</span></div>
 </div>
 </section>
 
@@ -5759,8 +5775,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-36 (sandalwood theme)';
-  window.BETA_VER = 'beta-36';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-37 (About tidied)';
+  window.BETA_VER = 'beta-37';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
