@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Splash background samples</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Segoe UI',system-ui,sans-serif}
+  .panel{position:relative;width:390px;height:844px;overflow:hidden;
+         display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .tag{position:absolute;top:10px;left:10px;z-index:9;font-size:11px;font-weight:900;
+       letter-spacing:.6px;background:rgba(0,0,0,.55);color:#fff;padding:5px 10px;border-radius:8px}
+
+  /* ── A · straight diagonal blend ───────────────────────────── */
+  .bgA{background:linear-gradient(140deg,#FF2D78 0%,#B14BC8 45%,#22D3EE 100%)}
+
+  /* ── B · cyan spotlight on a pink field ────────────────────── */
+  .bgB{background:
+      radial-gradient(105% 62% at 50% 34%, #4BE3F5 0%, rgba(75,227,245,0) 62%),
+      linear-gradient(180deg,#FF3D86 0%,#E12C79 100%)}
+
+  /* ── C · candy sky: pink up top, cyan below ────────────────── */
+  .bgC{background:
+      radial-gradient(120% 55% at 50% 108%, rgba(255,255,255,.35), rgba(255,255,255,0) 60%),
+      linear-gradient(180deg,#FF4E9B 0%,#C053CE 42%,#2ED0EE 100%)}
+
+  /* ── D · soft candy mesh, four blobs ───────────────────────── */
+  .bgD{background:
+      radial-gradient(58% 42% at 18% 16%, #FF5FA8 0%, rgba(255,95,168,0) 70%),
+      radial-gradient(64% 46% at 84% 24%, #35D9F0 0%, rgba(53,217,240,0) 72%),
+      radial-gradient(70% 50% at 26% 88%, #48E0F2 0%, rgba(72,224,242,0) 70%),
+      radial-gradient(66% 48% at 88% 84%, #FF3D86 0%, rgba(255,61,134,0) 72%),
+      linear-gradient(160deg,#C13FB0 0%,#7E4BD4 100%)}
+
+  /* ── E · deep candy — keeps our dark bones, pink+cyan on top ─ */
+  .bgE{background:
+      radial-gradient(78% 44% at 22% 8%, rgba(255,61,134,.85), rgba(255,61,134,0) 68%),
+      radial-gradient(84% 48% at 82% 96%, rgba(34,211,238,.80), rgba(34,211,238,0) 70%),
+      linear-gradient(180deg,#2A1157 0%,#3C1B72 48%,#12324F 100%)}
+
+  /* ── F · what we have today, for comparison ────────────────── */
+  .bgF{background:
+      radial-gradient(130% 55% at 50% 106%, rgba(247,179,43,.24), transparent 72%),
+      linear-gradient(180deg,#100B33 0%,#171043 42%,#1D1550 100%)}
+
+  /* soft drifting light, like the app already has */
+  .rays{position:absolute;inset:-30% -40%;pointer-events:none;
+    background:repeating-linear-gradient(19deg,
+      rgba(255,255,255,0) 0px, rgba(255,255,255,.07) 46px,
+      rgba(255,255,255,0) 96px, rgba(255,255,255,0) 150px)}
+
+  /* ── the real splash content, so readability can be judged ── */
+  .stage{position:relative;width:230px;height:230px;display:grid;place-items:center}
+  .face{width:150px;height:150px;border-radius:50%;background:linear-gradient(160deg,#FFD265,#F2A81E);
+        display:grid;place-items:center;font-size:78px;
+        box-shadow:0 8px 0 rgba(0,0,0,.22),0 14px 30px rgba(0,0,0,.34),
+                   inset 2px 4px 6px rgba(255,255,255,.35)}
+  .die{position:absolute;left:calc(50% - 26px);top:calc(50% - 108px);width:52px;height:52px;
+       border-radius:14px;padding:8px;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);gap:2px;
+       background:linear-gradient(150deg,#fff,#EAE6DA);transform:rotate(-14deg);
+       box-shadow:0 4px 0 rgba(0,0,0,.28),0 8px 18px rgba(0,0,0,.35),inset 1px 2px 3px rgba(255,255,255,.95)}
+  .die i{border-radius:50%;background:#2E2208;opacity:0}
+  .die i.on{opacity:1}
+  .die i:nth-child(5){background:#E23B4A}
+  .spark{position:absolute;font-size:15px;opacity:.85}
+  .name{font-size:31px;font-weight:900;color:#fff;margin-top:14px;letter-spacing:-.6px;
+        text-shadow:0 3px 12px rgba(0,0,0,.55)}
+  .tagline{font-size:12.5px;font-weight:800;line-height:1.55;margin-top:8px;max-width:22em;
+    text-align:center;background:linear-gradient(90deg,#FFD675,#FB7185,#A78BFA,#22D3EE,#3DD68C);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 1px 3px rgba(0,0,0,.5))}
+  .tagline.solid{background:none;color:#fff;-webkit-text-fill-color:#fff;
+    text-shadow:0 2px 6px rgba(0,0,0,.6)}
+  .play{margin-top:24px;display:inline-flex;align-items:center;gap:9px;
+    background:linear-gradient(180deg,#FFD265,#F5A916);color:#231502;border:0;
+    font-size:19px;font-weight:900;padding:15px 34px;border-radius:999px;font-family:inherit;
+    box-shadow:0 5px 0 #B87908,0 12px 24px rgba(0,0,0,.4)}
+</style></head><body>
+<div id="sheet"></div>
+<script>
+  var VARIANTS = [
+    ['A','bgA','Straight blend — pink to cyan, one diagonal sweep'],
+    ['B','bgB','Cyan spotlight on a pink field'],
+    ['C','bgC','Candy sky — pink above, cyan below'],
+    ['D','bgD','Candy mesh — four soft blobs, closest to Candy Crush'],
+    ['E','bgE','Deep candy — our dark bones, pink and cyan glows on top'],
+    ['F','bgF','What we have today, for comparison']
+  ];
+  var FACE = [[0,2,4,6,8]];   // a five, so the red middle pip shows
+  var html = '';
+  VARIANTS.forEach(function(v){
+    var pips = '';
+    for (var i = 0; i < 9; i++) pips += '<i class="' + (FACE[0].indexOf(i) > -1 ? 'on' : '') + '"></i>';
+    html +=
+      '<div class="panel ' + v[1] + '" id="p' + v[0] + '">' +
+        '<div class="rays"></div>' +
+        '<div class="tag">' + v[0] + ' · ' + v[2] + '</div>' +
+        '<div class="stage">' +
+          '<span class="spark" style="left:6%;top:44%">✨</span>' +
+          '<span class="spark" style="left:82%;top:30%">⭐</span>' +
+          '<span class="spark" style="left:20%;top:16%">✨</span>' +
+          '<div class="face">🐒</div>' +
+          '<span class="die">' + pips + '</span>' +
+        '</div>' +
+        '<div class="name">MathMatrix Pro++</div>' +
+        '<div class="tagline">“Maths and monkeys — neither sits in one direction.”</div>' +
+        '<button class="play">▶ Tap to play</button>' +
+      '</div>';
+  });
+  document.getElementById('sheet').innerHTML = html;
+</script>
+</body></html>
