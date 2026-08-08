@@ -2099,10 +2099,14 @@ body.binaryMode #binaryPanel{ display:flex !important; }
 <!-- (Supervisor PIN modal removed — every level is now open to free choice) -->
 
 <!-- Cheat Sheet Image Popup (generic — reused by 3x3 / 4x4 / 5x5) -->
+<!-- Fitting a 614x964 scan onto a phone shows it at about 59%, which turns a
+     12px label in the original into 7px here — legible on paper, not on a
+     phone. Tapping the picture switches it to full size and lets you drag
+     around it; tapping outside still closes. -->
 <div class="congratsModal" id="cheatModal" onclick="closeCheat()">
-  <img id="cheatImg" alt="Quick formula sheet"
-       style="max-width:94vw; max-height:88vh; border-radius:12px; box-shadow:0 8px 40px rgba(0,0,0,.6); animation:bounceIn .5s ease;">
-  <p style="color:#fff; margin-top:12px; font-size:14px; opacity:.85;">Tap anywhere to close</p>
+  <img id="cheatImg" alt="Quick formula sheet" onclick="event.stopPropagation(); zoomCheat();"
+       style="max-width:94vw; max-height:88vh; border-radius:12px; box-shadow:0 8px 40px rgba(0,0,0,.6); animation:bounceIn .5s ease; cursor:zoom-in;">
+  <p id="cheatTip" style="color:#fff; margin-top:12px; font-size:14px; opacity:.85;">Tap the sheet to zoom in · tap outside to close</p>
 </div>
 
 <script>
@@ -2118,8 +2122,29 @@ function ASSET(name){
 }
 function openCheat(src){
   var m=document.getElementById('cheatModal');
-  document.getElementById('cheatImg').src=ASSET(src);
+  var i=document.getElementById('cheatImg');
+  i.src=ASSET(src);
+  zoomCheat(false);              // always open fitted, never remembering the last zoom
   m.style.display='flex';
+}
+/* Full size and scrollable, or fitted. The modal itself has to become
+   scrollable when zoomed, otherwise the overflow is simply unreachable. */
+function zoomCheat(on){
+  var m=document.getElementById('cheatModal');
+  var i=document.getElementById('cheatImg');
+  var tip=document.getElementById('cheatTip');
+  var zoomed=(on===undefined) ? !i.classList.contains('zoomed') : !!on;
+  i.classList.toggle('zoomed', zoomed);
+  if (zoomed){
+    i.style.maxWidth='none'; i.style.maxHeight='none'; i.style.cursor='zoom-out';
+    m.style.overflow='auto'; m.style.alignItems='flex-start'; m.style.justifyContent='flex-start';
+    m.scrollTop=0; m.scrollLeft=Math.max(0,(i.naturalWidth-m.clientWidth)/2);
+    if (tip) tip.textContent='Drag to look around · tap the sheet to fit it back';
+  } else {
+    i.style.maxWidth='94vw'; i.style.maxHeight='88vh'; i.style.cursor='zoom-in';
+    m.style.overflow=''; m.style.alignItems=''; m.style.justifyContent='';
+    if (tip) tip.textContent='Tap the sheet to zoom in · tap outside to close';
+  }
 }
 function closeCheat(){ document.getElementById('cheatModal').style.display='none'; }
 </script>
@@ -2790,9 +2815,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         <p><b>The Secret Structure:</b></p>
         <ol style="margin: 10px 0; padding-left: 20px;">
           <li><b>The target is not fixed — it appears once a full line is complete.</b> With the classic <b>1–36</b> every line totals <b>111</b> (all 36 numbers add to 666, and 666 ÷ 6 = 111).</li>
-          <li><b>Four little 3×3 magic blocks.</b> Each block is the same magic pattern, just shifted: block <b>A = 1–9</b>, then <b>+9</b>, <b>+18</b>, <b>+27</b> for the others.</li>
+          <li><b>Four little 3×3 magic blocks,</b> each the same pattern shifted on: <b>A</b> holds <b>1–9</b>, <b>B</b> holds <b>10–18</b>, <b>C</b> holds <b>19–27</b>, <b>D</b> holds <b>28–36</b>.</li>
           <li><b>Place them in the corners A · C · D · B</b> — A top-left, C top-right, D bottom-left, B bottom-right.</li>
-          <li><b>One swap finishes it:</b> swap <b>3 cells</b> of the top-left block with the matching 3 cells of the bottom-left block. Now every line matches! ✨</li>
+          <li><b>One swap finishes it:</b> trade <b>column 1</b> between <b>A and D</b> — except on the <b>middle row</b>, where you step one right and trade <b>column 2</b>. Three cells in all. Nothing swaps on the right-hand pair at this size.</li>
+          <li>Now every line matches! ✨ That stepped middle row is what makes the diagonals come out too.</li>
         </ol>
         <p><b>🚀 Different start = different target!</b> Start at 2 and step by 2 (2, 4, 6, … 72) → every line totals <b>222</b>. The pattern never changes, only the numbers do.</p>
         <p><b>💡 The Magic:</b> Big squares are just small squares stitched together — once you know 3×3, you already know 6×6! Tap 👁 <b>SHOW</b> to watch it build.</p>
@@ -2818,9 +2844,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         <p><b>The Secret Structure:</b></p>
         <ol style="margin: 10px 0; padding-left: 20px;">
           <li><b>The target appears once a full line is complete.</b> With the classic <b>1–100</b> every line totals <b>505</b> (all 100 numbers add to 5050, and 5050 ÷ 10 = 505).</li>
-          <li><b>Four 5×5 magic blocks.</b> Same idea as 6×6, just with bigger blocks: build a 5×5 magic square four times, shifted by +25 each, and place them in the corners <b>A · C · D · B</b>.</li>
-          <li><b>Then two swaps line everything up:</b> swap the marked cells between the left blocks (A ↔ D) and one column between the right blocks (B ↔ C). The Quick Formula Sheet shows the exact cells.</li>
-          <li>Now every row, column and diagonal matches! ✨</li>
+          <li><b>Four 5×5 magic blocks.</b> Build a 5×5 the count-down way four times and place them in the corners: <b>A</b> holds <b>1–25</b> top-left, <b>C</b> holds <b>51–75</b> top-right, <b>D</b> holds <b>76–100</b> bottom-left, <b>B</b> holds <b>26–50</b> bottom-right.</li>
+          <li><b>Swap 1 — the right-hand pair.</b> Trade the <b>last column</b> straight across between <b>C and B</b>: all five rows, no shift. Five cells.</li>
+          <li><b>Swap 2 — the left-hand pair.</b> Trade the <b>first two columns</b> between <b>A and D</b> — except on the <b>middle row</b> of the block, where you step one to the right and trade <b>columns 2 and 3</b>. Ten cells.</li>
+          <li>Now every row, column and diagonal matches! ✨ That stepped middle row is the whole reason it works — without it the two diagonals miss.</li>
         </ol>
         <p><b>🚀 Different start = different target!</b> Start at 2 and step by 2 (2, 4, … 200) → every line totals <b>1010</b>. Same method, new numbers.</p>
         <p><b>💡 The Magic:</b> The biggest square is still just small squares stitched together — you have come all the way from 3×3! 🏆 Tap 👁 <b>SHOW</b> to watch it build.</p>
@@ -4598,9 +4625,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       if (k === 'logic') openSheet('logic', '📐 How ' + nm + ' works');
       if (k === 'sheet'){
         var src = ASSET(CHEAT[currentSize]);
+        /* The scan is ~614px wide and the sheet is ~364 — so this inline copy
+           renders every label at about 59% and the numbers become unreadable.
+           It stays as the overview; tapping opens the full-size zoomable view. */
         openSheet('cheat', '📋 Formula sheet — ' + nm,
-          '<p>The step diagram for this puzzle.</p>' +
-          '<img src="' + src + '" alt="Formula sheet for ' + nm + '" ' +
+          '<p>The step diagram for this puzzle. <b>Tap it to read the numbers.</b></p>' +
+          '<img src="' + src + '" alt="Formula sheet for ' + nm + '" style="cursor:zoom-in" ' +
+          'onclick="openCheat(\'' + CHEAT[currentSize] + '\')" ' +
           'onerror="this.style.display=\'none\';' +
           'this.insertAdjacentHTML(\'afterend\',\'<p style=&quot;background:#241A5C;border-radius:12px;' +
           'padding:22px;text-align:center&quot;>Diagram for this puzzle is not in the app yet.</p>\')">');
@@ -4976,10 +5007,22 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
                  'Keep the numbers on the two diagonals where they are. Every other box becomes <b>17 − its number</b>.'],
     '8x8':      ['Same trick as 4×4, only bigger — write in order, then flip.',
                  'Keep the block diagonals. Every other box becomes <b>65 − its number</b>.'],
-    '6x6':      ['It is <b>four smaller squares</b> joined together, not one big one.',
-                 'Build the top-left block first, then swap whole columns between blocks.'],
-    '10x10':    ['Four blocks again — solve one small square at a time.',
-                 'Build the top-left 5×5 first, then swap whole columns between blocks.'],
+    /* 6×6 and 10×10 are Strachey's method, and the old wording — "swap whole
+       columns between blocks" — was simply wrong. Nothing swaps whole; it is a
+       fixed number of columns, and the middle row of the block shifts one step
+       right. Both ladders below were checked against Raja's cheat sheet by
+       building the square from them: the 10×10 comes out cell-for-cell
+       identical to the sheet and sums to 505 on every row, column and diagonal.
+
+       The block letters and their number ranges are the sheet's own:
+           A 1–25 top-left        C 51–75 top-right
+           D 76–100 bottom-left   B 26–50 bottom-right                        */
+    '6x6':      ['It is <b>four 3×3 squares</b>, not one big one. <b>A</b> 1–9 top-left, <b>C</b> 19–27 top-right, <b>D</b> 28–36 bottom-left, <b>B</b> 10–18 bottom-right.',
+                 'Build each 3×3 the count-down way, then <b>one swap</b>: trade <b>column 1</b> between <b>A and D</b> — except the <b>middle row</b>, which trades <b>column 2</b> instead.',
+                 'Nothing swaps on the right-hand pair at this size. That single stepped column is the whole trick.'],
+    '10x10':    ['It is <b>four 5×5 squares</b>, not one big one. <b>A</b> 1–25 top-left, <b>C</b> 51–75 top-right, <b>D</b> 76–100 bottom-left, <b>B</b> 26–50 bottom-right.',
+                 'Right-hand pair first, the easy one: swap the <b>last column</b> straight across between <b>C and B</b> — all five rows, no shift. Five cells.',
+                 'Left-hand pair: swap the <b>first two columns</b> between <b>A and D</b> — but on the <b>middle row</b> step one to the right and swap <b>columns 2 and 3</b>. Ten cells.'],
     '3cube':    ['The lines <b>multiply</b>, they do not add. Target = middle × middle × middle.',
                  'Set the <b>middle box</b> first. Every number here is a power of two.'],
     'ramanujan':['Only the <b>top row</b> is yours. The maths fills the other twelve boxes.',
@@ -5012,34 +5055,42 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       kimo('On this one the only hint is: <b>answer honestly</b>. One wrong card and I land next door.', 'think');
       return;
     }
-    var pair = HINTS[currentSize];
+    /* The ladder used to assume exactly two text hints. The four-block methods
+       genuinely need three steps to be stated correctly — the layout, then each
+       of the two swaps — so the count is derived from the list instead of being
+       hard-coded, and the point-and-reveal steps come after however many there
+       are. */
+    var pair = HINTS[currentSize] || [];
+    var TEXT = pair.length, TOTAL = TEXT + 2;
     hintLevel++; hintsUsed++;
     paintHintDots();
     sfx('hint');
-    if (hintLevel === 1 && pair){ kimo('<b>Hint 1 of 4.</b> ' + pair[0], 'think'); return; }
-    if (hintLevel === 2 && pair){ kimo('<b>Hint 2 of 4.</b> ' + pair[1], 'think'); return; }
+    if (hintLevel <= TEXT){
+      kimo('<b>Hint ' + hintLevel + ' of ' + TOTAL + '.</b> ' + pair[hintLevel - 1], 'think');
+      return;
+    }
 
     var t = hintTarget();
     if (!t){
       kimo('Every box is filled already — check the line totals around the edge.', 'think');
-      hintLevel = 4; return;
+      hintLevel = TOTAL; return;
     }
-    if (hintLevel === 3){
+    if (hintLevel === TEXT + 1){
       clearHintPoint();
       t.el.classList.add('hintPoint');
       var where = (t.r === t.c && t.r === Math.floor(PUZZLES[currentSize].rows / 2))
         ? 'the <b>middle</b> box — it sits on four lines at once'
         : 'this box, row ' + (t.r + 1) + ', column ' + (t.c + 1);
-      kimo('<b>Hint 3 of 4.</b> Try ' + where + '. I will not say the number — work it out.', 'think');
+      kimo('<b>Hint ' + hintLevel + ' of ' + TOTAL + '.</b> Try ' + where + '. I will not say the number — work it out.', 'think');
       return;
     }
-    // level 4: fill it in and say why
+    // last rung: fill it in and say why
     clearHintPoint();
     t.el.value = String(t.v);
     t.el.dispatchEvent(new Event('input', { bubbles: true }));
     t.el.classList.add('hintGiven');
     sfx('place');
-    kimo('<b>Hint 4 of 4.</b> That box is <b>' + t.v + '</b>. Now the lines through it give you the rest.', 'cheer');
+    kimo('<b>Hint ' + TOTAL + ' of ' + TOTAL + '.</b> That box is <b>' + t.v + '</b>. Now the lines through it give you the rest.', 'cheer');
     hintLevel = 0;   // ladder resets, so more help is available if they stall again
   }
 
@@ -5324,8 +5375,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-23 (roomier boards, better labels)';
-  window.BETA_VER = 'beta-23';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-24 (10x10 hints match the cheat sheet)';
+  window.BETA_VER = 'beta-24';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
