@@ -3892,15 +3892,29 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   
   // Clear button
   document.getElementById('clearBtn').addEventListener('click', function(){
+    /* The card games have no grid, so there is nothing to clear and every line
+       below would reach for PUZZLES[currentSize].rows, which does not exist for
+       them. CLEAR is hidden there, but a stray call must not throw. */
+    if (document.body.classList.contains('binaryMode')) return;
     stopDemos();      // also cancels a running (or stuck) SHOW / Watch demo
     resetVisuals();
     msg.textContent = 'Board cleared — set your own target!';
     msg.className = '';
     update();
+    /* Raja kept seeing a half-drawn screen after CLEAR that I could not
+       reproduce headlessly, and suggested the fix himself: make CLEAR re-enter
+       the Play screen rather than trust whatever state the board was left in.
+       goScreen re-asserts the screen flags, the app bar, the title, and re-runs
+       fitBoard — so the page is rebuilt rather than patched, whatever the demo
+       or a stray scroll left behind. Cheap, and it cannot be wrong. */
+    try { goScreen('scPlay'); } catch(e){}
+    try { window.scrollTo(0, 0); } catch(e){}
+
     /* Clearing after the demo is the handover: the lesson is finished and the
        board is theirs. Put Logic and Watch away so nothing competes with it.
        Only after a watch — otherwise CLEAR would take away a child's only
-       route to the method. Kimo says how to get them back. */
+       route to the method. Kimo says how to get them back.
+       After goScreen, so neither the class nor the message gets overwritten. */
     if (watchedHere){
       document.body.classList.add('toolsOff');
       try { kimo('Your turn now. Want the method again? Tap <b>←</b> and pick the puzzle.', null); } catch(e){}
@@ -4770,7 +4784,16 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     b.textContent = '⋯'; b.setAttribute('aria-label', 'Quick settings');
     bar.appendChild(b);
     b.addEventListener('click', function(){
+      /* The build number, one tap away. When Raja reports something that I
+         cannot reproduce, the first thing to rule out is his phone serving a
+         cached copy — and hunting for a version tag at the bottom of a page is
+         no way to check that. */
       openSheet('settings', '⚙️ Quick settings',
+        '<p style="background:#241A5C;border-radius:10px;padding:9px 12px;margin-bottom:10px;' +
+        'font-weight:800;letter-spacing:.3px">You are running <span style="color:var(--gold)">' +
+        // BUILD_VER lives in the other IIFE — read the label it already wrote
+        ((document.getElementById('verLabel') || {}).textContent || window.BETA_VER || '?') +
+        '</span></p>' +
         '<p>Tap a button below to change it.</p>');
       openSheetExtra('<p>🔊 <b>Sound</b> is the master switch — turning it off silences the music too, ' +
         'for night play.</p><p>🎵 <b>Music</b> is the monkey tune; it ducks while you type.</p>' +
@@ -5469,8 +5492,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-28 (winning brings Logic and Watch back)';
-  window.BETA_VER = 'beta-28';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-29 (CLEAR rebuilds the play screen)';
+  window.BETA_VER = 'beta-29';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
