@@ -1250,7 +1250,9 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
    game into a narrow strip. Landscape keeps the full width it needs.        */
 @media (min-width: 540px) and (min-height: 600px){
   body{ background:radial-gradient(120% 65% at 50% 0%, #241A5C 0%, #0C0828 72%) !important; }
-  .appShell{ max-width:480px; margin-inline:auto;
+  /* the long-hand pair first: margin-inline is Safari 14.1+, and without it the
+     app would sit hard left on an older iPad instead of centred */
+  .appShell{ max-width:480px; margin-left:auto; margin-right:auto; margin-inline:auto;
     box-shadow:0 0 0 1px rgba(255,255,255,.07), 0 18px 60px rgba(0,0,0,.55); }
 }
 
@@ -1665,8 +1667,11 @@ body.binaryMode #binaryPanel{ display:flex !important; }
 /* A real rolling die. The Unicode die characters render as a hollow outlined
    box in the system font — poor beside the 3D monkey — so the pips are drawn
    as actual dots on a 3x3 grid and switched on and off per face. */
-.splashDice{ position:absolute; left:-26px; top:-26px; width:52px; height:52px;
-  translate:0 -82px;                       /* pushed out to the orbit radius */
+/* top:-108px is the 26px half-size plus the 82px orbit radius. This used to be
+   translate:0 -82px, which needed Safari 14.1 and would have dropped the die on
+   top of the monkey on an older iPhone. Plain top does the same thing and cannot
+   clash with the transform the roll animation is already using. */
+.splashDice{ position:absolute; left:-26px; top:-108px; width:52px; height:52px;
   border-radius:14px; padding:8px; box-sizing:border-box;
   display:grid; grid-template:repeat(3,1fr)/repeat(3,1fr); gap:2px;
   background:linear-gradient(155deg,#FFFDF6,#E9DFC6);
@@ -5309,8 +5314,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-21 (older iPhones covered)';
-  window.BETA_VER = 'beta-21';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-22 (Safari gaps closed)';
+  window.BETA_VER = 'beta-22';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
