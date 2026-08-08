@@ -1272,6 +1272,13 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
    fingertip is about 10mm; Apple asks for 44pt and Material for 48dp. The bar
    is 46px tall so 40 is the most that fits without making it taller and
    stealing board height — a clear improvement over 29 either way. */
+/* Logic and Watch carry a word under the glyph. Same 40px height as the plain
+   icon buttons, so the bar does not grow and the board keeps its space. */
+.barBtn.barWord{ width:auto; min-width:44px; padding:0 8px; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:0; line-height:1; }
+.barBtn.barWord i{ font-style:normal; font-size:14px; }
+.barBtn.barWord span{ font-size:7.5px; font-weight:800; letter-spacing:.4px;
+  text-transform:uppercase; color:var(--bink2); margin-top:1px; }
 .barBtn{ width:40px; height:40px; flex:none; border-radius:12px; background:var(--sf2); display:grid;
   place-items:center; font-size:14px; border:0; color:var(--bink); box-shadow:var(--clay); cursor:pointer;
   font-family:inherit; }
@@ -1468,6 +1475,7 @@ body.onPlay .solvedCounter{ font-size:9px !important; padding:3px 9px !important
    display:…!important, and an !important stylesheet rule beats the plain inline
    style the code sets — so el.style.display='none' silently did nothing and the
    previous puzzle stayed on screen behind the cards. This wins it back. */
+body.binaryMode #barWatch,          /* no board to build, so nothing to watch */
 body.binaryMode #boardWrap,
 body.binaryMode #playRow,
 body.binaryMode #keypad,
@@ -1981,7 +1989,9 @@ body.binaryMode #binaryPanel{ display:flex !important; }
       <span><b>Birthday Magic</b><i>type any date of birth and the square builds itself</i></span>
     </div>
     <div class="toggleSwitch">
-      <button class="toggleBtn lvCard" data-size="ramanujan" data-name="🎂 Sir Ramanujan MathMagic" style="color:#fb7185; border-color:#e11d48; --c1:#ffb3bf; --c2:#fb7185;">
+      <!-- data-short is what fits in the app bar; the full name stays everywhere
+           there is room for it -->
+      <button class="toggleBtn lvCard" data-size="ramanujan" data-name="🎂 Sir Ramanujan MathMagic" data-short="🎂 Ramanujan" style="color:#fb7185; border-color:#e11d48; --c1:#ffb3bf; --c2:#fb7185;">
         <span class="lvGlyph" aria-hidden="true">🎂</span>
         <span class="lvText"><b class="lvName">Sir Ramanujan MathMagic</b><span class="lvDiff">Your own birthday</span><span class="lvMeta">4×4 · 18 magic groups · works with any date</span><span class="lvNow">PLAYING</span></span>
       </button>
@@ -4071,7 +4081,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     var title = document.getElementById('appBarTitle');
     var chip  = document.getElementById('appBarChip');
     // data-name, not textContent — the cards now hold several lines of copy
-    var lvlName = lvl ? (lvl.dataset.name || lvl.textContent.trim()) : '';
+    // the bar is the one place that is short of room — use data-short if a
+    // puzzle has one, so the name is never cut to "Sir Ramanujan Math…"
+    var lvlName = lvl ? (lvl.dataset.short || lvl.dataset.name || lvl.textContent.trim()) : '';
     if (title) title.textContent = (id === 'scPlay' && lvl) ? lvlName : SCREEN_TITLE[id];
     if (chip){
       chip.textContent = (id === 'scPlay' && lvl) ? 'playing' : SCREEN_CHIP[id];
@@ -4598,10 +4610,14 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
      open, so they always match the puzzle in play. */
   function learnRowsHtml(){
     var isGrid = !!PUZZLES[currentSize];
+    /* The formula sheet leads. It is the mind map Raja drew in Excel and the
+       thing to look at before starting — it was buried second and reads as an
+       afterthought there. "Watch it built" has left this list for its own
+       button in the bar, beside Logic, because it drives the board rather than
+       opening a page. */
     var all = [
+      ['sheet', '📋', 'Quick formula sheet', 'the mind map — look here first', isGrid && !!CHEAT[currentSize]],
       ['logic', '📐', 'The method', 'how this puzzle works', true],
-      ['sheet', '📋', 'Quick formula sheet', 'the step diagram, full width', isGrid && !!CHEAT[currentSize]],
-      ['watch', '▶', 'Watch it built', 'step by step on the board', isGrid],
       ['twins', '🔄', 'Eight twins', 'rotate or mirror — all 8 stay magic', isGrid]
     ];
     return all.filter(function(r){ return r[4]; }).map(function(r){
@@ -4675,18 +4691,35 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
     /* Everything about HOW to play used to be above the board; the fixed-height
        shell hid it to buy board height, which left a child on 3x3 with no route
-       to the method except leaving the board for the Learn tab. This puts it
-       back within reach — beside the settings button, opening over the board so
-       you keep your place. Play screen only: on the Learn tab it is redundant. */
+       to the method. These two put it back within reach beside the settings
+       button, opening over the board so you keep your place.
+
+       Both carry a WORD, not just a glyph. A bulb does not say "logic" to a
+       child who has never opened it, and Raja asked for the name. */
     var lb = document.createElement('button');
-    lb.className = 'barBtn'; lb.id = 'barLearn'; lb.type = 'button';
-    lb.textContent = '💡'; lb.setAttribute('aria-label', 'How to play this puzzle');
+    lb.className = 'barBtn barWord'; lb.id = 'barLearn'; lb.type = 'button';
+    lb.innerHTML = '<i>💡</i><span>Logic</span>';
+    lb.setAttribute('aria-label', 'Logic — how to play this puzzle');
     bar.appendChild(lb);
     lb.addEventListener('click', function(){
       var lvl = document.querySelector('.toggleBtn.active');
       var nm = lvl ? (lvl.dataset.name || 'this puzzle') : 'this puzzle';
-      openSheet('learnNow', '💡 How to play — ' + nm,
+      openSheet('learnNow', '💡 Logic — ' + nm,
         '<div class="learnRows sheetLearn">' + learnRowsHtml() + '</div>');
+    });
+
+    /* Watch is its own button rather than a row inside Logic: it does not open
+       anything to read, it drives the board. Hidden on the card games, which
+       have no board to build. */
+    var wb = document.createElement('button');
+    wb.className = 'barBtn barWord'; wb.id = 'barWatch'; wb.type = 'button';
+    wb.innerHTML = '<i>▶</i><span>Watch</span>';
+    wb.setAttribute('aria-label', 'Watch this puzzle being built');
+    bar.appendChild(wb);
+    wb.addEventListener('click', function(){
+      closeSheet();
+      goScreen('scPlay');
+      setTimeout(function(){ var w = document.getElementById('watchBtn'); if (w) w.click(); }, 260);
     });
 
     var b = document.createElement('button');
@@ -5001,12 +5034,23 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
        to any sequence, not just 1–9. */
     '3x3':      ['Middle = <b>target ÷ 3</b>. The rest are the middle <b>−1, +1, −2, +2, −3, +3, −4, +4</b>.',
                  'Each −k faces its +k across the middle. To build it: <b>1</b> in the top middle, count three down, place right.'],
+    /* "Count three down" was wrong here — the countdown is always the size of
+       the grid, so a 5×5 counts FIVE. Checked by building the square both ways:
+       counting five reproduces the app's 5×5 exactly, counting three does not. */
     '5x5':      ['Middle = <b>target ÷ 5</b>. The rest step out from it: <b>−1 +1 −2 +2</b> … all the way to <b>±12</b>.',
-                 'Put <b>1</b> in the top middle. Count three down, place to the right, wrapping round.'],
-    '4x4':      ['Write <b>1 upwards in order</b> first, then swap a few pairs.',
-                 'Keep the numbers on the two diagonals where they are. Every other box becomes <b>17 − its number</b>.'],
-    '8x8':      ['Same trick as 4×4, only bigger — write in order, then flip.',
-                 'Keep the block diagonals. Every other box becomes <b>65 − its number</b>.'],
+                 'Put <b>1</b> in the top middle. Count <b>five</b> down, place to the right, wrapping round. <b>25</b> lands in the bottom middle.'],
+    /* Mind-map first. "17 − its number" and "65 − its number" are correct, but
+       they are arithmetic on eight or thirty-two cells; the sheet's own way is
+       two writing passes, which a child can picture and hold. Both wordings
+       were checked by building the square from them — each reproduces the
+       app's grid exactly and is magic. The sums version stays as the last
+       rung, for whoever wants it. */
+    '4x4':      ['Look at the <b>formula sheet</b> once — it shows which squares to leave empty. Then write <b>1 to 16 straight across</b>, row by row, skipping those.',
+                 'Now fill the empty ones, straight across again, but counting <b>down from the biggest number you did not use</b> — 15, 14, 12, 9 …',
+                 'Prefer sums? Keep the two diagonals as they are; every other box becomes <b>17 − its number</b>.'],
+    '8x8':      ['Exactly the 4×4 trick, just bigger. Look at the <b>formula sheet</b> once for which squares to leave empty, then write <b>1 to 64 straight across</b>, skipping those.',
+                 'Fill the empty ones straight across, counting <b>down from the biggest number left over</b> — 63, 62, 59, 58 …',
+                 'Prefer sums? Keep the block diagonals; every other box becomes <b>65 − its number</b>.'],
     /* 6×6 and 10×10 are Strachey's method, and the old wording — "swap whole
        columns between blocks" — was simply wrong. Nothing swaps whole; it is a
        fixed number of columns, and the middle row of the block shifts one step
@@ -5375,8 +5419,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-24 (10x10 hints match the cheat sheet)';
-  window.BETA_VER = 'beta-24';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-25 (mind-map hints, Logic and Watch)';
+  window.BETA_VER = 'beta-25';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
