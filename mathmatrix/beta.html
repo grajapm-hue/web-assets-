@@ -1383,6 +1383,26 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
   content:''; position:absolute; left:0; right:0; top:50%;
   height:44px; transform:translateY(-50%); }
 
+/* ══ THE LOGIC SHEET'S STEP BOXES ══
+   These carry background:rgba(50,50,50,.8) inline, left over from the dark
+   theme, so no class could ever reach them. The sandalwood turned the text
+   dark and left the fill black: rgb(58,42,20) on about rgb(91,91,91) is 1.6:1.
+   Not merely "dark imposing", as Raja put it — genuinely unreadable.
+   Matched on the stale fill itself, so this cannot touch any other paragraph,
+   and the coloured left border is left alone: it is what tells the steps apart. */
+.shScroll #logicBox p[style*="rgba(50, 50, 50"]{
+  background:#F3E4C9 !important; color:#33220F !important; }
+
+/* ══ THE FORMULA SHEET SCAN ══
+   It was drawn at 100% of the sheet's WIDTH, which made it taller than the
+   sheet — you got the top third and had to scroll for the rest, so the one
+   picture that IS the mind map never appeared whole. Fit it to the visible box
+   instead: the entire diagram at once. Tapping still opens the full-size
+   zoomable copy, which is where the numbers are meant to be read. */
+.shScroll img{ width:auto !important; max-width:100% !important;
+  max-height:calc(86vh - 150px) !important; height:auto !important;
+  margin-left:auto !important; margin-right:auto !important; }
+
 /* The back arrow: Raja called it tiny, and at 40px it was — below the floor
    and the smallest thing in a bar full of chunky buttons. It is the way out of
    every screen, so it should be at least as easy to hit as the way in. */
@@ -5943,8 +5963,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-43 (the phone Back button works inside the app)';
-  window.BETA_VER = 'beta-43';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-44 (formula sheet fits whole; Logic boxes readable)';
+  window.BETA_VER = 'beta-44';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
