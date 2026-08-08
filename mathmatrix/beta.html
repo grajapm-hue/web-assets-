@@ -1382,6 +1382,14 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
 .diffShare::after, #appBarChip::after, #barLearn::after, #barWatch::after{
   content:''; position:absolute; left:0; right:0; top:50%;
   height:44px; transform:translateY(-50%); }
+
+/* The back arrow: Raja called it tiny, and at 40px it was — below the floor
+   and the smallest thing in a bar full of chunky buttons. It is the way out of
+   every screen, so it should be at least as easy to hit as the way in. */
+.navBack{ width:44px !important; height:44px !important;
+  font-size:21px !important; font-weight:900 !important; line-height:1 !important;
+  display:none; align-items:center; justify-content:center; }
+.navBack.show{ display:flex !important; }
 .modeGroup{ flex:none; }
 .modeHead{ margin:calc(2px * var(--lvScale, 1)) 0 calc(4px * var(--lvScale, 1)) !important;
   gap:calc(6px * var(--lvScale, 1)) !important; }
@@ -4455,6 +4463,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
        puzzle names, and the board is no place to offer a reload. */
     if (chip) chip.style.display = (id === 'scPlay') ? 'none' : 'inline-flex';
 
+    // Arm the phone's Back on every screen change, Puzzles included — so the
+    // guard is up from the moment the app opens, not only once you have left
+    // home. armBack() is idempotent; there is only ever one sentinel.
+    try { armBack(); } catch (e) {}
     if (id === 'scPlay'){ try { fitBoard(); } catch(e){} }
     // Learn is nothing but the logic notes — open them on arrival
     if (id === 'scLearn'){
@@ -4469,8 +4481,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     var tb = document.getElementById('tab-' + s);
     if (tb) tb.addEventListener('click', function(){ sfx('tab'); goScreen(s); });
   });
+  // The arrow and the phone's Back are the same button in two places.
   var _back = document.getElementById('navBack');
-  if (_back) _back.addEventListener('click', function(){ sfx('back'); goScreen('scHome'); });
+  if (_back) _back.addEventListener('click', function(){ sfx('back'); peelOne(); });
 
   applyAccent();
   goScreen('scHome');
@@ -4931,6 +4944,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     shScroll.scrollTop = 0;
     shHost.classList.add('on');
     sfx('sheetUp');
+    armBack();                 // a sheet is a layer the phone's Back should peel
   }
   function openSheetExtra(html){
     if (shScroll) shScroll.insertAdjacentHTML('beforeend', html);
@@ -4942,6 +4956,50 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     shHost.classList.remove('on');
     sfx('sheetDn');
   }
+
+  /* ---- ONE IDEA OF "BACK" ----
+     Raja: the phone's own Back was closing the whole app from anywhere — from
+     the middle of a 10x10 — and the ← he was meant to reach for instead is
+     tiny. So the phone button and the arrow now do the same thing, and it
+     peels one layer at a time:
+
+         a sheet is open        -> close it
+         a demo is running      -> stop it (Logic and Watch come back)
+         anywhere but Puzzles   -> Puzzles
+         Puzzles, nothing open  -> the app closes, on the SECOND press
+
+     The history side is a single sentinel entry, re-armed after each pop —
+     not a stack mirroring the app. A parallel stack drifts out of step the
+     moment anything else navigates; re-arming from the live state cannot.  */
+  var backArmed = false, exitWarn = null;
+  function openScreen(){
+    var s = document.querySelector('[data-screen].on');
+    return s ? s.getAttribute('data-screen') : 'scHome';
+  }
+  // toolsOff IS "a demo is running" — it is the one thing that hides the tools
+  function demoRunning(){ return document.body.classList.contains('toolsOff'); }
+  function backLayers(){ return !!sheetOpenKey || demoRunning() || openScreen() !== 'scHome'; }
+  function peelOne(){
+    if (sheetOpenKey){ closeSheet(); return true; }
+    if (demoRunning()){ try { stopDemos(); } catch(e){} return true; }
+    if (openScreen() !== 'scHome'){ goScreen('scHome'); return true; }
+    return false;
+  }
+  function armBack(){
+    if (backArmed) return;
+    try { history.pushState({ mmBack: 1 }, ''); backArmed = true; } catch (e) {}
+  }
+  window.addEventListener('popstate', function(){
+    backArmed = false;                       // the entry we pushed is spent
+    if (backLayers()){ peelOne(); armBack(); return; }
+    /* At Puzzles with nothing open. Rather than vanishing on a press a child
+       may not have meant, spend this one on saying so. Nothing is re-armed
+       here, so the very next Back leaves — the familiar tap-twice-to-exit.
+       If they do not press again, arm it back and the guard returns. */
+    clearTimeout(exitWarn);
+    try { sana('Tap <b>back</b> again to close the app.', 'think', true); } catch (e) {}
+    exitWarn = setTimeout(function(){ exitWarn = null; armBack(); }, 3000);
+  });
 
   /* ---- 6. the board fills the leftover box — width AND height ---- */
   var _fitBoard = fitBoard;
@@ -5885,8 +5943,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-42 (SaNa; bigger tap targets, darker offline line)';
-  window.BETA_VER = 'beta-42';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-43 (the phone Back button works inside the app)';
+  window.BETA_VER = 'beta-43';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
