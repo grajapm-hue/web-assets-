@@ -1340,7 +1340,19 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
   gap:calc(3px * var(--lvScale, 1));
   background:transparent !important; border:0 !important; padding:0 !important; margin:0 !important;
   max-width:none !important; }
+/* The heading is back, in the empty band under the BETA flag. flex:none so it
+   never eats into the space fitHome() measures for the puzzle list. */
 .difficultyBar > .diffLabel{ display:none !important; }
+.diffHead{ flex:none; display:flex; align-items:baseline; justify-content:space-between;
+  gap:8px; margin:1px 2px 4px; }
+.diffHead .diffLabel{ display:inline !important; writing-mode:horizontal-tb !important;
+  transform:none !important; font-size:calc(11px * var(--lvScale, 1)) !important;
+  font-weight:900 !important; letter-spacing:.9px; text-transform:uppercase;
+  color:#5E2A0A !important; background:none !important; padding:0 !important;
+  border:0 !important; white-space:nowrap; }
+.diffTip{ font-size:calc(8.5px * var(--lvScale, 1)); font-weight:800; letter-spacing:.2px;
+  color:#6B4A22; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.diffTip.off{ color:#9A3412; }
 .modeGroup{ flex:none; }
 .modeHead{ margin:calc(2px * var(--lvScale, 1)) 0 calc(4px * var(--lvScale, 1)) !important;
   gap:calc(6px * var(--lvScale, 1)) !important; }
@@ -2086,7 +2098,7 @@ body{ background:#C9A87C !important; }
 <section class="screen on" data-screen="scHome">
 <div class="titleCard">
   <h1>🐒🎲 MathMatrix Pro++</h1>
-  <div style="text-align:center; font-size:12px; font-weight:700; margin-top:4px; letter-spacing:.4px; line-height:1.5;">🐒 Kids Puzzle · for 5th grade &amp; up<br><span class="tagline">“Maths and monkeys — neither sits in one direction.”</span><br><span style="color:#4ade80;">Now playing:</span> <span id="nowPlaying" style="color:#8ab4f8;"><span class="np" data-np="3x3">3×3</span> · <span class="np" data-np="4x4">4×4</span> · <span class="np" data-np="5x5">5×5</span> · <span class="np" data-np="6x6">6×6</span> · <span class="np" data-np="8x8">8×8</span> · <span class="np" data-np="10x10">10×10</span> · <span class="np" data-np="3cube">3³</span> · <span class="np" data-np="ramanujan">🎂 Sir Ramanujan MathMagic</span> · <!--
+  <div style="text-align:center; font-size:12px; font-weight:700; margin-top:4px; letter-spacing:.4px; line-height:1.5;">🐒 Kids Puzzle · for 5th grade &amp; up<br><span class="tagline">“Maths and monkeys — neither sits in one direction.”</span><br><span style="color:#4ade80;">Puzzles :</span><span id="nowPlaying" style="color:#8ab4f8;"><span class="np" data-np="3x3">3×3</span> · <span class="np" data-np="4x4">4×4</span> · <span class="np" data-np="5x5">5×5</span> · <span class="np" data-np="6x6">6×6</span> · <span class="np" data-np="8x8">8×8</span> · <span class="np" data-np="10x10">10×10</span> · <span class="np" data-np="3cube">3³</span> · <span class="np" data-np="ramanujan">🎂 Sir Ramanujan MathMagic</span> · <!--
   This list is live: np-active highlights whichever puzzle you are on. It still
   had a single "Binary Guess" from before the game was split, so a child on
   Advance saw nothing light up — there was no entry carrying data-np="binary2"
@@ -2204,7 +2216,15 @@ body{ background:#C9A87C !important; }
 <section class="screen on" data-screen="scHome">
 <!-- Difficulty selector — every level open, pick any grade any time -->
 <div class="difficultyBar">
-  <span class="diffLabel">Choose Difficulty</span>
+  <!-- Raja asked for this band under the BETA flag to carry the heading and an
+       offline line, instead of sitting empty. The offline note belongs beside
+       it: this is the moment a child is choosing, and knowing it keeps working
+       with no internet is worth saying once, here, rather than only inside the
+       Get App tab. -->
+  <div class="diffHead">
+    <span class="diffLabel">Choose Difficulty</span>
+    <span class="diffTip" id="diffTip">📴 Plays with no internet</span>
+  </div>
 
   <!-- ➕ ADD MODE — the six size puzzles, an easy→hard ladder -->
   <div class="modeGroup">
@@ -4391,14 +4411,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // puzzle has one, so the name is never cut to "Sir Ramanujan Math…"
     var lvlName = lvl ? (lvl.dataset.short || lvl.dataset.name || lvl.textContent.trim()) : '';
     if (title) title.textContent = (id === 'scPlay' && lvl) ? lvlName : SCREEN_TITLE[id];
-    if (chip){
-      chip.textContent = (id === 'scPlay' && lvl) ? 'playing' : SCREEN_CHIP[id];
-      /* No chip while playing. It only ever said "playing" — which the lit Play
-         tab and the puzzle name in the title already tell you — and its 49px
-         was truncating the longest names to "Guess My Number ·…". Dropping it
-         here fits every title, including 🎂 Sir Ramanujan MathMagic. */
-      chip.style.display = (id === 'scPlay') ? 'none' : 'inline-block';
-    }
+    /* The chip used to narrate the screen — "10 puzzles", "how it works",
+       "offline ready". Raja asked for that space to do something instead, so it
+       is the update control now: one tap fetches the newest build. It keeps its
+       own label, so nothing here rewrites it.
+       Still hidden while playing: its width is what truncated the longest
+       puzzle names, and the board is no place to offer a reload. */
+    if (chip) chip.style.display = (id === 'scPlay') ? 'none' : 'inline-flex';
 
     if (id === 'scPlay'){ try { fitBoard(); } catch(e){} }
     // Learn is nothing but the logic notes — open them on arrival
@@ -4748,15 +4767,48 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // if even the smallest type will not fit, scrolling beats illegible text
     bar.style.overflowY = spanAt(s) > box + 1 ? 'auto' : 'hidden';
   }
-  /* The header pill said "9 puzzles" while ten were listed — it was typed by hand
-     and the Advance number game never updated it. Count them instead, so it stays
-     honest when Angle Magic and Logic Gates arrive. */
+  /* The header pill is the update button now. It counted puzzles before, which
+     the list underneath already showed.
+
+     It does not invent its own updating: it defers to #updateBtn on the Get App
+     screen, which already unregisters the service worker, clears the caches and
+     reloads — and which already refuses to do any of that while offline, since
+     clearing the cache with no connection would strand offline play entirely.
+     One implementation, two ways in. */
   (function(){
-    var n = document.querySelectorAll('.lvCard').length;
-    if (!n) return;
-    SCREEN_CHIP.scHome = n + ' puzzles';
     var chip = document.getElementById('appBarChip');
-    if (chip && /puzzles/.test(chip.textContent)) chip.textContent = SCREEN_CHIP.scHome;
+    if (!chip) return;
+    chip.setAttribute('role', 'button');
+    chip.setAttribute('aria-label', 'Fetch the newest version');
+    chip.style.cursor = 'pointer';
+
+    /* the tip under the BETA flag reads the same network state, so the two
+       never disagree about whether there is a connection */
+    function idle(){
+      var on = navigator.onLine;
+      chip.textContent = on ? '🔄 Update' : '📴 Offline';
+      var tip = document.getElementById('diffTip');
+      if (tip){
+        tip.textContent = on ? '📴 Plays with no internet'
+                             : '📴 No internet — still plays';
+        tip.classList.toggle('off', !on);
+      }
+    }
+    idle();
+    window.addEventListener('online', idle);
+    window.addEventListener('offline', idle);
+
+    chip.addEventListener('click', function(){
+      if (!navigator.onLine){
+        chip.textContent = '📴 No internet';
+        setTimeout(idle, 2200);
+        return;
+      }
+      chip.textContent = '⏳ Updating…';
+      var real = document.getElementById('updateBtn');
+      if (real) real.click();                 // the guarded path, reused
+      else { try { location.reload(); } catch(e){} }
+    });
   })();
 
   /* Belt and braces for the app bar. The shell is meant to fill the screen
@@ -5781,8 +5833,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-38 (the puzzle list names all ten)';
-  window.BETA_VER = 'beta-38';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-39 (update button, Choose Difficulty back)';
+  window.BETA_VER = 'beta-39';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
