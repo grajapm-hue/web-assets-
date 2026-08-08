@@ -1798,11 +1798,12 @@ body.binaryMode #binaryPanel{ display:flex !important; }
 .splashTag{ font-size:12.5px; font-weight:800; line-height:1.55; margin-top:8px; max-width:22em;
   color:#FFFFFF; text-shadow:0 2px 8px rgba(0,0,0,.55), 0 0 2px rgba(0,0,0,.45);
   animation:splashUp .4s .28s both; }
-/* quieter than Tap to play — a way in, not a competing call to action */
-.splashAbout{ margin-top:18px; display:inline-block; font-family:inherit; cursor:pointer;
-  font-size:11.5px; font-weight:800; letter-spacing:.3px; color:#FFFFFF;
-  background:rgba(0,0,0,.30); border:0; border-radius:999px; padding:9px 16px;
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.30);
+/* Bigger — it was too timid to find. Still quieter than Tap to play, but a
+   proper target now rather than a footnote. */
+.splashAbout{ margin-top:20px; display:inline-block; font-family:inherit; cursor:pointer;
+  font-size:14px; font-weight:800; letter-spacing:.3px; color:#FFFFFF;
+  background:rgba(0,0,0,.34); border:0; border-radius:999px; padding:13px 26px;
+  min-height:46px; box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.38);
   animation:splashUp .4s .34s both; }
 .splashAbout:active{ transform:translateY(2px); background:rgba(0,0,0,.44); }
 .splashHint{ font-size:10.5px; font-weight:800; letter-spacing:1.6px; text-transform:uppercase;
@@ -5343,8 +5344,11 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
            screen. It already exists as the About sheet: the journey from paper
            through 1990s spreadsheets to today, the credit, the contact address
            and the music licences. One way in, not a second copy. */
+        /* No "who made it" out here. It is a team effort — Raja, JNT and
+           Claude — and naming that on the front door reads as a byline.
+           The credits are inside, where they belong. */
         '<button class="splashAbout" type="button" id="splashAbout">' +
-          '📜 About this project · who made it</button>' +
+          '📜 About this project</button>' +
       '</div>';
     shell.appendChild(s);
 
@@ -5580,8 +5584,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-34 (candy welcome screen, About on it)';
-  window.BETA_VER = 'beta-34';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-35 (bigger About, no byline out front)';
+  window.BETA_VER = 'beta-35';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
