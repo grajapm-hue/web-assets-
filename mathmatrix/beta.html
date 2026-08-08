@@ -1403,6 +1403,29 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
   max-height:calc(86vh - 150px) !important; height:auto !important;
   margin-left:auto !important; margin-right:auto !important; }
 
+/* ══ BINARY ↔ DECIMAL, the printed part ══
+   A table you read, before the calculator you tap. Monospaced digits and
+   tabular figures so the 0s and 1s line up in columns — a conversion table
+   whose rows do not align is harder to read than no table at all. */
+.binTable{ border:2px solid #8A5E31; border-radius:14px; background:#FFF6E7;
+  padding:10px 12px; margin:12px 0; }
+.binTHead{ font-size:12px; font-weight:900; letter-spacing:.5px; text-transform:uppercase;
+  color:#5E2A0A; border-bottom:1px solid #D9BE92; padding-bottom:6px; margin-bottom:8px; }
+.binTGrid{ display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
+.binTGrid span{ display:flex; align-items:baseline; justify-content:center; gap:5px;
+  background:#F3E4C9; border-radius:8px; padding:5px 2px; }
+.binTGrid b{ font-size:13px; font-weight:900; color:#5E2A0A; min-width:15px; text-align:right;
+  font-variant-numeric:tabular-nums; }
+.binTGrid i{ font-style:normal; font-family:ui-monospace,Menlo,Consolas,monospace;
+  font-size:12.5px; font-weight:700; color:#124A18; letter-spacing:.5px; }
+.binPlace{ display:grid; grid-template-columns:repeat(8,1fr); gap:4px; }
+.binPlace span{ text-align:center; background:#F3E4C9; border-radius:7px; padding:6px 0;
+  font-size:11px; font-weight:900; color:#4A3218; font-variant-numeric:tabular-nums; }
+.binEg{ margin-top:8px; font-size:13px; font-weight:700; color:#3A2A14; }
+.binEg b{ color:#5E2A0A; }
+.binEg i{ font-style:normal; font-family:ui-monospace,Menlo,Consolas,monospace;
+  font-weight:800; color:#124A18; letter-spacing:.6px; }
+
 /* ══ THE BIT CONVERTER ══
    Two things. It has to be able to be EIGHT wide now, because Advance is a
    real 8-bit trick — one custom property drives the grid so 4 and 8 share the
@@ -3988,6 +4011,45 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     '</div>';
   }
 
+  /* ── BINARY ↔ DECIMAL, the reference block ──
+     Raja asked for a table to READ and a calculator to TAP, both widths, in
+     both games. It goes FIRST, ahead of the explanation: the last version put
+     the converter roughly 500px down a long note, which is why he reported the
+     calculator as "not updated" — on Junior nothing had changed, and on
+     Advance he would have had to scroll nearly to the bottom to see what had.
+
+     Junior's two converters are its own tens/units pair, so nothing is
+     duplicated: each game shows a 4-bit tool and an 8-bit tool either way. */
+  function binRef(forAdvance){
+    var rows = '';
+    for (var n = 0; n <= 15; n++){
+      var b = n.toString(2);
+      while (b.length < 4) b = '0' + b;
+      rows += '<span><b>' + n + '</b><i>' + b + '</i></span>';
+    }
+    var pv = [128,64,32,16,8,4,2,1].map(function(v){ return '<span>' + v + '</span>'; }).join('');
+    var tools = forAdvance
+      ? convSystem('P', 'any digit, 0 to 15', '', 4, '4-bit converter') +
+        convSystem('Q', 'the whole number, 0 to 255', 'b', 8, '8-bit converter')
+      : convSystem('A', 'tens digit', '', 4, '4-bit converter · tens') +
+        convSystem('B', 'units digit', 'b', 4, '4-bit converter · units') +
+        convSystem('Q', 'the whole number, 0 to 255', '', 8, '8-bit converter');
+    return '<h3>🔢 Binary ↔ Decimal</h3>' +
+      '<div class="binTable">' +
+        '<div class="binTHead">4-bit — every number from 0 to 15</div>' +
+        '<div class="binTGrid">' + rows + '</div>' +
+      '</div>' +
+      '<div class="binTable">' +
+        '<div class="binTHead">8-bit — the eight place values</div>' +
+        '<div class="binPlace">' + pv + '</div>' +
+        '<div class="binEg"><b>200</b> = 128 + 64 + 8 = <i>11001000</i></div>' +
+        '<div class="binEg"><b>37</b> = 32 + 4 + 1 = <i>00100101</i></div>' +
+      '</div>' +
+      '<p style="margin:10px 0 2px;">Now try it — tap the bits, <i>or</i> type a number ' +
+      'and watch them light up. It works both ways.</p>' +
+      tools;
+  }
+
   function convRefresh(sys, from){
     var bitsEls = document.querySelectorAll('.convBit[data-sys="' + sys + '"]');
     var dec = document.querySelector('.convDec[data-sys="' + sys + '"]');
@@ -4139,7 +4201,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
          the 4-bit one on the page could not even reach 255. */
       if (currentSize === 'binary2'){
         document.getElementById('logicBox').innerHTML =
-          '<h3>📐 Guess My Number · Advance — how the trick works</h3>' +
+          binRef(true) +
+          '<h3 style="margin-top:18px;">📐 Guess My Number · Advance — how the trick works</h3>' +
           '<p>Junior splits your number into two digits. Advance does not split it at all — ' +
           'it builds the <b>whole number</b> out of eight values: ' +
           '<b>128, 64, 32, 16, 8, 4, 2</b> and <b>1</b>.</p>' +
@@ -4154,17 +4217,16 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           '</ol>' +
           '<p><b>💡 Why eight cards?</b> Eight switches make 256 combinations, 0 to 255 — exactly the range, ' +
           'with nothing wasted. Junior needs eight too, but spends them as four and four.</p>' +
-          '<h3 style="margin-top:16px;">🔢 8-Bit Converter — works both ways</h3>' +
-          '<p style="margin-bottom:2px;">Tap the bits to build a number, <i>or</i> type a decimal (0–255) and ' +
-          'watch the bits light up. These eight are the eight cards, in the same order.</p>' +
-          convSystem('C', 'the whole number, 0 to 255', '', 8, '8-bit converter');
+          '<p>The <b>8-bit converter</b> at the top of this page is these eight cards, in the same order — ' +
+          'type your number into it and the yes cards light up.</p>';
         wireConverter();
         buildBinary(); resetBinary();
         document.getElementById('binaryClear').onclick = resetBinary;
         return;
       }
       document.getElementById('logicBox').innerHTML =
-        '<h3>📐 Binary Number Guess — how the trick works</h3>' +
+        binRef(false) +
+        '<h3 style="margin-top:18px;">📐 Binary Number Guess — how the trick works</h3>' +
         '<p>Every digit from <b>0 to 9</b> can be built from just four values: <b>8, 4, 2 and 1</b>. ' +
         'For example <b>9 = 8 + 1</b> and <b>6 = 4 + 2</b>. Writing which ones you used gives the <b>binary</b> code: ' +
         '9 becomes <b>1001</b> and 6 becomes <b>0110</b>.</p>' +
@@ -4175,11 +4237,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           '<li><b>Example — 99:</b> tens 9 = 8+1 → boxes <b>1</b> and <b>4</b>; units 9 = 8+1 → boxes <b>5</b> and <b>8</b>. ✅</li>' +
         '</ol>' +
         '<p><b>💡 Why 4 bits?</b> Four switches make 16 combinations (0–15), which is more than the ten digits 0–9 — just enough to name every digit.</p>' +
-        '<h3 style="margin-top:16px;">🔢 4-Bit Converter — works both ways</h3>' +
-        '<p style="margin-bottom:2px;">Tap the bits to build a number, <i>or</i> type a decimal (0–15) and watch the bits light up. ' +
-        'System A is the <b>tens</b> digit, System B the <b>units</b> — together they make any number to 99.</p>' +
-        convSystem('A', 'tens digit', '') +
-        convSystem('B', 'units digit', 'b');
+        '<p>The two <b>4-bit converters</b> at the top of this page are the tens digit and the units ' +
+        'digit — set both and you have any number up to 99. The 8-bit one beside them is the same ' +
+        'idea without the split, which is how <b>Advance</b> plays it.</p>';
       wireConverter();
       buildBinary(); resetBinary();
       document.getElementById('binaryClear').onclick = resetBinary;
@@ -6156,8 +6216,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-47 (8-bit converter for Advance; 3-cube formula sheet)';
-  window.BETA_VER = 'beta-47';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-48 (binary table + both converters, first on the page)';
+  window.BETA_VER = 'beta-48';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
