@@ -1353,6 +1353,17 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
 .diffTip{ font-size:calc(8.5px * var(--lvScale, 1)); font-weight:800; letter-spacing:.2px;
   color:#6B4A22; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .diffTip.off{ color:#9A3412; }
+/* The offline line and Share stack on the right, so the heading keeps the
+   whole left side. baseline on .diffHead lines the heading up with the tip,
+   the first thing in this column. */
+.diffSide{ display:flex; flex-direction:column; align-items:flex-end; min-width:0;
+  gap:calc(3px * var(--lvScale, 1)); }
+.diffShare{ font-family:inherit; cursor:pointer; border:0; white-space:nowrap;
+  font-size:calc(8.5px * var(--lvScale, 1)); font-weight:900; letter-spacing:.3px;
+  padding:calc(3px * var(--lvScale, 1)) calc(10px * var(--lvScale, 1));
+  border-radius:999px; background:#8A5E31; color:#FFF6E7;
+  box-shadow:0 2px 0 rgba(0,0,0,.22); }
+.diffShare:active{ transform:translateY(2px); box-shadow:0 0 0 rgba(0,0,0,.22); }
 .modeGroup{ flex:none; }
 .modeHead{ margin:calc(2px * var(--lvScale, 1)) 0 calc(4px * var(--lvScale, 1)) !important;
   gap:calc(6px * var(--lvScale, 1)) !important; }
@@ -2223,7 +2234,14 @@ body{ background:#C9A87C !important; }
        Get App tab. -->
   <div class="diffHead">
     <span class="diffLabel">Choose Difficulty</span>
-    <span class="diffTip" id="diffTip">📴 Plays with no internet</span>
+    <!-- Share sits under the offline line, where Raja asked for it. This is the
+         moment a parent thinks to pass the game on — standing in front of the
+         puzzle list — not three taps away inside the Get App tab. Same link and
+         same share sheet as the big button there; one source, two ways in. -->
+    <span class="diffSide">
+      <span class="diffTip" id="diffTip">📴 Plays with no internet</span>
+      <button class="diffShare" id="diffShare" type="button">📤 Share</button>
+    </span>
   </div>
 
   <!-- ➕ ADD MODE — the six size puzzles, an easy→hard ladder -->
@@ -4479,26 +4497,36 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
   // Share — the installed app has no address bar, so offer the phone's own share
   // sheet; fall back to copying the link when the browser has no Web Share API.
+  // Two ways in — the big button on Get App and the chip on the puzzle list —
+  // but one link, one message, one code path. Each button restores its own
+  // label, so the feedback appears where the finger actually was.
   (function(){
-    var sBtn = document.getElementById('shareBtn');
-    if (!sBtn) return;
     var LINK = 'https://kidsmathsmatrixpuzzle.github.io';
     var TEXT = '🐒🎲 MathMatrix Pro++ — magic square puzzles for kids (5th grade & up). '
              + '3×3 to 10×10 plus 3³ Multiply Magic. Free, works offline, no ads.';
-    sBtn.addEventListener('click', function(){
-      var payload = { title: 'Kids Maths Matrix Puzzle', text: TEXT, url: LINK };
-      if (navigator.share){
-        navigator.share(payload).catch(function(){});   // user cancelling is not an error
-        return;
-      }
-      var done = function(ok){
-        sBtn.textContent = ok ? '✅ Link copied — paste it anywhere!' : '📤 ' + LINK;
-        setTimeout(function(){ sBtn.textContent = '📤 Share this puzzle'; }, 3000);
-      };
-      if (navigator.clipboard && navigator.clipboard.writeText){
-        navigator.clipboard.writeText(TEXT + '\n' + LINK).then(function(){ done(true); }, function(){ done(false); });
-      } else { done(false); }
-    });
+    function wire(btn){
+      if (!btn) return;
+      var idle = btn.textContent;
+      btn.addEventListener('click', function(e){
+        e.stopPropagation();                // the chip sits inside the puzzle list
+        if (navigator.share){
+          navigator.share({ title: 'Kids Maths Matrix Puzzle', text: TEXT, url: LINK })
+            .catch(function(){});           // user cancelling is not an error
+          return;
+        }
+        // Desktop fallback. Kept short: the chip is a few characters wide, and a
+        // full URL printed into it would stretch the whole band.
+        var done = function(ok){
+          btn.textContent = ok ? '✅ Link copied!' : '⚠️ Copy failed';
+          setTimeout(function(){ btn.textContent = idle; }, 3000);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText){
+          navigator.clipboard.writeText(TEXT + '\n' + LINK).then(function(){ done(true); }, function(){ done(false); });
+        } else { done(false); }
+      });
+    }
+    wire(document.getElementById('shareBtn'));
+    wire(document.getElementById('diffShare'));
   })();
 
   // Custom keypad (numbers + navigation), so the OS keyboard never covers the board
@@ -5569,6 +5597,12 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   (function splashScreen(){
     var shell = document.querySelector('.appShell');
     if (!shell) return;
+    /* Coming back from an update? Then nobody launched anything — they were
+       already playing. Build no splash at all rather than building one and
+       tearing it down, which would leave the die's roll timer running against
+       a node that is no longer on the page. The stash is consumed at the end
+       of this file, not here. */
+    try { if (sessionStorage.getItem('mm.resume')) return; } catch (e) {}
     var tag = document.querySelector('#vault .tagline');
     var name = (SCREEN_TITLE && SCREEN_TITLE.scHome) ? SCREEN_TITLE.scHome.replace(/^[^A-Za-z]+/, '') : 'MathMatrix';
     var s = document.createElement('div');
@@ -5833,8 +5867,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-39 (update button, Choose Difficulty back)';
-  window.BETA_VER = 'beta-39';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-40 (Share on the list, and you keep your place)';
+  window.BETA_VER = 'beta-40';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
@@ -5863,6 +5897,20 @@ if (navigator.storage && navigator.storage.persist) {
         return;
       }
       upBtn.textContent = '⏳ Updating…'; upBtn.disabled = true;
+      /* Raja asked to land back where you were standing, rather than at the
+         welcome screen on 3×3. So note the screen and the puzzle before the
+         reload; the block at the end of this file spends it on the way back in.
+         The screen and the puzzle only — NOT a half-filled board. A new build
+         can change a grid, and pouring stale cells into a different puzzle is
+         worse than starting it clean. */
+      try {
+        var open = document.querySelector('[data-screen].on');
+        var lvl  = document.querySelector('.toggleBtn.active[data-size]');
+        sessionStorage.setItem('mm.resume', JSON.stringify({
+          s: open ? open.getAttribute('data-screen') : 'scHome',
+          z: lvl  ? lvl.getAttribute('data-size')    : ''
+        }));
+      } catch (e) {}
       var jobs = [];
       try {
         if ('serviceWorker' in navigator && navigator.serviceWorker.getRegistrations){
@@ -5880,6 +5928,38 @@ if (navigator.storage && navigator.storage.persist) {
       Promise.all(jobs).then(reload).catch(reload);
     });
   }
+
+  /* ---- BACK WHERE YOU WERE ----
+     An update is a reload, and a reload normally means the welcome screen and
+     3×3 again. Raja: "keep where one stand even after online updating." The
+     update leaves a note; this spends it, once.
+     It restores by clicking the real controls — the level card and the tab —
+     rather than reaching into the game's state. The card rebuilds the board and
+     the tab redraws the screen exactly as a finger would, so there is no second
+     version of "open a puzzle" here that can drift from the first. */
+  (function(){
+    var raw = null;
+    try {
+      raw = sessionStorage.getItem('mm.resume');
+      sessionStorage.removeItem('mm.resume');   // spent on the first boot that sees it
+    } catch (e) { return; }
+    if (!raw) return;
+    var st; try { st = JSON.parse(raw); } catch (e) { return; }
+    if (!st) return;
+
+    // The level card takes you to the board, so open it first and let the tab
+    // have the last word — otherwise landing on Home would be overruled.
+    if (st.z){
+      var card = document.querySelector('.toggleBtn[data-size="' + st.z + '"]');
+      if (card) card.click();
+    }
+    // Fall back to Home if that screen has no tab any more. scLearn is already
+    // in this position — it is still in the markup but nothing reaches it — and
+    // a note naming a retired screen should not leave anyone nowhere.
+    var tab = document.getElementById('tab-' + (st.s || 'scHome'))
+           || document.getElementById('tab-scHome');
+    if (tab) tab.click();
+  })();
 })();
 </script>
 </body>
