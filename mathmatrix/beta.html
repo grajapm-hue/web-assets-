@@ -2018,7 +2018,9 @@ body.binaryMode #binaryPanel{ display:flex !important; }
 <nav class="tabBar">
   <button class="tabBtn on" id="tab-scHome"  type="button"><span class="tabIco">🏠</span>Puzzles</button>
   <button class="tabBtn"    id="tab-scPlay"  type="button"><span class="tabIco">🎲</span>Play</button>
-  <button class="tabBtn"    id="tab-scLearn" type="button"><span class="tabIco">💡</span>Learn</button>
+<!-- Learn is no longer a bottom tab. It lives beside settings as the 💡 button,
+     so the list exists in exactly one place and opens over whatever you are
+     doing instead of navigating you away from it. -->
   <button class="tabBtn"    id="tab-scApp"   type="button"><span class="tabIco">📲</span>Get App</button>
   <button class="tabBtn"    id="tab-scFeed"  type="button"><span class="tabIco">💬</span>Feedback</button>
 </nav>
@@ -4185,28 +4187,14 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   goScreen = function(id){
     _goScreen(id);
     document.body.classList.toggle('onPlay', id === 'scPlay');
-    // the 💡 belongs on the board, not on the Learn tab where it duplicates itself
-    var lb = document.getElementById('barLearn');
-    if (lb) lb.style.display = (id === 'scPlay') ? '' : 'none';
     setTimeout(function(){
       try { fitBoard(); } catch(e){}
       if (id === 'scHome') try { fitHome(); } catch(e){}
     }, 40);
     if (id === 'scHome')  kimo('Pick a puzzle — <b>they\'re all open</b>, no locks.', null);
-    if (id === 'scLearn'){
-      kimo('This is the part I like. Here is <b>why</b> it works.', 'think');
-      /* The Learn tab used to offer the same four rows for every puzzle, and
-         three of them are about grids. On the two number games — which are
-         cards, with no grid at all — that meant:
-           · Quick formula sheet → a diagram that has never existed
-           · Watch it built      → jumped to an empty board and threw
-                                   "Cannot read properties of undefined"
-           · Eight twins         → explained rotating a square there isn't one of
-         Offer a row only when it leads somewhere. Angle Magic and Logic Gates
-         will arrive the same way, so this is the rule, not a patch. */
-      var rows = document.querySelector('.learnRows');
-      if (rows) rows.innerHTML = learnRowsHtml();
-    }
+    /* scLearn is no longer reachable — Learn is the 💡 sheet beside settings.
+       The section stays in the DOM only because #logicBox lives there and is
+       parked into the sheet system from it. */
     if (id === 'scFeed')  kimo('Found something odd? <b>Tell us</b> — that\'s what a beta is for.', 'think');
     if (id === 'scApp')   kimo('Install it once and it works with <b>no internet</b>.', null);
   };
@@ -4507,10 +4495,11 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
      "undefined". Both made the Learn tab offer a formula sheet and then tell the
      child the diagram is not in the app. A missing entry now hides the row
      instead; the number games explain themselves fully under "The method". */
-  /* The four learn rows, as markup. Two places render them now — the Learn tab
-     and the 💡 button on the board — so they are built from one source rather
-     than typed twice and drifting apart. `only` filters to the rows that lead
-     somewhere for the puzzle in play. */
+  /* The learn rows, as markup. There is exactly ONE place that renders them —
+     the 💡 button beside settings. They used to also fill a Learn screen in the
+     bottom bar, which meant the same list in two places; Raja asked for one
+     home, so the bottom tab is gone and this is it. Rows are rebuilt on every
+     open, so they always match the puzzle in play. */
   function learnRowsHtml(){
     var isGrid = !!PUZZLES[currentSize];
     var all = [
@@ -4527,13 +4516,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   }
 
   (function buildLearn(){
-    var sec = document.querySelector('[data-screen="scLearn"]');
-    if (!sec) return;
-    var rows = document.createElement('div');
-    rows.className = 'learnRows';
-    rows.innerHTML = learnRowsHtml();
-    sec.appendChild(rows);
-    // delegated on the document, so the copy inside the 💡 sheet works too
+    // No rows are rendered into a screen any more — they exist only inside the
+    // 💡 sheet. This just wires the one handler, delegated on the document so it
+    // works for markup that is created fresh each time the sheet opens.
     document.addEventListener('click', function(e){
       var b = e.target.closest('.rowBtn[data-learn]'); if (!b) return;
       var k = b.dataset.learn;
@@ -5246,8 +5231,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-18 (Learn tab fixed)';
-  window.BETA_VER = 'beta-18';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-19 (Learn lives beside settings)';
+  window.BETA_VER = 'beta-19';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
