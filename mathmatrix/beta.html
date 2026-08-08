@@ -4856,7 +4856,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     bar.insertAdjacentElement('afterend', sanaEl);
     var flag = document.createElement('div');
     flag.className = 'betaFlag';
-    flag.innerHTML = '<b>BETA</b> — a test version. Tell us what breaks on the 💬 Feedback tab.';
+    /* The build number lives HERE, on the front page, not buried in Get App.
+       Raja asked "where the updated version mentioned in app" — and he was
+       asking because he could not tell whether a change had failed to ship or
+       his phone was simply holding an old copy. That question should never
+       need asking twice: the answer is now the first line he reads. */
+    flag.innerHTML = '<b>BETA <span id="flagVer">…</span></b> — tell us what breaks ' +
+                     'on the 💬 Feedback tab.';
     sanaEl.insertAdjacentElement('afterend', flag);
     sanaBub = sanaEl.querySelector('.sanaBub');
     sanaSpark = sanaEl.querySelector('.sanaSpark');
@@ -6216,10 +6222,43 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-48 (binary table + both converters, first on the page)';
-  window.BETA_VER = 'beta-48';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-49 (version on the front page + auto online refresh)';
+  window.BETA_VER = 'beta-49';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
+  // the short form on the BETA flag, where it is seen without looking for it
+  var flagVer = document.getElementById('flagVer');
+  if (flagVer) flagVer.textContent = window.BETA_VER;
+
+  /* ── AUTO ONLINE REFRESH ──
+     Raja asked for this in as many words — "auto forced app online refresh" —
+     and a manual button turned out not to be enough. GitHub Pages serves this
+     file with Cache-Control: max-age=600, so a plain revisit can hand back a
+     ten-minute-old build; twice now he has reported a change as missing when
+     it had shipped and his phone simply had a different file.
+
+     So on each online launch the app asks the network which build is newest,
+     and if it is not the one running, takes it. Once per session, guarded in
+     sessionStorage, so this can never become a reload loop — and the query
+     string is what actually defeats the cache, since a plain reload is free
+     to hand back the very copy we are trying to replace. */
+  (function autoFresh(){
+    if (!navigator.onLine || !window.fetch) return;
+    var ONCE = 'mm.freshChecked';
+    try {
+      if (sessionStorage.getItem(ONCE)) return;
+      sessionStorage.setItem(ONCE, '1');
+    } catch (e) { return; }        // no sessionStorage means no loop guard, so do not risk it
+    fetch(location.pathname + '?fresh=' + Date.now(), { cache: 'no-store' })
+      .then(function(r){ return r.ok ? r.text() : null; })
+      .then(function(txt){
+        if (!txt) return;
+        var m = txt.match(/window\.BETA_VER\s*=\s*'([^']+)'/);
+        if (!m || !m[1] || m[1] === window.BETA_VER) return;
+        location.replace(location.pathname + '?v=' + encodeURIComponent(m[1]));
+      })
+      .catch(function(){});        // offline mid-flight, or blocked: keep playing
+  })();
 
   var upBtn = document.getElementById('updateBtn');
   // Reflect the network state on the button so users never trigger a destructive
