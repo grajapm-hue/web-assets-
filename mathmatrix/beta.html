@@ -1670,7 +1670,11 @@ body.binaryMode #binaryPanel{ display:flex !important; }
 .mrRow2 button{ flex:1; }
 
 /* ══ HINT LADDER ══ */
-#hintBtn{ background:var(--gold) !important; color:#1a1204 !important; }
+/* Orange, not the brand gold. Gold stays for the stars and Kimo's highlights;
+   the Hint chip is one of the three play-row colours and wants its own hue.
+   This rule sits after the chip block above and would otherwise win, which is
+   why the colour has to be set here rather than there. */
+#hintBtn{ background:#FF8A00 !important; color:#241000 !important; }
 .cell.hintPoint{ box-shadow:0 0 0 3px var(--gold) !important; animation:hintPulse 1.3s ease-in-out infinite; }
 @keyframes hintPulse{ 0%,100%{ box-shadow:0 0 0 3px var(--gold) } 50%{ box-shadow:0 0 0 7px rgba(247,179,43,.34) } }
 .cell.hintGiven{ background:color-mix(in srgb, var(--gold) 30%, var(--sf2)) !important; }
@@ -5545,8 +5549,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-32 (direct colours, bigger type)';
-  window.BETA_VER = 'beta-32';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-33 (Hint is orange too)';
+  window.BETA_VER = 'beta-33';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
