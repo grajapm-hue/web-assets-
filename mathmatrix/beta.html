@@ -1403,6 +1403,28 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
   max-height:calc(86vh - 150px) !important; height:auto !important;
   margin-left:auto !important; margin-right:auto !important; }
 
+/* ══ THE BIT CONVERTER ══
+   Two things. It has to be able to be EIGHT wide now, because Advance is a
+   real 8-bit trick — one custom property drives the grid so 4 and 8 share the
+   same rules. And it still wore the old dark-theme navy, which inside the
+   cream Logic sheet is exactly the dark hole the step boxes were. */
+.convBits, .convLabels{ grid-template-columns:repeat(var(--nb, 4), 1fr) !important; }
+.convBox.w8 .convBit{ height:44px !important; font-size:17px !important; }
+.convBox.w8 .convLabels span{ font-size:9px !important; letter-spacing:-.3px !important; }
+.convBox{ background:#FFF6E7 !important; border-color:#8A5E31 !important; }
+.convBox.b{ border-color:#A8703A !important; }
+.convTitle{ color:#5E2A0A !important; border-bottom-color:#D9BE92 !important; }
+.convBox.b .convTitle{ color:#7A3B0C !important; }
+.convBit{ background:#F3E4C9 !important; border-color:#B08A5A !important; color:#4A3218 !important; }
+/* "lit" has to be unmistakable to a child, so it inverts rather than tints */
+.convBit.on{ background:#1B5E20 !important; border-color:#124A18 !important;
+  color:#EAFBEA !important; box-shadow:0 0 9px rgba(27,94,32,.45) !important; }
+.convLabels span{ color:#5A3A14 !important; }
+.convDecLabel{ color:#5E2A0A !important; }
+.convDec{ background:#FFFDF7 !important; border-color:#B08A5A !important; color:#241708 !important; }
+.convDec:focus{ border-color:#8A5E31 !important; }
+.convClear{ background:#8A5E31 !important; color:#FFF6E7 !important; }
+
 /* ══ THE SWAP PAIR, mid-demo ══
    The two cells about to trade places, lit for one beat before they do. Strong
    enough to find at a glance on a board of sixteen, and gone the moment they
@@ -3941,19 +3963,28 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   })();
 
   // ---------- 4-bit bi-directional converter (Binary Guess notes) ----------
-  function convSystem(id, label, cls){
-    var w = [8,4,2,1], bits = '', labs = '';
-    for (var i = 0; i < 4; i++){
+  /* Any width, not just four. The Advance game is a genuine 8-bit trick
+     (MR_ADV_VALUES = 128…1) but it was being handed the Junior's two 4-bit
+     systems, so the converter could not represent the number the child had
+     just been asked about. Width now drives the weights, the cap, the input
+     length and the grid, so 4 and 8 come out of the same code. */
+  function convSystem(id, label, cls, nbits, heading){
+    var n = nbits || 4, w = [], bits = '', labs = '';
+    for (var k = 0; k < n; k++) w.push(Math.pow(2, n - 1 - k));
+    for (var i = 0; i < n; i++){
       bits += '<button type="button" class="convBit" data-sys="' + id + '" data-i="' + i + '">0</button>';
       labs += '<span>' + w[i] + '</span>';
     }
-    return '<div class="convBox ' + cls + '">' +
-      '<div class="convTitle">Converter System ' + id + ' <span>(' + label + ')</span></div>' +
+    var max = Math.pow(2, n) - 1;
+    return '<div class="convBox ' + cls + (n > 4 ? ' w8' : '') + '" style="--nb:' + n + '">' +
+      '<div class="convTitle">' + (heading || ('Converter System ' + id)) +
+        ' <span>(' + label + ')</span></div>' +
       '<div class="convBits">' + bits + '</div>' +
       '<div class="convLabels">' + labs + '</div>' +
-      '<div class="convDecLabel">Decimal value (0 – 15)</div>' +
-      '<input class="convDec" data-sys="' + id + '" inputmode="numeric" maxlength="2" value="0">' +
-      '<button type="button" class="convClear" data-sys="' + id + '">Clear System ' + id + '</button>' +
+      '<div class="convDecLabel">Decimal value (0 – ' + max + ')</div>' +
+      '<input class="convDec" data-sys="' + id + '" inputmode="numeric" maxlength="' +
+        String(max).length + '" value="0">' +
+      '<button type="button" class="convClear" data-sys="' + id + '">Clear</button>' +
     '</div>';
   }
 
@@ -3961,20 +3992,23 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     var bitsEls = document.querySelectorAll('.convBit[data-sys="' + sys + '"]');
     var dec = document.querySelector('.convDec[data-sys="' + sys + '"]');
     if (!bitsEls.length || !dec) return;
-    var w = [8,4,2,1], v;
+    // read the width off the DOM, so 4-bit and 8-bit need no separate code path
+    var n = bitsEls.length, w = [], v;
+    for (var k = 0; k < n; k++) w.push(Math.pow(2, n - 1 - k));
+    var max = Math.pow(2, n) - 1;
     if (from === 'dec'){                       // decimal typed → light the bits
       v = parseInt(dec.value, 10);
       if (isNaN(v)) v = 0;
-      if (v > 15) { v = 15; dec.value = '15'; }
-      if (v < 0)  { v = 0;  dec.value = '0';  }
-      for (var i = 0; i < 4; i++){
+      if (v > max) { v = max; dec.value = String(max); }
+      if (v < 0)   { v = 0;   dec.value = '0';  }
+      for (var i = 0; i < n; i++){
         var on = (v & w[i]) !== 0;
         bitsEls[i].textContent = on ? '1' : '0';
         bitsEls[i].classList.toggle('on', on);
       }
     } else {                                   // bits toggled → show the decimal
       v = 0;
-      for (var j = 0; j < 4; j++) if (bitsEls[j].classList.contains('on')) v += w[j];
+      for (var j = 0; j < n; j++) if (bitsEls[j].classList.contains('on')) v += w[j];
       dec.value = String(v);
     }
   }
@@ -4097,6 +4131,38 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     if (on){
       stopDemos();
       instCard.innerHTML = '<b>Binary Number Guess!</b> Think of a number from <b>1 to 99</b>, then tap every box <b>where your guess number appears</b> — the binary bits will name it. 🔢';
+      /* Advance is a different trick and needs its own notes. It was being
+         given the Junior's, which describe a tens digit and a units digit
+         built from 8·4·2·1 each — but Advance runs on MR_ADV_VALUES,
+         128·64·32·16·8·4·2·1 across the whole number. Raja spotted the
+         converter that goes with it was missing; it was worse than missing,
+         the 4-bit one on the page could not even reach 255. */
+      if (currentSize === 'binary2'){
+        document.getElementById('logicBox').innerHTML =
+          '<h3>📐 Guess My Number · Advance — how the trick works</h3>' +
+          '<p>Junior splits your number into two digits. Advance does not split it at all — ' +
+          'it builds the <b>whole number</b> out of eight values: ' +
+          '<b>128, 64, 32, 16, 8, 4, 2</b> and <b>1</b>.</p>' +
+          '<ol style="margin:10px 0; padding-left:20px;">' +
+            '<li>Every number from <b>1 to 255</b> is one sum of those eight, and only one.</li>' +
+            '<li><b>Card 1</b> holds every number that uses 128, <b>card 2</b> every number that uses 64, ' +
+              'and so on down to <b>card 8</b> for the 1s.</li>' +
+            '<li>Saying yes to a card means "my number uses that value". Add up the yes cards and ' +
+              'your number is there — no guessing at all.</li>' +
+            '<li><b>Example — 200:</b> 200 = 128 + 64 + 8, so yes on cards <b>1</b>, <b>2</b> and <b>5</b>, ' +
+              'no on the rest. ✅</li>' +
+          '</ol>' +
+          '<p><b>💡 Why eight cards?</b> Eight switches make 256 combinations, 0 to 255 — exactly the range, ' +
+          'with nothing wasted. Junior needs eight too, but spends them as four and four.</p>' +
+          '<h3 style="margin-top:16px;">🔢 8-Bit Converter — works both ways</h3>' +
+          '<p style="margin-bottom:2px;">Tap the bits to build a number, <i>or</i> type a decimal (0–255) and ' +
+          'watch the bits light up. These eight are the eight cards, in the same order.</p>' +
+          convSystem('C', 'the whole number, 0 to 255', '', 8, '8-bit converter');
+        wireConverter();
+        buildBinary(); resetBinary();
+        document.getElementById('binaryClear').onclick = resetBinary;
+        return;
+      }
       document.getElementById('logicBox').innerHTML =
         '<h3>📐 Binary Number Guess — how the trick works</h3>' +
         '<p>Every digit from <b>0 to 9</b> can be built from just four values: <b>8, 4, 2 and 1</b>. ' +
@@ -5210,13 +5276,14 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   /* ---- 7. Learn becomes rows that open sheets ---- */
   var CHEAT = { '3x3':'cheat-3x3.png', '4x4':'cheat-4x4.png', '5x5':'cheat-5x5.png',
                 '6x6':'cheat-6x6.png', '8x8':'cheat-8x8.png', '10x10':'cheat-10x10.png',
-                'ramanujan':'cheat-ramanujan.jpg' };
-  /* No '3cube' entry. It used to point at cheat-3x3.png, so a child on
-     Multiply Magic tapped "formula sheet" and got the ADDITION diagram — the
-     right nine positions, the wrong arithmetic. Raja is sending a 3³ scan;
-     until it arrives the row hides itself, the same way the number games do,
-     rather than offering the wrong method. Add '3cube':'cheat-3cube.png' here
-     when the file lands. */
+                'ramanujan':'cheat-ramanujan.jpg',
+                '3cube':'cheat-3cube.png' };
+  /* '3cube' used to point at cheat-3x3.png, so Multiply Magic offered the
+     ADDITION diagram — right nine positions, wrong arithmetic. Raja sent his
+     own 3SQUARE MULT sheet, cropped in here as cheat-3cube.png: the original
+     handwritten square plus two more worked examples. Verified before wiring —
+     all three are magic by PRODUCT (4096, 216, 1728) on every row, column and
+     diagonal, and the top one is PUZZLES['3cube'].example exactly. */
   /* No entry for 'binary' or 'binary2' on purpose. cheat-binary.png has never
      existed — the slot was wired for a reference image that never arrived — and
      binary2 was never added at all, so its src rendered as the literal string
@@ -6089,8 +6156,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-46 (4x4 Watch follows the cheat sheet)';
-  window.BETA_VER = 'beta-46';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-47 (8-bit converter for Advance; 3-cube formula sheet)';
+  window.BETA_VER = 'beta-47';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
