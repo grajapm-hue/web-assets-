@@ -1350,9 +1350,12 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
   font-weight:900 !important; letter-spacing:.9px; text-transform:uppercase;
   color:#5E2A0A !important; background:none !important; padding:0 !important;
   border:0 !important; white-space:nowrap; }
+/* Darker than it looks like it needs to be. At 8.5px this is small text, so it
+   owes 4.5:1 against the sandalwood, and the friendlier brown only reached
+   3.5:1 — measured, not guessed. Same for the offline red. */
 .diffTip{ font-size:calc(8.5px * var(--lvScale, 1)); font-weight:800; letter-spacing:.2px;
-  color:#6B4A22; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.diffTip.off{ color:#9A3412; }
+  color:#54340F; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.diffTip.off{ color:#6E1F06; }
 /* The offline line and Share stack on the right, so the heading keeps the
    whole left side. baseline on .diffHead lines the heading up with the tip,
    the first thing in this column. */
@@ -1364,6 +1367,21 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
   border-radius:999px; background:#8A5E31; color:#FFF6E7;
   box-shadow:0 2px 0 rgba(0,0,0,.22); }
 .diffShare:active{ transform:translateY(2px); box-shadow:0 0 0 rgba(0,0,0,.22); }
+
+/* ══ TAP TARGETS — reach without regrowth ══
+   Share is 24px tall, the Update pill 18px, Logic and Watch 40px. All under the
+   44px a ten-year-old's finger is owed, and none of them can simply grow: the
+   band would steal rows from the puzzle list and the app bar has no spare
+   height at all. So grow the REACHABLE area and leave the drawing alone — an
+   invisible box centred on each control, which is what Apple's guidance means
+   by extending the hit area beyond the visual bounds.
+   Only ever taller, never wider, so nothing can reach sideways into a
+   neighbour. The rows above and below these chips are text, not buttons, so
+   there is nothing above or below for the extra height to steal. */
+.diffShare, #appBarChip, #barLearn, #barWatch{ position:relative; }
+.diffShare::after, #appBarChip::after, #barLearn::after, #barWatch::after{
+  content:''; position:absolute; left:0; right:0; top:50%;
+  height:44px; transform:translateY(-50%); }
 .modeGroup{ flex:none; }
 .modeHead{ margin:calc(2px * var(--lvScale, 1)) 0 calc(4px * var(--lvScale, 1)) !important;
   gap:calc(6px * var(--lvScale, 1)) !important; }
@@ -5867,8 +5885,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-41 (the helper is called SaNa now)';
-  window.BETA_VER = 'beta-41';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-42 (SaNa; bigger tap targets, darker offline line)';
+  window.BETA_VER = 'beta-42';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
