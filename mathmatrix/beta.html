@@ -1475,6 +1475,14 @@ body.onPlay .solvedCounter{ font-size:9px !important; padding:3px 9px !important
    display:…!important, and an !important stylesheet rule beats the plain inline
    style the code sets — so el.style.display='none' silently did nothing and the
    previous puzzle stayed on screen behind the cards. This wins it back. */
+/* Logic and Watch step aside twice: while the demo is running, because there
+   is nothing to tap and the board should be the only thing moving; and again
+   once the child clears the board after watching, because that is the moment
+   it stops being a lesson and becomes their turn. A class rather than inline
+   styles, so it composes with the card-game rule below instead of fighting it. */
+body.toolsOff #barLearn,
+body.toolsOff #barWatch{ display:none !important; }
+
 body.binaryMode #barWatch,          /* no board to build, so nothing to watch */
 body.binaryMode #boardWrap,
 body.binaryMode #playRow,
@@ -2578,6 +2586,11 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       var newSize = this.dataset.size;
       document.querySelectorAll('.toggleBtn').forEach(function(b){ b.classList.remove('active'); });
       this.classList.add('active');
+      /* Fresh puzzle, fresh start: Logic and Watch are back, and the "already
+         watched" memory is wiped. This is the route Kimo tells a child about
+         when the tools step aside. */
+      watchedHere = false;
+      document.body.classList.remove('toolsOff');
       applyAccent();                      // this puzzle's colour takes over the whole app
       goScreen('scPlay');                 // picking a level takes you straight to the board
       if (newSize === 'binary' || newSize === 'binary2'){   // card games, not grid puzzles
@@ -3884,6 +3897,14 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     msg.textContent = 'Board cleared — set your own target!';
     msg.className = '';
     update();
+    /* Clearing after the demo is the handover: the lesson is finished and the
+       board is theirs. Put Logic and Watch away so nothing competes with it.
+       Only after a watch — otherwise CLEAR would take away a child's only
+       route to the method. Kimo says how to get them back. */
+    if (watchedHere){
+      document.body.classList.add('toolsOff');
+      try { kimo('Your turn now. Want the method again? Tap <b>←</b> and pick the puzzle.', null); } catch(e){}
+    }
   });
   
   // Peek button
@@ -4011,6 +4032,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         btn.disabled = false;
         document.getElementById('peekBtn').disabled = false;
         watching = false;
+        // demo over — the tools come back so the pattern can be re-read
+        document.body.classList.remove('toolsOff');
+        try { kimo('That is the whole pattern. Tap <b>CLEAR</b> and it is your turn.', 'cheer'); } catch(e){}
         return;
       }
       if (dualPass && i === keptCount){
@@ -4685,6 +4709,12 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   })();
 
   /* ---- 9. quick settings in the app bar ---- */
+  /* Has the demo been watched since this puzzle was opened? Only then does
+     CLEAR put the tools away — a child who never watched must keep their route
+     to the method, or pressing CLEAR would strand them. Reset on every puzzle
+     switch, which is also how the tools come back. */
+  var watchedHere = false;
+
   (function barButtons(){
     var bar = document.querySelector('.appBar');
     if (!bar) return;
@@ -4719,6 +4749,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     wb.addEventListener('click', function(){
       closeSheet();
       goScreen('scPlay');
+      document.body.classList.add('toolsOff');   // nothing to tap while it builds
+      watchedHere = true;
       setTimeout(function(){ var w = document.getElementById('watchBtn'); if (w) w.click(); }, 260);
     });
 
@@ -5419,8 +5451,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-25 (mind-map hints, Logic and Watch)';
-  window.BETA_VER = 'beta-25';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-26 (tools step aside for your turn)';
+  window.BETA_VER = 'beta-26';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
