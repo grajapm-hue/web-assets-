@@ -2624,6 +2624,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     });
     var _wbtn = document.getElementById('watchBtn'); if (_wbtn) _wbtn.disabled = false;
     var _pbtn = document.getElementById('peekBtn'); if (_pbtn){ _pbtn.disabled = false; _pbtn.textContent = '👁 SHOW'; }
+    /* The demo is the only thing that hides Logic and Watch, so whenever it
+       stops — finished, cleared, or cancelled by switching puzzle — they come
+       straight back. One place, so no exit path can leave them missing. */
+    document.body.classList.remove('toolsOff');
   }
 
   // Mark the persistent guide/shade cells for the current size (used by both
@@ -3910,15 +3914,14 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     try { goScreen('scPlay'); } catch(e){}
     try { window.scrollTo(0, 0); } catch(e){}
 
-    /* Clearing after the demo is the handover: the lesson is finished and the
-       board is theirs. Put Logic and Watch away so nothing competes with it.
-       Only after a watch — otherwise CLEAR would take away a child's only
-       route to the method. Kimo says how to get them back.
-       After goScreen, so neither the class nor the message gets overwritten. */
-    if (watchedHere){
-      document.body.classList.add('toolsOff');
-      try { kimo('Your turn now. Want the method again? Tap <b>←</b> and pick the puzzle.', null); } catch(e){}
-    }
+    /* CLEAR puts the full play screen back — Logic and Watch included.
+       They step aside ONLY while the demo is running. I had them staying away
+       after CLEAR too, which is what Raja kept reporting: he cleared, went to
+       play, and the tools were gone with only a line of text pointing at the
+       back arrow. "That page seem all and proceed to play" — everything
+       present, and you just play. */
+    watchedHere = false;
+    document.body.classList.remove('toolsOff');
   });
   
   // Peek button
@@ -4734,10 +4737,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   })();
 
   /* ---- 9. quick settings in the app bar ---- */
-  /* Has the demo been watched since this puzzle was opened? Only then does
-     CLEAR put the tools away — a child who never watched must keep their route
-     to the method, or pressing CLEAR would strand them. Reset on every puzzle
-     switch, which is also how the tools come back. */
+  /* Kept only so the demo can be recognised as "in progress"; the tools now
+     come back the moment it ends, and CLEAR restores the full screen. */
   var watchedHere = false;
 
   (function barButtons(){
@@ -5492,8 +5493,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-29 (CLEAR rebuilds the play screen)';
-  window.BETA_VER = 'beta-29';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-30 (tools hide only while the demo runs)';
+  window.BETA_VER = 'beta-30';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
