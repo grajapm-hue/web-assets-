@@ -3910,23 +3910,24 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   // Peek button
   // Bring the whole board into view (plus the keypad when it also fits) so the
   // player never has to scroll while SHOW / Watch Me Solve is running.
+  /* This used to scroll the window to bring the board into view — right for the
+     old layout, which was one long scrolling page. The beta is a fixed-height
+     shell and the board is sized to fit inside it, so there is nothing to
+     scroll TO, and scrolling can only do harm.
+
+     And it did. On a phone the layout viewport is taller than the visible one
+     while the browser's address bar is showing, so window.scrollTo actually
+     moves — carrying the app bar off the top. Raja hit exactly this: after
+     Watch, the back arrow, the puzzle name, Logic, Watch and settings were all
+     gone, and Kimo was telling him to "tap ←" when no ← was on screen.
+     Reproduced by giving the document 80px of slack: the bar went to top:-19.
+
+     So it now does the opposite — it makes sure we are at the top, undoing any
+     stray scroll from a previous layout state or a bounce. */
   function showWholeBoard(){
-    var bc = document.querySelector('.boardContainer');
-    if (!bc) return;
-    var vh = window.innerHeight || document.documentElement.clientHeight;
-    var sy = window.pageYOffset || document.documentElement.scrollTop || 0;
-    var top = bc.getBoundingClientRect().top + sy;
-    var boardBottom = bc.getBoundingClientRect().bottom + sy;
-    var kp = document.getElementById('keypad');
-    var bottom = boardBottom;
-    if (kp){
-      var kpBottom = kp.getBoundingClientRect().bottom + sy;
-      if (kpBottom - top <= vh - 12) bottom = kpBottom;   // keypad fits too — include it
-    }
-    var h = bottom - top;
-    var y = (h <= vh - 12) ? top - (vh - h) / 2 : top - 8;   // centre if it fits, else align top
-    try { window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' }); }
-    catch (e) { window.scrollTo(0, Math.max(0, y)); }
+    if (!window.pageYOffset && !document.documentElement.scrollTop) return;
+    try { window.scrollTo({ top: 0, behavior: 'auto' }); }
+    catch (e) { window.scrollTo(0, 0); }
   }
 
   document.getElementById('peekBtn').addEventListener('click', function(){
@@ -4476,6 +4477,16 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     var chip = document.getElementById('appBarChip');
     if (chip && /puzzles/.test(chip.textContent)) chip.textContent = SCREEN_CHIP.scHome;
   })();
+
+  /* Belt and braces for the app bar. The shell is meant to fill the screen
+     exactly, but on a phone the layout viewport is taller than the visible one
+     while the address bar is up, which leaves the document a little room to
+     scroll. Anything that scrolls into it takes the app bar — back arrow and
+     all — off the top. Nothing in a fixed-height app should ever scroll the
+     window, so put it straight back. */
+  window.addEventListener('scroll', function(){
+    if (window.pageYOffset || document.documentElement.scrollTop) window.scrollTo(0, 0);
+  }, { passive: true });
 
   window.addEventListener('resize', fitHome);
   window.addEventListener('orientationchange', function(){ setTimeout(fitHome, 250); });
@@ -5451,8 +5462,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-26 (tools step aside for your turn)';
-  window.BETA_VER = 'beta-26';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-27 (the app bar can never scroll away)';
+  window.BETA_VER = 'beta-27';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
