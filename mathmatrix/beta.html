@@ -4998,8 +4998,23 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   }
   // toolsOff IS "a demo is running" — it is the one thing that hides the tools
   function demoRunning(){ return document.body.classList.contains('toolsOff'); }
-  function backLayers(){ return !!sheetOpenKey || demoRunning() || openScreen() !== 'scHome'; }
+  function cheatOpen(){
+    var m = document.getElementById('cheatModal');
+    return !!m && getComputedStyle(m).display !== 'none';
+  }
+  function backLayers(){
+    return cheatOpen() || !!sheetOpenKey || demoRunning() || openScreen() !== 'scHome';
+  }
   function peelOne(){
+    /* The diagram is the top layer, and now that the formula sheet opens
+       straight into it, it is where Back is most likely to be pressed. Full
+       size counts as its own step: one Back fits it, the next puts it away. */
+    if (cheatOpen()){
+      var ci = document.getElementById('cheatImg');
+      if (ci && ci.classList.contains('zoomed')){ try { zoomCheat(false); } catch(e){} return true; }
+      try { closeCheat(); } catch(e){}
+      return true;
+    }
     if (sheetOpenKey){ closeSheet(); return true; }
     if (demoRunning()){ try { stopDemos(); } catch(e){} return true; }
     if (openScreen() !== 'scHome'){ goScreen('scHome'); return true; }
@@ -5008,6 +5023,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   function armBack(){
     if (backArmed) return;
     try { history.pushState({ mmBack: 1 }, ''); backArmed = true; } catch (e) {}
+  }
+  /* openCheat is a global, called from the learn row AND from the pink buttons
+     inside every method write-up. Wrapping it once here arms Back for all of
+     them, rather than remembering to arm at each call site. */
+  if (typeof window.openCheat === 'function'){
+    var _openCheatOrig = window.openCheat;
+    window.openCheat = function(src){ _openCheatOrig(src); armBack(); };
   }
   window.addEventListener('popstate', function(){
     backArmed = false;                       // the entry we pushed is spent
@@ -5132,17 +5154,15 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       var nm = lvl ? (lvl.dataset.name || 'this puzzle') : 'this puzzle';
       if (k === 'logic') openSheet('logic', '📐 How ' + nm + ' works');
       if (k === 'sheet'){
-        var src = ASSET(CHEAT[currentSize]);
-        /* The scan is ~614px wide and the sheet is ~364 — so this inline copy
-           renders every label at about 59% and the numbers become unreadable.
-           It stays as the overview; tapping opens the full-size zoomable view. */
-        openSheet('cheat', '📋 Formula sheet — ' + nm,
-          '<p>The step diagram for this puzzle. <b>Tap it to read the numbers.</b></p>' +
-          '<img src="' + src + '" alt="Formula sheet for ' + nm + '" style="cursor:zoom-in" ' +
-          'onclick="openCheat(\'' + CHEAT[currentSize] + '\')" ' +
-          'onerror="this.style.display=\'none\';' +
-          'this.insertAdjacentHTML(\'afterend\',\'<p style=&quot;background:#241A5C;border-radius:12px;' +
-          'padding:22px;text-align:center&quot;>Diagram for this puzzle is not in the app yet.</p>\')">');
+        /* Straight to the big view — v131's behaviour, and Raja is right that
+           v131 fitted these better. Measured side by side on the same phone:
+           v131 showed the 6x6 scan at 62% of full size, covering 82% of the
+           screen; the preview inside the bottom sheet managed 48% and half the
+           screen, and 28% on a 320px phone. A sheet shares its space with a
+           header, a caption and the board behind it, so it can never win that.
+           The modal here IS v131's code, so this matches it exactly, and the
+           small middle step is gone rather than made smaller. */
+        openCheat(CHEAT[currentSize]);
       }
       if (k === 'watch'){
         goScreen('scPlay');
@@ -5963,8 +5983,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-44 (formula sheet fits whole; Logic boxes readable)';
-  window.BETA_VER = 'beta-44';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-45 (formula sheet opens big, like v131)';
+  window.BETA_VER = 'beta-45';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
