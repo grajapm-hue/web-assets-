@@ -1860,7 +1860,9 @@ body.binaryMode #binaryPanel{ display:flex !important; }
     <button class="kp" data-k="6">6</button><button class="kp" data-k="7">7</button><button class="kp" data-k="8">8</button><button class="kp" data-k="9">9</button><button class="kp" data-k="0">0</button>
   </div>
   <div class="kprow">
-    <button class="kp kpnav" data-nav="sign">±</button><button class="kp kpnav" data-nav="back">⌫</button><button class="kp kpnav" data-nav="left">←</button><button class="kp kpnav" data-nav="up">↑</button><button class="kp kpnav" data-nav="down">↓</button><button class="kp kpnav" data-nav="right">→</button>
+    <!-- aria-labels: these six say nothing a screen reader can read out —
+         "±" and "⌫" and the arrows are glyphs, not words -->
+    <button class="kp kpnav" data-nav="sign" aria-label="Plus or minus">±</button><button class="kp kpnav" data-nav="back" aria-label="Delete">⌫</button><button class="kp kpnav" data-nav="left" aria-label="Move left">←</button><button class="kp kpnav" data-nav="up" aria-label="Move up">↑</button><button class="kp kpnav" data-nav="down" aria-label="Move down">↓</button><button class="kp kpnav" data-nav="right" aria-label="Move right">→</button>
   </div>
   <div style="text-align:center; margin-top:2px;">
     <button class="kp kpsys" data-nav="sys" onmousedown="event.preventDefault()">⌨️ System keyboard</button>
@@ -2896,6 +2898,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         // Up to 4-digit numbers (up to 9999) on every size — future-proof for multiplicative targets (e.g. 4096)
         inp.maxLength = 4;
         inp.dataset.r = r; inp.dataset.c = c2;   // position, for auto-advance / navigation
+        // Without this a screen reader reads a grid of nameless text boxes and
+        // a child using VoiceOver has no idea which square they are in.
+        inp.setAttribute('aria-label', 'Row ' + (r + 1) + ', column ' + (c2 + 1));
         inp.addEventListener('input', onInput);
         inp.addEventListener('keydown', onKeyDown);
         inp.addEventListener('focus', function(){ setActive(this); });
@@ -4503,7 +4508,12 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     function derive(){
       var cw = Math.floor((box.clientWidth - gap * (tracks - 1)) / tracks);
       var ch = Math.floor((box.clientHeight - gap * (tracks - 1)) / tracks);
-      return Math.min(cw, ch, 74);
+      /* The ceiling was 74, which left a 3x3 using only 75% of its area on a
+         430px phone — the biggest, easiest cells were the ones being capped.
+         It exists to stop a small board looking absurd on a wide screen, but
+         the shell is now capped at 480px anyway, so width already bounds it.
+         96 lets a 3x3 breathe and still cannot run away. */
+      return Math.min(cw, ch, 96);
     }
     var cell = derive();
     // A big board on a short phone cannot fit AND keep a keypad. Rather than let the
@@ -5314,8 +5324,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-22 (Safari gaps closed)';
-  window.BETA_VER = 'beta-22';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-23 (roomier boards, better labels)';
+  window.BETA_VER = 'beta-23';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
 
