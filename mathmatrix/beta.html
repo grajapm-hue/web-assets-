@@ -1,8 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" translate="no">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<!-- Chrome's auto-translate banner kept popping over the app bar on load even
+     though the page is already English — its language-detection heuristic
+     doesn't trust lang="en" alone. translate="no" + google notranslate are
+     the two standard signals that actually suppress the offer. -->
+<meta name="google" content="notranslate">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0d0d0d">
@@ -6682,8 +6687,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-59 (phones lock to portrait for play; tablets/laptops keep landscape)';
-  window.BETA_VER = 'beta-59';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-60 (Chrome auto-translate banner suppressed)';
+  window.BETA_VER = 'beta-60';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
