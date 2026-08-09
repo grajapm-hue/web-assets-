@@ -1010,6 +1010,26 @@
   }
   @media (orientation:portrait){ #rotateHint.show { display:block; } }
 
+  /* Phone-class devices only (see isPhoneClass()): rotating during play
+     leaves no room for the board once the header and keypad claim their
+     share of a short landscape screen — measured at 2px free on a
+     390px-tall phone. The board would silently collapse to nothing and
+     taps would land on the keypad underneath it instead of the cell.
+     Tablets and laptops have height to spare in landscape, so they are
+     left alone — that gate is in JS, this is just the blocking screen. */
+  #portraitLock {
+    display:none; position:fixed; inset:0; z-index:9999;
+    background:rgba(20,12,4,.94); color:#FFF6E7;
+    flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:24px; gap:14px;
+  }
+  #portraitLock.show { display:flex; }
+  #portraitLock .rotIcon { font-size:44px; animation:rotNudge 1.4s ease-in-out infinite; }
+  #portraitLock b { font-size:17px; }
+  #portraitLock span { font-size:13.5px; opacity:.85; max-width:280px; }
+  @keyframes rotNudge { 0%,100% { transform:rotate(0deg); } 50% { transform:rotate(-90deg); } }
+  @media (prefers-reduced-motion:reduce){ #portraitLock .rotIcon { animation:none; } }
+
 </style>
 <style>
 /* ══════════════════════════════════════════════════════════════════════
@@ -2297,6 +2317,11 @@ body{ background:#C9A87C !important; }
 </style>
 </head>
 <body>
+<div id="portraitLock" role="alert">
+  <div class="rotIcon">📱</div>
+  <b>Turn your phone back to portrait</b>
+  <span>The board and the keypad need to be on screen together — rotate back to keep playing.</span>
+</div>
 <div class="blob blob-a"></div><div class="blob blob-b"></div><div class="blob blob-c"></div>
 
 <!-- Difficulty Toggle -->
@@ -3729,6 +3754,31 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     fitCells();
   }
 
+  /* Tablet/laptop landscape has height to spare for the board even after
+     the header and keypad take their share — a phone in landscape does
+     not (measured: 2px left on a 390px-tall screen). screen.width/height,
+     not innerWidth/innerHeight: they track the device's fixed physical
+     dimensions across rotation, so this reads the same in portrait and
+     landscape. 600 sits between the widest common phones (~430–480 CSS
+     px) and the narrowest tablets (iPad mini: 744). */
+  function isPhoneClass(){
+    var s = window.screen || {};
+    var short = Math.min(s.width || 9999, s.height || 9999);
+    return short < 600;
+  }
+  // Blocks play on a phone rotated to landscape instead of leaving it to
+  // silently collapse (see isPhoneClass()). Cancels any running Watch demo
+  // so nothing keeps animating, unseen, behind the block.
+  function checkPortraitLock(){
+    var lock = document.getElementById('portraitLock');
+    if (!lock) return;
+    var onPlay = !!document.querySelector('[data-screen="scPlay"].on');
+    var landscape = window.innerWidth > window.innerHeight;
+    var show = onPlay && isPhoneClass() && landscape;
+    lock.classList.toggle('show', show);
+    if (show && watchIv){ clearInterval(watchIv); watchIv = null; }
+  }
+
   // Auto-shrink each cell's font by its digit count so 1–4 digit numbers fit uniformly (no horizontal overflow)
   function fitCells(){
     if (!cells[0] || !cells[0][0]) return;
@@ -5106,6 +5156,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // home. armBack() is idempotent; there is only ever one sentinel.
     try { armBack(); } catch (e) {}
     if (id === 'scPlay'){ try { fitBoard(); } catch(e){} }
+    try { checkPortraitLock(); } catch(e){}
     // Learn is nothing but the logic notes — open them on arrival
     if (id === 'scLearn'){
       var box = document.getElementById('logicBox');
@@ -5227,6 +5278,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   // Re-fit digit sizes on orientation / breakpoint change
   window.addEventListener('resize', fitBoard);
   window.addEventListener('orientationchange', function(){ setTimeout(fitBoard, 250); });
+  window.addEventListener('resize', checkPortraitLock);
+  window.addEventListener('orientationchange', function(){ setTimeout(checkPortraitLock, 250); });
 
   /* ══════════════════════════════════════════════════════════════════
      BETA ADDITIONS — SaNa the mascot, diagonal arrows, feedback.
@@ -6629,8 +6682,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-58 (8x8 and 3-cube join the arrow demos; glyph box stands out)';
-  window.BETA_VER = 'beta-58';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-59 (phones lock to portrait for play; tablets/laptops keep landscape)';
+  window.BETA_VER = 'beta-59';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
