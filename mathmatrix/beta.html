@@ -1429,6 +1429,18 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
 .board.size10x10 .cell.swapB:not(.win):not(.peek):not(.swapPick){
   background:#E6D8F7 !important; border-color:#7C3AED !important; }
 
+/* The seam between the four blocks. Thicker border on the last cell of the
+   top-left block in each direction, so the eye reads 8×8 as four 4×4 squares
+   — which is exactly what it is. Everything here is border-box with a fixed
+   cell size, so this eats into the cell's own padding rather than pushing the
+   grid about. */
+.board.size6x6 .cell.blkR,
+.board.size8x8 .cell.blkR,
+.board.size10x10 .cell.blkR{ border-right-width:4px !important; border-right-color:#6B4522 !important; }
+.board.size6x6 .cell.blkB,
+.board.size8x8 .cell.blkB,
+.board.size10x10 .cell.blkB{ border-bottom-width:4px !important; border-bottom-color:#6B4522 !important; }
+
 /* ══ BINARY ↔ DECIMAL, the printed part ══
    A table you read, before the calculator you tap. Monospaced digits and
    tabular figures so the 0s and 1s line up in columns — a conversion table
@@ -3109,6 +3121,28 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       [[5,0],[5,1],[6,0],[6,1],[7,1],[7,2],[8,0],[8,1],[9,0],[9,1],[5,9],[6,9],[7,9],[8,9],[9,9]].forEach(function(p){
         cells[p[0]][p[1]].classList.add('swapB');
       });
+    }
+
+    /* ── FOUR BLOCKS ──
+       Raja: "like make four blocks of 8x8", holding up the 4x4 board.
+
+       He is pointing at something true. The 8x8 forward-fill pattern is the
+       4x4 pattern repeated four times — checked cell by cell against the
+       app's own answer, all four quadrants are 1001/0110/0110/1001, the exact
+       shape of the 4x4 board. A child who can do 4x4 can already do 8x8; the
+       board just never said so.
+
+       6x6 and 10x10 are built as four blocks too — his own 10x10 sheet is
+       drawn that way and labelled A C / D B — so all three get the seam.
+       Border width, not margin or gap: every box here is border-box with a
+       fixed width, so a thicker edge costs no layout and cannot disturb
+       fitBoard's sums. */
+    if (currentSize === '6x6' || currentSize === '8x8' || currentSize === '10x10'){
+      var half = n / 2;
+      for (var kr = 0; kr < n; kr++) for (var kc = 0; kc < n; kc++){
+        if (kc === half - 1) cells[kr][kc].classList.add('blkR');
+        if (kr === half - 1) cells[kr][kc].classList.add('blkB');
+      }
     }
   }
 
@@ -6264,8 +6298,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-51 (8x8, 6x6 and 10x10 show their method shading)';
-  window.BETA_VER = 'beta-51';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-52 (8x8 reads as four 4x4 blocks)';
+  window.BETA_VER = 'beta-52';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
