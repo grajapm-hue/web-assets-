@@ -1293,12 +1293,13 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
 .appBar{ flex:none; height:56px; padding:0 11px !important; position:static !important;
   display:flex; align-items:center; gap:8px;
   background:rgba(0,0,0,.26) !important; border-bottom:1px solid rgba(255,255,255,.09) !important; }
-.appBarTitle{ font-size:13px !important; font-weight:900 !important; line-height:1.15; }
+.appBarTitle{ font-size:14.5px !important; font-weight:900 !important; line-height:1.15; }
 /* The longest name, 🎂 Sir Ramanujan MathMagic, wants ~213px of bar. Below
    390px there is not that much, so trim the type a little rather than cut the
    name to "Guess My Number ·…". At 320 it still has to ellipsis — the name is
-   longer than the phone. */
-@media (max-width: 389px){ .appBarTitle{ font-size:11.5px !important; } }
+   longer than the phone. Raja asked this bigger even knowing that trade-off;
+   ellipsis was already the accepted fallback here, not new risk. */
+@media (max-width: 389px){ .appBarTitle{ font-size:12.5px !important; } }
 .appBarTitle small{ display:block; font-size:8.5px; font-weight:700; color:var(--bink3); letter-spacing:.3px; }
 .navBack{ width:46px !important; height:46px !important; border-radius:13px !important; font-size:19px !important; }
 .appBarChip{ font-size:11.5px !important; padding:5px 10px !important; }
@@ -1402,11 +1403,20 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
 /* Darker than it looks like it needs to be. At 8.5px this is small text, so it
    owes 4.5:1 against the sandalwood, and the friendlier brown only reached
    3.5:1 — measured, not guessed. Same for the offline red. */
-.diffTip{ font-size:calc(8.5px * var(--lvScale, 1));
-  font-size:min(calc(8.5px * var(--lvScale, 1)), 11.5px);
+/* max-width:100% is load-bearing, not decoration: .diffTip lives inside
+   .diffSide, a COLUMN flex. flex-shrink/min-width:0 on a column child only
+   govern the vertical (main) axis there — they do nothing for width. Width
+   was implicitly capped only by "the text just happens to be short enough
+   to fit whatever .diffSide shrank to", which held at the old 11.5px cap
+   and broke the moment the cap grew: measured 18px of the tip's own text
+   spilling left, past .diffSide's shrunk edge, into the label. Without
+   max-width:100% here, overflow/text-overflow/white-space above have
+   nothing to clip against in this nesting and are cosmetic no-ops. */
+.diffTip{ font-size:calc(10px * var(--lvScale, 1));
+  font-size:min(calc(10px * var(--lvScale, 1)), 13px);
   font-weight:800; letter-spacing:.2px;
   color:#54340F; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-  flex:0 1 auto; min-width:0;
+  max-width:100%; flex:0 1 auto; min-width:0;
   cursor:pointer; text-decoration:underline; text-decoration-style:dotted;
   text-underline-offset:2px; }
 .diffTip.off{ color:#6E1F06; }
@@ -1421,8 +1431,9 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
 .diffSide{ display:flex; flex-direction:column; align-items:flex-end; min-width:0;
   gap:calc(8px * var(--lvScale, 1)); }
 .diffShare{ font-family:inherit; cursor:pointer; border:0; white-space:nowrap;
-  font-size:calc(8.5px * var(--lvScale, 1)); font-weight:900; letter-spacing:.3px;
-  padding:calc(3px * var(--lvScale, 1)) calc(10px * var(--lvScale, 1));
+  max-width:100%; box-sizing:border-box;
+  font-size:calc(10px * var(--lvScale, 1)); font-weight:900; letter-spacing:.3px;
+  padding:calc(4px * var(--lvScale, 1)) calc(12px * var(--lvScale, 1));
   border-radius:999px; background:#8A5E31; color:#FFF6E7;
   box-shadow:0 2px 0 rgba(0,0,0,.22); }
 .diffShare:active{ transform:translateY(2px); box-shadow:0 0 0 rgba(0,0,0,.22); }
@@ -1592,8 +1603,8 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
   box-shadow:0 2px 0 rgba(94,64,32,.3); line-height:1; font-size:.92em; }
 .diffHead .diffLabel{ background:#F3E4C9 !important; border:1.5px solid #C4A277 !important;
   border-radius:999px !important; padding:2px 10px !important; }
-.diffTip{ background:#F3E4C9; border:1.5px solid #C4A277;
-  border-radius:999px; padding:2px 9px; }
+.diffTip{ background:#F3E4C9; border:2px solid #C4A277;
+  border-radius:999px; padding:3px 11px; }
 
 /* ══ THE TWO ROUTES, IN TWO COLOURS ══
    Raja: black text on the cells that are going to change, and the numbers you
@@ -6777,8 +6788,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-66 (bigger top-bar tabs; monkey-dice mascot moved to the difficulty row; BETA banner moved into About)';
-  window.BETA_VER = 'beta-66';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-67 (bigger title, offline tip and Share text + matching pill/border)';
+  window.BETA_VER = 'beta-67';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
