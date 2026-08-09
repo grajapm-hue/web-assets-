@@ -5386,9 +5386,15 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // works for markup that is created fresh each time the sheet opens.
     document.addEventListener('click', function(e){
       var b = e.target.closest('.rowBtn[data-learn]'); if (!b) return;
-      var k = b.dataset.learn;
+      openLearn(b.dataset.learn, !!b.closest('#sheetHost'));
+    });
+  })();
+
+  /* Opening a learn page, by key. Split out of the click handler so the 💡
+     button can call it directly — see openLearnMenu below. */
+  function openLearn(k, fromSheet){
       // tapped from the sheet over the board? get out of the way first
-      if (b.closest('#sheetHost')) closeSheet();
+      if (fromSheet) closeSheet();
       var lvl = document.querySelector('.toggleBtn.active');
       var nm = lvl ? (lvl.dataset.name || 'this puzzle') : 'this puzzle';
       if (k === 'logic') openSheet('logic', '📐 How ' + nm + ' works');
@@ -5413,8 +5419,23 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         '<p>The numbers move. The relationships never do. That is why one solved square gives you eight ' +
         'puzzles to show your friends.</p>' +
         '<p><b>🐒 SaNa says:</b> “Maths and monkeys — neither sits in one direction.”</p>');
-    });
-  })();
+  }
+
+  /* The 💡 button. A menu with one item is not a menu — it is a dead end that
+     looks like an empty sheet, which is exactly what the number games showed:
+     tap Logic, get a list containing "The method" and nothing else, and the
+     binary calculator is another tap below that. Raja hunted for it three
+     times. When there is only one page to go to, go to it. */
+  function openLearnMenu(){
+    var html = learnRowsHtml();
+    var keys = (html.match(/data-learn="([a-z]+)"/g) || [])
+                 .map(function(s){ return s.replace(/.*"([a-z]+)".*/, '$1'); });
+    if (keys.length === 1){ openLearn(keys[0], false); return; }
+    var lvl = document.querySelector('.toggleBtn.active');
+    var nm = lvl ? (lvl.dataset.name || 'this puzzle') : 'this puzzle';
+    openSheet('learnNow', '💡 Logic — ' + nm,
+      '<div class="learnRows sheetLearn">' + html + '</div>');
+  }
 
   /* ---- 8. Get App / offline + about rows ---- */
   (function buildAppRows(){
@@ -5456,12 +5477,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     lb.innerHTML = '<i>💡</i><span>Logic</span>';
     lb.setAttribute('aria-label', 'Logic — how to play this puzzle');
     bar.appendChild(lb);
-    lb.addEventListener('click', function(){
-      var lvl = document.querySelector('.toggleBtn.active');
-      var nm = lvl ? (lvl.dataset.name || 'this puzzle') : 'this puzzle';
-      openSheet('learnNow', '💡 Logic — ' + nm,
-        '<div class="learnRows sheetLearn">' + learnRowsHtml() + '</div>');
-    });
+    lb.addEventListener('click', function(){ openLearnMenu(); });
 
     /* Watch is its own button rather than a row inside Logic: it does not open
        anything to read, it drives the board. Hidden on the card games, which
@@ -6222,8 +6238,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-49 (version on the front page + auto online refresh)';
-  window.BETA_VER = 'beta-49';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-50 (Logic opens the page when there is only one)';
+  window.BETA_VER = 'beta-50';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
