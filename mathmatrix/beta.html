@@ -2342,10 +2342,18 @@ body{ background:#C9A87C !important; }
   border:1px solid #B08D5F !important; }
 #fbText::placeholder, #fbWho::placeholder{ color:#A98F6A !important; }
 #fbCopy{ background:#8A5E31 !important; color:#FFF6E7 !important; }
-#offlineBox{ background:#FFF6E7 !important; color:#33220F !important; }
+/* Raja: "shrink the note table to showing all notes" — four browser
+   sections at the base 15px/1.6 didn't fit an 86%-height sheet on a real
+   phone even after the safe-area fix (measured: still 157px of overflow
+   at a realistic 654px-tall viewport, needing a scroll that on his device
+   read as content just... stopping). Shrunk until it doesn't need one. */
+#offlineBox{ background:#FFF6E7 !important; color:#33220F !important;
+  font-size:12.5px !important; line-height:1.4 !important; padding:10px 12px !important; }
+#offlineBox h3{ font-size:14.5px !important; margin:0 0 6px !important; }
+#offlineBox b{ font-size:12.5px !important; }
 .offlinePromise{ background:#EAFBF1 !important; border:1.5px solid #22c55e !important;
-  border-radius:10px !important; padding:9px 12px !important; margin:2px 0 12px !important;
-  color:#0E5A34 !important; font-weight:800 !important; }
+  border-radius:9px !important; padding:7px 10px !important; margin:0 0 9px !important;
+  color:#0E5A34 !important; font-weight:800 !important; font-size:12.5px !important; }
 
 @media(prefers-reduced-motion:reduce){ *{ animation:none !important; } }
 </style>
@@ -6745,8 +6753,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-64 (sheets now clear the system nav bar at the bottom)';
-  window.BETA_VER = 'beta-64';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-65 (offline instructions shrunk to fit with zero scrolling)';
+  window.BETA_VER = 'beta-65';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
