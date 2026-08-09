@@ -3143,7 +3143,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     if (!svg) return;
     [].forEach.call(svg.querySelectorAll('path.swapLine'), function(p){ p.remove(); });
   }
-  function drawSwapArrow(a, b){
+  /* oneWay: a swap arrow points both ways because the two cells trade; a path
+     arrow points from where you were to where you go next. */
+  function drawSwapArrow(a, b, oneWay){
     var svg = arrowLayer(); if (!svg) return;
     var board = document.getElementById('board');
     var br = board.getBoundingClientRect();
@@ -3157,7 +3159,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     var p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     p.setAttribute('class', 'swapLine');
     p.setAttribute('d', 'M' + x1 + ',' + y1 + ' Q' + cx + ',' + cy + ' ' + x2 + ',' + y2);
-    p.setAttribute('marker-start', 'url(#swapHead)');
+    if (!oneWay) p.setAttribute('marker-start', 'url(#swapHead)');
     p.setAttribute('marker-end', 'url(#swapHead)');
     svg.appendChild(p);
   }
@@ -4707,6 +4709,74 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       document.body.classList.remove('toolsOff');
       try { sana('That is the whole pattern. Tap <b>CLEAR</b> and it is your turn.', 'cheer'); } catch(e){}
     }
+    /* ═══ THE COUNT-DOWN PUZZLES ═══
+       Raja: "place arrow dot in 3x3 and 5x5 too."
+
+       These two are not built by swapping — they are walked. Put 1 in the top
+       middle, count N boxes down, place the next one to the right of where
+       the count ended. His sheets draw that walk as arrows, so the demo draws
+       it as arrows too: one dotted arrow per move, from the number you just
+       wrote to where the next one lands. Nothing is hard-coded — the path is
+       read off the puzzle's own answer in value order, so the arrows follow
+       whatever the board actually contains. */
+    var walk = (!isBirthday() && (currentSize === '3x3' || currentSize === '5x5'));
+    if (walk){
+      var path = [];
+      for (var wr = 0; wr < R; wr++) for (var wc = 0; wc < Cc; wc++) path.push([wr, wc]);
+      path.sort(function(p, q){
+        return puzzle.example[p[0]][p[1]] - puzzle.example[q[0]][q[1]];
+      });
+      var val = function(p){ return puzzle.example[p[0]][p[1]]; };
+      var put = function(p){
+        var c = cells[p[0]][p[1]];
+        c.value = String(val(p));
+        c.classList.remove('placing'); void c.offsetWidth; c.classList.add('placing');
+        sfx('tick', panForCell(c));
+        update();
+      };
+      var wsteps = [];
+      var step = currentSize === '3x3' ? 3 : 5;
+      var slow = currentSize === '3x3' ? 4 : 2;     // 3x3 is short, so it can breathe
+      wsteps.push({ hold: 3, run: function(){
+        msg.textContent = '▶ Put 1 in the top middle. That is the only free choice.';
+        msg.className = '';
+        try { sana('Start with <b>1</b> in the <b>top middle</b> box.', 'think', true); } catch(e){}
+      }});
+      wsteps.push({ hold: slow + 1, run: function(){ put(path[0]); }});
+      wsteps.push({ hold: 4, run: function(){
+        msg.textContent = '▶ Now count ' + step + ' boxes DOWN, and place to the RIGHT of where you land.';
+        try { sana('Count <b>' + step + ' down</b>, then place to the <b>right</b>. Wrap round the edges.', 'think', true); } catch(e){}
+      }});
+      for (var pk = 1; pk < path.length; pk++) (function(k){
+        wsteps.push({ hold: slow, run: function(){
+          clearArrows();
+          drawSwapArrow(path[k - 1], path[k], true);          // one way: this is a move
+          cells[path[k - 1][0]][path[k - 1][1]].classList.add('swapPick');
+          msg.textContent = '▶ ' + val(path[k - 1]) + '  →  ' + val(path[k]) +
+                            '   (' + val(path[k]) + ' of ' + N + ')';
+        }});
+        wsteps.push({ hold: slow, run: function(){
+          cells[path[k - 1][0]][path[k - 1][1]].classList.remove('swapPick');
+          put(path[k]);
+        }});
+      })(pk);
+      wsteps.push({ hold: 5, run: function(){
+        clearArrows();
+        msg.textContent = '✨ ' + N + ' lands in the bottom middle. Every line makes ' +
+                          (R * (N + 1) / 2) + '.';
+        try { sana('And <b>' + N + '</b> finishes in the bottom middle. That is the whole walk.', 'cheer', true); } catch(e){}
+      }});
+      var WT = 190, wi = 0, wwait = 0;
+      watchIv = setInterval(function(){
+        if (wwait > 0){ wwait--; return; }
+        if (wi >= wsteps.length){ finishWatch(); return; }
+        var wst = wsteps[wi++];
+        wst.run();
+        wwait = wst.hold;
+      }, WT);
+      return;
+    }
+
     var sheetPairs = isBirthday() ? null : SHEET_SWAPS[currentSize];
     if (sheetPairs){
       var natural = function(r, c){ return r * Cc + c + 1; };
@@ -6490,8 +6560,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-56 (slower Watch, readable digits, boxes on the three bare things)';
-  window.BETA_VER = 'beta-56';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-57 (3x3 and 5x5 Watch walk the path with dotted arrows)';
+  window.BETA_VER = 'beta-57';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
