@@ -1343,18 +1343,35 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
 /* The heading is back, in the empty band under the BETA flag. flex:none so it
    never eats into the space fitHome() measures for the puzzle list. */
 .difficultyBar > .diffLabel{ display:none !important; }
+/* Raja: these two lines run to the very edge of the screen — the C of CHOOSE
+   and the t of internet look like they fall off it. Measured: they sat 13px
+   from each edge, which is fine on a flat screen and not fine on a phone with
+   a curved one. They are also the widest things on the page, so they are the
+   first to look wrong. Now inset like a heading should be.
+
+   And they must SHRINK rather than collide. --lvScale reaches 1.75 on a tall
+   phone, which at the old sizes drew the heading at 19px and the tip at 15px
+   and slid them straight through each other — measured 66px of overlap. Two
+   guards: a ceiling on both, and flex:0 1 auto with min-width:0 so either can
+   give way instead of running over its neighbour. */
 .diffHead{ flex:none; display:flex; align-items:baseline; justify-content:space-between;
-  gap:8px; margin:1px 2px 4px; }
+  gap:12px; margin:1px 11px 4px; }
 .diffHead .diffLabel{ display:inline !important; writing-mode:horizontal-tb !important;
-  transform:none !important; font-size:calc(11px * var(--lvScale, 1)) !important;
+  transform:none !important;
+  font-size:calc(11px * var(--lvScale, 1)) !important;
+  font-size:min(calc(11px * var(--lvScale, 1)), 14.5px) !important;
   font-weight:900 !important; letter-spacing:.9px; text-transform:uppercase;
   color:#5E2A0A !important; background:none !important; padding:0 !important;
-  border:0 !important; white-space:nowrap; }
+  border:0 !important; white-space:nowrap;
+  flex:0 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; }
 /* Darker than it looks like it needs to be. At 8.5px this is small text, so it
    owes 4.5:1 against the sandalwood, and the friendlier brown only reached
    3.5:1 — measured, not guessed. Same for the offline red. */
-.diffTip{ font-size:calc(8.5px * var(--lvScale, 1)); font-weight:800; letter-spacing:.2px;
-  color:#54340F; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.diffTip{ font-size:calc(8.5px * var(--lvScale, 1));
+  font-size:min(calc(8.5px * var(--lvScale, 1)), 11.5px);
+  font-weight:800; letter-spacing:.2px;
+  color:#54340F; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  flex:0 1 auto; min-width:0; }
 .diffTip.off{ color:#6E1F06; }
 /* The offline line and Share stack on the right, so the heading keeps the
    whole left side. baseline on .diffHead lines the heading up with the tip,
@@ -6298,8 +6315,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-52 (8x8 reads as four 4x4 blocks)';
-  window.BETA_VER = 'beta-52';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-53 (Choose Difficulty and the offline line off the edge)';
+  window.BETA_VER = 'beta-53';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
