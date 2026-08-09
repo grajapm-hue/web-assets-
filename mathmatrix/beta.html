@@ -6065,17 +6065,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     b.textContent = '⋯'; b.setAttribute('aria-label', 'Quick settings');
     bar.appendChild(b);
     b.addEventListener('click', function(){
-      /* The build number, one tap away. When Raja reports something that I
-         cannot reproduce, the first thing to rule out is his phone serving a
-         cached copy — and hunting for a version tag at the bottom of a page is
-         no way to check that. */
-      openSheet('settings', '⚙️ Quick settings',
-        '<p style="background:#241A5C;border-radius:10px;padding:9px 12px;margin-bottom:10px;' +
-        'font-weight:800;letter-spacing:.3px">You are running <span style="color:var(--gold)">' +
-        // BUILD_VER lives in the other IIFE — read the label it already wrote
-        ((document.getElementById('verLabel') || {}).textContent || window.BETA_VER || '?') +
-        '</span></p>' +
-        '<p>Tap a button below to change it.</p>');
+      /* Raja: the build banner here was "not relevant" — Quick settings is
+         Sound/Music, and the version already shows at the bottom of the
+         puzzle table and in About, so this was a third, out-of-place copy. */
+      openSheet('settings', '⚙️ Quick settings', '<p>Tap a button below to change it.</p>');
       openSheetExtra('<p>🔊 <b>Sound</b> is the master switch — turning it off silences the music too, ' +
         'for night play.</p><p>🎵 <b>Music</b> is the monkey tune; it ducks while you type.</p>' +
         '<p>🎧 <b>Spatial stereo</b> puts each sound where it happens on the board. Use earphones.</p>');
@@ -6803,8 +6796,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-68 (gradient title text, bigger; Binary Magic in a 2-column grid)';
-  window.BETA_VER = 'beta-68';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-69 (build banner removed from Quick settings -- out of place there)';
+  window.BETA_VER = 'beta-69';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
