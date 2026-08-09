@@ -2204,20 +2204,15 @@ body{ background:#C9A87C !important; }
 /* top bar */
 .appBar{ background:rgba(94,64,32,.18) !important;
   border-bottom:1px solid rgba(94,64,32,.30) !important; }
-/* Raja: gradient like the open (splash) screen. The splash's own gold text
-   gradient (#FFD675->var(--gold)) was tried on THIS bar and measured first:
-   the bar's actual painted colour (18% brown wash over the shell's cream
-   gradient) composites to ~rgb(204,181,147), a light warm tan, and both
-   splash-gold stops fail 4.5:1 against it (~1.3:1 and ~1.9:1) -- the exact
-   "dissolved" problem .splashTag's own comment already warns about, just on
-   a different background this time. Same warm family, dark end shifted
-   until both stops clear 4.5:1: #3A2109 measures 7.7:1 (also already used
-   elsewhere, .cell.swapPick), #6B3410 measures 4.99:1. */
-.appBarTitle{
-  background:linear-gradient(160deg,#3A2109,#6B3410) !important;
-  -webkit-background-clip:text !important; background-clip:text !important;
-  color:transparent !important; -webkit-text-fill-color:transparent !important;
-}
+/* The gradient (background-clip:text) still read as "smeared with
+   background" on Raja's actual device even though both stops measured
+   past 4.5:1 here on paper — gradient-clip text is known to render
+   inconsistently (anti-aliasing/fallback quirks vary by browser/GPU) in a
+   way flat colour never does. Raja: "direct RGB which not smeared" — back
+   to a solid colour, no clip trick. #241105 is darker than either of the
+   two gradient stops (past .cell.swapPick's own #3A2109), so it does not
+   inherit whatever margin those were already living on. */
+.appBarTitle{ color:#241105 !important; }
 .appBarTitle small{ color:#6B5334 !important; }
 .appBarChip{ background:#8A5E31 !important; color:#FFF3E0 !important; }
 .barBtn, .navBack{ background:#8A5E31 !important; color:#FFF6E7 !important; }
@@ -6796,8 +6791,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-69 (build banner removed from Quick settings -- out of place there)';
-  window.BETA_VER = 'beta-69';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-70 (title back to a solid colour -- the gradient read as smeared)';
+  window.BETA_VER = 'beta-70';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
