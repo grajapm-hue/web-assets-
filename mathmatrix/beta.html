@@ -2,7 +2,12 @@
 <html lang="en" translate="no">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<!-- viewport-fit=cover: without it, env(safe-area-inset-*) always reports 0,
+     which is why .tabBar's own safe-area padding below was a no-op — needed
+     now that the "Play offline" sheet's last line was found rendering under
+     a device's overlaid system nav bar. -->
+
 <!-- Chrome's auto-translate banner kept popping over the app bar on load even
      though the page is already English — its language-detection heuristic
      doesn't trust lang="en" alone. translate="no" + google notranslate are
@@ -1779,7 +1784,8 @@ body.onPlay .solvedCounter{ font-size:9px !important; padding:3px 9px !important
 .grab{ width:34px; height:4px; border-radius:99px; background:rgba(255,255,255,.22); margin:7px auto 0; flex:none; }
 .shHead{ flex:none; display:flex; align-items:center; gap:8px; padding:9px 13px 7px; }
 .shHead b{ flex:1; font-size:13px; font-weight:900; }
-.shScroll{ overflow-y:auto; -webkit-overflow-scrolling:touch; padding:0 13px 16px; }
+.shScroll{ overflow-y:auto; -webkit-overflow-scrolling:touch;
+  padding:0 13px calc(16px + env(safe-area-inset-bottom)); }
 .shScroll p{ font-size:11.5px; color:var(--bink2); line-height:1.6; margin-bottom:8px; }
 .shScroll p b{ color:var(--bink); }
 .shScroll img{ width:100%; border-radius:12px; display:block; }
@@ -6739,8 +6745,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-63 (offline payoff line moved to the top of the sheet, out of scroll)';
-  window.BETA_VER = 'beta-63';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-64 (sheets now clear the system nav bar at the bottom)';
+  window.BETA_VER = 'beta-64';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
