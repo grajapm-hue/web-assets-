@@ -4669,7 +4669,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       if (watchIv){ clearInterval(watchIv); watchIv = null; }
       clearArrows();
       for (var fr = 0; fr < R; fr++) for (var fc = 0; fc < Cc; fc++){
-        cells[fr][fc].classList.remove('swapPick');
+        /* The teaching ink goes with the demo. .backFill sets its colour with
+           !important and is declared after the win rule, so leaving it on
+           would paint red digits onto a won cell. */
+        cells[fr][fc].classList.remove('swapPick', 'willChange', 'backFill');
         cells[fr][fc].classList.add('win');
         cells[fr][fc].readOnly = true;
       }
@@ -4683,7 +4686,6 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     }
     var sheetPairs = isBirthday() ? null : SHEET_SWAPS[currentSize];
     if (sheetPairs){
-      var rcName = function(p){ return 'R' + (p[0] + 1) + 'C' + (p[1] + 1); };
       var natural = function(r, c){ return r * Cc + c + 1; };
 
       /* The cells that do NOT keep their natural value — the ones a child has
@@ -4693,20 +4695,21 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       for (var qr = 0; qr < R; qr++) for (var qc = 0; qc < Cc; qc++)
         if (puzzle.example[qr][qc] !== natural(qr, qc)) changes.push([qr, qc]);
 
-      /* Raja's second route, and the one he calls easiest for a beginner:
-         write across skipping those cells, then fill the gaps left-to-right
-         counting DOWN through the numbers you never used. Verified against
-         this grid — the gaps want 15, 14, 12, 9, 8, 5, 3, 2, which is exactly
-         the unused numbers in descending order: it starts next to 16 and ends
-         before 1, as he described. No coordinates to remember. */
-      var countdown = changes.map(function(p){ return puzzle.example[p[0]][p[1]]; });
+      /* Raja's fill, corrected to what he actually does: not counting DOWN
+         from 15 through the gaps top-first, but scanning BOTTOM TO TOP and
+         counting UP. Start beside 16 with 2, and finish at the top with
+         14, 15.
+
+         The two are the same eight numbers read from opposite ends, and his
+         way is the one a child can hold: the numbers you did not use, in
+         order, smallest first — 2, 3, 5, 8, 9, 12, 14, 15. Verified against
+         this grid before it was built. */
+      var gapsUp = changes.slice().reverse();          // bottom-right, walking up
+      var countUp = gapsUp.map(function(p){ return puzzle.example[p[0]][p[1]]; });
 
       var steps = [];
-      var mark = function(on){
-        changes.forEach(function(p){ cells[p[0]][p[1]].classList.toggle('willChange', on); });
-      };
 
-      // ── PART 1 · the countdown ──────────────────────────────────────────
+      // ── 1 · the whole sequence, straight across ─────────────────────────
       steps.push({ hold: 2, run: function(){
         msg.textContent = '▶ Step 1 — write 1 to ' + N + ' straight across, like reading a line.';
         msg.className = '';
@@ -4722,11 +4725,34 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           update();
         }});
       })(sr, sc);
-      steps.push({ hold: 7, run: function(){
-        msg.textContent = '▶ The ' + changes.length + ' black ones are the only cells that change.';
-        try { sana('Only the <b>black</b> ones change. The rest are already right.', 'think', true); } catch(e){}
+
+      /* ── 2 · the arrows, while the full sequence is on the board ──────────
+         Raja: the arrow marks belong at the time of the first full sequence
+         entry, then dismiss. So they are not a separate replay any more —
+         they appear over the finished 1..N, all four together the way his
+         sheet draws them, and then they go. */
+      steps.push({ hold: 3, run: function(){
+        msg.textContent = '▶ These eight pair up — each black one trades with its partner.';
+        try { sana('The <b>black</b> ones pair up, like the arrows on the sheet.', 'think', true); } catch(e){}
       }});
-      // empty them, and hold — Raja asked for a moment to see the shape
+      sheetPairs.forEach(function(pair){
+        steps.push({ hold: 2, run: function(){
+          drawSwapArrow(pair[0], pair[1]);
+          cells[pair[0][0]][pair[0][1]].classList.add('swapPick');
+          cells[pair[1][0]][pair[1][1]].classList.add('swapPick');
+          sfx('tick', panForCell(cells[pair[0][0]][pair[0][1]]));
+        }});
+      });
+      steps.push({ hold: 9, run: function(){
+        msg.textContent = '▶ ' + sheetPairs.length + ' pairs. Now watch them go.';
+      }});
+      steps.push({ hold: 4, run: function(){
+        clearArrows();
+        changes.forEach(function(p){ cells[p[0]][p[1]].classList.remove('swapPick'); });
+        msg.textContent = '▶ Rub the black ones out. Look at the shape they leave.';
+      }});
+
+      // ── 3 · empty them, and hold, so the shape registers ────────────────
       steps.push({ hold: 9, run: function(){
         changes.forEach(function(p){
           var c = cells[p[0]][p[1]];
@@ -4735,69 +4761,30 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         });
         sfx('place');
         update();
-        msg.textContent = '▶ Rub those out. Look at the shape they leave.';
       }});
+
+      // ── 4 · fill them from the bottom up, counting on from 2 ────────────
       steps.push({ hold: 4, run: function(){
-        msg.textContent = '▶ Step 2 — fill the gaps counting DOWN, starting next to ' + N + '.';
-        try { sana('Now fill the gaps <b>counting down</b> — ' + countdown[0] +
-                   ', ' + countdown[1] + ', ' + countdown[2] + ' …', 'think', true); } catch(e){}
+        msg.textContent = '▶ Step 2 — start beside ' + N + ' and fill upwards: ' +
+                          countUp[0] + ', ' + countUp[1] + ', ' + countUp[2] + ' …';
+        try { sana('Now go <b>bottom to top</b> and count on — <b>' + countUp[0] + ', ' +
+                   countUp[1] + ', ' + countUp[2] + '</b> …', 'think', true); } catch(e){}
       }});
-      changes.forEach(function(p, k){
+      gapsUp.forEach(function(p, k){
         steps.push({ hold: 2, run: function(){
           var c = cells[p[0]][p[1]];
-          c.value = String(countdown[k]);
+          c.value = String(countUp[k]);
           c.classList.remove('willChange'); c.classList.add('backFill');
           c.classList.remove('placing'); void c.offsetWidth; c.classList.add('placing');
           sfx('tick', panForCell(c));
-          msg.textContent = '▶ ' + countdown.slice(0, k + 1).join('  ') +
-                            (k < countdown.length - 1 ? '  …' : '   — and stop, just before 1.');
+          msg.textContent = '▶ ' + countUp.slice(0, k + 1).join('  ') +
+                            (k < countUp.length - 1 ? '  …' : '   — and stop at ' + countUp[k] + '.');
           update();
         }});
       });
       steps.push({ hold: 6, run: function(){
-        msg.textContent = '✨ Every row, column and diagonal makes ' + (N + 1) / 2 * R + '.';
-        try { sana('That is it. Two passes across the table — nothing to memorise.', 'cheer', true); } catch(e){}
-      }});
-
-      // ── PART 2 · the same square, by swapping ───────────────────────────
-      steps.push({ hold: 6, run: function(){
-        clearArrows();
-        for (var r2 = 0; r2 < R; r2++) for (var c2 = 0; c2 < Cc; c2++){
-          var c = cells[r2][c2];
-          c.value = String(natural(r2, c2));
-          c.classList.remove('backFill');
-        }
-        mark(true);
-        update();
-        msg.textContent = '▶ The same square the other way — ' + sheetPairs.length + ' swaps.';
-        msg.className = '';
-        try { sana('Same square, another road: just <b>' + sheetPairs.length + ' swaps</b>.', 'think', true); } catch(e){}
-      }});
-      sheetPairs.forEach(function(pair, n){
-        var a = pair[0], b = pair[1];
-        steps.push({ hold: 7, run: function(){
-          cells[a[0]][a[1]].classList.add('swapPick');
-          cells[b[0]][b[1]].classList.add('swapPick');
-          drawSwapArrow(a, b);                     // dotted, like the arrows on his sheets
-          msg.textContent = '▶ Swap ' + rcName(a) + ' ↔ ' + rcName(b) +
-                            '   (' + (n + 1) + ' of ' + sheetPairs.length + ')';
-          sfx('tick', panForCell(cells[a[0]][a[1]]));
-        }});
-        steps.push({ hold: 5, run: function(){
-          var ca = cells[a[0]][a[1]], cb = cells[b[0]][b[1]];
-          var t = ca.value; ca.value = cb.value; cb.value = t;
-          [ca, cb].forEach(function(x){
-            x.classList.remove('swapPick', 'placing'); void x.offsetWidth; x.classList.add('placing');
-          });
-          clearArrows();
-          sfx('tick', panForCell(cb));
-          update();
-        }});
-      });
-      steps.push({ hold: 4, run: function(){
-        mark(false);
-        msg.textContent = '▶ The same square. Count down, or swap — your choice.';
-        try { sana('Both roads end at the <b>same square</b>. Pick the one you like.', 'cheer', true); } catch(e){}
+        msg.textContent = '✨ Every row, column and diagonal makes ' + ((N + 1) / 2 * R) + '.';
+        try { sana('Two passes across the table — down one way, up the other. Nothing to memorise.', 'cheer', true); } catch(e){}
       }});
 
       /* One interval, and each step says how many ticks to hold for. A chain of
@@ -6459,8 +6446,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-54 (4x4 Watch: countdown in two colours, then dotted swap arrows)';
-  window.BETA_VER = 'beta-54';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-55 (4x4 Watch: arrows during the sequence, then fill bottom-up 2,3,5...)';
+  window.BETA_VER = 'beta-55';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
