@@ -1403,6 +1403,32 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
   max-height:calc(86vh - 150px) !important; height:auto !important;
   margin-left:auto !important; margin-right:auto !important; }
 
+/* ══ THE METHOD, SHOWN ON THE BOARD ══
+   Raja: make 8×8 shade like 4×4, for the fill sequence forward and backward.
+
+   4×4 tints the cells that keep their natural value, so you can see which ones
+   you write forward (1, 2, 3 …) and which you come back for, counting down.
+   8×8 uses that same fill-and-flip method and already marks the same cells
+   with .anchor — but no per-size rule ever gave the class a fill, so under the
+   sandalwood theme both groups paint the same cream and the method is
+   invisible. 6×6 and 10×10 lost their swap-pair tints the same way.
+
+   Measured before and after: 4×4 painted 2 distinct cell backgrounds, the
+   other three painted 1, with only a border-colour difference nobody sees.
+
+   The :not() guards matter. A solved cell, a SHOW-tinted cell and a
+   mid-demo swap pair all set their own background at the same specificity,
+   and a plain .anchor rule placed here would out-rank them by source order —
+   the board would keep the method tint after it had been won. */
+.board.size8x8 .cell.anchor:not(.win):not(.peek):not(.swapPick){
+  background:#CFE6F5 !important; border-color:#1E5A96 !important; }
+.board.size6x6 .cell.swapA:not(.win):not(.peek):not(.swapPick),
+.board.size10x10 .cell.swapA:not(.win):not(.peek):not(.swapPick){
+  background:#CCEFE9 !important; border-color:#0F766E !important; }
+.board.size6x6 .cell.swapB:not(.win):not(.peek):not(.swapPick),
+.board.size10x10 .cell.swapB:not(.win):not(.peek):not(.swapPick){
+  background:#E6D8F7 !important; border-color:#7C3AED !important; }
+
 /* ══ BINARY ↔ DECIMAL, the printed part ══
    A table you read, before the calculator you tap. Monospaced digits and
    tabular figures so the 0s and 1s line up in columns — a conversion table
@@ -6238,8 +6264,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-50 (Logic opens the page when there is only one)';
-  window.BETA_VER = 'beta-50';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-51 (8x8, 6x6 and 10x10 show their method shading)';
+  window.BETA_VER = 'beta-51';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
