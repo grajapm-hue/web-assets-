@@ -2337,6 +2337,9 @@ body{ background:#C9A87C !important; }
 #fbText::placeholder, #fbWho::placeholder{ color:#A98F6A !important; }
 #fbCopy{ background:#8A5E31 !important; color:#FFF6E7 !important; }
 #offlineBox{ background:#FFF6E7 !important; color:#33220F !important; }
+.offlinePromise{ background:#EAFBF1 !important; border:1.5px solid #22c55e !important;
+  border-radius:10px !important; padding:9px 12px !important; margin:2px 0 12px !important;
+  color:#0E5A34 !important; font-weight:800 !important; }
 
 @media(prefers-reduced-motion:reduce){ *{ animation:none !important; } }
 </style>
@@ -2457,6 +2460,11 @@ body{ background:#C9A87C !important; }
 </div>
 <div id="offlineBox">
   <h3>📲 Play Offline — Add to Home Screen</h3>
+  <!-- Raja: "bottom green notes out of scan" — four browser sections now
+       push the payoff line past where a quick skim stops. Lead with it
+       instead, in its own banner so it still reads at a glance even if
+       nobody scrolls the steps below. -->
+  <div class="offlinePromise">✅ Once added, tap the icon anytime to play — no internet needed!</div>
   <b>iPhone / iPad (Safari):</b><br>
   1. Open this game in Safari<br>
   2. Tap the Share button (square with arrow ⬆️)<br>
@@ -2473,8 +2481,7 @@ body{ background:#C9A87C !important; }
   3. Click "Install" — it opens in its own window<br>
   <b>Mac (Safari) / Firefox (any device):</b><br>
   Bookmark the page, or add it to your Dock/Home Screen from the browser's
-  Share menu — same idea, worded a little differently in each browser.<br>
-  <span style="color:#22c55e; font-weight:700;">✅ Once added, tap the icon anytime to play — no internet needed!</span>
+  Share menu — same idea, worded a little differently in each browser.
 </div>
 
 </section>
@@ -6732,8 +6739,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-62 (offline note is tappable + covers every browser; version shown at table bottom)';
-  window.BETA_VER = 'beta-62';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-63 (offline payoff line moved to the top of the sheet, out of scroll)';
+  window.BETA_VER = 'beta-63';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
