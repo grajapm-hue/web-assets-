@@ -2204,15 +2204,17 @@ body{ background:#C9A87C !important; }
 /* top bar */
 .appBar{ background:rgba(94,64,32,.18) !important;
   border-bottom:1px solid rgba(94,64,32,.30) !important; }
-/* The gradient (background-clip:text) still read as "smeared with
-   background" on Raja's actual device even though both stops measured
-   past 4.5:1 here on paper — gradient-clip text is known to render
-   inconsistently (anti-aliasing/fallback quirks vary by browser/GPU) in a
-   way flat colour never does. Raja: "direct RGB which not smeared" — back
-   to a solid colour, no clip trick. #241105 is darker than either of the
-   two gradient stops (past .cell.swapPick's own #3A2109), so it does not
-   inherit whatever margin those were already living on. */
-.appBarTitle{ color:#241105 !important; }
+/* Raja: "place to red green or blue instead black no need gradient" — the
+   solid #241105 was still too close to black/brown to read as a colour
+   rather than "just dark". Picked green over red/blue: red already means
+   "error/duplicate" elsewhere in the board, blue already means "link"
+   (.credit's mailto/music links) — green's only prior association here is
+   mildly positive (correct answers, the offline banner), nothing that
+   fights a brand title. NOT reusing .cell.placing's #0E5A34 unchecked —
+   that was measured against the board cells' own lighter background, not
+   this bar's; measured fresh here instead: #0A4527 clears 5.6:1 against
+   the same ~rgb(204,181,147) bar background used throughout this section. */
+.appBarTitle{ color:#0A4527 !important; }
 .appBarTitle small{ color:#6B5334 !important; }
 .appBarChip{ background:#8A5E31 !important; color:#FFF3E0 !important; }
 .barBtn, .navBack{ background:#8A5E31 !important; color:#FFF6E7 !important; }
@@ -6791,8 +6793,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-70 (title back to a solid colour -- the gradient read as smeared)';
-  window.BETA_VER = 'beta-70';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-71 (title in dark green instead of near-black)';
+  window.BETA_VER = 'beta-71';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
