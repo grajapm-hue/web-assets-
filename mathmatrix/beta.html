@@ -1285,7 +1285,12 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
     box-shadow:0 0 0 1px rgba(255,255,255,.07), 0 18px 60px rgba(0,0,0,.55); }
 }
 
-.appBar{ flex:none; height:46px; padding:0 11px !important; position:static !important;
+/* 56px, not 46: Raja asked for the top-area tabs bigger, and dropping the
+   title glyph (moved to .diffMascot) plus the BETA banner row (moved into
+   About) freed the room to grow the bar itself instead of just cramming
+   bigger icons into the old 46px, which is the ceiling the buttons below
+   were previously capped against. */
+.appBar{ flex:none; height:56px; padding:0 11px !important; position:static !important;
   display:flex; align-items:center; gap:8px;
   background:rgba(0,0,0,.26) !important; border-bottom:1px solid rgba(255,255,255,.09) !important; }
 .appBarTitle{ font-size:13px !important; font-weight:900 !important; line-height:1.15; }
@@ -1295,18 +1300,18 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
    longer than the phone. */
 @media (max-width: 389px){ .appBarTitle{ font-size:11.5px !important; } }
 .appBarTitle small{ display:block; font-size:8.5px; font-weight:700; color:var(--bink3); letter-spacing:.3px; }
-.navBack{ width:40px !important; height:40px !important; border-radius:12px !important; font-size:17px !important; }
-.appBarChip{ font-size:9px !important; padding:3px 8px !important; }
-/* 40px, not 29. These three (← 💡 ⋯) are the whole navigation and a child's
-   fingertip is about 10mm; Apple asks for 44pt and Material for 48dp. The bar
-   is 46px tall so 40 is the most that fits without making it taller and
-   stealing board height — a clear improvement over 29 either way. */
-/* Logic and Watch carry a word under the glyph. Same 40px height as the plain
-   icon buttons, so the bar does not grow and the board keeps its space. */
-.barBtn.barWord{ width:auto; min-width:44px; padding:0 8px; display:flex; flex-direction:column;
+.navBack{ width:46px !important; height:46px !important; border-radius:13px !important; font-size:19px !important; }
+.appBarChip{ font-size:11.5px !important; padding:5px 10px !important; }
+/* 46px, not 40: the bar has 10px more to give now (see .appBar above), so
+   the ← 💡 ⋯ group grows with it instead of staying pinned to the old
+   46px-bar / 40px-button ceiling. */
+.barBtn{ width:46px !important; height:46px !important; border-radius:13px !important; font-size:17px !important; }
+/* Logic and Watch carry a word under the glyph. Same height as the plain
+   icon buttons, so the bar does not grow past what .appBar already set. */
+.barBtn.barWord{ width:auto; min-width:48px; padding:0 9px; display:flex; flex-direction:column;
   align-items:center; justify-content:center; gap:0; line-height:1; }
-.barBtn.barWord i{ font-style:normal; font-size:14px; }
-.barBtn.barWord span{ font-size:7.5px; font-weight:800; letter-spacing:.4px;
+.barBtn.barWord i{ font-style:normal; font-size:17px; }
+.barBtn.barWord span{ font-size:9px; font-weight:800; letter-spacing:.4px;
   text-transform:uppercase; color:var(--bink2); margin-top:1px; }
 .barBtn{ width:40px; height:40px; flex:none; border-radius:12px; background:var(--sf2); display:grid;
   place-items:center; font-size:14px; border:0; color:var(--bink); box-shadow:var(--clay); cursor:pointer;
@@ -1421,6 +1426,16 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
   border-radius:999px; background:#8A5E31; color:#FFF6E7;
   box-shadow:0 2px 0 rgba(0,0,0,.22); }
 .diffShare:active{ transform:translateY(2px); box-shadow:0 0 0 rgba(0,0,0,.22); }
+
+/* The mascot, moved down from the app-bar title — see the HTML comment by
+   .diffMascot. Its own centred row rather than squeezed between the label
+   and the tip/share pair: at "as big as possible" it does not fit beside
+   either without recreating the exact crowding this row has already been
+   fixed for twice (diffLabel/diffTip overlap, then diffTip/diffShare). */
+.diffMascot{ width:100%; text-align:center; line-height:1;
+  font-size:min(calc(40px * var(--lvScale, 1)), 64px);
+  margin:2px 0 8px;
+  filter:drop-shadow(0 3px 0 rgba(94,64,32,.3)); }
 
 /* ══ TAP TARGETS — reach without regrowth ══
    Share is 24px tall, the Update pill 18px, Logic and Watch 40px. All under the
@@ -2372,7 +2387,7 @@ body{ background:#C9A87C !important; }
 
 <header class="appBar">
   <button class="navBack" id="navBack" type="button" aria-label="Back to puzzles">←</button>
-  <div class="appBarTitle" id="appBarTitle">🐒🎲 MathMatrix Pro++</div>
+  <div class="appBarTitle" id="appBarTitle">MathMatrix Pro++</div>
   <!-- placeholder only: the real count is set from the number of cards on Home -->
   <span class="appBarChip" id="appBarChip">10 puzzles</span>
 </header>
@@ -2529,6 +2544,13 @@ body{ background:#C9A87C !important; }
     </span>
   </div>
 
+  <!-- Raja: "swap monkey dice middle of the choose Difficulty row... as
+       much as possible bigger visible" — moved down from the tiny app-bar
+       title glyph (freed that space for bigger LOGIC/WATCH buttons) to be
+       the centrepiece of this band instead, where it actually has room to
+       be seen. -->
+  <div class="diffMascot" aria-hidden="true">🐒🎲</div>
+
   <!-- ➕ ADD MODE — the six size puzzles, an easy→hard ladder -->
   <div class="modeGroup">
     <div class="modeHead" style="--m1:#7dd3fc; --m2:#38bdf8;">
@@ -2634,7 +2656,12 @@ body{ background:#C9A87C !important; }
   Preserve · explore · pass them on.</span>
 </div>
 
-<div class="credit">Created by G.RajaPathamuthu · Kids Puzzle Library<br>Guided by : JNT<br>Code Coordinated by : Claude AI<br>
+<div class="credit">
+  <!-- moved here from its own row on Home -- Raja: "remove beta feedback
+       long tab here... hence placed this in About" -->
+  <span style="color:#9A3412; font-weight:800;">BETA</span> — tell us what breaks
+  on the 💬 Feedback tab.<br>
+  Created by G.RajaPathamuthu · Kids Puzzle Library<br>Guided by : JNT<br>Code Coordinated by : Claude AI<br>
   <i style="opacity:.85;">(What we get is all we ask for.)</i><br>
   Mail To : <a href="mailto:grajapm@gmail.com?subject=MathMatrix%20Feedback%20%26%20Suggestion" style="color:#8ab4f8; text-decoration:underline;">✉️ Feedback &amp; Suggestion</a><br>
   <span style="opacity:.7; font-size:12px;">App <span id="verLabel">…</span></span><br>
@@ -5144,7 +5171,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
      A screen may be built from more than one fragment (Home is the title card
      plus the level list), so screens are matched by data-screen, not by id. */
   var SCREEN_TITLE = {
-    scHome:  '🐒🎲 MathMatrix Pro++',
+    // no leading glyph here any more -- the monkey-and-dice moved down to
+    // the difficulty row (.diffMascot), freeing the bar for bigger buttons
+    scHome:  'MathMatrix Pro++',
     scLearn: '💡 Math Logic',
     scApp:   '📲 Share & Install',
     scFeed:  '💬 Feedback'
@@ -5356,16 +5385,11 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     sanaEl.innerHTML = '<span class="sanaFace">🐒<span class="sanaSpark"></span></span>' +
                        '<span class="sanaBub">Hello! I\'m <b>SaNa</b>. Pick a puzzle and I\'ll help you.</span>';
     bar.insertAdjacentElement('afterend', sanaEl);
-    var flag = document.createElement('div');
-    flag.className = 'betaFlag';
-    /* The build number lives HERE, on the front page, not buried in Get App.
-       Raja asked "where the updated version mentioned in app" — and he was
-       asking because he could not tell whether a change had failed to ship or
-       his phone was simply holding an old copy. That question should never
-       need asking twice: the answer is now the first line he reads. */
-    flag.innerHTML = '<b>BETA <span id="flagVer">…</span></b> — tell us what breaks ' +
-                     'on the 💬 Feedback tab.';
-    sanaEl.insertAdjacentElement('afterend', flag);
+    /* The BETA/feedback banner used to sit here as its own row under SaNa.
+       Raja: "remove beta feedback long tab here... hence placed this in
+       About" — the version it carried still shows (#verFooter, bottom of
+       the puzzle table) and the feedback nudge now lives in the About
+       sheet's credit block instead, alongside the version there. */
     sanaBub = sanaEl.querySelector('.sanaBub');
     sanaSpark = sanaEl.querySelector('.sanaSpark');
   })();
@@ -6753,8 +6777,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-65 (offline instructions shrunk to fit with zero scrolling)';
-  window.BETA_VER = 'beta-65';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-66 (bigger top-bar tabs; monkey-dice mascot moved to the difficulty row; BETA banner moved into About)';
+  window.BETA_VER = 'beta-66';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
