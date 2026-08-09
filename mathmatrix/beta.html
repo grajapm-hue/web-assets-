@@ -1518,9 +1518,16 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
 /* Kept tight on purpose: the bar is 360px wide on Raja's phone and already
    carries four buttons, and "Guess My Number · Junior" needs every pixel the
    title can get before the ellipsis bites. */
+/* Cream, not brown. It was #8A5E31 — the exact colour of the Logic, Watch and
+   ⋯ buttons, on a bar that is itself a brown wash, so Raja saw one brown on
+   another. A pale tile with a brown edge belongs to the puzzle-card family
+   instead, and separates from both.
+   Kept tight on purpose: the bar is 360px on his phone and already carries
+   four buttons, and "Guess My Number · Junior" needs the room. */
 .appBar .titleGlyph{ display:inline-flex; align-items:center; gap:0;
-  background:#8A5E31; border-radius:8px; padding:1px 4px; margin-right:5px;
-  box-shadow:0 2px 0 rgba(0,0,0,.22); line-height:1; font-size:.92em; }
+  background:#FFF6E7; border:1.5px solid #8A5E31; border-radius:8px;
+  padding:1px 4px; margin-right:5px;
+  box-shadow:0 2px 0 rgba(94,64,32,.3); line-height:1; font-size:.92em; }
 .diffHead .diffLabel{ background:#F3E4C9 !important; border:1.5px solid #C4A277 !important;
   border-radius:999px !important; padding:2px 10px !important; }
 .diffTip{ background:#F3E4C9; border:1.5px solid #C4A277;
@@ -4687,9 +4694,34 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
        the four corners and four middles the sheet promises.
 
        4x4 only for now: Raja asked to see one before the rest follow. */
-    var SHEET_SWAPS = {
-      '4x4': [ [[0,1],[3,2]], [[0,2],[3,1]], [[1,0],[2,3]], [[2,0],[1,3]] ]
-    };
+    /* Which cells trade with which — DERIVED from the puzzle's own answer, not
+       listed. A typed list was right for 4x4 and would have had to be right
+       again for 8x8's sixteen pairs; this cannot drift, and it returns null
+       for a grid that is not built by swapping at all, so 6x6 and 10x10 fall
+       through to their own demo instead of being given a false story.
+       Checked: 4x4 pairs into 4, 8x8 into 16, and both cover every changed
+       cell exactly once. */
+    function sheetPairsFor(pz, n){
+      var nat = function(r, c){ return r * n + c + 1; };
+      var changed = [], used = {}, pairs = [];
+      for (var r = 0; r < n; r++) for (var c = 0; c < n; c++)
+        if (pz.example[r][c] !== nat(r, c)) changed.push([r, c]);
+      if (!changed.length) return null;
+      changed.forEach(function(p){
+        var pk = p[0] + ',' + p[1];
+        if (used[pk]) return;
+        var want = pz.example[p[0]][p[1]];
+        for (var i = 0; i < changed.length; i++){
+          var q = changed[i], qk = q[0] + ',' + q[1];
+          if (used[qk] || qk === pk) continue;
+          // q is where `want` naturally lives, and q holds what p naturally held
+          if (nat(q[0], q[1]) === want && pz.example[q[0]][q[1]] === nat(p[0], p[1])){
+            used[pk] = 1; used[qk] = 1; pairs.push([p, q]); break;
+          }
+        }
+      });
+      return pairs.length * 2 === changed.length ? pairs : null;
+    }
     function finishWatch(){
       if (watchIv){ clearInterval(watchIv); watchIv = null; }
       clearArrows();
@@ -4719,7 +4751,17 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
        wrote to where the next one lands. Nothing is hard-coded — the path is
        read off the puzzle's own answer in value order, so the arrows follow
        whatever the board actually contains. */
-    var walk = (!isBirthday() && (currentSize === '3x3' || currentSize === '5x5'));
+    /* 3-cube joins the walk. Its numbers are 2^0 to 2^8 rather than 1 to 9,
+       and its walk runs the other way — 1 in the BOTTOM middle, counting UP —
+       which is why the down-rule scored 0 of 8 against it and the up-rule
+       scores 8 of 8. Same arrows, mirrored words. */
+    var WALKS = {
+      '3x3':   { step: 3, up: false, from: 'top middle',    to: 'bottom middle' },
+      '5x5':   { step: 5, up: false, from: 'top middle',    to: 'bottom middle' },
+      '3cube': { step: 3, up: true,  from: 'bottom middle', to: 'top middle', times: true }
+    };
+    var walkCfg = isBirthday() ? null : WALKS[currentSize];
+    var walk = !!walkCfg;
     if (walk){
       var path = [];
       for (var wr = 0; wr < R; wr++) for (var wc = 0; wc < Cc; wc++) path.push([wr, wc]);
@@ -4735,17 +4777,19 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         update();
       };
       var wsteps = [];
-      var step = currentSize === '3x3' ? 3 : 5;
-      var slow = currentSize === '3x3' ? 4 : 2;     // 3x3 is short, so it can breathe
+      var step = walkCfg.step;
+      var dirWord = walkCfg.up ? 'UP' : 'DOWN';
+      var last = val(path[path.length - 1]);
+      var slow = path.length <= 9 ? 4 : 2;          // the short walks can breathe
       wsteps.push({ hold: 3, run: function(){
-        msg.textContent = '▶ Put 1 in the top middle. That is the only free choice.';
+        msg.textContent = '▶ Put 1 in the ' + walkCfg.from + '. That is the only free choice.';
         msg.className = '';
-        try { sana('Start with <b>1</b> in the <b>top middle</b> box.', 'think', true); } catch(e){}
+        try { sana('Start with <b>1</b> in the <b>' + walkCfg.from + '</b> box.', 'think', true); } catch(e){}
       }});
       wsteps.push({ hold: slow + 1, run: function(){ put(path[0]); }});
       wsteps.push({ hold: 4, run: function(){
-        msg.textContent = '▶ Now count ' + step + ' boxes DOWN, and place to the RIGHT of where you land.';
-        try { sana('Count <b>' + step + ' down</b>, then place to the <b>right</b>. Wrap round the edges.', 'think', true); } catch(e){}
+        msg.textContent = '▶ Now count ' + step + ' boxes ' + dirWord + ', and place to the RIGHT of where you land.';
+        try { sana('Count <b>' + step + ' ' + dirWord.toLowerCase() + '</b>, then place to the <b>right</b>. Wrap round the edges.', 'think', true); } catch(e){}
       }});
       for (var pk = 1; pk < path.length; pk++) (function(k){
         wsteps.push({ hold: slow, run: function(){
@@ -4753,7 +4797,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           drawSwapArrow(path[k - 1], path[k], true);          // one way: this is a move
           cells[path[k - 1][0]][path[k - 1][1]].classList.add('swapPick');
           msg.textContent = '▶ ' + val(path[k - 1]) + '  →  ' + val(path[k]) +
-                            '   (' + val(path[k]) + ' of ' + N + ')';
+                            '   (' + (k + 1) + ' of ' + path.length + ')';
         }});
         wsteps.push({ hold: slow, run: function(){
           cells[path[k - 1][0]][path[k - 1][1]].classList.remove('swapPick');
@@ -4762,9 +4806,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       })(pk);
       wsteps.push({ hold: 5, run: function(){
         clearArrows();
-        msg.textContent = '✨ ' + N + ' lands in the bottom middle. Every line makes ' +
-                          (R * (N + 1) / 2) + '.';
-        try { sana('And <b>' + N + '</b> finishes in the bottom middle. That is the whole walk.', 'cheer', true); } catch(e){}
+        msg.textContent = '✨ ' + last + ' lands in the ' + walkCfg.to + '. Every line ' +
+                          (walkCfg.times ? 'multiplies to ' + (val(path[0]) * val(path[4]) * val(path[8]))
+                                         : 'makes ' + (R * (N + 1) / 2)) + '.';
+        try { sana('And <b>' + last + '</b> finishes in the <b>' + walkCfg.to + '</b>. That is the whole walk.', 'cheer', true); } catch(e){}
       }});
       var WT = 190, wi = 0, wwait = 0;
       watchIv = setInterval(function(){
@@ -4777,7 +4822,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       return;
     }
 
-    var sheetPairs = isBirthday() ? null : SHEET_SWAPS[currentSize];
+    var sheetPairs = isBirthday() ? null : sheetPairsFor(puzzle, R);
     if (sheetPairs){
       var natural = function(r, c){ return r * Cc + c + 1; };
 
@@ -4800,6 +4845,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       var gapsUp = changes.slice().reverse();          // bottom-right, walking up
       var countUp = gapsUp.map(function(p){ return puzzle.example[p[0]][p[1]]; });
 
+      /* A 4x4 can dwell; a 64-cell board cannot, or the demo runs past a
+         minute and nobody sees the end. Half the beat on the big grids, which
+         still leaves ~190ms a number — slower than the 150ms Raja called too
+         fast — and brings the 8x8 in near 30s instead of 70. */
+      var big = N > 20;
+      var putHold = big ? 1 : 2, fillHold = big ? 2 : 3;
+
       var steps = [];
 
       // ── 1 · the whole sequence, straight across ─────────────────────────
@@ -4809,13 +4861,19 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         try { sana('Write <b>1 to ' + N + '</b> straight across — no thinking yet.', 'think', true); } catch(e){}
       }});
       for (var sr = 0; sr < R; sr++) for (var sc = 0; sc < Cc; sc++) (function(r0, c0){
-        steps.push({ hold: 2, run: function(){
+        var li = r0 * Cc + c0;
+        steps.push({ hold: putHold, run: function(){
           var cell = cells[r0][c0];
           cell.value = String(natural(r0, c0));
           if (puzzle.example[r0][c0] !== natural(r0, c0)) cell.classList.add('willChange');
           cell.classList.remove('placing'); void cell.offsetWidth; cell.classList.add('placing');
           sfx('tick', panForCell(cell));
-          update();
+          /* update() re-totals every row, column and diagonal. On a 64-cell
+             board that is the whole cost of the demo — it stretched the 8x8 to
+             49s at a nominal 29s. The sums mean nothing until the sequence is
+             down anyway, so on the big grids they are refreshed periodically
+             and at the end rather than after all 64 placements. */
+          if (!big || li % 8 === 7 || li === N - 1) update();
         }});
       })(sr, sc);
 
@@ -4824,11 +4882,15 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
          entry, then dismiss. So they are not a separate replay any more —
          they appear over the finished 1..N, all four together the way his
          sheet draws them, and then they go. */
-      steps.push({ hold: 3, run: function(){
-        msg.textContent = '▶ These eight pair up — each black one trades with its partner.';
+      /* Arrows only while they can still be read. Four over a 4x4 is his
+         cheat sheet; sixteen over an 8x8 is a spider web, and the two-pass
+         story is the lesson there anyway. */
+      var showArrows = sheetPairs.length <= 8;
+      if (showArrows) steps.push({ hold: 3, run: function(){
+        msg.textContent = '▶ These ' + changes.length + ' pair up — each black one trades with its partner.';
         try { sana('The <b>black</b> ones pair up, like the arrows on the sheet.', 'think', true); } catch(e){}
       }});
-      sheetPairs.forEach(function(pair){
+      (showArrows ? sheetPairs : []).forEach(function(pair){
         steps.push({ hold: 2, run: function(){
           drawSwapArrow(pair[0], pair[1]);
           cells[pair[0][0]][pair[0][1]].classList.add('swapPick');
@@ -4836,7 +4898,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           sfx('tick', panForCell(cells[pair[0][0]][pair[0][1]]));
         }});
       });
-      steps.push({ hold: 9, run: function(){
+      if (showArrows) steps.push({ hold: 9, run: function(){
         msg.textContent = '▶ ' + sheetPairs.length + ' pairs. Now watch them go.';
       }});
       steps.push({ hold: 4, run: function(){
@@ -4864,15 +4926,18 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
                    countUp[1] + ', ' + countUp[2] + '</b> …', 'think', true); } catch(e){}
       }});
       gapsUp.forEach(function(p, k){
-        steps.push({ hold: 3, run: function(){
+        steps.push({ hold: fillHold, run: function(){
           var c = cells[p[0]][p[1]];
           c.value = String(countUp[k]);
           c.classList.remove('willChange'); c.classList.add('backFill');
           c.classList.remove('placing'); void c.offsetWidth; c.classList.add('placing');
           sfx('tick', panForCell(c));
-          msg.textContent = '▶ ' + countUp.slice(0, k + 1).join('  ') +
+          /* the tail of a 32-number list is unreadable and pushes the bar
+             around, so the big grids show the last few rather than all */
+          var shown = big ? countUp.slice(Math.max(0, k - 4), k + 1) : countUp.slice(0, k + 1);
+          msg.textContent = '▶ ' + (big && k > 4 ? '… ' : '') + shown.join('  ') +
                             (k < countUp.length - 1 ? '  …' : '   — and stop at ' + countUp[k] + '.');
-          update();
+          if (!big || k % 4 === 3 || k === countUp.length - 1) update();
         }});
       });
       steps.push({ hold: 6, run: function(){
@@ -4888,7 +4953,11 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
          one. 190 a tick, and a placement costs two — so a number lands every
          ~380ms and the whole demo runs ~19s instead of ~12s. Watching is the
          entire point of this screen; it can afford the seconds. */
-      var TICK = 190, si = 0, waitTicks = 0;
+      /* Each step costs its hold PLUS the tick it runs on, so the 8x8's 254
+         ticks came to 48s at 190 — measured, after I first mis-counted them as
+         29s. 150 on the big grids brings it to ~38s while a number still lands
+         every 300ms, twice the pace Raja called too fast. */
+      var TICK = big ? 150 : 190, si = 0, waitTicks = 0;
       watchIv = setInterval(function(){
         if (waitTicks > 0){ waitTicks--; return; }
         if (si >= steps.length){ finishWatch(); return; }
@@ -6560,8 +6629,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-57 (3x3 and 5x5 Watch walk the path with dotted arrows)';
-  window.BETA_VER = 'beta-57';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-58 (8x8 and 3-cube join the arrow demos; glyph box stands out)';
+  window.BETA_VER = 'beta-58';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
