@@ -1503,6 +1503,29 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
 .convDec:focus{ border-color:#8A5E31 !important; }
 .convClear{ background:#8A5E31 !important; color:#FFF6E7 !important; }
 
+/* ══ THE JUST-PLACED DIGIT ══
+   Raja: "where ever the box is small the green text is smeared with
+   background." He is right, and it is not the small boxes — it is every box.
+   .cell.placing paints #4ade80, a light green chosen for the old DARK theme,
+   and the demo leaves that class on. Over the sandalwood cream that measures
+   1.5:1, so on a 28px 10x10 cell the number all but disappears. A dark green
+   keeps the "just landed" signal and can actually be read: 7.4:1. */
+.cell.placing{ color:#0E5A34 !important; }
+
+/* ══ BOXES ROUND THE THREE BARE THINGS ══
+   Raja marked the monkey-and-dice, Choose Difficulty and the offline line:
+   everything else in those rows sits in a box and these three float loose. */
+/* Kept tight on purpose: the bar is 360px wide on Raja's phone and already
+   carries four buttons, and "Guess My Number · Junior" needs every pixel the
+   title can get before the ellipsis bites. */
+.appBar .titleGlyph{ display:inline-flex; align-items:center; gap:0;
+  background:#8A5E31; border-radius:8px; padding:1px 4px; margin-right:5px;
+  box-shadow:0 2px 0 rgba(0,0,0,.22); line-height:1; font-size:.92em; }
+.diffHead .diffLabel{ background:#F3E4C9 !important; border:1.5px solid #C4A277 !important;
+  border-radius:999px !important; padding:2px 10px !important; }
+.diffTip{ background:#F3E4C9; border:1.5px solid #C4A277;
+  border-radius:999px; padding:2px 9px; }
+
 /* ══ THE TWO ROUTES, IN TWO COLOURS ══
    Raja: black text on the cells that are going to change, and the numbers you
    fill back in a different colour, "as another colour is easy to understand
@@ -4716,7 +4739,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         try { sana('Write <b>1 to ' + N + '</b> straight across — no thinking yet.', 'think', true); } catch(e){}
       }});
       for (var sr = 0; sr < R; sr++) for (var sc = 0; sc < Cc; sc++) (function(r0, c0){
-        steps.push({ hold: 1, run: function(){
+        steps.push({ hold: 2, run: function(){
           var cell = cells[r0][c0];
           cell.value = String(natural(r0, c0));
           if (puzzle.example[r0][c0] !== natural(r0, c0)) cell.classList.add('willChange');
@@ -4771,7 +4794,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
                    countUp[1] + ', ' + countUp[2] + '</b> …', 'think', true); } catch(e){}
       }});
       gapsUp.forEach(function(p, k){
-        steps.push({ hold: 2, run: function(){
+        steps.push({ hold: 3, run: function(){
           var c = cells[p[0]][p[1]];
           c.value = String(countUp[k]);
           c.classList.remove('willChange'); c.classList.add('backFill');
@@ -4790,7 +4813,12 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       /* One interval, and each step says how many ticks to hold for. A chain of
          setTimeouts would pace just as well but would leave stopDemos with
          several handles to cancel instead of the one it already clears. */
-      var TICK = 150, si = 0, waitTicks = 0;
+      /* Raja, twice: the scan is too fast to observe. It was 150ms a cell,
+         which is fine for recognising a pattern and useless for following
+         one. 190 a tick, and a placement costs two — so a number lands every
+         ~380ms and the whole demo runs ~19s instead of ~12s. Watching is the
+         entire point of this screen; it can afford the seconds. */
+      var TICK = 190, si = 0, waitTicks = 0;
       watchIv = setInterval(function(){
         if (waitTicks > 0){ waitTicks--; return; }
         if (si >= steps.length){ finishWatch(); return; }
@@ -4825,7 +4853,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     }
     var flipSum = N + 1;   // partner sum for the demo grid: 17 for 4×4, 65 for 8×8
     // slow, mind-mapping pace on the small sizes; scale down on the big grids so the demo stays ~18–20s
-    var delay = isBirthday() ? 950 : currentSize === '10x10' ? 500 : currentSize === '8x8' ? 430 : currentSize === '6x6' ? 500 : 1100;
+    var delay = isBirthday() ? 950 : currentSize === '10x10' ? 620 : currentSize === '8x8' ? 560 : currentSize === '6x6' ? 640 : 1250;
     var i = 0;
     msg.textContent = isBirthday()
       ? '▶ Typing Ramanujan’s birthday 22-12-1887 — watch the rest appear…'
@@ -4891,6 +4919,18 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     if (meta) meta.setAttribute('content', edge);
   }
 
+  function esc(s){
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  /* Split a leading run of glyphs off a title so it can be boxed. Anything
+     that starts with a letter or digit — "4×4 Hard", "10×10 Grandmaster" —
+     has no glyph run and comes back untouched. */
+  function boxedTitle(s){
+    var m = String(s || '').match(/^([^\w\d]+?)\s+(.*)$/);
+    if (!m || !m[1].trim()) return esc(s);
+    return '<span class="titleGlyph">' + esc(m[1].trim()) + '</span>' + esc(m[2]);
+  }
+
   function goScreen(id){
     document.querySelectorAll('[data-screen]').forEach(function(sec){
       sec.classList.toggle('on', sec.getAttribute('data-screen') === id);
@@ -4909,7 +4949,11 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // the bar is the one place that is short of room — use data-short if a
     // puzzle has one, so the name is never cut to "Sir Ramanujan Math…"
     var lvlName = lvl ? (lvl.dataset.short || lvl.dataset.name || lvl.textContent.trim()) : '';
-    if (title) title.textContent = (id === 'scPlay' && lvl) ? lvlName : SCREEN_TITLE[id];
+    /* Raja asked for the monkey-and-dice to sit in a box like everything else
+       in this bar. The glyphs lead the title string, so peel the leading run
+       off and box it. Titles are ours, but escaped anyway — innerHTML with an
+       unescaped string is a habit worth not having. */
+    if (title) title.innerHTML = boxedTitle((id === 'scPlay' && lvl) ? lvlName : SCREEN_TITLE[id]);
     /* The chip used to narrate the screen — "10 puzzles", "how it works",
        "offline ready". Raja asked for that space to do something instead, so it
        is the update control now: one tap fetches the newest build. It keeps its
@@ -6446,8 +6490,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-55 (4x4 Watch: arrows during the sequence, then fill bottom-up 2,3,5...)';
-  window.BETA_VER = 'beta-55';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-56 (slower Watch, readable digits, boxes on the three bare things)';
+  window.BETA_VER = 'beta-56';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
