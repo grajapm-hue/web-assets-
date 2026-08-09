@@ -1396,7 +1396,9 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
   font-size:min(calc(8.5px * var(--lvScale, 1)), 11.5px);
   font-weight:800; letter-spacing:.2px;
   color:#54340F; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-  flex:0 1 auto; min-width:0; }
+  flex:0 1 auto; min-width:0;
+  cursor:pointer; text-decoration:underline; text-decoration-style:dotted;
+  text-underline-offset:2px; }
 .diffTip.off{ color:#6E1F06; }
 /* The offline line and Share stack on the right, so the heading keeps the
    whole left side. baseline on .diffHead lines the heading up with the tip,
@@ -1637,6 +1639,9 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
 .comingChip{ font-size:calc(10px * var(--lvScale, 1)) !important;
   padding:calc(5px * var(--lvScale, 1)) calc(9px * var(--lvScale, 1)) !important; }
 .journeyNote,.credit{ display:none !important; }   /* moved into the About sheet */
+.verFooter{ width:100%; text-align:center; margin-top:8px;
+  font-size:calc(9px * var(--lvScale, 1)); font-weight:700; letter-spacing:.3px;
+  color:#8A6A3F; opacity:.75; }
 
 /* ── PLAY: the board is the flexible region ── */
 .solvedCounter{ flex:none; font-size:9.5px !important; padding:4px 10px !important; margin:0 0 5px !important; }
@@ -2462,6 +2467,13 @@ body{ background:#C9A87C !important; }
   2. Tap the ⋮ menu (top right)<br>
   3. Tap "Add to Home Screen" (or "Install App")<br>
   4. Tap "Add" — done!<br>
+  <b>Computer (Chrome / Edge):</b><br>
+  1. Open this game in the browser<br>
+  2. Click the install icon ⊕ at the right of the address bar<br>
+  3. Click "Install" — it opens in its own window<br>
+  <b>Mac (Safari) / Firefox (any device):</b><br>
+  Bookmark the page, or add it to your Dock/Home Screen from the browser's
+  Share menu — same idea, worded a little differently in each browser.<br>
   <span style="color:#22c55e; font-weight:700;">✅ Once added, tap the icon anytime to play — no internet needed!</span>
 </div>
 
@@ -2491,7 +2503,7 @@ body{ background:#C9A87C !important; }
          puzzle list — not three taps away inside the Get App tab. Same link and
          same share sheet as the big button there; one source, two ways in. -->
     <span class="diffSide">
-      <span class="diffTip" id="diffTip">📴 Plays with no internet</span>
+      <span class="diffTip" id="diffTip" role="button" tabindex="0" aria-label="How to play with no internet">📴 Plays with no internet</span>
       <button class="diffShare" id="diffShare" type="button">📤 Share</button>
     </span>
   </div>
@@ -2583,6 +2595,11 @@ body{ background:#C9A87C !important; }
     <button class="comingChip" data-soon="Angle Magic">📐 Angle Magic</button>
     <button class="comingChip" data-soon="Logic Gates">🔀 Logic Gates</button>
   </div>
+  <!-- Raja: keep the version at the bottom of the puzzle table too, not just
+       the BETA flag up top — so it's still checkable after scrolling all the
+       way through the list. Same #flagVer/#verLabel source, so it can never
+       disagree with the top of the page. -->
+  <div class="verFooter">v<span id="verFooter">…</span></div>
 </div>
 
 
@@ -5920,6 +5937,19 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     });
   })();
 
+  /* Raja: the offline note on Home was just a label — nothing to tap, no
+     way to learn what "plays with no internet" actually takes. Same sheet
+     as Get App > Play offline, so the instructions live in one place. */
+  (function(){
+    var tip = document.getElementById('diffTip');
+    if (!tip) return;
+    var open = function(){ openSheet('offline', '📲 Play offline'); };
+    tip.addEventListener('click', open);
+    tip.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); open(); }
+    });
+  })();
+
   /* ---- 9. quick settings in the app bar ---- */
   /* Kept only so the demo can be recognised as "in progress"; the tools now
      come back the moment it ends, and CLEAR restores the full screen. */
@@ -6702,13 +6732,17 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-61 (Share button no longer steals taps meant for the offline tip)';
-  window.BETA_VER = 'beta-61';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-62 (offline note is tappable + covers every browser; version shown at table bottom)';
+  window.BETA_VER = 'beta-62';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
   var flagVer = document.getElementById('flagVer');
   if (flagVer) flagVer.textContent = window.BETA_VER;
+  // same short form again at the bottom of the puzzle table, past Coming
+  // Soon — so it is still checkable after scrolling through the whole list
+  var footVer = document.getElementById('verFooter');
+  if (footVer) footVer.textContent = window.BETA_VER;
 
   /* ── AUTO ONLINE REFRESH ──
      Raja asked for this in as many words — "auto forced app online refresh" —
