@@ -1880,8 +1880,25 @@ body.binaryMode #learnRow,
 body.binaryMode #learnHint,
 body.binaryMode .keysChip,
 body.binaryMode .targetPill,
-body.binaryMode .solvedCounter{ display:none !important; }
+body.binaryMode .solvedCounter,
+/* Raja: "when select level to go play rooms, but in logic select shows
+   only logic notes ... not play room like ChatGPT presenting" — gate
+   rooms live in scPlay now, same as every other puzzle, not a sheet.
+   Same proven mechanism as binaryMode (a body class + !important CSS),
+   not just JS inline styles — the comment above explains why: inline
+   styles lose to this layout's own !important rules elsewhere. */
+body.gateMode #barWatch,           /* no board to build, so nothing to watch */
+body.gateMode #boardWrap,
+body.gateMode #playRow,
+body.gateMode #keypad,
+body.gateMode #rotateHint,
+body.gateMode #learnRow,
+body.gateMode #learnHint,
+body.gateMode .keysChip,
+body.gateMode .targetPill,
+body.gateMode .solvedCounter{ display:none !important; }
 body.binaryMode #binaryPanel{ display:flex !important; }
+body.gateMode #gatePanel{ display:block !important; }
 
 /* ══ MIND READER — one card at a time ══ */
 /* safe center: on the reveal every child is flex:none, so the answer used to
@@ -2445,12 +2462,15 @@ body{ background:#C9A87C !important; }
   border-radius:9px !important; padding:7px 10px !important; margin:0 0 9px !important;
   color:#0E5A34 !important; font-weight:800 !important; font-size:12.5px !important; }
 
-/* ══ GATE LOGIC — one room per truth-table row, inside the sheet system ══
+/* ══ GATE LOGIC — a real Play-screen game (#gatePanel), not a sheet ══
    Raja: "as much possible choices of using gate logic which creates eager
    to kids play and learn gate logics" -- room-by-room like the reference,
    but scoped one card per gate (matches every other puzzle: pick any,
    any time, no forced order) and covering the WHOLE truth table per gate,
    not one lucky row. Sandalwood, not the reference's dark theme. */
+.gateBackBtn{ display:block; margin:0 0 12px; padding:8px 16px; border-radius:999px;
+  border:2px solid #8A5E31; background:#FFF6E7; color:#5E3D1C; font-size:13px;
+  font-weight:800; cursor:pointer; }
 .gateProgress{ font-size:11.5px; font-weight:900; letter-spacing:.6px; text-transform:uppercase;
   color:#8A5E31; margin-bottom:8px; }
 .gateTip{ background:#F3E4C9; border:2px solid #C4A277; border-radius:12px;
@@ -2548,6 +2568,17 @@ body{ background:#C9A87C !important; }
   <div id="binaryReadout"></div>
   <div style="text-align:center; margin:10px 0 4px;">
     <button id="binaryClear" style="background:transparent; border:2px solid #ef4444; color:#ef4444; border-radius:10px; padding:8px 20px; font-size:15px; font-weight:800; cursor:pointer;">↺ Start again</button>
+  </div>
+</div>
+
+<!-- Gate Logic: a real Play-screen panel, same pattern as #binaryPanel above
+     (a non-grid game living inside scPlay), not a sheet. #gatePicker holds
+     the 7-gate chooser; #gateRoomWrap holds whichever gate is active. -->
+<div id="gatePanel" style="display:none;">
+  <div id="gatePicker"></div>
+  <div id="gateRoomWrap" style="display:none;">
+    <button class="gateBackBtn" id="gateBackBtn" type="button">← All Gates</button>
+    <div id="gateRoom"></div>
   </div>
 </div>
 
@@ -2780,17 +2811,23 @@ body{ background:#C9A87C !important; }
        hard-coded LV_MIN) and force the whole list to scroll. That's what
        squeezed "Choose Difficulty" on Raja's real device — same fragile
        spot the diffHead row has broken at before, now tripped by content
-       volume elsewhere in the list, not a diffHead change itself. This
-       card opens a picker sheet instead (openGateList), same mechanism
-       every other sheet already uses, so Home's own list height goes
-       back to what it was before Gate Logic existed. -->
+       volume elsewhere in the list, not a diffHead change itself. Still
+       ONE card here, for that reason — Home's list height stays what it
+       was before Gate Logic existed.
+       Raja later: "when select level to go play rooms, but in logic
+       select shows only logic notes ... not play room like ChatGPT
+       presenting" — tapping this now goes to the real Play screen
+       (#gatePanel, wired like #binaryPanel) instead of opening a sheet.
+       No data-size: this deliberately stays outside the grid-puzzle
+       click handler (which assumes PUZZLES[newSize] and calls
+       initBoard()) — its own handler drives goScreen('scPlay') instead. -->
   <div class="modeGroup solo">
     <div class="modeHead" style="--m1:#c4b5fd; --m2:#8b5cf6;">
       <span class="mIco">🔀</span>
       <span><b>Gate Logic</b><i>flip the inputs, watch each gate decide ON or OFF</i></span>
     </div>
     <div class="toggleSwitch">
-      <button class="toggleBtn lvCard" id="gateListBtn" type="button" style="color:#8b5cf6; border-color:#8b5cf6; --c1:#c4b5fd; --c2:#8b5cf6;">
+      <button class="toggleBtn lvCard" id="gateListBtn" type="button" data-name="🔀 Gate Logic" style="color:#8b5cf6; border-color:#8b5cf6; --c1:#c4b5fd; --c2:#8b5cf6;">
         <span class="lvGlyph" aria-hidden="true">🔀</span>
         <span class="lvText"><b class="lvName">7 Logic Gates</b><span class="lvDiff">AND · OR · NOT · NAND · NOR · XOR · XNOR</span><span class="lvMeta">pick one, then walk its whole truth table</span></span>
       </button>
@@ -3384,6 +3421,17 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     setTimeout(function(){ fl.remove(); }, 560);
   }
   var timerInt = null, startTime = null;
+
+  // Top-level like showBinaryMode (defined below, called here — function
+  // hoisting makes the order fine), not nested in the Gate Logic IIFE: this
+  // handler needs to call it directly when leaving gate mode for a real
+  // puzzle, same as it already does for showBinaryMode(false).
+  function showGateMode(on){
+    document.body.classList.toggle('gateMode', !!on);
+    var gp = document.getElementById('gatePanel');
+    if (gp) gp.style.display = on ? 'block' : 'none';
+  }
+
   // Difficulty toggle — every level is open to free choice (grade labels are the guide).
   // Reward/applause on solving stays; there is no lock.
   // [data-size]: Gate Logic reuses .toggleBtn/.lvCard for identical styling but
@@ -3408,12 +3456,14 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       applyAccent();                      // this puzzle's colour takes over the whole app
       goScreen('scPlay');                 // picking a level takes you straight to the board
       if (newSize === 'binary' || newSize === 'binary2'){   // card games, not grid puzzles
+        if (currentSize === 'gatelogic') showGateMode(false);
         currentSize = newSize;
         showBinaryMode(true);
         highlightNowPlaying();
         return;
       }
       if (currentSize === 'binary' || currentSize === 'binary2') showBinaryMode(false);   // back to the grids
+      if (currentSize === 'gatelogic') showGateMode(false);                               // back to the grids
       if (newSize !== currentSize) {
         currentSize = newSize;
         initBoard();
@@ -4616,13 +4666,15 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     });
   })();
 
-  // ---- Gate Logic — 7 gate cards, each its own room-by-room walk through
-  // that gate's whole truth table ------------------------------------------
+  // ---- Gate Logic — a real Play-screen game, not a sheet -------------------
   // Raja: "as much possible choices of using gate logic which creates eager
   // to kids play and learn gate logics" — every standard gate, every row of
-  // its table, not one lucky guess. Rooms live inside the existing sheet
-  // system (openSheet with dynamic content, same as openLearnMenu's), so
-  // Back/close/scroll all just work — nothing new to wire for those.
+  // its table, not one lucky guess.
+  // Raja later: "when select level to go play rooms, but in logic select
+  // shows only logic notes ... not play room like ChatGPT presenting" —
+  // moved from a sheet (openSheet, like a notes page) into #gatePanel
+  // inside scPlay, wired exactly like #binaryPanel: a body class + the
+  // same !important CSS rules, goScreen('scPlay'), the real app bar.
   (function(){
     var GATES = [
       { key:'and',  name:'AND Gate',  glyph:'∧', inputs:2, rows:[[0,0,0],[0,1,0],[1,0,0],[1,1,1]],
@@ -4725,36 +4777,83 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       }
     }
 
+    // The 📐 LOGIC button reads whatever is already sitting in #logicBox
+    // (openLearn('logic') just opens a sheet around it) — same mechanism
+    // showBinaryMode uses to keep LOGIC honest for its own two games.
+    function gateLogicBoxHTML(g){
+      var rows = g.rows.map(function(row){
+        var out = row[row.length - 1];
+        var ins = g.inputs === 1
+          ? 'A=' + (row[0] ? 'ON' : 'OFF')
+          : 'A=' + (row[0] ? 'ON' : 'OFF') + ', B=' + (row[1] ? 'ON' : 'OFF');
+        return ins + ' → <b>' + (out ? 'ON' : 'OFF') + '</b>';
+      }).join('<br>');
+      return '<h3>📐 ' + g.name + ' — truth table</h3><p>' + g.rule + '</p><p>' + rows + '</p>';
+    }
+
+    function openGatePicker(){
+      gateState = null;
+      var picker = document.getElementById('gatePicker'), wrap = document.getElementById('gateRoomWrap');
+      if (picker){
+        picker.innerHTML = '<div class="learnRows sheetLearn">' + GATES.map(function(g){
+          return '<button class="rowBtn" data-gate="' + g.key + '" type="button"><i>' + g.glyph + '</i>' +
+            '<span><b>' + g.name + '</b><small>' + g.diff + ' · ' + g.rows.length + ' rooms</small></span></button>';
+        }).join('') + '</div>';
+        picker.style.display = 'block';
+      }
+      if (wrap) wrap.style.display = 'none';
+      var title = document.getElementById('appBarTitle');
+      if (title) title.innerHTML = boxedTitle('🔀 Gate Logic');
+      var lb = document.getElementById('logicBox');
+      if (lb) lb.innerHTML = '<h3>📐 Gate Logic</h3><p>Pick a gate below — each one walks through its whole truth table, one input at a time.</p>';
+    }
+
     function openGate(key){
       var g = null;
       for (var i = 0; i < GATES.length; i++) if (GATES[i].key === key) g = GATES[i];
       if (!g) return;
       gateState = { gate: g, roomIdx: 0 };
       sfx('card');
-      openSheet('gate-' + key, g.name, '<div id="gateRoom"></div>');
+      var picker = document.getElementById('gatePicker'), wrap = document.getElementById('gateRoomWrap');
+      if (picker) picker.style.display = 'none';
+      if (wrap) wrap.style.display = 'block';
+      var title = document.getElementById('appBarTitle');
+      if (title) title.innerHTML = boxedTitle(g.name);
+      var lb = document.getElementById('logicBox');
+      if (lb) lb.innerHTML = gateLogicBoxHTML(g);
       renderGateRoom();
     }
 
-    // The Home entry point opens this picker instead of 7 rows sitting
-    // directly in .difficultyBar — .rowBtn is the same class the Get App
-    // screen's own "Play offline"/"About" rows already use.
-    function openGateList(){
-      var html = '<div class="learnRows sheetLearn">' + GATES.map(function(g){
-        return '<button class="rowBtn" data-gate="' + g.key + '" type="button"><i>' + g.glyph + '</i>' +
-          '<span><b>' + g.name + '</b><small>' + g.diff + ' · ' + g.rows.length + ' rooms</small></span></button>';
-      }).join('') + '</div>';
-      openSheet('gateList', '🔀 Gate Logic', html);
+    // Entry point from Home — same shape as the real puzzle-select handler
+    // (cancel any congrats countdown, clear .active, recolour via
+    // applyAccent, goScreen('scPlay')) but its own currentSize sentinel
+    // ('gatelogic') rather than a PUZZLES key, same precedent as 'binary'/
+    // 'binary2' — neither of those is in PUZZLES either.
+    var gateListBtn = document.getElementById('gateListBtn');
+    if (gateListBtn){
+      gateListBtn.addEventListener('click', function(){
+        if (_congratsAutoTimer){ clearInterval(_congratsAutoTimer); _congratsAutoTimer = null; }
+        var cm = document.getElementById('congratsModal');
+        if (cm && cm.style.display === 'flex') cm.style.display = 'none';
+        sfx('card');
+        document.querySelectorAll('.toggleBtn').forEach(function(b){ b.classList.remove('active'); });
+        gateListBtn.classList.add('active');
+        applyAccent();
+        if (currentSize === 'binary' || currentSize === 'binary2') showBinaryMode(false);
+        currentSize = 'gatelogic';
+        goScreen('scPlay');
+        showGateMode(true);
+        openGatePicker();
+      });
     }
 
-    var gateListBtn = document.getElementById('gateListBtn');
-    if (gateListBtn) gateListBtn.addEventListener('click', function(){ sfx('card'); openGateList(); });
+    var gateBackBtn = document.getElementById('gateBackBtn');
+    if (gateBackBtn) gateBackBtn.addEventListener('click', function(){ sfx('back'); openGatePicker(); });
 
-    // Delegated on document, not shScroll: this IIFE runs before buildSheets()
-    // assigns that variable (script order, not just declaration order), so
-    // shScroll is still undefined here. document exists immediately and the
-    // click still bubbles to it regardless of how many times sheet content
-    // is replaced — same reasoning as the app's own keypad delegation, just
-    // anchored higher since the sheet host is built later.
+    // Delegated on document: .rowBtn[data-gate] lives in #gatePicker, which
+    // is rebuilt via innerHTML on every openGatePicker() call, so a direct
+    // listener would need re-attaching each time — delegation sidesteps that
+    // (same reasoning as the app's own keypad delegation).
     document.addEventListener('click', function(e){
       var row = e.target.closest('.rowBtn[data-gate]');
       if (row){ openGate(row.dataset.gate); return; }
@@ -7332,8 +7431,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-82 (Gate Logic: animated emoji on choices, correct/wrong, and the win screen)';
-  window.BETA_VER = 'beta-82';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-83 (Gate Logic moved into a real Play-screen room, not a sheet)';
+  window.BETA_VER = 'beta-83';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
