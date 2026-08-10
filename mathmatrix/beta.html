@@ -2470,6 +2470,16 @@ body{ background:#C9A87C !important; }
 .gateAgainBtn{ margin-top:6px; padding:12px 22px; border-radius:12px; border:2px solid #8A5E31;
   background:#8A5E31; color:#FFF6E7; font-size:15px; font-weight:800; cursor:pointer; }
 
+/* "same like attached image with animated emoji effects" — the reference's
+   own emoji (🟢🔴❓) sit static; these move, reusing keyframes already built
+   elsewhere (Mind Reader's reveal, a completed line, SaNa's own "oops") so
+   nothing new is defined here, just pointed at gate logic's own elements. */
+.gateEmoji{ display:inline-block; animation:starPop .5s var(--spring); }
+.gateWinEmoji{ font-size:40px; animation-duration:.7s; }
+.gatePop{ animation:mrPop .5s var(--spring); }
+.gateBounce{ animation:badgePop .32s cubic-bezier(.34,1.56,.64,1); }
+.gateShake{ animation:sanaOops .45s ease; }
+
 @media(prefers-reduced-motion:reduce){ *{ animation:none !important; } }
 </style>
 </head>
@@ -4647,23 +4657,32 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // table per gate: still teaches "this isn't automatically that gate".
     function decoyGateName(g){ return g.key === 'or' ? 'AND' : 'OR'; }
 
+    // Raja: "same like attached image with animated emoji effects" — same
+    // room shape as the reference, but the emoji now actually move: a pop-in
+    // on the icon and gate diagram (reusing .mrPop's keyframe, already built
+    // for the Mind Reader reveal), a bounce on a correct tap (badgePop,
+    // already built for a completed line), and a shake on a wrong one
+    // (sanaOops, already built for SaNa's own "oops"). No new keyframes.
     function renderGateRoom(){
       var st = gateState; if (!st) return;
       var g = st.gate, row = g.rows[st.roomIdx];
       var el = document.getElementById('gateRoom');
       if (!el) return;
       var choices = [
-        { label:'🟢 ON / TRUE', val:1 },
-        { label:'🔴 OFF / FALSE', val:0 },
-        { label:'❓ Cannot know', val:-1 },
-        { label:'↔️ Same as ' + decoyGateName(g), val:-2 }
+        { emoji:'🟢', text:'ON / TRUE', val:1 },
+        { emoji:'🔴', text:'OFF / FALSE', val:0 },
+        { emoji:'❓', text:'Cannot know', val:-1 },
+        { emoji:'↔️', text:'Same as ' + decoyGateName(g), val:-2 }
       ];
       el.innerHTML =
         '<div class="gateProgress">Room ' + (st.roomIdx + 1) + ' of ' + g.rows.length + ' — ' + g.name + '</div>' +
         '<div class="gateTip">What does the ' + g.name.toUpperCase() + ' output for this input?</div>' +
-        '<div class="gateDiagram">' + gateDiagramHTML(g, row) + '</div>' +
+        '<div class="gateDiagram gatePop">' + gateDiagramHTML(g, row) + '</div>' +
         '<div class="gateChoices">' +
-          choices.map(function(c){ return '<button class="gateChoiceBtn" data-val="' + c.val + '">' + c.label + '</button>'; }).join('') +
+          choices.map(function(c){
+            return '<button class="gateChoiceBtn" data-val="' + c.val + '">' +
+              '<span class="gateEmoji">' + c.emoji + '</span> ' + c.text + '</button>';
+          }).join('') +
         '</div>' +
         '<div class="gateFeedback" id="gateFeedback">Touch one of the four boxes.</div>';
     }
@@ -4674,7 +4693,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       if (!el) return;
       sfx('unlock');
       el.innerHTML =
-        '<div class="gateWin">🎉<br>' + g.name + ' solved!' +
+        '<div class="gateWin"><span class="gateEmoji gateWinEmoji">🎉</span><br>' + g.name + ' solved!' +
           '<span class="gateWinRule">' + g.rule + '</span></div>' +
         '<button class="gateAgainBtn" id="gateAgainBtn" type="button">↻ Play Again</button>';
     }
@@ -4683,11 +4702,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       var st = gateState; if (!st) return;
       var g = st.gate, row = g.rows[st.roomIdx], correct = row[row.length - 1];
       var fb = document.getElementById('gateFeedback');
+      var btn = document.querySelector('.gateChoiceBtn[data-val="' + val + '"]');
       if (!fb) return;
       if (val === correct){
         sfx('yes');
         fb.textContent = '✅ Correct!';
-        fb.className = 'gateFeedback gateFeedback-ok';
+        fb.className = 'gateFeedback gateFeedback-ok gatePop';
+        if (btn) btn.classList.add('gateBounce');
         setTimeout(function(){
           if (gateState !== st) return;             // sheet was closed/reopened mid-wait
           st.roomIdx++;
@@ -4696,6 +4717,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         }, 700);
       } else {
         sfx('no');
+        if (btn){
+          btn.classList.remove('gateShake'); void btn.offsetWidth; btn.classList.add('gateShake');
+        }
         fb.textContent = '❌ Not quite. ' + g.rule;
         fb.className = 'gateFeedback gateFeedback-bad';
       }
@@ -7308,8 +7332,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-81 (Choose Difficulty moved beside the monkey, monkey unchanged)';
-  window.BETA_VER = 'beta-81';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-82 (Gate Logic: animated emoji on choices, correct/wrong, and the win screen)';
+  window.BETA_VER = 'beta-82';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
