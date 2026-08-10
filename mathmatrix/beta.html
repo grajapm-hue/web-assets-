@@ -2602,9 +2602,14 @@ body{ background:#C9A87C !important; }
     <!-- Share sits under the offline line, where Raja asked for it. This is the
          moment a parent thinks to pass the game on — standing in front of the
          puzzle list — not three taps away inside the Get App tab. Same link and
-         same share sheet as the big button there; one source, two ways in. -->
+         same share sheet as the big button there; one source, two ways in.
+         Install sits right next to the offline line for the same reason: Raja
+         asked for a download chip beside it, mirroring the browser's own
+         home-screen-install affordance. Same #installBtn logic as Get App,
+         reusing .diffShare for identical sizing/tap-target treatment. -->
     <span class="diffSide">
       <span class="diffTip" id="diffTip" role="button" tabindex="0" aria-label="How to play with no internet">📴 Plays with no internet</span>
+      <button class="diffShare" id="diffInstall" type="button">📥 Install</button>
       <button class="diffShare" id="diffShare" type="button">📤 Share</button>
     </span>
   </div>
@@ -4463,20 +4468,28 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
   // ---- Install to home screen -------------------------------------------------
   // Chrome/Edge fire beforeinstallprompt, so one tap can install. iOS Safari has
-  // no such API, so there we open the step-by-step panel instead.
+  // no such API, so there we open the same offline/install sheet the Home
+  // chip's "Plays with no internet" tap already uses (park('offline', ...)).
+  // Two buttons, one code path: the big one on Get App, and the chip beside
+  // the offline note on Home — same "one source, two ways in" as Share.
   (function(){
-    var iBtn = document.getElementById('installBtn');
-    if (!iBtn) return;
+    var iBtns = [document.getElementById('installBtn'), document.getElementById('diffInstall')].filter(Boolean);
+    if (!iBtns.length) return;
     var deferred = null;
 
     function markInstalled(){
-      iBtn.textContent = '✅ Installed';
-      iBtn.style.borderColor = '#22c55e'; iBtn.style.color = '#4ade80';
-      iBtn.disabled = true; iBtn.style.opacity = '.75';
+      iBtns.forEach(function(b){
+        b.textContent = '✅ Installed';
+        b.style.borderColor = '#22c55e'; b.style.color = '#4ade80';
+        b.disabled = true; b.style.opacity = '.75';
+      });
     }
     function markHowTo(){                        // cannot install directly here
-      iBtn.textContent = '📲 How to Install';
-      iBtn.style.borderColor = '#64748b'; iBtn.style.color = '#cbd5e1';
+      iBtns.forEach(function(b){
+        if (b.disabled) return;                   // already Installed — leave it
+        b.textContent = '📲 How to Install';
+        b.style.borderColor = '#64748b'; b.style.color = '#cbd5e1';
+      });
     }
 
     var standalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
@@ -4492,47 +4505,39 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     window.addEventListener('beforeinstallprompt', function(e){
       e.preventDefault();
       deferred = e;
-      if (!iBtn.disabled){                       // a real one-tap install is available
-        iBtn.textContent = '📥 Install App';
-        iBtn.style.borderColor = '#38bdf8'; iBtn.style.color = '#7dd3fc';
-      }
+      iBtns.forEach(function(b){
+        if (!b.disabled){                       // a real one-tap install is available
+          b.textContent = '📥 Install App';
+          b.style.borderColor = '#38bdf8'; b.style.color = '#7dd3fc';
+        }
+      });
     });
 
     // No install event (iPhone, unsupported browser, or already installed):
     // stop promising a one-tap install and offer the instructions instead.
-    setTimeout(function(){ if (!deferred && !iBtn.disabled) markHowTo(); }, 2500);
+    setTimeout(function(){ if (!deferred) markHowTo(); }, 2500);
 
     window.addEventListener('appinstalled', function(){
       deferred = null;
-      iBtn.textContent = '✅ Installed';
-      iBtn.style.borderColor = '#22c55e'; iBtn.style.color = '#4ade80';
+      markInstalled();
       sfx('unlock');
     });
 
-    iBtn.addEventListener('click', function(){
-      if (soundOn) ensureAudio();
-      if (deferred){
-        deferred.prompt();
-        deferred.userChoice.then(function(res){
-          if (res && res.outcome === 'accepted'){ iBtn.textContent = '✅ Installing…'; }
-          deferred = null;
-        }).catch(function(){});
-        return;
-      }
-      // No install API (iPhone/iPad, or already dismissed): show how to do it by hand
-      var box = document.getElementById('offlineBox');
-      var btn = document.getElementById('offlineBtn');
-      if (box){
-        box.style.display = 'block';
-        if (btn) btn.textContent = '📲 Play Offline ▲';
-        try { box.scrollIntoView({ behavior:'smooth', block:'center' }); }
-        catch(e){ box.scrollIntoView(); }
-      }
-      var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-      msg.innerHTML = isIOS
-        ? '📲 On iPhone: tap <b>Share ⬆️</b> at the bottom of Safari, then <b>Add to Home Screen</b>.'
-        : '📲 Use your browser menu <b>⋮</b> → <b>Install app</b> / <b>Add to Home screen</b>.';
-      msg.className = '';
+    iBtns.forEach(function(b){
+      b.addEventListener('click', function(){
+        if (soundOn) ensureAudio();
+        if (deferred){
+          deferred.prompt();
+          deferred.userChoice.then(function(res){
+            if (res && res.outcome === 'accepted'){ b.textContent = '✅ Installing…'; }
+            deferred = null;
+          }).catch(function(){});
+          return;
+        }
+        // No install API (iPhone/iPad, or already dismissed): the full
+        // per-platform instructions, same sheet Home's offline chip opens.
+        openSheet('offline', '📲 Play offline');
+      });
     });
   })();
 
@@ -7102,8 +7107,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-77 (splash tagline in bright green with a stronger legibility halo)';
-  window.BETA_VER = 'beta-77';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-78 (Install chip beside the offline note on Home)';
+  window.BETA_VER = 'beta-78';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
