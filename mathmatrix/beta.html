@@ -5033,20 +5033,21 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     update();
 
     /* ═══ THE TRIANGLE DEMO ═══
-       Raja: "make arrow pass in watch in five different target in sequence
-       order one by one and pause when back or clear player to decide" —
-       one worked example per real target (17,19,20,21,23, ascending),
-       corners first, then an arrow across each side's two edge numbers.
-       "Pause when back or clear" needed no new code: watchIv below is the
-       SAME shared variable stopDemos() already clears on CLEAR/back, so
-       that mechanic — built once, used by every demo in this handler —
-       just works here too. */
+       Raja, refining the first version: "...arrow pass fill to be 1 in one
+       cell pause fraction of and arrow pass next cell where to 2 to place
+       and stay a fraction of seconds to register in mind... hence this is
+       for just mind mapping not to fix the mind in logic — that one need
+       may select logic." Not the side-grouped version this had — the SAME
+       walk this file already uses for 3x3/5x5/3cube (see THE COUNT-DOWN
+       PUZZLES, just below): arrow from the cell you just placed to the
+       next one, place, pause, repeat — pure spatial copying, no "corners
+       count twice" reasoning mixed in. That reasoning stays where Raja
+       put it: the Logic panel, for whoever chooses to open it. Five
+       targets, ascending, back to back — same watchIv, so CLEAR/back still
+       cancels it for free, same as before and every other demo here. */
     if (puzzle.shape === 'triangle'){
-      var SIDES = [
-        { key: 'left',   corners: [0, 5], edges: [1, 3] },
-        { key: 'right',  corners: [0, 8], edges: [2, 4] },
-        { key: 'bottom', corners: [5, 8], edges: [6, 7] }
-      ];
+      var TRI_LABELS = ['top corner', 'upper left', 'upper right', 'lower left', 'lower right',
+                         'bottom left corner', 'bottom middle left', 'bottom middle right', 'bottom right corner'];
       var put = function(i, v){
         var c = cells[0][i];
         c.value = String(v);
@@ -5063,27 +5064,31 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       var steps = [];
       PUZZLES.triangle.targets.forEach(function(row, ti){
         var v = row.v, t = row.t;
+        // cell indices sorted by their own value: order[0] holds 1, order[8] holds 9
+        var order = [0,1,2,3,4,5,6,7,8].slice().sort(function(a,b){ return v[a] - v[b]; });
+
         steps.push({ hold: 3, run: function(){
-          msg.textContent = '▶ Target ' + t + ' (' + (ti + 1) + ' of 5) — the 3 corners go in first.';
+          msg.textContent = '▶ Target ' + t + ' (' + (ti + 1) + ' of 5) — put 1 in the ' + TRI_LABELS[order[0]] + '.';
           msg.className = '';
-          try { sana('Target <b>' + t + '</b>. Corners first — they count on two sides each.', 'think', true); } catch(e){}
         }});
-        [0, 5, 8].forEach(function(ci){
-          steps.push({ hold: 2, run: function(){ put(ci, v[ci]); }});
-        });
-        SIDES.forEach(function(side){
-          steps.push({ hold: 2, run: function(){
-            drawSwapArrow([0, side.edges[0]], [0, side.edges[1]]);
-            msg.textContent = '▶ ' + side.key + ' side: ' + v[side.edges[0]] + ' + ' + v[side.edges[1]] +
-                              ' + ' + v[side.corners[0]] + ' + ' + v[side.corners[1]] + ' = ' + t;
+        steps.push({ hold: 3, run: function(){ put(order[0], 1); }});
+
+        for (var k = 1; k < 9; k++) (function(k){
+          steps.push({ hold: 3, run: function(){
+            drawSwapArrow([0, order[k - 1]], [0, order[k]], true);
+            cells[0][order[k - 1]].classList.add('swapPick');
+            msg.textContent = '▶ ' + k + '  →  ' + (k + 1) + '   (' + (k + 1) + ' of 9)';
           }});
-          steps.push({ hold: 2, run: function(){ put(side.edges[0], v[side.edges[0]]); }});
-          steps.push({ hold: 2, run: function(){ put(side.edges[1], v[side.edges[1]]); clearArrows(); }});
-        });
+          steps.push({ hold: 3, run: function(){
+            cells[0][order[k - 1]].classList.remove('swapPick');
+            put(order[k], k + 1);
+          }});
+        })(k);
+
         steps.push({ hold: 5, run: function(){
+          clearArrows();
           msg.textContent = '✨ Target ' + t + '! Every side adds to ' + t + '.';
           msg.className = 'win';
-          try { sana('That is ' + t + ' done — ' + (5 - ti - 1) + ' target' + (5 - ti - 1 === 1 ? '' : 's') + ' left to watch.', 'cheer', true); } catch(e){}
         }});
         if (ti < PUZZLES.triangle.targets.length - 1){
           steps.push({ hold: 3, run: clearBoard });
@@ -7058,8 +7063,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-72 (Triangle Magic: new puzzle, direct cheat sheet, 5-target Watch demo)';
-  window.BETA_VER = 'beta-72';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-73 (Triangle Watch demo: pure 1-to-9 arrow walk, no side-grouping)';
+  window.BETA_VER = 'beta-73';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
