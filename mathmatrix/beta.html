@@ -4869,10 +4869,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         // Raja: "no appreciation pop by SaNa[,] may keep some seconds before
         // showing logic questions" — every correct answer used to just
         // advance after 700ms with nothing from SaNa; the win screen was
-        // the only place she showed up. Same 'cheer' voice a finished line
-        // already gets elsewhere, held long enough (1.6s, 2.2s for the
-        // bigger warm-up->logic moment) to actually be read before the
-        // next room replaces it.
+        // the only place she showed up. First pass held it 1.6s/2.2s and
+        // Raja still couldn't catch it in time — "increase to pause time
+        // in 3 to 5 seconds instead milli seconds" — now 3.5s / 5s for the
+        // bigger warm-up->logic moment.
         try {
           if (enteringLogic){
             sana('<b>Warm-up done!</b> Now for the real ' + g.name + ' logic.', 'cheer', true);
@@ -4886,7 +4886,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           st.roomIdx++;
           if (st.roomIdx >= total) renderGateDone();
           else renderGateRoom();
-        }, enteringLogic ? 2200 : 1600);
+        }, enteringLogic ? 5000 : 3500);
       } else {
         sfx('no');
         if (btn){
@@ -7558,8 +7558,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-91 (Gate Logic: SaNa cheers every correct answer, longer pause)';
-  window.BETA_VER = 'beta-91';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-92 (Gate Logic: SaNa pause up to 3.5-5 real seconds)';
+  window.BETA_VER = 'beta-92';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
