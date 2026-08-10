@@ -4692,9 +4692,37 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       { key:'xnor', name:'XNOR Gate', glyph:'⊙', inputs:2, rows:[[0,0,1],[0,1,0],[1,0,0],[1,1,1]],
         diff:'ON when the same', rule:'XNOR is ON when the two inputs are the SAME.' }
     ];
-    var gateState = null;   // { gate, roomIdx }
+    // Raja, pointing straight at the ChatGPT draft's own 4 screenshots:
+    // rooms 1-3 are easy pass-through questions (an animal fact), room 4
+    // is the first real "LOGIC ROOM" — that shape, not what shipped in
+    // beta-83 where every room was already a logic question. Kept small
+    // (2 warm-ups, not 3) since "as much possible choices of using gate
+    // logic" was the very first ask this whole feature started from —
+    // a shared pool so 7 gates don't all open on the identical 2 questions.
+    var WARMUPS = [
+      { tip:'Choose the animal that gives us milk.', choices:[
+          {emoji:'🦁',text:'Lion'},{emoji:'🐘',text:'Elephant'},{emoji:'🐄',text:'Cow',ok:true},{emoji:'🐅',text:'Tiger'}] },
+      { tip:'Choose the animal that can fly.', choices:[
+          {emoji:'🐟',text:'Fish'},{emoji:'🦅',text:'Eagle',ok:true},{emoji:'🐄',text:'Cow'},{emoji:'🐕',text:'Dog'}] },
+      { tip:'Choose the animal that lives in water.', choices:[
+          {emoji:'🐕',text:'Dog'},{emoji:'🐟',text:'Fish',ok:true},{emoji:'🐘',text:'Elephant'},{emoji:'🐎',text:'Horse'}] },
+      { tip:'Choose the shape with 3 sides.', choices:[
+          {emoji:'⬛',text:'Square'},{emoji:'🔺',text:'Triangle',ok:true},{emoji:'⭕',text:'Circle'},{emoji:'⭐',text:'Star'}] },
+      { tip:'Choose the colour you get by mixing blue and yellow.', choices:[
+          {emoji:'🟩',text:'Green',ok:true},{emoji:'🟥',text:'Red'},{emoji:'🟪',text:'Purple'},{emoji:'🟧',text:'Orange'}] },
+      { tip:'Choose the number that comes right after 9.', choices:[
+          {emoji:'8️⃣',text:'8'},{emoji:'🔟',text:'10',ok:true},{emoji:'2️⃣',text:'12'},{emoji:'5️⃣',text:'5'}] }
+    ];
+    var WARMUP_COUNT = 2;
+    function gateWarmup(g, roomIdx){
+      var gi = GATES.indexOf(g);
+      return WARMUPS[(gi * WARMUP_COUNT + roomIdx) % WARMUPS.length];
+    }
+
+    var gateState = null;   // { gate, roomIdx } — 0..WARMUP_COUNT-1 are warm-ups, the rest index g.rows
 
     function gateShortName(g){ return g.name.replace(' Gate', ''); }
+    function gateTotalRooms(g){ return WARMUP_COUNT + g.rows.length; }
 
     function gateDiagramHTML(g, row){
       if (g.inputs === 1){
@@ -4717,18 +4745,34 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // (sanaOops, already built for SaNa's own "oops"). No new keyframes.
     function renderGateRoom(){
       var st = gateState; if (!st) return;
-      var g = st.gate, row = g.rows[st.roomIdx];
+      var g = st.gate, total = gateTotalRooms(g);
       var el = document.getElementById('gateRoom');
       if (!el) return;
+      var progress = '<div class="gateProgress">Room ' + (st.roomIdx + 1) + ' of ' + total + ' — ' + g.name + '</div>';
+
+      if (st.roomIdx < WARMUP_COUNT){                 // pass-through warm-up, no gate content yet
+        var w = gateWarmup(g, st.roomIdx);
+        el.innerHTML = progress +
+          '<div class="gateTip">' + w.tip + '</div>' +
+          '<div class="gateChoices">' +
+            w.choices.map(function(c, i){
+              return '<button class="gateChoiceBtn" data-val="' + i + '">' +
+                '<span class="gateEmoji">' + c.emoji + '</span> ' + c.text + '</button>';
+            }).join('') +
+          '</div>' +
+          '<div class="gateFeedback" id="gateFeedback">Touch one of the four boxes.</div>';
+        return;
+      }
+
+      var row = g.rows[st.roomIdx - WARMUP_COUNT];
       var choices = [
         { emoji:'🟢', text:'ON / TRUE', val:1 },
         { emoji:'🔴', text:'OFF / FALSE', val:0 },
         { emoji:'❓', text:'Cannot know', val:-1 },
         { emoji:'↔️', text:'Same as ' + decoyGateName(g), val:-2 }
       ];
-      el.innerHTML =
-        '<div class="gateProgress">Room ' + (st.roomIdx + 1) + ' of ' + g.rows.length + ' — ' + g.name + '</div>' +
-        '<div class="gateTip">What does the ' + g.name.toUpperCase() + ' output for this input?</div>' +
+      el.innerHTML = progress +
+        '<div class="gateTip">LOGIC ROOM: What does the ' + g.name.toUpperCase() + ' output for this input?</div>' +
         '<div class="gateDiagram gatePop">' + gateDiagramHTML(g, row) + '</div>' +
         '<div class="gateChoices">' +
           choices.map(function(c){
@@ -4752,19 +4796,33 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
     function gateChoose(val){
       var st = gateState; if (!st) return;
-      var g = st.gate, row = g.rows[st.roomIdx], correct = row[row.length - 1];
+      var g = st.gate, total = gateTotalRooms(g);
       var fb = document.getElementById('gateFeedback');
       var btn = document.querySelector('.gateChoiceBtn[data-val="' + val + '"]');
       if (!fb) return;
-      if (val === correct){
+
+      var isWarmup = st.roomIdx < WARMUP_COUNT;
+      var correct, wrongMsg;
+      if (isWarmup){
+        var w = gateWarmup(g, st.roomIdx);
+        correct = !!(w.choices[val] && w.choices[val].ok);
+        wrongMsg = '❌ Not quite — try again!';
+      } else {
+        var row = g.rows[st.roomIdx - WARMUP_COUNT];
+        correct = (val === row[row.length - 1]);
+        wrongMsg = '❌ Not quite. ' + g.rule;
+      }
+
+      if (correct){
         sfx('yes');
-        fb.textContent = '✅ Correct!';
+        var enteringLogic = isWarmup && st.roomIdx === WARMUP_COUNT - 1;
+        fb.textContent = enteringLogic ? '✅ Correct! Now the real logic begins…' : '✅ Correct!';
         fb.className = 'gateFeedback gateFeedback-ok gatePop';
         if (btn) btn.classList.add('gateBounce');
         setTimeout(function(){
-          if (gateState !== st) return;             // sheet was closed/reopened mid-wait
+          if (gateState !== st) return;             // room was left/reopened mid-wait
           st.roomIdx++;
-          if (st.roomIdx >= g.rows.length) renderGateDone();
+          if (st.roomIdx >= total) renderGateDone();
           else renderGateRoom();
         }, 700);
       } else {
@@ -4772,7 +4830,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         if (btn){
           btn.classList.remove('gateShake'); void btn.offsetWidth; btn.classList.add('gateShake');
         }
-        fb.textContent = '❌ Not quite. ' + g.rule;
+        fb.textContent = wrongMsg;
         fb.className = 'gateFeedback gateFeedback-bad';
       }
     }
@@ -7431,8 +7489,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-83 (Gate Logic moved into a real Play-screen room, not a sheet)';
-  window.BETA_VER = 'beta-83';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-84 (Gate Logic: 2 warm-up rooms, then the real LOGIC ROOM test)';
+  window.BETA_VER = 'beta-84';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
