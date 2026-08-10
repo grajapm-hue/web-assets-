@@ -2679,7 +2679,8 @@ body{ background:#C9A87C !important; }
 
   <!-- 🔢 BINARY MODE — Raja: split into the same 2-column grid as Add Magic
        (3x3/4x4 etc.), instead of stacking full-width, to leave more room
-       for the puzzles still coming (Angle Magic, Logic Gates). -->
+       for the puzzles still coming (Logic Gates). Angle Magic became
+       Triangle Magic, a real puzzle now, not a "coming soon" chip. -->
   <div class="modeGroup">
     <div class="modeHead" style="--m1:#f0e58a; --m2:#84cc16;">
       <span class="mIco">🔢</span>
@@ -2699,7 +2700,6 @@ body{ background:#C9A87C !important; }
 
   <div class="comingWrap">
     <span class="comingLabel">🔜 Coming Soon</span>
-    <button class="comingChip" data-soon="Angle Magic">📐 Angle Magic</button>
     <button class="comingChip" data-soon="Logic Gates">🔀 Logic Gates</button>
   </div>
   <!-- Raja: keep the version at the bottom of the puzzle table too, not just
@@ -7085,8 +7085,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-74 (Triangle Watch demo shows the real Target throughout, not just near the end)';
-  window.BETA_VER = 'beta-74';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-75 (Angle Magic removed from Coming Soon -- it became Triangle Magic)';
+  window.BETA_VER = 'beta-75';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
