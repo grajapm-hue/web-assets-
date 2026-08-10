@@ -2134,8 +2134,20 @@ body.binaryMode #binaryPanel{ display:flex !important; }
    same x), but the box itself wasn't. A block div with max-width and no
    margin:auto just anchors to its container's left padding edge instead of
    centring as a box — measured 31.5px left of the true centre before this. */
+/* Raja: "make different bright color red or green or blue then top and
+   bottom line words" — a plain fill in any of the three measured badly
+   here (sampled the actual gradient behind both wrapped lines with the
+   text hidden first: red/green/blue all scored under 2.7:1 against at
+   least one of the two, some near 1:1 — this background is exactly what
+   .splashTag's own earlier comment already found "dissolves" a colour
+   treatment). Went with green (furthest in hue from this gradient's
+   magenta/purple/blue range, and already this app's --wingreen) but kept
+   it legible the same way the white version already was: not raw
+   contrast against one sampled colour, a heavier dark halo that holds up
+   against ANY of them. */
 .splashTag{ font-size:12.5px; font-weight:800; line-height:1.55; margin:8px auto 0; max-width:22em;
-  color:#FFFFFF; text-shadow:0 2px 8px rgba(0,0,0,.55), 0 0 2px rgba(0,0,0,.45);
+  color:#3DD68C;
+  text-shadow:0 2px 10px rgba(0,0,0,.75), 0 0 6px rgba(0,0,0,.65), 0 0 2px rgba(0,0,0,.9);
   animation:splashUp .4s .28s both; }
 /* Bigger — it was too timid to find. Still quieter than Tap to play, but a
    proper target now rather than a footnote. */
@@ -7090,8 +7102,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-76 (splash tagline box actually centered, not just its text)';
-  window.BETA_VER = 'beta-76';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-77 (splash tagline in bright green with a stronger legibility halo)';
+  window.BETA_VER = 'beta-77';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
