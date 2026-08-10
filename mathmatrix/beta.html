@@ -2488,34 +2488,50 @@ body{ background:#C9A87C !important; }
    but scoped one card per gate (matches every other puzzle: pick any,
    any time, no forced order) and covering the WHOLE truth table per gate,
    not one lucky row. Sandalwood, not the reference's dark theme. */
-.gateBackBtn{ display:block; margin:0 0 12px; padding:8px 16px; border-radius:999px;
-  border:2px solid #8A5E31; background:#FFF6E7; color:#5E3D1C; font-size:13px;
+.gateBackBtn{ display:block; margin:0 0 14px; padding:9px 18px; border-radius:999px;
+  border:2px solid #8A5E31; background:#FFF6E7; color:#5E3D1C; font-size:14px;
   font-weight:800; cursor:pointer; }
-.gateProgress{ font-size:11.5px; font-weight:900; letter-spacing:.6px; text-transform:uppercase;
-  color:#8A5E31; margin-bottom:8px; }
-.gateTip{ background:#F3E4C9; border:2px solid #C4A277; border-radius:12px;
-  padding:12px 14px; margin:0 0 12px; font-size:14.5px; font-weight:800; color:#33220F; }
+.gateProgress{ font-size:13px; font-weight:900; letter-spacing:.6px; text-transform:uppercase;
+  color:#8A5E31; margin-bottom:10px; }
+.gateTip{ background:#F3E4C9; border:2px solid #C4A277; border-radius:14px;
+  padding:16px 18px; margin:0 0 16px; font-size:17px; font-weight:800; color:#33220F; }
 .gateDiagram{ font-family:'Courier New', monospace; background:#FFF6E7; border:2px solid #8A5E31;
-  border-radius:12px; padding:12px 14px; margin:0 0 14px; font-size:14px; line-height:1.5;
+  border-radius:14px; padding:16px 18px; margin:0 0 16px; font-size:16px; line-height:1.65;
   white-space:pre-wrap; text-align:left; color:#33220F; }
-.gateChoices{ display:grid; grid-template-columns:repeat(2, 1fr); gap:10px; margin-bottom:12px; }
-.gateChoiceBtn{ min-height:62px; border:2px solid #8A5E31; border-radius:14px;
-  background:#FFF6E7; color:#33220F; font-size:14px; font-weight:800;
-  padding:10px; cursor:pointer; touch-action:manipulation; }
-.gateFeedback{ min-height:24px; font-size:14px; font-weight:800; color:#5E3D1C; }
+/* Raja: "have more space in down, increase room size according and
+   animated emoji size to cover as much possible in side room like
+   attached ... may increase more than shows in attached" — the reference
+   itself still leaves blank space below Restart; going bigger than it,
+   not just matching it. Choice boxes near double their old height, emoji
+   promoted from "inherits the button's 14px" (effectively invisible) to
+   its own large, centred, block-level size — the actual focal point of
+   each box now, same as the reference's own layout intent. */
+.gateChoices{ display:grid; grid-template-columns:repeat(2, 1fr); gap:14px; margin-bottom:16px; }
+.gateChoiceBtn{ min-height:132px; border:2px solid #8A5E31; border-radius:18px;
+  background:#FFF6E7; color:#33220F; font-size:17px; font-weight:800;
+  padding:14px; cursor:pointer; touch-action:manipulation;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; }
+.gateFeedback{ min-height:26px; font-size:16px; font-weight:800; color:#5E3D1C; }
 .gateFeedback-ok{ color:#0E5A34; }
 .gateFeedback-bad{ color:#9A3412; }
-.gateWin{ font-size:20px; font-weight:900; padding:20px 6px; line-height:1.5; color:#33220F; }
-.gateWinRule{ display:block; font-size:14px; font-weight:700; color:#5E3D1C; margin-top:6px; }
-.gateAgainBtn{ margin-top:6px; padding:12px 22px; border-radius:12px; border:2px solid #8A5E31;
-  background:#8A5E31; color:#FFF6E7; font-size:15px; font-weight:800; cursor:pointer; }
+.gateWin{ font-size:24px; font-weight:900; padding:24px 6px; line-height:1.5; color:#33220F; }
+.gateWinRule{ display:block; font-size:16px; font-weight:700; color:#5E3D1C; margin-top:8px; }
+.gateAgainBtn{ margin-top:8px; padding:14px 24px; border-radius:14px; border:2px solid #8A5E31;
+  background:#8A5E31; color:#FFF6E7; font-size:16px; font-weight:800; cursor:pointer; }
 
 /* "same like attached image with animated emoji effects" — the reference's
    own emoji (🟢🔴❓) sit static; these move, reusing keyframes already built
    elsewhere (Mind Reader's reveal, a completed line, SaNa's own "oops") so
    nothing new is defined here, just pointed at gate logic's own elements. */
-.gateEmoji{ display:inline-block; animation:starPop .5s var(--spring); }
-.gateWinEmoji{ font-size:40px; animation-duration:.7s; }
+.gateEmoji{ display:block; font-size:44px; line-height:1; animation:starPop .5s var(--spring); }
+.gateWinEmoji{ font-size:56px; animation-duration:.7s; }
+/* .gateDiagram used to carry this too, but mrPop's scale(1.14) overshoot on
+   a bordered box with aligned monospace text inside it visibly spilled past
+   its own edges for a fraction of a second before settling back to a
+   perfect fit — confirmed by measuring mid-animation vs after (368px both
+   times; only the transform was different). Real for the instant it's
+   visible, so removed there — kept everywhere else (feedback text, emoji),
+   where an untextured element overshooting its own bounds isn't visible. */
 .gatePop{ animation:mrPop .5s var(--spring); }
 .gateBounce{ animation:badgePop .32s cubic-bezier(.34,1.56,.64,1); }
 .gateShake{ animation:sanaOops .45s ease; }
@@ -4793,7 +4809,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       ];
       el.innerHTML = progress +
         '<div class="gateTip">LOGIC ROOM: What does the ' + g.name.toUpperCase() + ' output for this input?</div>' +
-        '<div class="gateDiagram gatePop">' + gateDiagramHTML(g, row) + '</div>' +
+        '<div class="gateDiagram">' + gateDiagramHTML(g, row) + '</div>' +
         '<div class="gateChoices">' +
           choices.map(function(c){
             return '<button class="gateChoiceBtn" data-val="' + c.val + '">' +
@@ -7516,8 +7532,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-87 (Gate Logic LOGIC sheet: shadow and rounding removed, truly flat)';
-  window.BETA_VER = 'beta-87';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-89 (Gate Logic: fixed the diagram pop-in overflow glitch)';
+  window.BETA_VER = 'beta-89';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
