@@ -5048,16 +5048,36 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     if (puzzle.shape === 'triangle'){
       var TRI_LABELS = ['top corner', 'upper left', 'upper right', 'lower left', 'lower right',
                          'bottom left corner', 'bottom middle left', 'bottom middle right', 'bottom right corner'];
+      /* Raja: "show target... instead just place until end of sequence
+         only" — the pill's own auto-detect (in update(), below) needs 2
+         COMPLETE sides to agree before it shows anything, and a plain
+         1..9 walk finishes sides in a scattered order, so it stayed "?"
+         for most of a round and only popped in near the end. The demo
+         already knows the target — scoped to just this branch (not a
+         change to update() itself, which every other puzzle's demo also
+         relies on): re-assert it after every placement, since update()'s
+         own logic would otherwise reset it back to "?" the moment fewer
+         than 2 sides happen to agree yet. */
+      var demoTarget = null;
+      var showTarget = function(){
+        if (demoTarget === null) return;
+        targetVal.textContent = demoTarget;
+        targetPill.classList.add('preview');
+      };
       var put = function(i, v){
         var c = cells[0][i];
         c.value = String(v);
         c.classList.remove('placing'); void c.offsetWidth; c.classList.add('placing');
         sfx('tick', panForCell(c));
         update();
+        showTarget();
       };
       var clearBoard = function(){
         for (var i = 0; i < 9; i++){ cells[0][i].value = ''; cells[0][i].classList.remove('placing'); }
         clearArrows();
+        demoTarget = null;
+        targetVal.textContent = '?';
+        targetPill.classList.remove('preview');
         update();
       };
 
@@ -5070,6 +5090,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         steps.push({ hold: 3, run: function(){
           msg.textContent = '▶ Target ' + t + ' (' + (ti + 1) + ' of 5) — put 1 in the ' + TRI_LABELS[order[0]] + '.';
           msg.className = '';
+          demoTarget = t;
+          showTarget();
         }});
         steps.push({ hold: 3, run: function(){ put(order[0], 1); }});
 
@@ -7063,8 +7085,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-73 (Triangle Watch demo: pure 1-to-9 arrow walk, no side-grouping)';
-  window.BETA_VER = 'beta-73';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-74 (Triangle Watch demo shows the real Target throughout, not just near the end)';
+  window.BETA_VER = 'beta-74';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
