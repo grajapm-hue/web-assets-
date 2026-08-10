@@ -2745,42 +2745,25 @@ body{ background:#C9A87C !important; }
     </div>
   </div>
 
-  <!-- 🔀 GATE LOGIC — one card per gate, matching every other section: pick
-       any gate, any time, no forced order. Each card opens its own room-by-
-       room walk through THAT gate's whole truth table (not just one row). -->
-  <div class="modeGroup">
+  <!-- 🔀 GATE LOGIC — ONE compact entry, not 7 full rows: the 7 individual
+       gate cards inflated .difficultyBar's natural content height enough
+       to push fitHome()'s --lvScale to its floor (measured: 0.92, the
+       hard-coded LV_MIN) and force the whole list to scroll. That's what
+       squeezed "Choose Difficulty" on Raja's real device — same fragile
+       spot the diffHead row has broken at before, now tripped by content
+       volume elsewhere in the list, not a diffHead change itself. This
+       card opens a picker sheet instead (openGateList), same mechanism
+       every other sheet already uses, so Home's own list height goes
+       back to what it was before Gate Logic existed. -->
+  <div class="modeGroup solo">
     <div class="modeHead" style="--m1:#c4b5fd; --m2:#8b5cf6;">
       <span class="mIco">🔀</span>
       <span><b>Gate Logic</b><i>flip the inputs, watch each gate decide ON or OFF</i></span>
     </div>
     <div class="toggleSwitch">
-      <button class="toggleBtn lvCard" data-gate="and" data-name="AND Gate" style="color:#60a5fa; border-color:#3b82f6; --c1:#9ec7ff; --c2:#60a5fa;">
-        <span class="lvGlyph" aria-hidden="true">∧</span>
-        <span class="lvText"><b class="lvName">AND Gate</b><span class="lvDiff">Both must be ON</span><span class="lvMeta">4 rooms · every input combination</span></span>
-      </button>
-      <button class="toggleBtn lvCard" data-gate="or" data-name="OR Gate" style="color:#4ade80; border-color:#22c55e; --c1:#9cf0bd; --c2:#4ade80;">
-        <span class="lvGlyph" aria-hidden="true">∨</span>
-        <span class="lvText"><b class="lvName">OR Gate</b><span class="lvDiff">Either one is enough</span><span class="lvMeta">4 rooms · every input combination</span></span>
-      </button>
-      <button class="toggleBtn lvCard" data-gate="not" data-name="NOT Gate" style="color:#fbbf24; border-color:#f59e0b; --c1:#fcd98a; --c2:#fbbf24;">
-        <span class="lvGlyph" aria-hidden="true">¬</span>
-        <span class="lvText"><b class="lvName">NOT Gate</b><span class="lvDiff">Flips the input</span><span class="lvMeta">2 rooms · one input, either way</span></span>
-      </button>
-      <button class="toggleBtn lvCard" data-gate="nand" data-name="NAND Gate" style="color:#c084fc; border-color:#a855f7; --c1:#ddb8ff; --c2:#c084fc;">
-        <span class="lvGlyph" aria-hidden="true">⊼</span>
-        <span class="lvText"><b class="lvName">NAND Gate</b><span class="lvDiff">Opposite of AND</span><span class="lvMeta">4 rooms · every input combination</span></span>
-      </button>
-      <button class="toggleBtn lvCard" data-gate="nor" data-name="NOR Gate" style="color:#22d3ee; border-color:#06b6d4; --c1:#86e9f7; --c2:#22d3ee;">
-        <span class="lvGlyph" aria-hidden="true">⊽</span>
-        <span class="lvText"><b class="lvName">NOR Gate</b><span class="lvDiff">Opposite of OR</span><span class="lvMeta">4 rooms · every input combination</span></span>
-      </button>
-      <button class="toggleBtn lvCard" data-gate="xor" data-name="XOR Gate" style="color:#fb923c; border-color:#ea580c; --c1:#fdba8c; --c2:#fb923c;">
-        <span class="lvGlyph" aria-hidden="true">⊕</span>
-        <span class="lvText"><b class="lvName">XOR Gate</b><span class="lvDiff">ON when different</span><span class="lvMeta">4 rooms · every input combination</span></span>
-      </button>
-      <button class="toggleBtn lvCard" data-gate="xnor" data-name="XNOR Gate" style="color:#fb7185; border-color:#e11d48; --c1:#ffb3bf; --c2:#fb7185;">
-        <span class="lvGlyph" aria-hidden="true">⊙</span>
-        <span class="lvText"><b class="lvName">XNOR Gate</b><span class="lvDiff">ON when the same</span><span class="lvMeta">4 rooms · every input combination</span></span>
+      <button class="toggleBtn lvCard" id="gateListBtn" type="button" style="color:#8b5cf6; border-color:#8b5cf6; --c1:#c4b5fd; --c2:#8b5cf6;">
+        <span class="lvGlyph" aria-hidden="true">🔀</span>
+        <span class="lvText"><b class="lvName">7 Logic Gates</b><span class="lvDiff">AND · OR · NOT · NAND · NOR · XOR · XNOR</span><span class="lvMeta">pick one, then walk its whole truth table</span></span>
       </button>
     </div>
   </div>
@@ -4613,20 +4596,20 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   // Back/close/scroll all just work — nothing new to wire for those.
   (function(){
     var GATES = [
-      { key:'and',  name:'AND Gate',  inputs:2, rows:[[0,0,0],[0,1,0],[1,0,0],[1,1,1]],
-        rule:'AND is ON only when BOTH inputs are ON.' },
-      { key:'or',   name:'OR Gate',   inputs:2, rows:[[0,0,0],[0,1,1],[1,0,1],[1,1,1]],
-        rule:'OR is ON when EITHER input is ON.' },
-      { key:'not',  name:'NOT Gate',  inputs:1, rows:[[0,1],[1,0]],
-        rule:'NOT flips the input — ON becomes OFF, OFF becomes ON.' },
-      { key:'nand', name:'NAND Gate', inputs:2, rows:[[0,0,1],[0,1,1],[1,0,1],[1,1,0]],
-        rule:'NAND is the opposite of AND — OFF only when BOTH inputs are ON.' },
-      { key:'nor',  name:'NOR Gate',  inputs:2, rows:[[0,0,1],[0,1,0],[1,0,0],[1,1,0]],
-        rule:'NOR is the opposite of OR — ON only when BOTH inputs are OFF.' },
-      { key:'xor',  name:'XOR Gate',  inputs:2, rows:[[0,0,0],[0,1,1],[1,0,1],[1,1,0]],
-        rule:'XOR is ON when the two inputs are DIFFERENT.' },
-      { key:'xnor', name:'XNOR Gate', inputs:2, rows:[[0,0,1],[0,1,0],[1,0,0],[1,1,1]],
-        rule:'XNOR is ON when the two inputs are the SAME.' }
+      { key:'and',  name:'AND Gate',  glyph:'∧', inputs:2, rows:[[0,0,0],[0,1,0],[1,0,0],[1,1,1]],
+        diff:'Both must be ON', rule:'AND is ON only when BOTH inputs are ON.' },
+      { key:'or',   name:'OR Gate',   glyph:'∨', inputs:2, rows:[[0,0,0],[0,1,1],[1,0,1],[1,1,1]],
+        diff:'Either one is enough', rule:'OR is ON when EITHER input is ON.' },
+      { key:'not',  name:'NOT Gate',  glyph:'¬', inputs:1, rows:[[0,1],[1,0]],
+        diff:'Flips the input', rule:'NOT flips the input — ON becomes OFF, OFF becomes ON.' },
+      { key:'nand', name:'NAND Gate', glyph:'⊼', inputs:2, rows:[[0,0,1],[0,1,1],[1,0,1],[1,1,0]],
+        diff:'Opposite of AND', rule:'NAND is the opposite of AND — OFF only when BOTH inputs are ON.' },
+      { key:'nor',  name:'NOR Gate',  glyph:'⊽', inputs:2, rows:[[0,0,1],[0,1,0],[1,0,0],[1,1,0]],
+        diff:'Opposite of OR', rule:'NOR is the opposite of OR — ON only when BOTH inputs are OFF.' },
+      { key:'xor',  name:'XOR Gate',  glyph:'⊕', inputs:2, rows:[[0,0,0],[0,1,1],[1,0,1],[1,1,0]],
+        diff:'ON when different', rule:'XOR is ON when the two inputs are DIFFERENT.' },
+      { key:'xnor', name:'XNOR Gate', glyph:'⊙', inputs:2, rows:[[0,0,1],[0,1,0],[1,0,0],[1,1,1]],
+        diff:'ON when the same', rule:'XNOR is ON when the two inputs are the SAME.' }
     ];
     var gateState = null;   // { gate, roomIdx }
 
@@ -4709,17 +4692,29 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       renderGateRoom();
     }
 
-    document.querySelectorAll('.toggleBtn[data-gate]').forEach(function(btn){
-      btn.addEventListener('click', function(){ openGate(this.dataset.gate); });
-    });
+    // The Home entry point opens this picker instead of 7 rows sitting
+    // directly in .difficultyBar — .rowBtn is the same class the Get App
+    // screen's own "Play offline"/"About" rows already use.
+    function openGateList(){
+      var html = '<div class="learnRows sheetLearn">' + GATES.map(function(g){
+        return '<button class="rowBtn" data-gate="' + g.key + '" type="button"><i>' + g.glyph + '</i>' +
+          '<span><b>' + g.name + '</b><small>' + g.diff + ' · ' + g.rows.length + ' rooms</small></span></button>';
+      }).join('') + '</div>';
+      openSheet('gateList', '🔀 Gate Logic', html);
+    }
+
+    var gateListBtn = document.getElementById('gateListBtn');
+    if (gateListBtn) gateListBtn.addEventListener('click', function(){ sfx('card'); openGateList(); });
 
     // Delegated on document, not shScroll: this IIFE runs before buildSheets()
     // assigns that variable (script order, not just declaration order), so
     // shScroll is still undefined here. document exists immediately and the
-    // click still bubbles to it regardless of how many times #gateRoom's
-    // innerHTML is replaced — same reasoning as the app's own keypad
-    // delegation, just anchored higher since the sheet host is built later.
+    // click still bubbles to it regardless of how many times sheet content
+    // is replaced — same reasoning as the app's own keypad delegation, just
+    // anchored higher since the sheet host is built later.
     document.addEventListener('click', function(e){
+      var row = e.target.closest('.rowBtn[data-gate]');
+      if (row){ openGate(row.dataset.gate); return; }
       var cb = e.target.closest('.gateChoiceBtn');
       if (cb){ gateChoose(parseInt(cb.dataset.val, 10)); return; }
       var again = e.target.closest('#gateAgainBtn');
@@ -7294,8 +7289,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-79 (Gate Logic: 7 gates, room-by-room, full truth tables)';
-  window.BETA_VER = 'beta-79';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-80 (Gate Logic collapsed to one Home entry — fixes the diffHead squeeze)';
+  window.BETA_VER = 'beta-80';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
