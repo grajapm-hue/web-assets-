@@ -1912,6 +1912,13 @@ body.gateMode #logicBox{ min-height:44vh; }
    whole sheet reads as one surface, edge to edge — scoped to gateMode,
    not the shared .shBody every other sheet also uses. */
 body.gateMode .shBody{ background:#FFF6E7 !important; }
+/* Raja, marking the same screenshot again: matching the colour wasn't
+   enough — #logicBox still carried the shared "clay" card treatment
+   (a real box-shadow plus 20px rounded corners plus its own margin),
+   which draws a visible edge on 3-4 sides regardless of background
+   colour. Flattened to nothing: no shadow, no radius, no margin — a
+   true edge-to-edge surface, not just a colour match. */
+body.gateMode #logicBox{ box-shadow:none !important; border-radius:0 !important; margin:0 !important; }
 
 /* ══ MIND READER — one card at a time ══ */
 /* safe center: on the reveal every child is flex:none, so the answer used to
@@ -7509,8 +7516,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-86 (Gate Logic LOGIC sheet: one flat cream surface, no card seam)';
-  window.BETA_VER = 'beta-86';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-87 (Gate Logic LOGIC sheet: shadow and rounding removed, truly flat)';
+  window.BETA_VER = 'beta-87';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
