@@ -1905,6 +1905,13 @@ body.gateMode #gatePanel{ display:block !important; }
    the screen. Scoped to gateMode only, not the shared .shBody used by
    every other sheet — this doesn't touch Learn/About/Offline's own sizing. */
 body.gateMode #logicBox{ min-height:44vh; }
+/* Raja: "may better if white text was sheet cover four side with cream
+   background" — #logicBox (#FFF6E7) floated as a visibly separate card
+   with a 25px gap of .shBody's own tan (#F3E4C9) showing around it on
+   every side. Same cream on both now, so the seam disappears and the
+   whole sheet reads as one surface, edge to edge — scoped to gateMode,
+   not the shared .shBody every other sheet also uses. */
+body.gateMode .shBody{ background:#FFF6E7 !important; }
 
 /* ══ MIND READER — one card at a time ══ */
 /* safe center: on the reveal every child is flex:none, so the answer used to
@@ -7502,8 +7509,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-85 (Gate Logic LOGIC sheet sits higher, not tucked in the bottom third)';
-  window.BETA_VER = 'beta-85';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-86 (Gate Logic LOGIC sheet: one flat cream surface, no card seam)';
+  window.BETA_VER = 'beta-86';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
