@@ -2129,7 +2129,12 @@ body.binaryMode #binaryPanel{ display:flex !important; }
    multi-colour background has nowhere to stand out — on the new candy
    background the tagline simply dissolved. One fixed colour and a shadow
    reads on every part of it. */
-.splashTag{ font-size:12.5px; font-weight:800; line-height:1.55; margin-top:8px; max-width:22em;
+/* Raja: "keep a word habit of monkey and maths as center align" — text-align:
+   center was already correct (measured: both wrapped lines centre on the
+   same x), but the box itself wasn't. A block div with max-width and no
+   margin:auto just anchors to its container's left padding edge instead of
+   centring as a box — measured 31.5px left of the true centre before this. */
+.splashTag{ font-size:12.5px; font-weight:800; line-height:1.55; margin:8px auto 0; max-width:22em;
   color:#FFFFFF; text-shadow:0 2px 8px rgba(0,0,0,.55), 0 0 2px rgba(0,0,0,.45);
   animation:splashUp .4s .28s both; }
 /* Bigger — it was too timid to find. Still quieter than Tap to play, but a
@@ -7085,8 +7090,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-75 (Angle Magic removed from Coming Soon -- it became Triangle Magic)';
-  window.BETA_VER = 'beta-75';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-76 (splash tagline box actually centered, not just its text)';
+  window.BETA_VER = 'beta-76';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
