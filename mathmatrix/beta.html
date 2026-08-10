@@ -4824,8 +4824,15 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       var g = st.gate, el = document.getElementById('gateRoom');
       if (!el) return;
       sfx('unlock');
+      // Raja: "when end the puzzle ... will Pop appreciation by monkey dice
+      // will better look" — same celebration a real puzzle win already
+      // gets (celebrate()'s confetti burst, SaNa's own 'party' line), not
+      // new code, just Gate Logic reaching for what already exists. 🐒🎲
+      // is the same mascot pair Home's own diffMascot uses.
+      try { celebrate(); } catch(e){}
+      try { sana('<b>' + g.name + ' — solved!</b> Nice work.', 'party', true); } catch(e){}
       el.innerHTML =
-        '<div class="gateWin"><span class="gateEmoji gateWinEmoji">🎉</span><br>' + g.name + ' solved!' +
+        '<div class="gateWin"><span class="gateEmoji gateWinEmoji">🎉 🐒🎲</span><br>' + g.name + ' solved!' +
           '<span class="gateWinRule">' + g.rule + '</span></div>' +
         '<button class="gateAgainBtn" id="gateAgainBtn" type="button">↻ Play Again</button>';
     }
@@ -7532,8 +7539,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-89 (Gate Logic: fixed the diagram pop-in overflow glitch)';
-  window.BETA_VER = 'beta-89';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-90 (Gate Logic win: confetti + SaNa cheer + monkey-dice pop)';
+  window.BETA_VER = 'beta-90';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
