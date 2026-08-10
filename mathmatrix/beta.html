@@ -894,15 +894,15 @@
   }
 
   /* clay depth — light from top-left, shadow beneath, soft inner rim */
-  .cell, .toggleBtn, .kp, .btnRow button, #timerBox, .binCard, .comingChip, .convBit, .convDec{
+  .cell, .toggleBtn, .kp, .btnRow button, #timerBox, .binCard, .comingChip, .convBit, .convDec, .gateChoiceBtn{
     box-shadow: 4px 4px 10px rgba(0,0,0,.42), -3px -3px 8px rgba(255,255,255,.05),
                 inset 1px 1px 2px rgba(255,255,255,.08), inset -2px -2px 4px rgba(0,0,0,.22) !important;
   }
   /* squish on press — like real silicone */
-  .cell, .toggleBtn, .kp, .btnRow button, .comingChip, .binCard, .convBit{
+  .cell, .toggleBtn, .kp, .btnRow button, .comingChip, .binCard, .convBit, .gateChoiceBtn{
     transition: transform .13s cubic-bezier(.34,1.56,.64,1), box-shadow .13s ease, background .2s ease;
   }
-  .toggleBtn:active, .kp:active, .btnRow button:active, .binCard:active, .convBit:active{
+  .toggleBtn:active, .kp:active, .btnRow button:active, .binCard:active, .convBit:active, .gateChoiceBtn:active{
     transform: scale(.93) !important;
     box-shadow: inset 4px 4px 9px rgba(0,0,0,.45), inset -2px -2px 6px rgba(255,255,255,.06) !important;
   }
@@ -2435,6 +2435,31 @@ body{ background:#C9A87C !important; }
   border-radius:9px !important; padding:7px 10px !important; margin:0 0 9px !important;
   color:#0E5A34 !important; font-weight:800 !important; font-size:12.5px !important; }
 
+/* ══ GATE LOGIC — one room per truth-table row, inside the sheet system ══
+   Raja: "as much possible choices of using gate logic which creates eager
+   to kids play and learn gate logics" -- room-by-room like the reference,
+   but scoped one card per gate (matches every other puzzle: pick any,
+   any time, no forced order) and covering the WHOLE truth table per gate,
+   not one lucky row. Sandalwood, not the reference's dark theme. */
+.gateProgress{ font-size:11.5px; font-weight:900; letter-spacing:.6px; text-transform:uppercase;
+  color:#8A5E31; margin-bottom:8px; }
+.gateTip{ background:#F3E4C9; border:2px solid #C4A277; border-radius:12px;
+  padding:12px 14px; margin:0 0 12px; font-size:14.5px; font-weight:800; color:#33220F; }
+.gateDiagram{ font-family:'Courier New', monospace; background:#FFF6E7; border:2px solid #8A5E31;
+  border-radius:12px; padding:12px 14px; margin:0 0 14px; font-size:14px; line-height:1.5;
+  white-space:pre-wrap; text-align:left; color:#33220F; }
+.gateChoices{ display:grid; grid-template-columns:repeat(2, 1fr); gap:10px; margin-bottom:12px; }
+.gateChoiceBtn{ min-height:62px; border:2px solid #8A5E31; border-radius:14px;
+  background:#FFF6E7; color:#33220F; font-size:14px; font-weight:800;
+  padding:10px; cursor:pointer; touch-action:manipulation; }
+.gateFeedback{ min-height:24px; font-size:14px; font-weight:800; color:#5E3D1C; }
+.gateFeedback-ok{ color:#0E5A34; }
+.gateFeedback-bad{ color:#9A3412; }
+.gateWin{ font-size:20px; font-weight:900; padding:20px 6px; line-height:1.5; color:#33220F; }
+.gateWinRule{ display:block; font-size:14px; font-weight:700; color:#5E3D1C; margin-top:6px; }
+.gateAgainBtn{ margin-top:6px; padding:12px 22px; border-radius:12px; border:2px solid #8A5E31;
+  background:#8A5E31; color:#FFF6E7; font-size:15px; font-weight:800; cursor:pointer; }
+
 @media(prefers-reduced-motion:reduce){ *{ animation:none !important; } }
 </style>
 </head>
@@ -2720,9 +2745,44 @@ body{ background:#C9A87C !important; }
     </div>
   </div>
 
-  <div class="comingWrap">
-    <span class="comingLabel">🔜 Coming Soon</span>
-    <button class="comingChip" data-soon="Logic Gates">🔀 Logic Gates</button>
+  <!-- 🔀 GATE LOGIC — one card per gate, matching every other section: pick
+       any gate, any time, no forced order. Each card opens its own room-by-
+       room walk through THAT gate's whole truth table (not just one row). -->
+  <div class="modeGroup">
+    <div class="modeHead" style="--m1:#c4b5fd; --m2:#8b5cf6;">
+      <span class="mIco">🔀</span>
+      <span><b>Gate Logic</b><i>flip the inputs, watch each gate decide ON or OFF</i></span>
+    </div>
+    <div class="toggleSwitch">
+      <button class="toggleBtn lvCard" data-gate="and" data-name="AND Gate" style="color:#60a5fa; border-color:#3b82f6; --c1:#9ec7ff; --c2:#60a5fa;">
+        <span class="lvGlyph" aria-hidden="true">∧</span>
+        <span class="lvText"><b class="lvName">AND Gate</b><span class="lvDiff">Both must be ON</span><span class="lvMeta">4 rooms · every input combination</span></span>
+      </button>
+      <button class="toggleBtn lvCard" data-gate="or" data-name="OR Gate" style="color:#4ade80; border-color:#22c55e; --c1:#9cf0bd; --c2:#4ade80;">
+        <span class="lvGlyph" aria-hidden="true">∨</span>
+        <span class="lvText"><b class="lvName">OR Gate</b><span class="lvDiff">Either one is enough</span><span class="lvMeta">4 rooms · every input combination</span></span>
+      </button>
+      <button class="toggleBtn lvCard" data-gate="not" data-name="NOT Gate" style="color:#fbbf24; border-color:#f59e0b; --c1:#fcd98a; --c2:#fbbf24;">
+        <span class="lvGlyph" aria-hidden="true">¬</span>
+        <span class="lvText"><b class="lvName">NOT Gate</b><span class="lvDiff">Flips the input</span><span class="lvMeta">2 rooms · one input, either way</span></span>
+      </button>
+      <button class="toggleBtn lvCard" data-gate="nand" data-name="NAND Gate" style="color:#c084fc; border-color:#a855f7; --c1:#ddb8ff; --c2:#c084fc;">
+        <span class="lvGlyph" aria-hidden="true">⊼</span>
+        <span class="lvText"><b class="lvName">NAND Gate</b><span class="lvDiff">Opposite of AND</span><span class="lvMeta">4 rooms · every input combination</span></span>
+      </button>
+      <button class="toggleBtn lvCard" data-gate="nor" data-name="NOR Gate" style="color:#22d3ee; border-color:#06b6d4; --c1:#86e9f7; --c2:#22d3ee;">
+        <span class="lvGlyph" aria-hidden="true">⊽</span>
+        <span class="lvText"><b class="lvName">NOR Gate</b><span class="lvDiff">Opposite of OR</span><span class="lvMeta">4 rooms · every input combination</span></span>
+      </button>
+      <button class="toggleBtn lvCard" data-gate="xor" data-name="XOR Gate" style="color:#fb923c; border-color:#ea580c; --c1:#fdba8c; --c2:#fb923c;">
+        <span class="lvGlyph" aria-hidden="true">⊕</span>
+        <span class="lvText"><b class="lvName">XOR Gate</b><span class="lvDiff">ON when different</span><span class="lvMeta">4 rooms · every input combination</span></span>
+      </button>
+      <button class="toggleBtn lvCard" data-gate="xnor" data-name="XNOR Gate" style="color:#fb7185; border-color:#e11d48; --c1:#ffb3bf; --c2:#fb7185;">
+        <span class="lvGlyph" aria-hidden="true">⊙</span>
+        <span class="lvText"><b class="lvName">XNOR Gate</b><span class="lvDiff">ON when the same</span><span class="lvMeta">4 rooms · every input combination</span></span>
+      </button>
+    </div>
   </div>
   <!-- Raja: keep the version at the bottom of the puzzle table too, not just
        the BETA flag up top — so it's still checkable after scrolling all the
@@ -3314,7 +3374,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   var timerInt = null, startTime = null;
   // Difficulty toggle — every level is open to free choice (grade labels are the guide).
   // Reward/applause on solving stays; there is no lock.
-  document.querySelectorAll('.toggleBtn').forEach(function(btn){
+  // [data-size]: Gate Logic reuses .toggleBtn/.lvCard for identical styling but
+  // has its own data-gate + click handling (not a grid puzzle) — must not fall
+  // into this handler, which assumes a PUZZLES[newSize] grid exists.
+  document.querySelectorAll('.toggleBtn[data-size]').forEach(function(btn){
     btn.addEventListener('click', function(){
       // If a congrats countdown is running, cancel it — player chose their own level
       if (_congratsAutoTimer){ clearInterval(_congratsAutoTimer); _congratsAutoTimer = null; }
@@ -4538,6 +4601,129 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         // per-platform instructions, same sheet Home's offline chip opens.
         openSheet('offline', '📲 Play offline');
       });
+    });
+  })();
+
+  // ---- Gate Logic — 7 gate cards, each its own room-by-room walk through
+  // that gate's whole truth table ------------------------------------------
+  // Raja: "as much possible choices of using gate logic which creates eager
+  // to kids play and learn gate logics" — every standard gate, every row of
+  // its table, not one lucky guess. Rooms live inside the existing sheet
+  // system (openSheet with dynamic content, same as openLearnMenu's), so
+  // Back/close/scroll all just work — nothing new to wire for those.
+  (function(){
+    var GATES = [
+      { key:'and',  name:'AND Gate',  inputs:2, rows:[[0,0,0],[0,1,0],[1,0,0],[1,1,1]],
+        rule:'AND is ON only when BOTH inputs are ON.' },
+      { key:'or',   name:'OR Gate',   inputs:2, rows:[[0,0,0],[0,1,1],[1,0,1],[1,1,1]],
+        rule:'OR is ON when EITHER input is ON.' },
+      { key:'not',  name:'NOT Gate',  inputs:1, rows:[[0,1],[1,0]],
+        rule:'NOT flips the input — ON becomes OFF, OFF becomes ON.' },
+      { key:'nand', name:'NAND Gate', inputs:2, rows:[[0,0,1],[0,1,1],[1,0,1],[1,1,0]],
+        rule:'NAND is the opposite of AND — OFF only when BOTH inputs are ON.' },
+      { key:'nor',  name:'NOR Gate',  inputs:2, rows:[[0,0,1],[0,1,0],[1,0,0],[1,1,0]],
+        rule:'NOR is the opposite of OR — ON only when BOTH inputs are OFF.' },
+      { key:'xor',  name:'XOR Gate',  inputs:2, rows:[[0,0,0],[0,1,1],[1,0,1],[1,1,0]],
+        rule:'XOR is ON when the two inputs are DIFFERENT.' },
+      { key:'xnor', name:'XNOR Gate', inputs:2, rows:[[0,0,1],[0,1,0],[1,0,0],[1,1,1]],
+        rule:'XNOR is ON when the two inputs are the SAME.' }
+    ];
+    var gateState = null;   // { gate, roomIdx }
+
+    function gateShortName(g){ return g.name.replace(' Gate', ''); }
+
+    function gateDiagramHTML(g, row){
+      if (g.inputs === 1){
+        return 'A = ' + (row[0] ? 'ON' : 'OFF') + '\n\nA ──► ' + gateShortName(g) + ' ──► ?';
+      }
+      return 'A = ' + (row[0] ? 'ON' : 'OFF') + '\nB = ' + (row[1] ? 'ON' : 'OFF') +
+        '\n\nA ──┐\n    ├── ' + gateShortName(g) + ' ──► ?\nB ──┘';
+    }
+
+    // A confusable-gate decoy — the classic mix-up (AND/OR, and OR for
+    // everything else). Kept to one simple rule rather than a hand-tuned
+    // table per gate: still teaches "this isn't automatically that gate".
+    function decoyGateName(g){ return g.key === 'or' ? 'AND' : 'OR'; }
+
+    function renderGateRoom(){
+      var st = gateState; if (!st) return;
+      var g = st.gate, row = g.rows[st.roomIdx];
+      var el = document.getElementById('gateRoom');
+      if (!el) return;
+      var choices = [
+        { label:'🟢 ON / TRUE', val:1 },
+        { label:'🔴 OFF / FALSE', val:0 },
+        { label:'❓ Cannot know', val:-1 },
+        { label:'↔️ Same as ' + decoyGateName(g), val:-2 }
+      ];
+      el.innerHTML =
+        '<div class="gateProgress">Room ' + (st.roomIdx + 1) + ' of ' + g.rows.length + ' — ' + g.name + '</div>' +
+        '<div class="gateTip">What does the ' + g.name.toUpperCase() + ' output for this input?</div>' +
+        '<div class="gateDiagram">' + gateDiagramHTML(g, row) + '</div>' +
+        '<div class="gateChoices">' +
+          choices.map(function(c){ return '<button class="gateChoiceBtn" data-val="' + c.val + '">' + c.label + '</button>'; }).join('') +
+        '</div>' +
+        '<div class="gateFeedback" id="gateFeedback">Touch one of the four boxes.</div>';
+    }
+
+    function renderGateDone(){
+      var st = gateState; if (!st) return;
+      var g = st.gate, el = document.getElementById('gateRoom');
+      if (!el) return;
+      sfx('unlock');
+      el.innerHTML =
+        '<div class="gateWin">🎉<br>' + g.name + ' solved!' +
+          '<span class="gateWinRule">' + g.rule + '</span></div>' +
+        '<button class="gateAgainBtn" id="gateAgainBtn" type="button">↻ Play Again</button>';
+    }
+
+    function gateChoose(val){
+      var st = gateState; if (!st) return;
+      var g = st.gate, row = g.rows[st.roomIdx], correct = row[row.length - 1];
+      var fb = document.getElementById('gateFeedback');
+      if (!fb) return;
+      if (val === correct){
+        sfx('yes');
+        fb.textContent = '✅ Correct!';
+        fb.className = 'gateFeedback gateFeedback-ok';
+        setTimeout(function(){
+          if (gateState !== st) return;             // sheet was closed/reopened mid-wait
+          st.roomIdx++;
+          if (st.roomIdx >= g.rows.length) renderGateDone();
+          else renderGateRoom();
+        }, 700);
+      } else {
+        sfx('no');
+        fb.textContent = '❌ Not quite. ' + g.rule;
+        fb.className = 'gateFeedback gateFeedback-bad';
+      }
+    }
+
+    function openGate(key){
+      var g = null;
+      for (var i = 0; i < GATES.length; i++) if (GATES[i].key === key) g = GATES[i];
+      if (!g) return;
+      gateState = { gate: g, roomIdx: 0 };
+      sfx('card');
+      openSheet('gate-' + key, g.name, '<div id="gateRoom"></div>');
+      renderGateRoom();
+    }
+
+    document.querySelectorAll('.toggleBtn[data-gate]').forEach(function(btn){
+      btn.addEventListener('click', function(){ openGate(this.dataset.gate); });
+    });
+
+    // Delegated on document, not shScroll: this IIFE runs before buildSheets()
+    // assigns that variable (script order, not just declaration order), so
+    // shScroll is still undefined here. document exists immediately and the
+    // click still bubbles to it regardless of how many times #gateRoom's
+    // innerHTML is replaced — same reasoning as the app's own keypad
+    // delegation, just anchored higher since the sheet host is built later.
+    document.addEventListener('click', function(e){
+      var cb = e.target.closest('.gateChoiceBtn');
+      if (cb){ gateChoose(parseInt(cb.dataset.val, 10)); return; }
+      var again = e.target.closest('#gateAgainBtn');
+      if (again && gateState){ gateState.roomIdx = 0; sfx('card'); renderGateRoom(); }
     });
   })();
 
@@ -5778,8 +5964,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   initBoard = function(){ _initBoard.apply(null, arguments); tagCorners(); };
   tagCorners();
 
-  // SaNa introduces each puzzle as you pick it
-  document.querySelectorAll('.toggleBtn').forEach(function(btn){
+  // SaNa introduces each puzzle as you pick it (Gate Logic excluded — see
+  // the [data-size] guard above; its own handler below has its own line)
+  document.querySelectorAll('.toggleBtn[data-size]').forEach(function(btn){
     btn.addEventListener('click', function(){
       sfx('card');
       var nm = this.dataset.name || this.textContent.trim();
@@ -7107,8 +7294,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-78 (Install chip beside the offline note on Home)';
-  window.BETA_VER = 'beta-78';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-79 (Gate Logic: 7 gates, room-by-room, full truth tables)';
+  window.BETA_VER = 'beta-79';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
