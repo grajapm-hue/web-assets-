@@ -5065,10 +5065,25 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         '<div class="gateWin"><span class="gateEmoji gateWinEmoji">🎉 🐒🎲</span><br>' + g.name + levelTag + ' solved!' +
           '<span class="gateWinRule">' + g.rule + '</span></div>' +
         (hasNext
-          ? '<button class="gateNextLevelBtn" id="gateNextLevelBtn" type="button">▶ Unlocked: ' +
+          ? '<button class="gateNextLevelBtn" id="gateNextLevelBtn" type="button" disabled>▶ Unlocked: ' +
               g.levels[st.levelIdx + 1].inputs + '-input ' + gateShortName(g) + '</button>'
           : '') +
-        '<button class="gateAgainBtn" id="gateAgainBtn" type="button">↻ Play Again</button>';
+        '<button class="gateAgainBtn" id="gateAgainBtn" type="button" disabled>↻ Play Again</button>';
+      // Raja: "after win the 2input puzzle not showing 3input card ...
+      // directly shows ask question" — the tap that answers the LAST
+      // question (or taps Next ▶) can register a second time immediately
+      // after this screen renders, landing on whichever button now sits
+      // where that tap was — skipping straight past the win screen the
+      // player should actually see and choose from. A disabled button
+      // fires no click at all natively, so a brief window where these two
+      // genuinely cannot be tapped closes this off regardless of the exact
+      // cause (ghost click, a real fast double-tap, anything) — same idea
+      // already proven for the Next ▶ button's own double-fire guard.
+      setTimeout(function(){
+        var nb = document.getElementById('gateNextLevelBtn'), ab = document.getElementById('gateAgainBtn');
+        if (nb) nb.disabled = false;
+        if (ab) ab.disabled = false;
+      }, 450);
     }
 
     function gateChoose(val){
@@ -8039,8 +8054,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-114 (Gate Logic: 3-input and 5-input sub-levels, unlocked one at a time)';
-  window.BETA_VER = 'beta-114';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-115 (Gate Logic win screen: a brief guard so the finishing tap can\'t also skip straight past it)';
+  window.BETA_VER = 'beta-115';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
