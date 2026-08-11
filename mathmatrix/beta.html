@@ -6255,7 +6255,18 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   // but one link, one message, one code path. Each button restores its own
   // label, so the feedback appears where the finger actually was.
   (function(){
-    var LINK = 'https://kidsmathsmatrixpuzzle.github.io';
+    // Raja: "copy link doing to old v132" — this was hardcoded to
+    // production's own nice URL, copied over from KidsMathsMatrixPuzzle.html
+    // verbatim without adjusting it for beta. Made sense there (production
+    // wants people sharing the clean branded link, not a raw path) but on
+    // beta it silently sent every tester to a completely different, frozen,
+    // months-old build with none of this work in it. location.origin +
+    // location.pathname (no query string, no #fragment -- this app uses
+    // neither for routing) always reflects wherever THIS exact file is
+    // actually being served, so Share/Copy Link point at what's really on
+    // screen, on beta now and just as correctly once this becomes the real
+    // production file later -- nothing to remember to change at promotion time.
+    var LINK = location.origin + location.pathname;
     var TEXT = '🐒🎲 MathMatrix Pro++ — magic square puzzles for kids (5th grade & up). '
              + '3×3 to 10×10 plus 3³ Multiply Magic. Free, works offline, no ads.';
     function wire(btn){
@@ -7847,8 +7858,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-112 (Share reverted to plain sharing; a real, separate Copy Link button on Get App instead)';
-  window.BETA_VER = 'beta-112';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-113 (Share/Copy Link now point at THIS page, not the old frozen v132 mirror)';
+  window.BETA_VER = 'beta-113';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
