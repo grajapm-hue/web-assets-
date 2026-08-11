@@ -8,6 +8,13 @@
   "orientation": "portrait",
   "background_color": "#1B1442",
   "theme_color": "#8b5cf6",
+  "prefer_related_applications": false,
+  "related_applications": [
+    {
+      "platform": "webapp",
+      "url": "https://grajapm-hue.github.io/web-assets-/mathmatrix/beta-manifest.json"
+    }
+  ],
   "icons": [
     {
       "src": "icon-192.png",
