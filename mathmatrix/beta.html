@@ -4739,6 +4739,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // (2 warm-ups, not 3) since "as much possible choices of using gate
     // logic" was the very first ask this whole feature started from —
     // a shared pool so 7 gates don't all open on the identical 2 questions.
+    // Raja: "show different animals in each card to another card room" —
+    // 14 entries, one for each of the 7 gates' 2 warm-up rooms exactly
+    // (GATES.length * WARMUP_COUNT), so gateWarmup's index never has to
+    // wrap around and repeat one gate's questions on another's.
     var WARMUPS = [
       { tip:'Choose the animal that gives us milk.', choices:[
           {emoji:'🦁',text:'Lion'},{emoji:'🐘',text:'Elephant'},{emoji:'🐄',text:'Cow',ok:true},{emoji:'🐅',text:'Tiger'}] },
@@ -4746,12 +4750,28 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           {emoji:'🐟',text:'Fish'},{emoji:'🦅',text:'Eagle',ok:true},{emoji:'🐄',text:'Cow'},{emoji:'🐕',text:'Dog'}] },
       { tip:'Choose the animal that lives in water.', choices:[
           {emoji:'🐕',text:'Dog'},{emoji:'🐟',text:'Fish',ok:true},{emoji:'🐘',text:'Elephant'},{emoji:'🐎',text:'Horse'}] },
-      { tip:'Choose the shape with 3 sides.', choices:[
-          {emoji:'⬛',text:'Square'},{emoji:'🔺',text:'Triangle',ok:true},{emoji:'⭕',text:'Circle'},{emoji:'⭐',text:'Star'}] },
-      { tip:'Choose the colour you get by mixing blue and yellow.', choices:[
-          {emoji:'🟩',text:'Green',ok:true},{emoji:'🟥',text:'Red'},{emoji:'🟪',text:'Purple'},{emoji:'🟧',text:'Orange'}] },
-      { tip:'Choose the number that comes right after 9.', choices:[
-          {emoji:'8️⃣',text:'8'},{emoji:'🔟',text:'10',ok:true},{emoji:'2️⃣',text:'12'},{emoji:'5️⃣',text:'5'}] }
+      { tip:'Choose the biggest land animal.', choices:[
+          {emoji:'🐘',text:'Elephant',ok:true},{emoji:'🦁',text:'Lion'},{emoji:'🐎',text:'Horse'},{emoji:'🐕',text:'Dog'}] },
+      { tip:'Choose the animal known for its loud roar.', choices:[
+          {emoji:'🦁',text:'Lion',ok:true},{emoji:'🐄',text:'Cow'},{emoji:'🐟',text:'Fish'},{emoji:'🐇',text:'Rabbit'}] },
+      { tip:'Choose the animal with a long trunk.', choices:[
+          {emoji:'🐘',text:'Elephant',ok:true},{emoji:'🦒',text:'Giraffe'},{emoji:'🦓',text:'Zebra'},{emoji:'🐻',text:'Bear'}] },
+      { tip:'Choose the animal with black and white stripes.', choices:[
+          {emoji:'🦓',text:'Zebra',ok:true},{emoji:'🦁',text:'Lion'},{emoji:'🐼',text:'Panda'},{emoji:'🦊',text:'Fox'}] },
+      { tip:'Choose the animal that loves bananas.', choices:[
+          {emoji:'🐒',text:'Monkey',ok:true},{emoji:'🐘',text:'Elephant'},{emoji:'🐅',text:'Tiger'},{emoji:'🦉',text:'Owl'}] },
+      { tip:'Choose the animal that hops instead of walking.', choices:[
+          {emoji:'🐇',text:'Rabbit',ok:true},{emoji:'🐕',text:'Dog'},{emoji:'🐈',text:'Cat'},{emoji:'🐄',text:'Cow'}] },
+      { tip:'Choose the animal with a very long neck.', choices:[
+          {emoji:'🦒',text:'Giraffe',ok:true},{emoji:'🦓',text:'Zebra'},{emoji:'🐎',text:'Horse'},{emoji:'🐫',text:'Camel'}] },
+      { tip:'Choose the animal that carries its home on its back.', choices:[
+          {emoji:'🐢',text:'Turtle',ok:true},{emoji:'🐸',text:'Frog'},{emoji:'🐍',text:'Snake'},{emoji:'🐟',text:'Fish'}] },
+      { tip:'Choose the animal called the "King of the Jungle".', choices:[
+          {emoji:'🦁',text:'Lion',ok:true},{emoji:'🐅',text:'Tiger'},{emoji:'🐘',text:'Elephant'},{emoji:'🐻',text:'Bear'}] },
+      { tip:'Choose the animal known for being very slow.', choices:[
+          {emoji:'🐌',text:'Snail',ok:true},{emoji:'🐆',text:'Cheetah'},{emoji:'🐎',text:'Horse'},{emoji:'🐇',text:'Rabbit'}] },
+      { tip:'Choose the animal that says "moo".', choices:[
+          {emoji:'🐄',text:'Cow',ok:true},{emoji:'🐑',text:'Sheep'},{emoji:'🐐',text:'Goat'},{emoji:'🐖',text:'Pig'}] }
     ];
     var WARMUP_COUNT = 2;
     function gateWarmup(g, roomIdx){
@@ -4885,9 +4905,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         // .gateEmoji (not the whole pill) carries the pop animation —
         // small and inline, so it cannot spill past the pill's own edges
         // the way animating the whole bordered box did (beta-94's bug).
+        var mascotPop = ' <span class="gateEmoji" style="display:inline-block; font-size:28px;">🐒🎲</span>';
         fb.innerHTML = enteringLogic
-          ? '🎉 Warm-up done! Now the real logic begins…'
-          : '✅ ' + cheer + ' <span class="gateEmoji" style="display:inline-block; font-size:28px;">🐒🎲</span>';
+          ? '🎉 Warm-up done! Now the real logic begins…' + mascotPop
+          : '✅ ' + cheer + mascotPop;
         // No .gatePop on the pill itself: same bug as the diagram
         // (beta-89) — mrPop's scale(1.14) overshoot on an element with a
         // real background and border visibly spills past its own
@@ -4901,12 +4922,20 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
             sana('<b>' + cheer + '</b>', 'cheer');
           }
         } catch(e){}
+        // Raja: "the time delay in every answer little more should reduce
+        // to a second, but not in win appreciation that's should keep
+        // some seconds" — 3.5s/5s was asked for when the appreciation
+        // wasn't visible at all; now that it reliably shows (confirmed),
+        // routine per-answer progress can move again. The win screen
+        // itself has no timer to shorten — it already waits for a tap
+        // (Play Again / All Gates), which is what "keep some seconds"
+        // actually needs.
         setTimeout(function(){
           if (gateState !== st) return;             // room was left/reopened mid-wait
           st.roomIdx++;
           if (st.roomIdx >= total) renderGateDone();
           else renderGateRoom();
-        }, enteringLogic ? 5000 : 3500);
+        }, 1200);
       } else {
         sfx('no');
         if (btn){
@@ -7585,8 +7614,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-96 (Gate Logic: monkey-dice pop on every correct answer)';
-  window.BETA_VER = 'beta-96';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-97 (Gate Logic: faster pacing, 14 unique animal warm-ups)';
+  window.BETA_VER = 'beta-97';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
