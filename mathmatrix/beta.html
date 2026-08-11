@@ -5068,7 +5068,18 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           ? '<button class="gateNextLevelBtn" id="gateNextLevelBtn" type="button" disabled>▶ Unlocked: ' +
               g.levels[st.levelIdx + 1].inputs + '-input ' + gateShortName(g) + '</button>'
           : '') +
-        '<button class="gateAgainBtn" id="gateAgainBtn" type="button" disabled>↻ Play Again</button>';
+        // Raja: "where is 3 input kids play rooms" — traced it to a mix-up,
+        // not a code bug: this button correctly replays the SAME level it
+        // always has, but "Play Again" alone doesn't say which level, so it
+        // reads just as easily as "play the next thing" — an honest tap on
+        // the wrong of two buttons sitting right next to each other. Naming
+        // the level explicitly, same as the gold button right above it
+        // already does, removes the ambiguity — only where that ambiguity
+        // exists (a gate with more than one level); NOT only ever has the
+        // one, so plain "Play Again" there was never actually confusing.
+        '<button class="gateAgainBtn" id="gateAgainBtn" type="button" disabled>↻ ' +
+          (g.levels.length > 1 ? ('Replay ' + level.inputs + '-input ' + gateShortName(g)) : 'Play Again') +
+          '</button>';
       // Raja: "after win the 2input puzzle not showing 3input card ...
       // directly shows ask question" — the tap that answers the LAST
       // question (or taps Next ▶) can register a second time immediately
@@ -8054,8 +8065,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-115 (Gate Logic win screen: a brief guard so the finishing tap can\'t also skip straight past it)';
-  window.BETA_VER = 'beta-115';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-116 (Gate Logic win screen: "Play Again" now names the level it replays, so it can\'t be mistaken for the next one)';
+  window.BETA_VER = 'beta-116';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
