@@ -796,7 +796,19 @@
      chosen level button, so the whole app changes personality per puzzle. */
   :root{ --accent:#60a5fa; --accent2:#3b82f6; }
   body{ padding:0 !important; display:block !important; }
-  .appShell{ display:flex; flex-direction:column; min-height:100vh; width:100%; }
+  /* No min-height here on purpose. Raja, Brave on Android: "scrolling is
+     locked unable to scroll" -- the real .appShell sizing rule further down
+     (height:100dvh / height:100vh / max-height:100dvh) already fully
+     specifies height, and per spec min-height ALWAYS overrides max-height
+     when they conflict. A leftover min-height:100vh here was silently
+     defeating that dvh cap on any browser whose persistent chrome (Brave's
+     own extra toolbar, on top of Android's) makes 100vh taller than what is
+     actually visible -- forcing the shell past the real screen with no way
+     to reach the rest, since outer page scroll is deliberately blocked
+     everywhere else in this app. Confirmed with a plain min/max-height
+     conflict on a throwaway element: it renders at the min, ignoring the
+     cap, exactly this shape. */
+  .appShell{ display:flex; flex-direction:column; width:100%; }
   .appBar{ position:sticky; top:0; z-index:50; display:flex; align-items:center; gap:10px;
     padding:10px 12px; background:rgba(6,6,16,.88); -webkit-backdrop-filter:blur(14px);
     backdrop-filter:blur(14px); border-bottom:1px solid rgba(255,255,255,.09); }
@@ -7692,8 +7704,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-103 (splash: recommends Chrome on Android / Safari on iPhone, when not already on it)';
-  window.BETA_VER = 'beta-103';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-104 (appShell: dropped a leftover min-height that was defeating the dvh cap on browsers like Brave)';
+  window.BETA_VER = 'beta-104';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
