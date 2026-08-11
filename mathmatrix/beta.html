@@ -5404,7 +5404,14 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         picker.style.display = 'block';
       }
       var lb = document.getElementById('logicBox');
-      if (lb) lb.innerHTML = '<h3>📐 ' + g.name + '</h3><p>' + g.rule + '</p><p>Pick a level below to begin.</p>';
+      // Raja: "some tune unified to all logic notes like truth table along
+      // instructions" — this popup (before a level is picked) had only the
+      // rule sentence, while the SAME 💡 button inside a room already shows
+      // a full truth table (gateLogicBoxHTML). Reuses that, level 0 (2-input,
+      // every multi-level gate's first/simplest table) standing in for the
+      // gate as a whole here, same shared function so any future gate gets
+      // it automatically too.
+      if (lb) lb.innerHTML = gateLogicBoxHTML(g, 0) + '<p>Pick a level below to begin.</p>';
     }
 
     // Multi-level gate → the level chooser above. Single-level (NOT) →
@@ -8195,8 +8202,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-119 (Gate Logic: warm-up room count now scales with inputs -- 2/3/5 for 2/3/5-input levels)';
-  window.BETA_VER = 'beta-119';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-120 (Gate Logic: the level-picker LOGIC popup now shows a truth table too, matching the per-level one)';
+  window.BETA_VER = 'beta-120';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
