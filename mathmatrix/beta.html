@@ -6253,6 +6253,25 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       btn.addEventListener('click', function(e){
         e.stopPropagation();                // the chip sits inside the puzzle list
         if (navigator.share){
+          // Raja: "copy of link file is broken ... not able to paste it in
+          // url bar to run" — real Android behaviour, not a bug in this
+          // call. Chrome/Brave bridge {text, url} into ONE native Android
+          // Intent (there is no separate "url" extra apart from text at the
+          // OS level), so the system sheet's own "copy" quick-action grabs
+          // the whole title+description+link paragraph, which obviously
+          // isn't a valid address to paste into a URL bar. That concat
+          // happens on the OS side, outside anything a page can control.
+          // What IS in reach: write the CLEAN link to the clipboard
+          // ourselves, in parallel with opening the share sheet, under the
+          // same tap gesture — so pasting anywhere afterward, even if the
+          // sheet is immediately cancelled, gets a real, navigable URL.
+          if (navigator.clipboard && navigator.clipboard.writeText){
+            navigator.clipboard.writeText(LINK).catch(function(){});
+            // The share sheet covers the screen almost immediately, so a
+            // button-text flash would go unseen — SaNa's line survives
+            // being covered, since it's still there once the sheet closes.
+            try { sana('<b>Link copied too!</b> Paste it anywhere to open the game directly.', 'cheer'); } catch(e){}
+          }
           navigator.share({ title: 'Kids Maths Matrix Puzzle', text: TEXT, url: LINK })
             .catch(function(){});           // user cancelling is not an error
           return;
@@ -7806,8 +7825,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-110 (install detection survives a fresh page reload now; Installed chip recoloured to fit the sandalwood theme)';
-  window.BETA_VER = 'beta-110';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-111 (Share now also copies a clean, pastable link -- the native share sheet\'s own copy button grabs the whole description instead)';
+  window.BETA_VER = 'beta-111';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
