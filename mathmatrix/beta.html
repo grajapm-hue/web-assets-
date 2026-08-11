@@ -1371,7 +1371,8 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
    falls back to flex-start the moment the list is taller than the box, so a
    tall tablet gets the leftover split evenly and a short phone still starts
    at the first puzzle. */
-.difficultyBar{ flex:1; min-height:0; overflow:hidden; display:flex; flex-direction:column;
+.difficultyBar{ flex:1; min-height:0; overflow-x:hidden; overflow-y:auto;
+  -webkit-overflow-scrolling:touch; display:flex; flex-direction:column;
   justify-content:safe center;
   gap:calc(3px * var(--lvScale, 1));
   background:transparent !important; border:0 !important; padding:0 !important; margin:0 !important;
@@ -6482,8 +6483,15 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     for (var i = 0; i < 14 && spanAt(s) > box && s > LV_MIN; i++) s = Math.max(LV_MIN, s - 0.03);
     bar.style.setProperty('--lvScale', s.toFixed(3));
 
-    // if even the smallest type will not fit, scrolling beats illegible text
-    bar.style.overflowY = spanAt(s) > box + 1 ? 'auto' : 'hidden';
+    // Scrolling used to be gated behind this same spanAt() measurement --
+    // 'auto' only if it thought content still overflowed at LV_MIN. Raja:
+    // "gate logic tag only shows not showing list below" + "unable to
+    // scroll" on a real iPhone -- the list's last item (Gate Logic) was
+    // clipped by overflow:hidden AND unreachable, meaning this measurement
+    // under-counted the real on-device height (the same class of gap as the
+    // 0.7px story above). The CSS is unconditionally scrollable now, so
+    // there is nothing left to toggle here -- a wrong measurement can no
+    // longer strand content with zero way to reach it.
   }
   /* The header pill is the update button now. It counted puzzles before, which
      the list underneath already showed.
@@ -7657,8 +7665,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-101 (Gate Logic: truth table now a real A/B/Output grid)';
-  window.BETA_VER = 'beta-101';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-102 (Home list: always scrollable, so a fit miscalc can never strand a puzzle)';
+  window.BETA_VER = 'beta-102';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
