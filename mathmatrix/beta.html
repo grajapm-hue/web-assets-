@@ -4893,21 +4893,24 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // Raja, pointing straight at the ChatGPT draft's own 4 screenshots:
     // rooms 1-3 are easy pass-through questions (an animal fact), room 4
     // is the first real "LOGIC ROOM" — that shape, not what shipped in
-    // beta-83 where every room was already a logic question. Kept small
-    // (2 warm-ups, not 3) since "as much possible choices of using gate
-    // logic" was the very first ask this whole feature started from —
-    // a shared pool so 7 gates don't all open on the identical 2 questions.
+    // beta-83 where every room was already a logic question. beta-114
+    // deliberately trimmed this to a flat 2 warm-ups per level ("kept small
+    // ... a shared pool so 7 gates don't all open on the identical 2
+    // questions") — Raja pushed back on that exact call, re-pointing at the
+    // same draft: a 3-input adventure gets 3 warm-up rooms in it, matching
+    // its input count, not a flat 2. Warm-up count now scales with inputs
+    // (gateWarmupCount below) instead of being fixed.
     // Raja: "show different animals in each card to another card room" —
     // ORIGINALLY 14 entries (7 gates x 2 warm-ups). Raja later, after every
     // LEVEL of a gate started warming up too (beta-117): "you opted same
     // 2input card selection to 3 input without adding any cards ... what
     // difference in both in practical" — fair catch: reusing the identical
     // 2 questions across a gate's 2/3/5-input levels gave levels no real
-    // sense of progression. Expanded to 38 entries: every (gate, level)
-    // pair gets its OWN 2 questions (6 multi-level gates x 3 levels + NOT's
-    // own 1 level, all x WARMUP_COUNT), still exactly the number
-    // gateWarmup's index needs so it never has to wrap and repeat one
-    // pair's questions on another's.
+    // sense of progression. Expanded to 38 entries (beta-118) for that fix,
+    // then to 62 (beta-119) once warm-up count itself started scaling with
+    // inputs (2+3+5 per multi-level gate x 6 gates + NOT's own 2) — still
+    // exactly the number gateWarmup's index needs so it never has to wrap
+    // and repeat one pair's questions on another's.
     var WARMUPS = [
       { tip:'Choose the animal that gives us milk.', choices:[
           {emoji:'🦁',text:'Lion'},{emoji:'🐘',text:'Elephant'},{emoji:'🐄',text:'Cow',ok:true},{emoji:'🐅',text:'Tiger'}] },
@@ -4984,32 +4987,89 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       { tip:'Choose the animal that digs tunnels underground to live.', choices:[
           {emoji:'🦫',text:'Mole',ok:true},{emoji:'🐇',text:'Rabbit'},{emoji:'🐿️',text:'Squirrel'},{emoji:'🐀',text:'Rat'}] },
       { tip:'Choose the largest animal that has ever lived.', choices:[
-          {emoji:'🐋',text:'Blue Whale',ok:true},{emoji:'🐘',text:'Elephant'},{emoji:'🦒',text:'Giraffe'},{emoji:'🦈',text:'Shark'}] }
+          {emoji:'🐋',text:'Blue Whale',ok:true},{emoji:'🐘',text:'Elephant'},{emoji:'🦒',text:'Giraffe'},{emoji:'🦈',text:'Shark'}] },
+      { tip:'Choose the bird known for hunting at night.', choices:[
+          {emoji:'🦉',text:'Owl',ok:true},{emoji:'🦅',text:'Eagle'},{emoji:'🦆',text:'Duck'},{emoji:'🦜',text:'Parrot'}] },
+      { tip:'Choose the animal that claps its flippers and lives near icy water.', choices:[
+          {emoji:'🦭',text:'Seal',ok:true},{emoji:'🐧',text:'Penguin'},{emoji:'🐬',text:'Dolphin'},{emoji:'🐳',text:'Whale'}] },
+      { tip:'Choose the smart ocean animal that talks to its friends using clicks and whistles.', choices:[
+          {emoji:'🐬',text:'Dolphin',ok:true},{emoji:'🦈',text:'Shark'},{emoji:'🐠',text:'Fish'},{emoji:'🦑',text:'Squid'}] },
+      { tip:'Choose the animal with a big horn on its nose.', choices:[
+          {emoji:'🦏',text:'Rhino',ok:true},{emoji:'🐘',text:'Elephant'},{emoji:'🦛',text:'Hippo'},{emoji:'🐫',text:'Camel'}] },
+      { tip:'Choose the animal known as the "river horse".', choices:[
+          {emoji:'🦛',text:'Hippo',ok:true},{emoji:'🐎',text:'Horse'},{emoji:'🐊',text:'Crocodile'},{emoji:'🦏',text:'Rhino'}] },
+      { tip:'Choose the animal with branching antlers on its head.', choices:[
+          {emoji:'🦌',text:'Deer',ok:true},{emoji:'🐐',text:'Goat'},{emoji:'🐑',text:'Sheep'},{emoji:'🦒',text:'Giraffe'}] },
+      { tip:'Choose the fluffy animal that spits when it gets annoyed.', choices:[
+          {emoji:'🦙',text:'Llama',ok:true},{emoji:'🐑',text:'Sheep'},{emoji:'🐐',text:'Goat'},{emoji:'🐫',text:'Camel'}] },
+      { tip:'Choose the tiny animal famous for loving cheese.', choices:[
+          {emoji:'🐁',text:'Mouse',ok:true},{emoji:'🐀',text:'Rat'},{emoji:'🐹',text:'Hamster'},{emoji:'🐇',text:'Rabbit'}] },
+      { tip:'Choose the sea animal with TEN arms, cousin of the octopus.', choices:[
+          {emoji:'🦑',text:'Squid',ok:true},{emoji:'🐙',text:'Octopus'},{emoji:'🦀',text:'Crab'},{emoji:'🦞',text:'Lobster'}] },
+      { tip:'Choose the fish that puffs up into a spiky ball underwater.', choices:[
+          {emoji:'🐡',text:'Pufferfish',ok:true},{emoji:'🐠',text:'Tropical Fish'},{emoji:'🦈',text:'Shark'},{emoji:'🐟',text:'Fish'}] },
+      { tip:'Choose the small desert animal with a stinger on its tail.', choices:[
+          {emoji:'🦂',text:'Scorpion',ok:true},{emoji:'🕷️',text:'Spider'},{emoji:'🐍',text:'Snake'},{emoji:'🦟',text:'Mosquito'}] },
+      { tip:'Choose the tiny flying insect that buzzes and bites at night.', choices:[
+          {emoji:'🦟',text:'Mosquito',ok:true},{emoji:'🪰',text:'Fly'},{emoji:'🐝',text:'Bee'},{emoji:'🦗',text:'Cricket'}] },
+      { tip:'Choose the small round beetle with red and black spots.', choices:[
+          {emoji:'🐞',text:'Ladybug',ok:true},{emoji:'🦋',text:'Butterfly'},{emoji:'🐜',text:'Ant'},{emoji:'🦗',text:'Cricket'}] },
+      { tip:'Choose the big bird people often cook for festival dinners.', choices:[
+          {emoji:'🦃',text:'Turkey',ok:true},{emoji:'🐔',text:'Chicken'},{emoji:'🦢',text:'Swan'},{emoji:'🦆',text:'Duck'}] },
+      { tip:'Choose the bird that crows loudly to wake everyone at sunrise.', choices:[
+          {emoji:'🐓',text:'Rooster',ok:true},{emoji:'🐔',text:'Chicken'},{emoji:'🦃',text:'Turkey'},{emoji:'🦅',text:'Eagle'}] },
+      { tip:'Choose the bird famous for its huge, colourful tail feathers.', choices:[
+          {emoji:'🦚',text:'Peacock',ok:true},{emoji:'🦜',text:'Parrot'},{emoji:'🦩',text:'Flamingo'},{emoji:'🐓',text:'Rooster'}] },
+      { tip:'Choose the animal that moves so slowly that algae can grow on its fur.', choices:[
+          {emoji:'🦥',text:'Sloth',ok:true},{emoji:'🐒',text:'Monkey'},{emoji:'🐿️',text:'Squirrel'},{emoji:'🐨',text:'Koala'}] },
+      { tip:'Choose the animal with a black mask around its eyes that washes its food.', choices:[
+          {emoji:'🦝',text:'Raccoon',ok:true},{emoji:'🐼',text:'Panda'},{emoji:'🦡',text:'Badger'},{emoji:'🐨',text:'Koala'}] },
+      { tip:'Choose the animal that floats on its back and cracks shells open with a rock.', choices:[
+          {emoji:'🦦',text:'Otter',ok:true},{emoji:'🦫',text:'Beaver'},{emoji:'🐬',text:'Dolphin'},{emoji:'🦭',text:'Seal'}] },
+      { tip:'Choose the pink bird that often stands balanced on just one leg.', choices:[
+          {emoji:'🦩',text:'Flamingo',ok:true},{emoji:'🦢',text:'Swan'},{emoji:'🦆',text:'Duck'},{emoji:'🐓',text:'Rooster'}] },
+      { tip:'Choose the graceful white bird known for staying with one partner for life.', choices:[
+          {emoji:'🦢',text:'Swan',ok:true},{emoji:'🦩',text:'Flamingo'},{emoji:'🦆',text:'Duck'},{emoji:'🦅',text:'Eagle'}] },
+      { tip:'Choose the ocean animal with rows of sharp teeth that never stop growing back.', choices:[
+          {emoji:'🦈',text:'Shark',ok:true},{emoji:'🐬',text:'Dolphin'},{emoji:'🐡',text:'Pufferfish'},{emoji:'🐙',text:'Octopus'}] },
+      { tip:'Choose the animal that howls at the moon and lives in a pack.', choices:[
+          {emoji:'🐺',text:'Wolf',ok:true},{emoji:'🦊',text:'Fox'},{emoji:'🐕',text:'Dog'},{emoji:'🦝',text:'Raccoon'}] },
+      { tip:'Choose the big cat with dark rosette spots that drags its food up a tree.', choices:[
+          {emoji:'🐆',text:'Leopard',ok:true},{emoji:'🐅',text:'Tiger'},{emoji:'🦁',text:'Lion'},{emoji:'🐈',text:'Cat'}] }
     ];
-    var WARMUP_COUNT = 2;
-    // Every (gate, level) pair gets its own 2-question slot -- a running
-    // offset built once from GATES itself (6 gates x 3 levels + NOT x 1 =
-    // 19 slots, matching WARMUPS.length exactly the same way the original
-    // 14-entry version matched GATES.length, so this index never wraps
-    // and repeats one pair's questions on another's).
-    var GATE_WARMUP_SLOT_BASE = {};
+    // Raja, pointing at his own ChatGPT-drafted prototype: a 3-input
+    // adventure gets 3 warm-up rooms before logic starts, not a flat 2 --
+    // the warm-up count itself should track the level's input count. NOT's
+    // one level keeps 2 (its only level, nothing to show progression
+    // between, and 1 warm-up felt too thin on its own).
+    function gateWarmupCount(level){ return Math.max(2, level.inputs); }
+    // Every (gate, level) pair gets its own warmupCount-sized question
+    // block -- a running offset built once from GATES itself (6 gates x
+    // (2+3+5) + NOT's own 2 = 62, matching WARMUPS.length exactly, so this
+    // index never wraps and repeats one pair's questions on another's).
+    var GATE_WARMUP_OFFSET = {};
     (function(){
       var acc = 0;
-      GATES.forEach(function(g){ GATE_WARMUP_SLOT_BASE[g.key] = acc; acc += g.levels.length; });
+      GATES.forEach(function(g){
+        GATE_WARMUP_OFFSET[g.key] = [];
+        g.levels.forEach(function(level){
+          GATE_WARMUP_OFFSET[g.key].push(acc);
+          acc += gateWarmupCount(level);
+        });
+      });
     })();
     function gateWarmup(g, levelIdx, roomIdx){
-      var slot = GATE_WARMUP_SLOT_BASE[g.key] + levelIdx;
-      return WARMUPS[(slot * WARMUP_COUNT + roomIdx) % WARMUPS.length];
+      var base = GATE_WARMUP_OFFSET[g.key][levelIdx];
+      return WARMUPS[(base + roomIdx) % WARMUPS.length];
     }
     // Rotated per correct answer so 4-6 in a row don't all say the same
     // thing — same short "cheer" voice SaNa already uses for a finished
     // puzzle line elsewhere.
     var GATE_CHEERS = ['Nice!', 'Great job!', 'You got it!', 'Correct!', 'Well done!', 'Exactly right!'];
 
-    // { gate, levelIdx, roomIdx } — levelIdx indexes g.levels; on levelIdx
-    // 0, roomIdx 0..WARMUP_COUNT-1 are warm-ups, the rest index
-    // g.levels[levelIdx].rows. Levels past 0 skip warm-ups entirely — the
-    // tap-a-box interaction is already familiar by then.
+    // { gate, levelIdx, roomIdx } — levelIdx indexes g.levels; roomIdx
+    // 0..gateWarmupCount(level)-1 are warm-ups (2/3/5, matching the
+    // level's own input count), the rest index g.levels[levelIdx].rows.
     var gateState = null;
 
     // Raja: "sub level of previous one completed" — how far a player has
@@ -5039,7 +5099,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // controls" ritual before the real questions, not meant to be unique
     // trivia every time.
     function gateTotalRooms(g, levelIdx){
-      return WARMUP_COUNT + g.levels[levelIdx].rows.length;
+      var level = g.levels[levelIdx];
+      return gateWarmupCount(level) + level.rows.length;
     }
 
     // 1-input and 2-input keep the exact diagram they always had (proven,
@@ -5078,8 +5139,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       if (!el) return;
       var levelTag = g.levels.length > 1 ? (' · ' + level.inputs + '-input') : '';
       var progress = '<div class="gateProgress">Room ' + (st.roomIdx + 1) + ' of ' + total + ' — ' + g.name + levelTag + '</div>';
+      var wc = gateWarmupCount(level);
 
-      if (st.roomIdx < WARMUP_COUNT){                  // pass-through warm-up, every level now
+      if (st.roomIdx < wc){                  // pass-through warm-up, count scales with inputs
         var w = gateWarmup(g, st.levelIdx, st.roomIdx);
         el.innerHTML = progress +
           '<div class="gateTip">' + w.tip + '</div>' +
@@ -5093,7 +5155,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         return;
       }
 
-      var row = level.rows[st.roomIdx - WARMUP_COUNT];
+      var row = level.rows[st.roomIdx - wc];
       var choices = [
         { emoji:'🟢', text:'ON / TRUE', val:1 },
         { emoji:'🔴', text:'OFF / FALSE', val:0 },
@@ -5181,21 +5243,22 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       // is already answered and waiting on the child, not on another tap.
       if (document.getElementById('gateNextBtn')) return;
 
-      var isWarmup = st.roomIdx < WARMUP_COUNT;   // every level warms up now
+      var wc = gateWarmupCount(level);
+      var isWarmup = st.roomIdx < wc;   // count scales with the level's inputs
       var correct, wrongMsg;
       if (isWarmup){
         var w = gateWarmup(g, st.levelIdx, st.roomIdx);
         correct = !!(w.choices[val] && w.choices[val].ok);
         wrongMsg = '❌ Not quite — try again!';
       } else {
-        var row = level.rows[st.roomIdx - WARMUP_COUNT];
+        var row = level.rows[st.roomIdx - wc];
         correct = (val === row[row.length - 1]);
         wrongMsg = '❌ Not quite. ' + g.rule;
       }
 
       if (correct){
         sfx('yes');
-        var enteringLogic = isWarmup && st.roomIdx === WARMUP_COUNT - 1;
+        var enteringLogic = isWarmup && st.roomIdx === wc - 1;
         // Raja: "observe the appreciation still failed ... may the delay
         // wrongly placed instead of appreciation" — traced it: SaNa's
         // bubble sits at the very top of the screen, well above the
@@ -8132,8 +8195,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-118 (Gate Logic: every level now gets its own distinct warm-up questions, not the same 2 cards repeated)';
-  window.BETA_VER = 'beta-118';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-119 (Gate Logic: warm-up room count now scales with inputs -- 2/3/5 for 2/3/5-input levels)';
+  window.BETA_VER = 'beta-119';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
