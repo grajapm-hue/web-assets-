@@ -4877,14 +4877,21 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         // is the one guaranteed to be seen — it is what the tap itself
         // just changed.
         var cheer = GATE_CHEERS[Math.floor(Math.random() * GATE_CHEERS.length)];
-        fb.textContent = enteringLogic
+        // Raja's actual, consistent ask since the very first message on
+        // this: "Pop appreciation by monkey dice" — every pass so far
+        // fixed WHERE/HOW text showed (SaNa's distant bubble, then this
+        // pill) but never actually put 🐒🎲 itself into the per-answer
+        // moment, only the final win screen got it. That was the gap.
+        // .gateEmoji (not the whole pill) carries the pop animation —
+        // small and inline, so it cannot spill past the pill's own edges
+        // the way animating the whole bordered box did (beta-94's bug).
+        fb.innerHTML = enteringLogic
           ? '🎉 Warm-up done! Now the real logic begins…'
-          : '✅ ' + cheer;
-        // No .gatePop here: same bug as the diagram (beta-89) — mrPop's
-        // scale(1.14) overshoot on an element with a real background and
-        // border visibly spills past its own container for a fraction of
-        // a second. Harmless on plain text (nothing to see overflow); real
-        // now that this is a bordered pill, so left off from the start.
+          : '✅ ' + cheer + ' <span class="gateEmoji" style="display:inline-block; font-size:28px;">🐒🎲</span>';
+        // No .gatePop on the pill itself: same bug as the diagram
+        // (beta-89) — mrPop's scale(1.14) overshoot on an element with a
+        // real background and border visibly spills past its own
+        // container for a fraction of a second.
         fb.className = 'gateFeedback gateFeedback-ok';
         if (btn) btn.classList.add('gateBounce');
         try {
@@ -7578,8 +7585,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-95 (Gate Logic: fixed the feedback pill overflow glitch)';
-  window.BETA_VER = 'beta-95';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-96 (Gate Logic: monkey-dice pop on every correct answer)';
+  window.BETA_VER = 'beta-96';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
