@@ -2104,6 +2104,7 @@ body.gateMode #logicBox{ box-shadow:none !important; border-radius:0 !important;
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.22); }
 .splashStage{ position:relative; width:230px; height:230px; margin:0 auto;
   display:grid; place-items:center; }
+.splashStage.big{ transform:scale(1.14); margin-top:8px; margin-bottom:8px; }
 .splashFace{ width:118px; height:118px; margin:0 auto 4px; border-radius:50%; display:grid;
   place-items:center; font-size:64px; position:relative;
   background:linear-gradient(160deg,#FFD675,var(--gold));
@@ -7453,10 +7454,17 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     s.className = 'splash';
     s.setAttribute('role', 'button');
     s.setAttribute('aria-label', 'Start');
+    // Raja: "have a More place in marked can shift there in monkey dice with
+    // bigger image" -- when the browser tip above isn't showing (the usual
+    // case: most visitors are already on the recommended browser), that
+    // space is free. .splashStage.big scales the whole monkey+dice+orbit up
+    // as one unit -- every keyframe in it is a rotation/percentage, not a
+    // fixed px path, so a single transform:scale() enlarges it correctly
+    // without hand-recalculating the orbit radius.
     s.innerHTML =
       '<div class="splashInner">' +
         (tipText ? '<div class="splashBrowserTip">' + tipText + '</div>' : '') +
-        '<div class="splashStage">' +
+        '<div class="splashStage' + (tipText ? '' : ' big') + '">' +
           '<span class="splashSpark" style="left:6%;  top:44%; animation-delay:.0s">✨</span>' +
           '<span class="splashSpark" style="left:82%; top:30%; animation-delay:.9s">⭐</span>' +
           '<span class="splashSpark" style="left:20%; top:16%; animation-delay:1.7s">✨</span>' +
@@ -7712,8 +7720,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-105 (Home list: bigger universal fit margin, one text line, so more browsers never need to scroll at all)';
-  window.BETA_VER = 'beta-105';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-106 (splash: monkey+dice bigger when the browser tip has nothing to show)';
+  window.BETA_VER = 'beta-106';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
