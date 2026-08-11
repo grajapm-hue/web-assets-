@@ -4966,9 +4966,15 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     }
 
     function gateShortName(g){ return g.name.replace(' Gate', ''); }
+    // Raja: "need is like 2 input play be tune accordingly" — the warm-up
+    // rooms run at the start of every level now, not just the first. Same
+    // 2 animal questions each time (gateWarmup only ever looks at the
+    // gate, not which level it's warming up for) rather than writing a
+    // whole second/third pool per gate -- it is a quick "hands on the
+    // controls" ritual before the real questions, not meant to be unique
+    // trivia every time.
     function gateTotalRooms(g, levelIdx){
-      var warmups = levelIdx === 0 ? WARMUP_COUNT : 0;
-      return warmups + g.levels[levelIdx].rows.length;
+      return WARMUP_COUNT + g.levels[levelIdx].rows.length;
     }
 
     // 1-input and 2-input keep the exact diagram they always had (proven,
@@ -5008,8 +5014,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       var levelTag = g.levels.length > 1 ? (' · ' + level.inputs + '-input') : '';
       var progress = '<div class="gateProgress">Room ' + (st.roomIdx + 1) + ' of ' + total + ' — ' + g.name + levelTag + '</div>';
 
-      var hasWarmup = st.levelIdx === 0;
-      if (hasWarmup && st.roomIdx < WARMUP_COUNT){    // pass-through warm-up, level 0 only
+      if (st.roomIdx < WARMUP_COUNT){                  // pass-through warm-up, every level now
         var w = gateWarmup(g, st.roomIdx);
         el.innerHTML = progress +
           '<div class="gateTip">' + w.tip + '</div>' +
@@ -5023,8 +5028,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         return;
       }
 
-      var warmupOffset = hasWarmup ? WARMUP_COUNT : 0;
-      var row = level.rows[st.roomIdx - warmupOffset];
+      var row = level.rows[st.roomIdx - WARMUP_COUNT];
       var choices = [
         { emoji:'🟢', text:'ON / TRUE', val:1 },
         { emoji:'🔴', text:'OFF / FALSE', val:0 },
@@ -5112,16 +5116,14 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       // is already answered and waiting on the child, not on another tap.
       if (document.getElementById('gateNextBtn')) return;
 
-      var hasWarmup = st.levelIdx === 0;
-      var isWarmup = hasWarmup && st.roomIdx < WARMUP_COUNT;
+      var isWarmup = st.roomIdx < WARMUP_COUNT;   // every level warms up now
       var correct, wrongMsg;
       if (isWarmup){
         var w = gateWarmup(g, st.roomIdx);
         correct = !!(w.choices[val] && w.choices[val].ok);
         wrongMsg = '❌ Not quite — try again!';
       } else {
-        var warmupOffset = hasWarmup ? WARMUP_COUNT : 0;
-        var row = level.rows[st.roomIdx - warmupOffset];
+        var row = level.rows[st.roomIdx - WARMUP_COUNT];
         correct = (val === row[row.length - 1]);
         wrongMsg = '❌ Not quite. ' + g.rule;
       }
@@ -8065,8 +8067,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-116 (Gate Logic win screen: "Play Again" now names the level it replays, so it can\'t be mistaken for the next one)';
-  window.BETA_VER = 'beta-116';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-117 (Gate Logic: the animal warm-up now runs before every level, not just 2-input)';
+  window.BETA_VER = 'beta-117';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
