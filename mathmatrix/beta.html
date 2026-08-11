@@ -1851,6 +1851,15 @@ body.onPlay .solvedCounter{ font-size:9px !important; padding:3px 9px !important
 .rowBtn.gold{ background:var(--gold); color:#1a1204; }
 .rowBtn.gold i{ background:rgba(0,0,0,.13); }
 .rowBtn.gold small{ color:#5c4405; }
+/* Gate Logic's level chooser: a locked level reads as genuinely inert (not
+   just a slightly duller version of a real choice), and the "back to all
+   gates" row sits visually apart from the numbered level rows below it so
+   it doesn't read as a fourth level. */
+.rowBtn.gateLevelLocked{ opacity:.5; cursor:not-allowed; }
+.rowBtn.gateLevelLocked:active{ transform:none; box-shadow:var(--clay); }
+.rowBtn.gateLevelBack{ background:transparent; box-shadow:none; margin-bottom:6px;
+  color:var(--bink2); font-weight:800; }
+.rowBtn.gateLevelBack i{ background:transparent; font-size:16px; }
 
 /* ── GET APP / FEEDBACK: compact ── */
 .screen.on[data-screen="scApp"] > div,
@@ -2564,11 +2573,22 @@ body{ background:#C9A87C !important; }
    its own large, centred, block-level size — the actual focal point of
    each box now, same as the reference's own layout intent. */
 .gateChoices{ display:grid; grid-template-columns:repeat(2, 1fr); gap:14px; margin-bottom:16px; }
-.gateChoiceBtn{ min-height:132px; border:2px solid #8A5E31; border-radius:18px;
+/* Raja: "keep animated images to fit in card box as much possible to
+   bigger and colorfull to attract kids" — the box grows enough to hold a
+   bigger emoji without cramping the label under it (checked: still fits
+   two-line labels on a narrow phone), and each LOGIC ROOM answer gets its
+   own tint so the four choices read apart at a glance, not just by text. */
+.gateChoiceBtn{ min-height:150px; border:2px solid #8A5E31; border-radius:18px;
   background:#FFF6E7; color:#33220F; font-size:17px; font-weight:800;
   padding:14px; cursor:pointer; touch-action:manipulation;
   display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; }
 .gateChoiceBtn:disabled{ opacity:.45; cursor:default; }
+/* Scoped to gateChoiceLogic only -- the warm-up buttons above reuse the
+   same data-val attribute for plain 0-3 indices, no ON/OFF meaning there. */
+.gateChoiceLogic[data-val="1"]{ background:#DFF7E9; border-color:var(--wingreen); }
+.gateChoiceLogic[data-val="0"]{ background:#FFE3DE; border-color:var(--warn); }
+.gateChoiceLogic[data-val="-1"]{ background:#EFEAF9; border-color:#8B7FD6; }
+.gateChoiceLogic[data-val="-2"]{ background:#E1F2FB; border-color:#38BDF8; }
 .gateFeedback{ min-height:26px; font-size:16px; font-weight:800; color:#5E3D1C; }
 /* A plain colour change on small text was too easy to miss (confirmed:
    Raja still couldn't catch it even at the longer pause) — a filled pill
@@ -2584,15 +2604,24 @@ body{ background:#C9A87C !important; }
   color:#FFF6E7; font-size:15px; font-weight:800; cursor:pointer; }
 .gateWin{ font-size:24px; font-weight:900; padding:24px 6px; line-height:1.5; color:#33220F; }
 .gateWinRule{ display:block; font-size:16px; font-weight:700; color:#5E3D1C; margin-top:8px; }
-.gateAgainBtn{ margin-top:8px; padding:14px 24px; border-radius:14px; border:2px solid #8A5E31;
-  background:#8A5E31; color:#FFF6E7; font-size:16px; font-weight:800; cursor:pointer; }
+/* Block-level and full-width, same reasoning as .gateNextBtn: without an
+   explicit width these two sat side by side and overlapped their own
+   text (confirmed by screenshot) instead of stacking. Gold/primary since
+   progressing to the next level is the main action; Play Again (replaying
+   what's already done) stays the plain secondary one below it. */
+.gateNextLevelBtn{ display:block; width:100%; max-width:340px; margin:10px auto 0; padding:14px 24px;
+  border-radius:14px; border:2px solid var(--gold); background:var(--gold);
+  color:#1a1204; font-size:16px; font-weight:900; cursor:pointer; box-sizing:border-box; }
+.gateAgainBtn{ display:block; width:100%; max-width:340px; margin:10px auto 0; padding:14px 24px;
+  border-radius:14px; border:2px solid #8A5E31;
+  background:#8A5E31; color:#FFF6E7; font-size:16px; font-weight:800; cursor:pointer; box-sizing:border-box; }
 
 /* "same like attached image with animated emoji effects" — the reference's
    own emoji (🟢🔴❓) sit static; these move, reusing keyframes already built
    elsewhere (Mind Reader's reveal, a completed line, SaNa's own "oops") so
    nothing new is defined here, just pointed at gate logic's own elements. */
-.gateEmoji{ display:block; font-size:44px; line-height:1; animation:starPop .5s var(--spring); }
-.gateWinEmoji{ font-size:56px; animation-duration:.7s; }
+.gateEmoji{ display:block; font-size:56px; line-height:1; animation:starPop .5s var(--spring); }
+.gateWinEmoji{ font-size:68px; animation-duration:.7s; }
 /* .gateDiagram used to carry this too, but mrPop's scale(1.14) overshoot on
    a bordered box with aligned monospace text inside it visibly spilled past
    its own edges for a fraction of a second before settling back to a
@@ -4809,21 +4838,57 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   // inside scPlay, wired exactly like #binaryPanel: a body class + the
   // same !important CSS rules, goScreen('scPlay'), the real app bar.
   (function(){
+    // Raja: "give new Logic gate puzzle with 3 input ABC and 5 input ABCDE
+    // one by one by sub level of previous one completed" — every gate that
+    // has a real multi-input meaning (all but NOT) now has a `levels` array
+    // instead of one fixed inputs/rows pair: 2-input first (unchanged table,
+    // same as always), then 3-input, then 5-input, unlocked in order.
+    //
+    // Rows are GENERATED, never hand-transcribed — a 32-row table typed by
+    // hand is exactly the kind of place a transcription slip hides. truthRows
+    // walks every combination of n inputs (2^n rows) and applies the gate's
+    // own boolean rule. XOR/XNOR past 2 inputs have more than one common
+    // reading; this app uses the real digital-electronics one — the one
+    // actual multi-input XOR/XNOR gates implement (chained 2-input XORs):
+    // XOR = ON when an ODD number of inputs are ON, XNOR = EVEN (including
+    // all-off). Every row of every table (2/3/5-input × 6 gates, 264 rows
+    // total) is cross-checked against an independently-written ground truth
+    // in _verifytruth.js before ever reaching this file.
+    function truthRows(n, fn){
+      var rows = [];
+      for (var i = 0; i < (1 << n); i++){
+        var bits = [];
+        for (var b = n - 1; b >= 0; b--) bits.push((i >> b) & 1);
+        bits.push(fn(bits) ? 1 : 0);
+        rows.push(bits);
+      }
+      return rows;
+    }
+    var GATE_FN = {
+      and:  function(b){ return b.every(function(v){ return v === 1; }); },
+      or:   function(b){ return b.some(function(v){ return v === 1; }); },
+      nand: function(b){ return !b.every(function(v){ return v === 1; }); },
+      nor:  function(b){ return !b.some(function(v){ return v === 1; }); },
+      xor:  function(b){ return b.reduce(function(a,v){ return a+v; }, 0) % 2 === 1; },
+      xnor: function(b){ return b.reduce(function(a,v){ return a+v; }, 0) % 2 === 0; }
+    };
+    function multiLevels(key){ return [2,3,5].map(function(n){ return { inputs:n, rows:truthRows(n, GATE_FN[key]) }; }); }
+
     var GATES = [
-      { key:'and',  name:'AND Gate',  glyph:'∧', inputs:2, rows:[[0,0,0],[0,1,0],[1,0,0],[1,1,1]],
-        diff:'Both must be ON', rule:'AND is ON only when BOTH inputs are ON.' },
-      { key:'or',   name:'OR Gate',   glyph:'∨', inputs:2, rows:[[0,0,0],[0,1,1],[1,0,1],[1,1,1]],
-        diff:'Either one is enough', rule:'OR is ON when EITHER input is ON.' },
-      { key:'not',  name:'NOT Gate',  glyph:'¬', inputs:1, rows:[[0,1],[1,0]],
+      { key:'and',  name:'AND Gate',  glyph:'∧', levels:multiLevels('and'),
+        diff:'Both must be ON', rule:'AND is ON only when ALL inputs are ON.' },
+      { key:'or',   name:'OR Gate',   glyph:'∨', levels:multiLevels('or'),
+        diff:'Either one is enough', rule:'OR is ON when ANY input is ON.' },
+      { key:'not',  name:'NOT Gate',  glyph:'¬', levels:[{ inputs:1, rows:[[0,1],[1,0]] }],
         diff:'Flips the input', rule:'NOT flips the input — ON becomes OFF, OFF becomes ON.' },
-      { key:'nand', name:'NAND Gate', glyph:'⊼', inputs:2, rows:[[0,0,1],[0,1,1],[1,0,1],[1,1,0]],
-        diff:'Opposite of AND', rule:'NAND is the opposite of AND — OFF only when BOTH inputs are ON.' },
-      { key:'nor',  name:'NOR Gate',  glyph:'⊽', inputs:2, rows:[[0,0,1],[0,1,0],[1,0,0],[1,1,0]],
-        diff:'Opposite of OR', rule:'NOR is the opposite of OR — ON only when BOTH inputs are OFF.' },
-      { key:'xor',  name:'XOR Gate',  glyph:'⊕', inputs:2, rows:[[0,0,0],[0,1,1],[1,0,1],[1,1,0]],
-        diff:'ON when different', rule:'XOR is ON when the two inputs are DIFFERENT.' },
-      { key:'xnor', name:'XNOR Gate', glyph:'⊙', inputs:2, rows:[[0,0,1],[0,1,0],[1,0,0],[1,1,1]],
-        diff:'ON when the same', rule:'XNOR is ON when the two inputs are the SAME.' }
+      { key:'nand', name:'NAND Gate', glyph:'⊼', levels:multiLevels('nand'),
+        diff:'Opposite of AND', rule:'NAND is the opposite of AND — OFF only when ALL inputs are ON.' },
+      { key:'nor',  name:'NOR Gate',  glyph:'⊽', levels:multiLevels('nor'),
+        diff:'Opposite of OR', rule:'NOR is the opposite of OR — ON only when ALL inputs are OFF.' },
+      { key:'xor',  name:'XOR Gate',  glyph:'⊕', levels:multiLevels('xor'),
+        diff:'ON when different', rule:'XOR is ON when an ODD number of inputs are ON.' },
+      { key:'xnor', name:'XNOR Gate', glyph:'⊙', levels:multiLevels('xnor'),
+        diff:'ON when the same', rule:'XNOR is ON when an EVEN number of inputs are ON.' }
     ];
     // Raja, pointing straight at the ChatGPT draft's own 4 screenshots:
     // rooms 1-3 are easy pass-through questions (an animal fact), room 4
@@ -4876,17 +4941,52 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // puzzle line elsewhere.
     var GATE_CHEERS = ['Nice!', 'Great job!', 'You got it!', 'Correct!', 'Well done!', 'Exactly right!'];
 
-    var gateState = null;   // { gate, roomIdx } — 0..WARMUP_COUNT-1 are warm-ups, the rest index g.rows
+    // { gate, levelIdx, roomIdx } — levelIdx indexes g.levels; on levelIdx
+    // 0, roomIdx 0..WARMUP_COUNT-1 are warm-ups, the rest index
+    // g.levels[levelIdx].rows. Levels past 0 skip warm-ups entirely — the
+    // tap-a-box interaction is already familiar by then.
+    var gateState = null;
+
+    // Raja: "sub level of previous one completed" — how far a player has
+    // gotten per gate, kept the same way puzzle wins already are
+    // (localStorage), so finishing 2-input AND today still counts tomorrow.
+    var GATE_PROGRESS_KEY = 'mm.gateProgress';
+    function loadGateProgress(){
+      try { return JSON.parse(localStorage.getItem(GATE_PROGRESS_KEY)) || {}; } catch(e){ return {}; }
+    }
+    function saveGateProgress(p){
+      try { localStorage.setItem(GATE_PROGRESS_KEY, JSON.stringify(p)); } catch(e){}
+    }
+    // Number of levels completed so far for this gate (0 if none). Level
+    // idx is playable once idx <= this value (idx 0 is always playable).
+    function gateProgressFor(key){ return loadGateProgress()[key] || 0; }
+    function gateMarkLevelDone(key, levelIdx){
+      var p = loadGateProgress(), next = levelIdx + 1;
+      if ((p[key] || 0) < next){ p[key] = next; saveGateProgress(p); }
+    }
 
     function gateShortName(g){ return g.name.replace(' Gate', ''); }
-    function gateTotalRooms(g){ return WARMUP_COUNT + g.rows.length; }
+    function gateTotalRooms(g, levelIdx){
+      var warmups = levelIdx === 0 ? WARMUP_COUNT : 0;
+      return warmups + g.levels[levelIdx].rows.length;
+    }
 
-    function gateDiagramHTML(g, row){
-      if (g.inputs === 1){
-        return 'A = ' + (row[0] ? 'ON' : 'OFF') + '\n\nA ──► ' + gateShortName(g) + ' ──► ?';
-      }
-      return 'A = ' + (row[0] ? 'ON' : 'OFF') + '\nB = ' + (row[1] ? 'ON' : 'OFF') +
-        '\n\nA ──┐\n    ├── ' + gateShortName(g) + ' ──► ?\nB ──┘';
+    // 1-input and 2-input keep the exact diagram they always had (proven,
+    // don't touch). 3/5-input reuse the same box-drawing style: every wire
+    // converges on the LAST input line rather than trying to hand-centre a
+    // junction between an odd number of lines — simpler to keep correct for
+    // any input count than fiddly per-n alignment math.
+    function gateDiagramHTML(g, level, row){
+      var n = level.inputs, labels = ['A','B','C','D','E'];
+      var head = labels.slice(0, n).map(function(L, i){ return L + ' = ' + (row[i] ? 'ON' : 'OFF'); }).join('\n');
+      if (n === 1) return head + '\n\nA ──► ' + gateShortName(g) + ' ──► ?';
+      if (n === 2) return head + '\n\nA ──┐\n    ├── ' + gateShortName(g) + ' ──► ?\nB ──┘';
+      var wires = labels.slice(0, n).map(function(L, i){
+        if (i === n - 1) return L + ' ──┘── ' + gateShortName(g) + ' ──► ?';
+        if (i === 0) return L + ' ──┐';
+        return L + ' ──┤';
+      }).join('\n');
+      return head + '\n\n' + wires;
     }
 
     // A confusable-gate decoy — the classic mix-up (AND/OR, and OR for
@@ -4902,12 +5002,14 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // (sanaOops, already built for SaNa's own "oops"). No new keyframes.
     function renderGateRoom(){
       var st = gateState; if (!st) return;
-      var g = st.gate, total = gateTotalRooms(g);
+      var g = st.gate, level = g.levels[st.levelIdx], total = gateTotalRooms(g, st.levelIdx);
       var el = document.getElementById('gateRoom');
       if (!el) return;
-      var progress = '<div class="gateProgress">Room ' + (st.roomIdx + 1) + ' of ' + total + ' — ' + g.name + '</div>';
+      var levelTag = g.levels.length > 1 ? (' · ' + level.inputs + '-input') : '';
+      var progress = '<div class="gateProgress">Room ' + (st.roomIdx + 1) + ' of ' + total + ' — ' + g.name + levelTag + '</div>';
 
-      if (st.roomIdx < WARMUP_COUNT){                 // pass-through warm-up, no gate content yet
+      var hasWarmup = st.levelIdx === 0;
+      if (hasWarmup && st.roomIdx < WARMUP_COUNT){    // pass-through warm-up, level 0 only
         var w = gateWarmup(g, st.roomIdx);
         el.innerHTML = progress +
           '<div class="gateTip">' + w.tip + '</div>' +
@@ -4921,7 +5023,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         return;
       }
 
-      var row = g.rows[st.roomIdx - WARMUP_COUNT];
+      var warmupOffset = hasWarmup ? WARMUP_COUNT : 0;
+      var row = level.rows[st.roomIdx - warmupOffset];
       var choices = [
         { emoji:'🟢', text:'ON / TRUE', val:1 },
         { emoji:'🔴', text:'OFF / FALSE', val:0 },
@@ -4930,10 +5033,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       ];
       el.innerHTML = progress +
         '<div class="gateTip">LOGIC ROOM: What does the ' + g.name.toUpperCase() + ' output for this input?</div>' +
-        '<div class="gateDiagram">' + gateDiagramHTML(g, row) + '</div>' +
+        '<div class="gateDiagram">' + gateDiagramHTML(g, level, row) + '</div>' +
         '<div class="gateChoices">' +
           choices.map(function(c){
-            return '<button class="gateChoiceBtn" data-val="' + c.val + '">' +
+            // gateChoiceLogic (not on the warm-up buttons above, which
+            // reuse data-val for plain 0-3 indices, not this ON/OFF
+            // meaning) scopes the colour-coding below to only these four.
+            return '<button class="gateChoiceBtn gateChoiceLogic" data-val="' + c.val + '">' +
               '<span class="gateEmoji">' + c.emoji + '</span> ' + c.text + '</button>';
           }).join('') +
         '</div>' +
@@ -4942,7 +5048,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
     function renderGateDone(){
       var st = gateState; if (!st) return;
-      var g = st.gate, el = document.getElementById('gateRoom');
+      var g = st.gate, level = g.levels[st.levelIdx], el = document.getElementById('gateRoom');
       if (!el) return;
       sfx('unlock');
       // Raja: "when end the puzzle ... will Pop appreciation by monkey dice
@@ -4951,16 +5057,23 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       // new code, just Gate Logic reaching for what already exists. 🐒🎲
       // is the same mascot pair Home's own diffMascot uses.
       try { celebrate(); } catch(e){}
-      try { sana('<b>' + g.name + ' — solved!</b> Nice work.', 'party', true); } catch(e){}
+      var levelTag = g.levels.length > 1 ? (' (' + level.inputs + '-input)') : '';
+      try { sana('<b>' + g.name + levelTag + ' — solved!</b> Nice work.', 'party', true); } catch(e){}
+      gateMarkLevelDone(g.key, st.levelIdx);
+      var hasNext = st.levelIdx + 1 < g.levels.length;
       el.innerHTML =
-        '<div class="gateWin"><span class="gateEmoji gateWinEmoji">🎉 🐒🎲</span><br>' + g.name + ' solved!' +
+        '<div class="gateWin"><span class="gateEmoji gateWinEmoji">🎉 🐒🎲</span><br>' + g.name + levelTag + ' solved!' +
           '<span class="gateWinRule">' + g.rule + '</span></div>' +
+        (hasNext
+          ? '<button class="gateNextLevelBtn" id="gateNextLevelBtn" type="button">▶ Unlocked: ' +
+              g.levels[st.levelIdx + 1].inputs + '-input ' + gateShortName(g) + '</button>'
+          : '') +
         '<button class="gateAgainBtn" id="gateAgainBtn" type="button">↻ Play Again</button>';
     }
 
     function gateChoose(val){
       var st = gateState; if (!st) return;
-      var g = st.gate, total = gateTotalRooms(g);
+      var g = st.gate, level = g.levels[st.levelIdx], total = gateTotalRooms(g, st.levelIdx);
       var fb = document.getElementById('gateFeedback');
       var btn = document.querySelector('.gateChoiceBtn[data-val="' + val + '"]');
       if (!fb) return;
@@ -4973,14 +5086,16 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       // is already answered and waiting on the child, not on another tap.
       if (document.getElementById('gateNextBtn')) return;
 
-      var isWarmup = st.roomIdx < WARMUP_COUNT;
+      var hasWarmup = st.levelIdx === 0;
+      var isWarmup = hasWarmup && st.roomIdx < WARMUP_COUNT;
       var correct, wrongMsg;
       if (isWarmup){
         var w = gateWarmup(g, st.roomIdx);
         correct = !!(w.choices[val] && w.choices[val].ok);
         wrongMsg = '❌ Not quite — try again!';
       } else {
-        var row = g.rows[st.roomIdx - WARMUP_COUNT];
+        var warmupOffset = hasWarmup ? WARMUP_COUNT : 0;
+        var row = level.rows[st.roomIdx - warmupOffset];
         correct = (val === row[row.length - 1]);
         wrongMsg = '❌ Not quite. ' + g.rule;
       }
@@ -5053,7 +5168,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // gateChoose() on why this replaced the setTimeout auto-advance.
     function gateAdvance(){
       var st = gateState; if (!st) return;
-      var g = st.gate, total = gateTotalRooms(g);
+      var g = st.gate, total = gateTotalRooms(g, st.levelIdx);
       st.roomIdx++;
       if (st.roomIdx >= total) renderGateDone();
       else renderGateRoom();
@@ -5065,14 +5180,22 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // Raja: "add or put it as a output like A B = output" — a real
     // columnar table (A / B / Output headers) instead of a sentence per
     // row, matching how a truth table normally reads in a textbook.
-    function gateLogicBoxHTML(g){
-      var head = g.inputs === 1 ? '<tr><th>A</th><th>Output</th></tr>' : '<tr><th>A</th><th>B</th><th>Output</th></tr>';
-      var rows = g.rows.map(function(row){
+    function findGate(key){
+      for (var i = 0; i < GATES.length; i++) if (GATES[i].key === key) return GATES[i];
+      return null;
+    }
+
+    function gateLogicBoxHTML(g, levelIdx){
+      var level = g.levels[levelIdx];
+      var labels = ['A','B','C','D','E'].slice(0, level.inputs);
+      var head = '<tr>' + labels.map(function(L){ return '<th>' + L + '</th>'; }).join('') + '<th>Output</th></tr>';
+      var rows = level.rows.map(function(row){
         var out = row[row.length - 1];
         var ins = row.slice(0, row.length - 1).map(function(v){ return '<td>' + (v ? 'ON' : 'OFF') + '</td>'; }).join('');
         return '<tr>' + ins + '<td class="gateTruthOut">' + (out ? 'ON' : 'OFF') + '</td></tr>';
       }).join('');
-      return '<h3>📐 ' + g.name + ' — truth table</h3><p>' + g.rule + '</p>' +
+      var titleTag = g.levels.length > 1 ? (' (' + level.inputs + '-input)') : '';
+      return '<h3>📐 ' + g.name + titleTag + ' — truth table</h3><p>' + g.rule + '</p>' +
         '<table class="gateTruthTable">' + head + rows + '</table>';
     }
 
@@ -5081,8 +5204,11 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       var picker = document.getElementById('gatePicker'), wrap = document.getElementById('gateRoomWrap');
       if (picker){
         picker.innerHTML = '<div class="learnRows sheetLearn">' + GATES.map(function(g){
+          var sub = g.levels.length > 1
+            ? (g.diff + ' · 2/3/5-input, 3 levels')
+            : (g.diff + ' · ' + g.levels[0].rows.length + ' rooms');
           return '<button class="rowBtn" data-gate="' + g.key + '" type="button"><i>' + g.glyph + '</i>' +
-            '<span><b>' + g.name + '</b><small>' + g.diff + ' · ' + g.rows.length + ' rooms</small></span></button>';
+            '<span><b>' + g.name + '</b><small>' + sub + '</small></span></button>';
         }).join('') + '</div>';
         picker.style.display = 'block';
       }
@@ -5093,19 +5219,61 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       if (lb) lb.innerHTML = '<h3>📐 Gate Logic</h3><p>Pick a gate below — each one walks through its whole truth table, one input at a time.</p>';
     }
 
-    function openGate(key){
-      var g = null;
-      for (var i = 0; i < GATES.length; i++) if (GATES[i].key === key) g = GATES[i];
-      if (!g) return;
-      gateState = { gate: g, roomIdx: 0 };
+    // Tapping a gate with multiple levels shows this chooser first; a
+    // single-level gate (NOT) skips straight into its rooms, same as
+    // before this feature existed — see the delegated click handler below.
+    function openGateLevels(key){
+      var g = findGate(key); if (!g) return;
+      gateState = null;
+      var picker = document.getElementById('gatePicker'), wrap = document.getElementById('gateRoomWrap');
+      if (wrap) wrap.style.display = 'none';
+      var title = document.getElementById('appBarTitle');
+      if (title) title.innerHTML = boxedTitle(g.name);
+      var completed = gateProgressFor(g.key);
+      if (picker){
+        picker.innerHTML = '<div class="learnRows sheetLearn">' +
+          '<button class="rowBtn gateLevelBack" type="button"><i>◀</i>' +
+            '<span><b>All Gates</b><small>back to the list</small></span></button>' +
+          g.levels.map(function(lv, idx){
+            var locked = idx > completed, isDone = idx < completed;
+            var status = locked ? ('🔒 Finish the ' + g.levels[idx - 1].inputs + '-input level first')
+                       : isDone ? '✅ Completed — tap to play again'
+                       : 'Tap to play';
+            return '<button class="rowBtn' + (locked ? ' gateLevelLocked' : '') + '" type="button"' +
+              (locked ? ' disabled' : '') + ' data-gate="' + g.key + '" data-level="' + idx + '">' +
+              '<i>' + (idx + 1) + '</i><span><b>' + lv.inputs + '-input ' + g.name + '</b>' +
+              '<small>' + status + '</small></span></button>';
+          }).join('') +
+        '</div>';
+        picker.style.display = 'block';
+      }
+      var lb = document.getElementById('logicBox');
+      if (lb) lb.innerHTML = '<h3>📐 ' + g.name + '</h3><p>' + g.rule + '</p><p>Pick a level below to begin.</p>';
+    }
+
+    // Multi-level gate → the level chooser above. Single-level (NOT) →
+    // straight into its rooms, unchanged from before this feature.
+    function openGateOrLevels(key){
+      var g = findGate(key); if (!g) return;
+      if (g.levels.length > 1) openGateLevels(key);
+      else startGateLevel(key, 0);
+    }
+
+    function startGateLevel(key, levelIdx){
+      var g = findGate(key); if (!g) return;
+      if (levelIdx < 0 || levelIdx >= g.levels.length) return;
+      if (levelIdx > gateProgressFor(g.key)) return;   // defensive: UI already disables locked levels
+      gateState = { gate: g, levelIdx: levelIdx, roomIdx: 0 };
       sfx('card');
       var picker = document.getElementById('gatePicker'), wrap = document.getElementById('gateRoomWrap');
       if (picker) picker.style.display = 'none';
       if (wrap) wrap.style.display = 'block';
+      var level = g.levels[levelIdx];
+      var titleTxt = g.levels.length > 1 ? (g.name + ' (' + level.inputs + '-input)') : g.name;
       var title = document.getElementById('appBarTitle');
-      if (title) title.innerHTML = boxedTitle(g.name);
+      if (title) title.innerHTML = boxedTitle(titleTxt);
       var lb = document.getElementById('logicBox');
-      if (lb) lb.innerHTML = gateLogicBoxHTML(g);
+      if (lb) lb.innerHTML = gateLogicBoxHTML(g, levelIdx);
       renderGateRoom();
     }
 
@@ -5132,16 +5300,29 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       });
     }
 
+    // One step back at a time: from a multi-level gate's rooms, back goes
+    // to that gate's level chooser, not all the way out to the 7-gate list.
     var gateBackBtn = document.getElementById('gateBackBtn');
-    if (gateBackBtn) gateBackBtn.addEventListener('click', function(){ sfx('back'); openGatePicker(); });
+    if (gateBackBtn) gateBackBtn.addEventListener('click', function(){
+      sfx('back');
+      if (gateState && gateState.gate.levels.length > 1) openGateLevels(gateState.gate.key);
+      else openGatePicker();
+    });
 
     // Delegated on document: .rowBtn[data-gate] lives in #gatePicker, which
-    // is rebuilt via innerHTML on every openGatePicker() call, so a direct
-    // listener would need re-attaching each time — delegation sidesteps that
-    // (same reasoning as the app's own keypad delegation).
+    // is rebuilt via innerHTML on every openGatePicker()/openGateLevels()
+    // call, so a direct listener would need re-attaching each time —
+    // delegation sidesteps that (same reasoning as the app's own keypad
+    // delegation).
     document.addEventListener('click', function(e){
-      var row = e.target.closest('.rowBtn[data-gate]');
-      if (row){ openGate(row.dataset.gate); return; }
+      var backRow = e.target.closest('.gateLevelBack');
+      if (backRow){ sfx('back'); openGatePicker(); return; }
+      var levelRow = e.target.closest('.rowBtn[data-level]');
+      if (levelRow && !levelRow.disabled){ startGateLevel(levelRow.dataset.gate, parseInt(levelRow.dataset.level, 10)); return; }
+      var row = e.target.closest('.rowBtn[data-gate]:not([data-level])');
+      if (row){ openGateOrLevels(row.dataset.gate); return; }
+      var nextLevel = e.target.closest('#gateNextLevelBtn');
+      if (nextLevel && gateState){ sfx('tab'); startGateLevel(gateState.gate.key, gateState.levelIdx + 1); return; }
       var cb = e.target.closest('.gateChoiceBtn');
       if (cb && !cb.disabled){ gateChoose(parseInt(cb.dataset.val, 10)); return; }
       var next = e.target.closest('#gateNextBtn');
@@ -7858,8 +8039,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-113 (Share/Copy Link now point at THIS page, not the old frozen v132 mirror)';
-  window.BETA_VER = 'beta-113';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-114 (Gate Logic: 3-input and 5-input sub-levels, unlocked one at a time)';
+  window.BETA_VER = 'beta-114';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
