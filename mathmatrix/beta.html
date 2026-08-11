@@ -6492,9 +6492,17 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // 0.7px short of the tab bar. Technically not overflow, but that is not
     // a margin, it is a rounding error waiting to become one on any device
     // that renders half a pixel differently (a real risk: iOS's own home-
-    // indicator safe-area works through this exact box). A flat 10px
-    // reserve means the fit always has genuine slack, not a coin flip.
-    var box = bar.clientHeight - 10;
+    // indicator safe-area works through this exact box).
+    //
+    // Raja later, on browser chrome varying (Brave's own bottom toolbar vs
+    // plain Chrome's bare minimum): "may allow one line scrolling in
+    // common" — right idea, and deliberately NOT per-browser detection
+    // (chrome height can't be reliably fingerprinted, and .difficultyBar is
+    // scroll-reachable either way since beta-102 / the dvh cap is honoured
+    // since beta-104). What a bigger universal reserve actually buys is
+    // fewer real devices ever NEEDING that scroll in the first place. 28px
+    // is roughly one line of the puzzle-list's own text at this scale.
+    var box = bar.clientHeight - 28;
     var natural = spanAt(1);
     var s = natural > 0 ? Math.max(LV_MIN, Math.min(LV_MAX, box / natural)) : 1;
 
@@ -7704,8 +7712,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-104 (appShell: dropped a leftover min-height that was defeating the dvh cap on browsers like Brave)';
-  window.BETA_VER = 'beta-104';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-105 (Home list: bigger universal fit margin, one text line, so more browsers never need to scroll at all)';
+  window.BETA_VER = 'beta-105';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
