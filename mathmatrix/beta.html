@@ -2491,6 +2491,17 @@ body{ background:#C9A87C !important; }
 .gateBackBtn{ display:block; margin:0 0 14px; padding:9px 18px; border-radius:999px;
   border:2px solid #8A5E31; background:#FFF6E7; color:#5E3D1C; font-size:14px;
   font-weight:800; cursor:pointer; }
+/* The LOGIC sheet's truth table — a real A/B/Output grid, not a sentence
+   per row. font-variant-numeric isn't relevant here (these are words, not
+   digits) but tabular alignment is exactly the same idea: every column
+   lines up regardless of how long "OFF" vs "ON" render. */
+.gateTruthTable{ width:100%; border-collapse:collapse; margin-top:10px; font-size:15px; }
+.gateTruthTable th, .gateTruthTable td{ border:1.5px solid #C4A277; padding:8px 6px;
+  text-align:center; font-weight:800; }
+.gateTruthTable th{ background:#F3E4C9; color:#5E2A0A; text-transform:uppercase;
+  font-size:12px; letter-spacing:.4px; }
+.gateTruthTable td{ color:#33220F; }
+.gateTruthOut{ background:#F3E4C9; }
 .gateProgress{ font-size:13px; font-weight:900; letter-spacing:.6px; text-transform:uppercase;
   color:#8A5E31; margin-bottom:10px; }
 .gateTip{ background:#F3E4C9; border:2px solid #C4A277; border-radius:14px;
@@ -4976,15 +4987,18 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // The 📐 LOGIC button reads whatever is already sitting in #logicBox
     // (openLearn('logic') just opens a sheet around it) — same mechanism
     // showBinaryMode uses to keep LOGIC honest for its own two games.
+    // Raja: "add or put it as a output like A B = output" — a real
+    // columnar table (A / B / Output headers) instead of a sentence per
+    // row, matching how a truth table normally reads in a textbook.
     function gateLogicBoxHTML(g){
+      var head = g.inputs === 1 ? '<tr><th>A</th><th>Output</th></tr>' : '<tr><th>A</th><th>B</th><th>Output</th></tr>';
       var rows = g.rows.map(function(row){
         var out = row[row.length - 1];
-        var ins = g.inputs === 1
-          ? 'A=' + (row[0] ? 'ON' : 'OFF')
-          : 'A=' + (row[0] ? 'ON' : 'OFF') + ', B=' + (row[1] ? 'ON' : 'OFF');
-        return ins + ' → <b>' + (out ? 'ON' : 'OFF') + '</b>';
-      }).join('<br>');
-      return '<h3>📐 ' + g.name + ' — truth table</h3><p>' + g.rule + '</p><p>' + rows + '</p>';
+        var ins = row.slice(0, row.length - 1).map(function(v){ return '<td>' + (v ? 'ON' : 'OFF') + '</td>'; }).join('');
+        return '<tr>' + ins + '<td class="gateTruthOut">' + (out ? 'ON' : 'OFF') + '</td></tr>';
+      }).join('');
+      return '<h3>📐 ' + g.name + ' — truth table</h3><p>' + g.rule + '</p>' +
+        '<table class="gateTruthTable">' + head + rows + '</table>';
     }
 
     function openGatePicker(){
@@ -7643,8 +7657,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-100 (Gate Logic: guard against a re-process race, scroll pill into view)';
-  window.BETA_VER = 'beta-100';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-101 (Gate Logic: truth table now a real A/B/Output grid)';
+  window.BETA_VER = 'beta-101';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
