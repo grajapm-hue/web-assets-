@@ -2082,6 +2082,14 @@ body.gateMode #logicBox{ box-shadow:none !important; border-radius:0 !important;
 .splash.out{ animation:splashOut .42s ease forwards; pointer-events:none; }
 @keyframes splashOut{ to{ opacity:0; transform:scale(1.05); } }
 .splashInner{ position:relative; z-index:1; text-align:center; padding:0 26px; }
+/* Raja: recommend Chrome on Android / Safari on iPhone, right above the
+   monkey-dice roll -- only rendered when detectBrowserTip() below finds the
+   visitor is NOT already on the recommended browser, so nobody sees a tip
+   telling them to do what they are already doing. */
+.splashBrowserTip{ display:inline-block; margin:0 0 12px; padding:6px 14px;
+  border-radius:999px; background:rgba(0,0,0,.24); color:#fff; font-size:12px;
+  font-weight:800; letter-spacing:.2px;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.22); }
 .splashStage{ position:relative; width:230px; height:230px; margin:0 auto;
   display:grid; place-items:center; }
 .splashFace{ width:118px; height:118px; margin:0 auto 4px; border-radius:50%; display:grid;
@@ -7403,12 +7411,31 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     try { if (sessionStorage.getItem('mm.resume')) return; } catch (e) {}
     var tag = document.querySelector('#vault .tagline');
     var name = (SCREEN_TITLE && SCREEN_TITLE.scHome) ? SCREEN_TITLE.scHome.replace(/^[^A-Za-z]+/, '') : 'MathMatrix';
+
+    // Raja: recommend Chrome on Android, Safari on iPhone -- only when the
+    // visitor is on neither. Both UAs carry "Safari" (WebKit's own token,
+    // inherited by every iOS browser) and both carry "Chrome" (Chromium's
+    // token, inherited by Edge/Opera/Samsung Internet), so each is only
+    // trustworthy once the OTHER platform's impostor tokens are excluded.
+    function browserTip(){
+      var ua = navigator.userAgent;
+      var isAndroid = /Android/.test(ua);
+      var isIOS = /iPhone|iPad|iPod/.test(ua);
+      var isRealChrome = /Chrome\//.test(ua) && !/Edg\/|OPR\/|SamsungBrowser/.test(ua);
+      var isRealSafari = /Safari\//.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
+      if (isAndroid && !isRealChrome) return '⚡ Runs best in Google Chrome';
+      if (isIOS && !isRealSafari) return '⚡ Runs best in Safari';
+      return '';
+    }
+    var tipText = browserTip();
+
     var s = document.createElement('div');
     s.className = 'splash';
     s.setAttribute('role', 'button');
     s.setAttribute('aria-label', 'Start');
     s.innerHTML =
       '<div class="splashInner">' +
+        (tipText ? '<div class="splashBrowserTip">' + tipText + '</div>' : '') +
         '<div class="splashStage">' +
           '<span class="splashSpark" style="left:6%;  top:44%; animation-delay:.0s">✨</span>' +
           '<span class="splashSpark" style="left:82%; top:30%; animation-delay:.9s">⭐</span>' +
@@ -7665,8 +7692,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-102 (Home list: always scrollable, so a fit miscalc can never strand a puzzle)';
-  window.BETA_VER = 'beta-102';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-103 (splash: recommends Chrome on Android / Safari on iPhone, when not already on it)';
+  window.BETA_VER = 'beta-103';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
