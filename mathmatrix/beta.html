@@ -2511,6 +2511,7 @@ body{ background:#C9A87C !important; }
   background:#FFF6E7; color:#33220F; font-size:17px; font-weight:800;
   padding:14px; cursor:pointer; touch-action:manipulation;
   display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; }
+.gateChoiceBtn:disabled{ opacity:.45; cursor:default; }
 .gateFeedback{ min-height:26px; font-size:16px; font-weight:800; color:#5E3D1C; }
 /* A plain colour change on small text was too easy to miss (confirmed:
    Raja still couldn't catch it even at the longer pause) — a filled pill
@@ -2518,6 +2519,12 @@ body{ background:#C9A87C !important; }
 .gateFeedback-ok{ color:#0E5A34; background:#DFF7E9; border:2px solid #22c55e;
   border-radius:12px; padding:10px 14px; font-size:18px; }
 .gateFeedback-bad{ color:#9A3412; }
+/* Tap-to-continue instead of a timer — see the comment in gateChoose()
+   for why. Block-level so it sits on its own line under the message,
+   not squeezed inline beside it. */
+.gateNextBtn{ display:block; margin:10px auto 2px; padding:10px 26px;
+  border-radius:999px; border:2px solid #0E5A34; background:#0E5A34;
+  color:#FFF6E7; font-size:15px; font-weight:800; cursor:pointer; }
 .gateWin{ font-size:24px; font-weight:900; padding:24px 6px; line-height:1.5; color:#33220F; }
 .gateWinRule{ display:block; font-size:16px; font-weight:700; color:#5E3D1C; margin-top:8px; }
 .gateAgainBtn{ margin-top:8px; padding:14px 24px; border-radius:14px; border:2px solid #8A5E31;
@@ -4906,15 +4913,27 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         // small and inline, so it cannot spill past the pill's own edges
         // the way animating the whole bordered box did (beta-94's bug).
         var mascotPop = ' <span class="gateEmoji" style="display:inline-block; font-size:28px;">🐒🎲</span>';
-        fb.innerHTML = enteringLogic
+        // Raja: "remain same ... application should appreciation Pop
+        // before attached level" — every timing tweak so far (1.6s, then
+        // 3.5s/5s, then 1.2s/3.2s) was still a race against whenever he
+        // happened to look or screenshot. A screenshot taken even a moment
+        // after a timed pop-up fires will NEVER catch it, no matter how
+        // long the delay — that's not a tuning problem, it's the model
+        // being wrong. The win screen never had this complaint because it
+        // does not auto-advance — it waits for a tap. Same fix here: no
+        // more setTimeout, a real "Next" button. The appreciation is now
+        // guaranteed seen because moving on requires seeing it first.
+        fb.innerHTML = (enteringLogic
           ? '🎉 Warm-up done! Now the real logic begins…' + mascotPop
-          : '✅ ' + cheer + mascotPop;
+          : '✅ ' + cheer + mascotPop)
+          + '<button class="gateNextBtn" id="gateNextBtn" type="button">Next ▶</button>';
         // No .gatePop on the pill itself: same bug as the diagram
         // (beta-89) — mrPop's scale(1.14) overshoot on an element with a
         // real background and border visibly spills past its own
         // container for a fraction of a second.
         fb.className = 'gateFeedback gateFeedback-ok';
         if (btn) btn.classList.add('gateBounce');
+        document.querySelectorAll('.gateChoiceBtn').forEach(function(b){ b.disabled = true; });
         try {
           if (enteringLogic){
             sana('<b>Warm-up done!</b> Now for the real ' + g.name + ' logic.', 'cheer', true);
@@ -4922,20 +4941,6 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
             sana('<b>' + cheer + '</b>', 'cheer');
           }
         } catch(e){}
-        // Raja: "cheer appreciation monkey not appearing before asking
-        // questions" — the warm-up->logic transition carries more to read
-        // ("Warm-up done! Now the real X logic begins…" plus the mascot
-        // pop) than a routine "✅ Nice!", but beta-97 collapsed it to the
-        // same 1.2s as everything else — too fast to register the bigger
-        // moment. Ordinary answers stay quick; this one keeps real time,
-        // same reasoning as the win screen already gets, just not
-        // unlimited since it still needs to move on.
-        setTimeout(function(){
-          if (gateState !== st) return;             // room was left/reopened mid-wait
-          st.roomIdx++;
-          if (st.roomIdx >= total) renderGateDone();
-          else renderGateRoom();
-        }, enteringLogic ? 3200 : 1200);
       } else {
         sfx('no');
         if (btn){
@@ -4944,6 +4949,16 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         fb.textContent = wrongMsg;
         fb.className = 'gateFeedback gateFeedback-bad';
       }
+    }
+
+    // Tapped after seeing the appreciation — see the comment in
+    // gateChoose() on why this replaced the setTimeout auto-advance.
+    function gateAdvance(){
+      var st = gateState; if (!st) return;
+      var g = st.gate, total = gateTotalRooms(g);
+      st.roomIdx++;
+      if (st.roomIdx >= total) renderGateDone();
+      else renderGateRoom();
     }
 
     // The 📐 LOGIC button reads whatever is already sitting in #logicBox
@@ -5027,7 +5042,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       var row = e.target.closest('.rowBtn[data-gate]');
       if (row){ openGate(row.dataset.gate); return; }
       var cb = e.target.closest('.gateChoiceBtn');
-      if (cb){ gateChoose(parseInt(cb.dataset.val, 10)); return; }
+      if (cb && !cb.disabled){ gateChoose(parseInt(cb.dataset.val, 10)); return; }
+      var next = e.target.closest('#gateNextBtn');
+      if (next){ sfx('tab'); gateAdvance(); return; }
       var again = e.target.closest('#gateAgainBtn');
       if (again && gateState){ gateState.roomIdx = 0; sfx('card'); renderGateRoom(); }
     });
@@ -7614,8 +7631,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-98 (Gate Logic: transition moment gets its own longer beat again)';
-  window.BETA_VER = 'beta-98';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-99 (Gate Logic: tap-to-continue instead of a timed advance)';
+  window.BETA_VER = 'beta-99';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
