@@ -16,7 +16,13 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0d0d0d">
-<!-- BETA: no manifest on purpose — installing the preview would shadow the real app -->
+<!-- Raja, after three rounds landing on the same wall: "install"/"download" can
+     only ever fall back to the same manual instructions without a real manifest
+     — so, deliberately, build the real thing now. beta-manifest.json is its OWN
+     manifest (own name, own start_url, own scope), never the shared manifest.json
+     production uses, so an installed beta icon can never collide with or shadow
+     the real app's. -->
+<link rel="manifest" href="beta-manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <!-- without this the browser asks for /favicon.ico, 404s, and the tab sits blank -->
 <link rel="icon" href="icon-192.png" type="image/png">
@@ -2776,17 +2782,16 @@ body{ background:#C9A87C !important; }
          moment a parent thinks to pass the game on — standing in front of the
          puzzle list — not three taps away inside the Get App tab. Same link and
          same share sheet as the big button there; one source, two ways in.
-         Raja: "'Plays with no internet' [and] 'How to Install' both show
-         same notes" — true, both opened the identical openSheet('offline',
-         ...) instructions. His fix: a genuinely different destination, not
-         one more copy of the same notes. #diffInstall now jumps straight to
-         the Get App screen (goScreen('scApp'), wired below near diffShare) --
-         it already has the real install button, offline instructions AND
-         share/update, so this is strictly more than a duplicate sheet, not
-         a rename of one. -->
+         #diffInstall went through two earlier shapes chasing the same fix
+         (relabel the fallback sheet, then navigate to the Get App screen
+         instead) before landing on the real one: beta now has its own
+         manifest, so this is wired into the SAME live install-state logic
+         as #installBtn (below, "Install to home screen") -- a real one-tap
+         install where the browser supports it, the same per-platform
+         instructions sheet only where it genuinely can't. -->
     <span class="diffSide">
       <span class="diffTip" id="diffTip" role="button" tabindex="0" aria-label="How to play with no internet">📴 Plays with no internet</span>
-      <button class="diffShare" id="diffInstall" type="button">📥 Get App</button>
+      <button class="diffShare" id="diffInstall" type="button">📥 Install App</button>
       <button class="diffShare" id="diffShare" type="button">📤 Share</button>
     </span>
   </div>
@@ -4693,29 +4698,22 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
 
 
-  // ---- Home's "Get App" chip — a real destination, not a copy of the notes ---
-  // Raja: "'Plays with no internet' [and] 'How to Install' both show same
-  // notes" — they did, both opened the identical instructions sheet. Rather
-  // than fake a second flavour of the same content, this jumps straight to
-  // the Get App screen itself: the real install button, the same offline
-  // instructions AND share/update, together — genuinely more than the chip
-  // ever showed alone, not a rename of it.
-  (function(){
-    var diffInstall = document.getElementById('diffInstall');
-    if (diffInstall){
-      diffInstall.addEventListener('click', function(){
-        if (soundOn) ensureAudio();
-        goScreen('scApp');
-      });
-    }
-  })();
-
   // ---- Install to home screen -------------------------------------------------
-  // Chrome/Edge fire beforeinstallprompt, so one tap can install. iOS Safari has
-  // no such API, so there we open the same offline/install sheet the Get App
-  // screen's own "Play Offline" button already uses (park('offline', ...)).
+  // Raja, across three rounds: "'Plays with no internet' [and] 'How to
+  // Install' both show same notes" (true — both opened the identical
+  // instructions sheet, beta had no manifest so a real install could never
+  // fire), then, once beta-108 pointed the chip at the Get App screen
+  // instead: "get app not meant for install or download ... same of play
+  // with no internet" (also true — that screen's own notes were still the
+  // same fallback). Both were symptoms of the same missing piece. Now that
+  // beta has its own manifest (above), this can go back to what it always
+  // should have been: a DIRECT install trigger, not a chip that leads
+  // somewhere else first. Chrome/Edge/Brave fire beforeinstallprompt now, so
+  // one tap can genuinely install. iOS Safari has no such API, so there it
+  // still opens the same offline/install sheet as before — that fallback
+  // was never the bug, a manifest-less beta always falling back to it was.
   (function(){
-    var iBtns = [document.getElementById('installBtn')].filter(Boolean);
+    var iBtns = [document.getElementById('installBtn'), document.getElementById('diffInstall')].filter(Boolean);
     if (!iBtns.length) return;
     var deferred = null;
 
@@ -7763,11 +7761,23 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   applyTheme(); // Apply colors and diagonal guide
 })();
 
-// PWA: register service worker for full offline play
-/* BETA: deliberately does NOT register a service worker.
-   The live app at / owns the SW for this origin; registering a second one under
-   /beta/ would fight it, and could leave testers holding a stale cache of a
-   preview build. The beta is always fetched fresh from the network. */
+// PWA: register a service worker so "Get App"/install can be a real, distinct
+// action instead of always falling back to the same manual instructions.
+/* Raja, after three rounds landing on the same wall without one: build the
+   real thing now. The worry the old comment here raised was real — a
+   DEFAULT-scoped registration of beta-sw.js would claim the whole
+   mathmatrix/ directory (a service worker's default scope is its own
+   folder) and genuinely fight the real app's sw.js for the same pages. The
+   fix is an explicit narrow scope, not going without one forever:
+   beta-sw.js registers scoped to exactly './beta.html' — matching
+   beta-manifest.json's own scope — so it can only ever control beta.html
+   itself, never touches KidsMathsMatrixPuzzle.html or the real sw.js's own
+   cache namespace ('mathmatrix-v*' vs this file's 'mathmatrix-beta-v*'). */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('beta-sw.js', { scope: './beta.html' }).catch(function(){});
+  });
+}
 
 // Ask the browser to keep our offline cache "persistent" (much less likely to be
 // evicted under storage pressure). Best-effort: may be granted silently, or not
@@ -7789,8 +7799,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-108 ("Get App" chip on Home now goes to the real Get App screen, not a copy of the offline notes)';
-  window.BETA_VER = 'beta-108';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-109 (beta gets its own manifest + service worker, narrowly scoped -- real install, not another copy of the notes)';
+  window.BETA_VER = 'beta-109';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
@@ -7872,14 +7882,23 @@ if (navigator.storage && navigator.storage.persist) {
       } catch (e) {}
       var jobs = [];
       try {
-        if ('serviceWorker' in navigator && navigator.serviceWorker.getRegistrations){
-          jobs.push(navigator.serviceWorker.getRegistrations().then(function(rs){
-            return Promise.all(rs.map(function(r){ return r.unregister(); }));
+        // getRegistration() (singular, no scope arg) -- the registration that
+        // actually controls THIS document, i.e. beta-sw.js only. Deliberately
+        // not getRegistrations() (plural): that returns every SW registered
+        // for the whole origin, which would also unregister the real app's
+        // own sw.js if both happen to be installed on the same device --
+        // this button should only ever touch beta's own state.
+        if ('serviceWorker' in navigator && navigator.serviceWorker.getRegistration){
+          jobs.push(navigator.serviceWorker.getRegistration().then(function(r){
+            return r ? r.unregister() : null;
           }));
         }
         if (window.caches && caches.keys){
           jobs.push(caches.keys().then(function(ks){
-            return Promise.all(ks.map(function(k){ return caches.delete(k); }));
+            // Same reasoning: only this file's own 'mathmatrix-beta-*'
+            // namespace, never the real app's 'mathmatrix-v*' caches.
+            return Promise.all(ks.filter(function(k){ return k.indexOf('mathmatrix-beta-') === 0; })
+              .map(function(k){ return caches.delete(k); }));
           }));
         }
       } catch (e) {}
