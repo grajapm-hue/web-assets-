@@ -2776,13 +2776,17 @@ body{ background:#C9A87C !important; }
          moment a parent thinks to pass the game on — standing in front of the
          puzzle list — not three taps away inside the Get App tab. Same link and
          same share sheet as the big button there; one source, two ways in.
-         Install sits right next to the offline line for the same reason: Raja
-         asked for a download chip beside it, mirroring the browser's own
-         home-screen-install affordance. Same #installBtn logic as Get App,
-         reusing .diffShare for identical sizing/tap-target treatment. -->
+         Raja: "'Plays with no internet' [and] 'How to Install' both show
+         same notes" — true, both opened the identical openSheet('offline',
+         ...) instructions. His fix: a genuinely different destination, not
+         one more copy of the same notes. #diffInstall now jumps straight to
+         the Get App screen (goScreen('scApp'), wired below near diffShare) --
+         it already has the real install button, offline instructions AND
+         share/update, so this is strictly more than a duplicate sheet, not
+         a rename of one. -->
     <span class="diffSide">
       <span class="diffTip" id="diffTip" role="button" tabindex="0" aria-label="How to play with no internet">📴 Plays with no internet</span>
-      <button class="diffShare" id="diffInstall" type="button">📥 Install</button>
+      <button class="diffShare" id="diffInstall" type="button">📥 Get App</button>
       <button class="diffShare" id="diffShare" type="button">📤 Share</button>
     </span>
   </div>
@@ -4689,14 +4693,29 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
 
 
+  // ---- Home's "Get App" chip — a real destination, not a copy of the notes ---
+  // Raja: "'Plays with no internet' [and] 'How to Install' both show same
+  // notes" — they did, both opened the identical instructions sheet. Rather
+  // than fake a second flavour of the same content, this jumps straight to
+  // the Get App screen itself: the real install button, the same offline
+  // instructions AND share/update, together — genuinely more than the chip
+  // ever showed alone, not a rename of it.
+  (function(){
+    var diffInstall = document.getElementById('diffInstall');
+    if (diffInstall){
+      diffInstall.addEventListener('click', function(){
+        if (soundOn) ensureAudio();
+        goScreen('scApp');
+      });
+    }
+  })();
+
   // ---- Install to home screen -------------------------------------------------
   // Chrome/Edge fire beforeinstallprompt, so one tap can install. iOS Safari has
-  // no such API, so there we open the same offline/install sheet the Home
-  // chip's "Plays with no internet" tap already uses (park('offline', ...)).
-  // Two buttons, one code path: the big one on Get App, and the chip beside
-  // the offline note on Home — same "one source, two ways in" as Share.
+  // no such API, so there we open the same offline/install sheet the Get App
+  // screen's own "Play Offline" button already uses (park('offline', ...)).
   (function(){
-    var iBtns = [document.getElementById('installBtn'), document.getElementById('diffInstall')].filter(Boolean);
+    var iBtns = [document.getElementById('installBtn')].filter(Boolean);
     if (!iBtns.length) return;
     var deferred = null;
 
@@ -7770,8 +7789,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-107 (puzzle-list monkey+dice: raised the size ceiling so it fills a roomy screen)';
-  window.BETA_VER = 'beta-107';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-108 ("Get App" chip on Home now goes to the real Get App screen, not a copy of the offline notes)';
+  window.BETA_VER = 'beta-108';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
