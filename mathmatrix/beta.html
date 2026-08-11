@@ -4922,20 +4922,20 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
             sana('<b>' + cheer + '</b>', 'cheer');
           }
         } catch(e){}
-        // Raja: "the time delay in every answer little more should reduce
-        // to a second, but not in win appreciation that's should keep
-        // some seconds" — 3.5s/5s was asked for when the appreciation
-        // wasn't visible at all; now that it reliably shows (confirmed),
-        // routine per-answer progress can move again. The win screen
-        // itself has no timer to shorten — it already waits for a tap
-        // (Play Again / All Gates), which is what "keep some seconds"
-        // actually needs.
+        // Raja: "cheer appreciation monkey not appearing before asking
+        // questions" — the warm-up->logic transition carries more to read
+        // ("Warm-up done! Now the real X logic begins…" plus the mascot
+        // pop) than a routine "✅ Nice!", but beta-97 collapsed it to the
+        // same 1.2s as everything else — too fast to register the bigger
+        // moment. Ordinary answers stay quick; this one keeps real time,
+        // same reasoning as the win screen already gets, just not
+        // unlimited since it still needs to move on.
         setTimeout(function(){
           if (gateState !== st) return;             // room was left/reopened mid-wait
           st.roomIdx++;
           if (st.roomIdx >= total) renderGateDone();
           else renderGateRoom();
-        }, 1200);
+        }, enteringLogic ? 3200 : 1200);
       } else {
         sfx('no');
         if (btn){
@@ -7614,8 +7614,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-97 (Gate Logic: faster pacing, 14 unique animal warm-ups)';
-  window.BETA_VER = 'beta-97';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-98 (Gate Logic: transition moment gets its own longer beat again)';
+  window.BETA_VER = 'beta-98';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
