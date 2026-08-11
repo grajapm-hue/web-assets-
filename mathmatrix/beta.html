@@ -2512,7 +2512,11 @@ body{ background:#C9A87C !important; }
   padding:14px; cursor:pointer; touch-action:manipulation;
   display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; }
 .gateFeedback{ min-height:26px; font-size:16px; font-weight:800; color:#5E3D1C; }
-.gateFeedback-ok{ color:#0E5A34; }
+/* A plain colour change on small text was too easy to miss (confirmed:
+   Raja still couldn't catch it even at the longer pause) — a filled pill
+   reads as a toast, not just a line of text. */
+.gateFeedback-ok{ color:#0E5A34; background:#DFF7E9; border:2px solid #22c55e;
+  border-radius:12px; padding:10px 14px; font-size:18px; }
 .gateFeedback-bad{ color:#9A3412; }
 .gateWin{ font-size:24px; font-weight:900; padding:24px 6px; line-height:1.5; color:#33220F; }
 .gateWinRule{ display:block; font-size:16px; font-weight:700; color:#5E3D1C; margin-top:8px; }
@@ -4863,21 +4867,30 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       if (correct){
         sfx('yes');
         var enteringLogic = isWarmup && st.roomIdx === WARMUP_COUNT - 1;
-        fb.textContent = enteringLogic ? '✅ Correct! Now the real logic begins…' : '✅ Correct!';
-        fb.className = 'gateFeedback gateFeedback-ok gatePop';
+        // Raja: "observe the appreciation still failed ... may the delay
+        // wrongly placed instead of appreciation" — traced it: SaNa's
+        // bubble sits at the very top of the screen, well above the
+        // choice grid and this feedback line, which is where a child's
+        // eyes actually are right after tapping. The bubble WAS updating
+        // (confirmed) — it just was not where anyone was looking. Same
+        // cheer text now goes in both places, but the feedback line here
+        // is the one guaranteed to be seen — it is what the tap itself
+        // just changed.
+        var cheer = GATE_CHEERS[Math.floor(Math.random() * GATE_CHEERS.length)];
+        fb.textContent = enteringLogic
+          ? '🎉 Warm-up done! Now the real logic begins…'
+          : '✅ ' + cheer;
+        // No .gatePop here: same bug as the diagram (beta-89) — mrPop's
+        // scale(1.14) overshoot on an element with a real background and
+        // border visibly spills past its own container for a fraction of
+        // a second. Harmless on plain text (nothing to see overflow); real
+        // now that this is a bordered pill, so left off from the start.
+        fb.className = 'gateFeedback gateFeedback-ok';
         if (btn) btn.classList.add('gateBounce');
-        // Raja: "no appreciation pop by SaNa[,] may keep some seconds before
-        // showing logic questions" — every correct answer used to just
-        // advance after 700ms with nothing from SaNa; the win screen was
-        // the only place she showed up. First pass held it 1.6s/2.2s and
-        // Raja still couldn't catch it in time — "increase to pause time
-        // in 3 to 5 seconds instead milli seconds" — now 3.5s / 5s for the
-        // bigger warm-up->logic moment.
         try {
           if (enteringLogic){
             sana('<b>Warm-up done!</b> Now for the real ' + g.name + ' logic.', 'cheer', true);
           } else {
-            var cheer = GATE_CHEERS[Math.floor(Math.random() * GATE_CHEERS.length)];
             sana('<b>' + cheer + '</b>', 'cheer');
           }
         } catch(e){}
@@ -7565,8 +7578,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-93 (Home list fit: real safety margin above the tab bar)';
-  window.BETA_VER = 'beta-93';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-95 (Gate Logic: fixed the feedback pill overflow glitch)';
+  window.BETA_VER = 'beta-95';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
