@@ -1466,8 +1466,26 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
    calculation, so it cannot shrink or push the monkey no matter how long
    "Choose Difficulty" renders at any lvScale. */
 .diffMascot{ width:100%; position:relative; text-align:center; line-height:1;
-  margin:2px 0 8px; min-height:calc(24px * var(--lvScale, 1)); }
-.diffMascotEmoji{ font-size:min(calc(40px * var(--lvScale, 1)), 64px);
+  margin:2px 0 8px; min-height:calc(36px * var(--lvScale, 1)); }
+/* Raja, on the empty band above "Choose Difficulty" on a roomy screen (the
+   .diffHead chip stack is right-aligned, so its own left side sits unused
+   too): "can shift there in monkey dice with bigger image". The safer read
+   of "shift" here is bigger, in place -- not relocating it into .diffHead,
+   which this exact row has a real history of breaking (diffLabel/diffTip,
+   then diffTip/diffShare, both documented above). 64px was a fairly tight
+   ceiling next to LV_MAX's own 40*1.75=70px reach; raised well past both so
+   it visibly grows on a tall/roomy screen instead of hitting a wall early. */
+/* --mascotShift/--mascotMax are set by fitHome() below, from the label's
+   REAL measured footprint on this exact device -- a fixed px formula can't
+   work here: testing found a wider/taller phone (bigger --lvScale, similar
+   container width) overlapping WORSE than a small one, not better, since
+   the two don't grow in lockstep. Rather than just capping the emoji small
+   enough to dodge the label, its centering point shifts into the actual
+   free zone to the label's right, so it can grow to fill that space
+   instead of merely avoiding it. Both vars default to a no-op for the
+   first paint, before fitHome() has run once. */
+.diffMascotEmoji{ position:relative; left:var(--mascotShift, 0px);
+  font-size:min(calc(42px * var(--lvScale, 1)), var(--mascotMax, 68px));
   filter:drop-shadow(0 3px 0 rgba(94,64,32,.3)); }
 .diffMascot .diffLabel{ position:absolute; left:0; top:50%; transform:translateY(-50%); }
 
@@ -6521,6 +6539,38 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // 0.7px story above). The CSS is unconditionally scrollable now, so
     // there is nothing left to toggle here -- a wrong measurement can no
     // longer strand content with zero way to reach it.
+
+    // Raja: "shift there in monkey dice with bigger image" -- the empty
+    // band above "Choose Difficulty" on a roomy screen. The monkey used to
+    // be centred across .diffMascot's FULL width while the label sits fixed
+    // at its own left edge (deliberately -- see .diffMascot .diffLabel's
+    // own comment: the label must never push or shrink the monkey). Simply
+    // capping the emoji small enough to dodge the label only proved it
+    // couldn't safely grow much at all -- container width and --lvScale
+    // don't grow in lockstep across devices, so on a wider/taller phone the
+    // safe cap came out SMALLER, not bigger, than before. Instead of
+    // avoiding the label's space, shift the emoji's own centering point
+    // into the real free zone to the label's right (measured, not
+    // guessed), so it can grow to fill exactly that room.
+    var mascot = document.querySelector('.diffMascot');
+    var mLabel = mascot && mascot.querySelector('.diffLabel');
+    var mEmoji = mascot && mascot.querySelector('.diffMascotEmoji');
+    if (mascot && mLabel && mEmoji){
+      mascot.style.setProperty('--mascotShift', '0px');
+      mascot.style.setProperty('--mascotMax', '999px');   // uncap to read the natural (unclamped) size
+      var mRect = mascot.getBoundingClientRect();
+      var lRect = mLabel.getBoundingClientRect();
+      var eRect = mEmoji.getBoundingClientRect();
+      var curFont = parseFloat(getComputedStyle(mEmoji).fontSize) || 1;
+      var widthPerFont = eRect.width / curFont;     // "🐒🎲" glyph-pair ratio, stable across sizes
+      var gap = 10;
+      var availLeft = (lRect.right - mRect.left) + gap;   // clearance the label needs, from the container's own left edge
+      var availWidth = mRect.width - availLeft - gap;     // room to its right, minus a matching margin on that side too
+      var shift = availLeft / 2;                          // re-centering within [availLeft, mRect.width] shifts the midpoint right by half of what's reserved
+      var maxFont = Math.max(24, availWidth / widthPerFont);   // 24px floor: never smaller than it always was
+      mascot.style.setProperty('--mascotShift', shift.toFixed(1) + 'px');
+      mascot.style.setProperty('--mascotMax', maxFont.toFixed(1) + 'px');
+    }
   }
   /* The header pill is the update button now. It counted puzzles before, which
      the list underneath already showed.
@@ -7720,8 +7770,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-106 (splash: monkey+dice bigger when the browser tip has nothing to show)';
-  window.BETA_VER = 'beta-106';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-107 (puzzle-list monkey+dice: raised the size ceiling so it fills a roomy screen)';
+  window.BETA_VER = 'beta-107';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
