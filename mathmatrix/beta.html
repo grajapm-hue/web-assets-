@@ -4878,6 +4878,14 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       var fb = document.getElementById('gateFeedback');
       var btn = document.querySelector('.gateChoiceBtn[data-val="' + val + '"]');
       if (!fb) return;
+      // Raja: "instead of shifting to next question show hanged above" —
+      // a correct answer had already run (all 4 choices were visibly
+      // disabled) but no pill/Next button was showing, so nothing was
+      // left to tap. Root cause not fully pinned down (a double-fire on
+      // the same tap is the leading suspect), but this guard closes it
+      // off regardless of cause: once a Next button is showing, a room
+      // is already answered and waiting on the child, not on another tap.
+      if (document.getElementById('gateNextBtn')) return;
 
       var isWarmup = st.roomIdx < WARMUP_COUNT;
       var correct, wrongMsg;
@@ -4941,6 +4949,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
             sana('<b>' + cheer + '</b>', 'cheer');
           }
         } catch(e){}
+        // Belt and braces: the Next button is what the child needs to
+        // find, so make sure it is actually on screen rather than trusting
+        // it always lands inside the visible viewport on every device.
+        try { fb.scrollIntoView({ behavior:'smooth', block:'end' }); } catch(e){}
       } else {
         sfx('no');
         if (btn){
@@ -7631,8 +7643,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-99 (Gate Logic: tap-to-continue instead of a timed advance)';
-  window.BETA_VER = 'beta-99';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-100 (Gate Logic: guard against a re-process race, scroll pill into view)';
+  window.BETA_VER = 'beta-100';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
