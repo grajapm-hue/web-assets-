@@ -4898,9 +4898,16 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // logic" was the very first ask this whole feature started from —
     // a shared pool so 7 gates don't all open on the identical 2 questions.
     // Raja: "show different animals in each card to another card room" —
-    // 14 entries, one for each of the 7 gates' 2 warm-up rooms exactly
-    // (GATES.length * WARMUP_COUNT), so gateWarmup's index never has to
-    // wrap around and repeat one gate's questions on another's.
+    // ORIGINALLY 14 entries (7 gates x 2 warm-ups). Raja later, after every
+    // LEVEL of a gate started warming up too (beta-117): "you opted same
+    // 2input card selection to 3 input without adding any cards ... what
+    // difference in both in practical" — fair catch: reusing the identical
+    // 2 questions across a gate's 2/3/5-input levels gave levels no real
+    // sense of progression. Expanded to 38 entries: every (gate, level)
+    // pair gets its OWN 2 questions (6 multi-level gates x 3 levels + NOT's
+    // own 1 level, all x WARMUP_COUNT), still exactly the number
+    // gateWarmup's index needs so it never has to wrap and repeat one
+    // pair's questions on another's.
     var WARMUPS = [
       { tip:'Choose the animal that gives us milk.', choices:[
           {emoji:'🦁',text:'Lion'},{emoji:'🐘',text:'Elephant'},{emoji:'🐄',text:'Cow',ok:true},{emoji:'🐅',text:'Tiger'}] },
@@ -4929,12 +4936,70 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       { tip:'Choose the animal known for being very slow.', choices:[
           {emoji:'🐌',text:'Snail',ok:true},{emoji:'🐆',text:'Cheetah'},{emoji:'🐎',text:'Horse'},{emoji:'🐇',text:'Rabbit'}] },
       { tip:'Choose the animal that says "moo".', choices:[
-          {emoji:'🐄',text:'Cow',ok:true},{emoji:'🐑',text:'Sheep'},{emoji:'🐐',text:'Goat'},{emoji:'🐖',text:'Pig'}] }
+          {emoji:'🐄',text:'Cow',ok:true},{emoji:'🐑',text:'Sheep'},{emoji:'🐐',text:'Goat'},{emoji:'🐖',text:'Pig'}] },
+      { tip:'Choose the fastest land animal.', choices:[
+          {emoji:'🐆',text:'Cheetah',ok:true},{emoji:'🐎',text:'Horse'},{emoji:'🐕',text:'Dog'},{emoji:'🐇',text:'Rabbit'}] },
+      { tip:'Choose the animal that spins a web to catch food.', choices:[
+          {emoji:'🕷️',text:'Spider',ok:true},{emoji:'🐜',text:'Ant'},{emoji:'🐝',text:'Bee'},{emoji:'🪰',text:'Fly'}] },
+      { tip:'Choose the animal that can change the colour of its skin.', choices:[
+          {emoji:'🦎',text:'Chameleon',ok:true},{emoji:'🐢',text:'Turtle'},{emoji:'🐸',text:'Frog'},{emoji:'🐍',text:'Snake'}] },
+      { tip:'Choose the animal that sleeps hanging upside down.', choices:[
+          {emoji:'🦇',text:'Bat',ok:true},{emoji:'🦉',text:'Owl'},{emoji:'🦥',text:'Sloth'},{emoji:'🐿️',text:'Squirrel'}] },
+      { tip:'Choose the animal with a hump that stores fat.', choices:[
+          {emoji:'🐫',text:'Camel',ok:true},{emoji:'🐎',text:'Horse'},{emoji:'🫏',text:'Donkey'},{emoji:'🦓',text:'Zebra'}] },
+      { tip:'Choose the animal that makes honey and lives in a hive.', choices:[
+          {emoji:'🐝',text:'Bee',ok:true},{emoji:'🦋',text:'Butterfly'},{emoji:'🦗',text:'Cricket'},{emoji:'🐜',text:'Ant'}] },
+      { tip:'Choose the tallest bird in the world.', choices:[
+          {emoji:'🐦',text:'Ostrich',ok:true},{emoji:'🦚',text:'Peacock'},{emoji:'🦅',text:'Eagle'},{emoji:'🦩',text:'Flamingo'}] },
+      { tip:'Choose the bird that cannot fly.', choices:[
+          {emoji:'🐧',text:'Penguin',ok:true},{emoji:'🦅',text:'Eagle'},{emoji:'🐦',text:'Sparrow'},{emoji:'🦜',text:'Parrot'}] },
+      { tip:'Choose the animal that builds dams using wood.', choices:[
+          {emoji:'🦫',text:'Beaver',ok:true},{emoji:'🦦',text:'Otter'},{emoji:'🐿️',text:'Squirrel'},{emoji:'🐀',text:'Rat'}] },
+      { tip:'Choose the animal that hunts alone and has orange and black stripes.', choices:[
+          {emoji:'🐅',text:'Tiger',ok:true},{emoji:'🦁',text:'Lion'},{emoji:'🐆',text:'Leopard'},{emoji:'🐺',text:'Wolf'}] },
+      { tip:'Choose the animal called "man\'s best friend".', choices:[
+          {emoji:'🐕',text:'Dog',ok:true},{emoji:'🐈',text:'Cat'},{emoji:'🐎',text:'Horse'},{emoji:'🐄',text:'Cow'}] },
+      { tip:'Choose the animal that catches insects with a long sticky tongue.', choices:[
+          {emoji:'🐸',text:'Frog',ok:true},{emoji:'🐢',text:'Turtle'},{emoji:'🐟',text:'Fish'},{emoji:'🐌',text:'Snail'}] },
+      { tip:'Choose the animal that carries its baby in a pouch.', choices:[
+          {emoji:'🦘',text:'Kangaroo',ok:true},{emoji:'🐨',text:'Koala'},{emoji:'🐼',text:'Panda'},{emoji:'🐻',text:'Bear'}] },
+      { tip:'Choose the animal with black eye patches that eats bamboo.', choices:[
+          {emoji:'🐼',text:'Panda',ok:true},{emoji:'🐻',text:'Bear'},{emoji:'🦝',text:'Raccoon'},{emoji:'🐨',text:'Koala'}] },
+      { tip:'Choose the animal that squirts ink to escape danger.', choices:[
+          {emoji:'🐙',text:'Octopus',ok:true},{emoji:'🐟',text:'Fish'},{emoji:'🦀',text:'Crab'},{emoji:'🦐',text:'Shrimp'}] },
+      { tip:'Choose the bird that can copy human words.', choices:[
+          {emoji:'🦜',text:'Parrot',ok:true},{emoji:'🐦',text:'Crow'},{emoji:'🦅',text:'Eagle'},{emoji:'🦉',text:'Owl'}] },
+      { tip:'Choose the animal that curls into a spiky ball when scared.', choices:[
+          {emoji:'🦔',text:'Hedgehog',ok:true},{emoji:'🐢',text:'Turtle'},{emoji:'🐌',text:'Snail'},{emoji:'🐸',text:'Frog'}] },
+      { tip:'Choose the animal that sprays a bad smell to defend itself.', choices:[
+          {emoji:'🦨',text:'Skunk',ok:true},{emoji:'🦝',text:'Raccoon'},{emoji:'🦡',text:'Badger'},{emoji:'🦦',text:'Otter'}] },
+      { tip:'Choose the animal that lives both on land and in water.', choices:[
+          {emoji:'🐊',text:'Crocodile',ok:true},{emoji:'🐍',text:'Snake'},{emoji:'🦎',text:'Lizard'},{emoji:'🐫',text:'Camel'}] },
+      { tip:'Choose the animal that purrs when it is happy.', choices:[
+          {emoji:'🐈',text:'Cat',ok:true},{emoji:'🐕',text:'Dog'},{emoji:'🐇',text:'Rabbit'},{emoji:'🐹',text:'Hamster'}] },
+      { tip:'Choose the insect that changes from a caterpillar into a flying insect.', choices:[
+          {emoji:'🦋',text:'Butterfly',ok:true},{emoji:'🐝',text:'Bee'},{emoji:'🐞',text:'Ladybug'},{emoji:'🪰',text:'Fly'}] },
+      { tip:'Choose the animal with webbed feet that quacks.', choices:[
+          {emoji:'🦆',text:'Duck',ok:true},{emoji:'🦩',text:'Flamingo'},{emoji:'🦢',text:'Swan'},{emoji:'🐔',text:'Chicken'}] },
+      { tip:'Choose the animal that digs tunnels underground to live.', choices:[
+          {emoji:'🦫',text:'Mole',ok:true},{emoji:'🐇',text:'Rabbit'},{emoji:'🐿️',text:'Squirrel'},{emoji:'🐀',text:'Rat'}] },
+      { tip:'Choose the largest animal that has ever lived.', choices:[
+          {emoji:'🐋',text:'Blue Whale',ok:true},{emoji:'🐘',text:'Elephant'},{emoji:'🦒',text:'Giraffe'},{emoji:'🦈',text:'Shark'}] }
     ];
     var WARMUP_COUNT = 2;
-    function gateWarmup(g, roomIdx){
-      var gi = GATES.indexOf(g);
-      return WARMUPS[(gi * WARMUP_COUNT + roomIdx) % WARMUPS.length];
+    // Every (gate, level) pair gets its own 2-question slot -- a running
+    // offset built once from GATES itself (6 gates x 3 levels + NOT x 1 =
+    // 19 slots, matching WARMUPS.length exactly the same way the original
+    // 14-entry version matched GATES.length, so this index never wraps
+    // and repeats one pair's questions on another's).
+    var GATE_WARMUP_SLOT_BASE = {};
+    (function(){
+      var acc = 0;
+      GATES.forEach(function(g){ GATE_WARMUP_SLOT_BASE[g.key] = acc; acc += g.levels.length; });
+    })();
+    function gateWarmup(g, levelIdx, roomIdx){
+      var slot = GATE_WARMUP_SLOT_BASE[g.key] + levelIdx;
+      return WARMUPS[(slot * WARMUP_COUNT + roomIdx) % WARMUPS.length];
     }
     // Rotated per correct answer so 4-6 in a row don't all say the same
     // thing — same short "cheer" voice SaNa already uses for a finished
@@ -5015,7 +5080,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       var progress = '<div class="gateProgress">Room ' + (st.roomIdx + 1) + ' of ' + total + ' — ' + g.name + levelTag + '</div>';
 
       if (st.roomIdx < WARMUP_COUNT){                  // pass-through warm-up, every level now
-        var w = gateWarmup(g, st.roomIdx);
+        var w = gateWarmup(g, st.levelIdx, st.roomIdx);
         el.innerHTML = progress +
           '<div class="gateTip">' + w.tip + '</div>' +
           '<div class="gateChoices">' +
@@ -5119,7 +5184,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       var isWarmup = st.roomIdx < WARMUP_COUNT;   // every level warms up now
       var correct, wrongMsg;
       if (isWarmup){
-        var w = gateWarmup(g, st.roomIdx);
+        var w = gateWarmup(g, st.levelIdx, st.roomIdx);
         correct = !!(w.choices[val] && w.choices[val].ok);
         wrongMsg = '❌ Not quite — try again!';
       } else {
@@ -8067,8 +8132,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-117 (Gate Logic: the animal warm-up now runs before every level, not just 2-input)';
-  window.BETA_VER = 'beta-117';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-118 (Gate Logic: every level now gets its own distinct warm-up questions, not the same 2 cards repeated)';
+  window.BETA_VER = 'beta-118';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
