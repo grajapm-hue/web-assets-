@@ -1493,6 +1493,30 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
 .diffMascotEmoji{ position:relative; left:var(--mascotShift, 0px);
   font-size:min(calc(42px * var(--lvScale, 1)), var(--mascotMax, 68px));
   filter:drop-shadow(0 3px 0 rgba(94,64,32,.3)); }
+/* Raja, after the warm-up cards got theirs: "can tune the another one monkey
+   dice like attached" — the same dark medallion behind Home's mascot, which
+   was the last picture still floating bare on the wood.
+   A PSEUDO-ELEMENT, not padding on the span: fitHome() sizes this emoji by
+   dividing its measured width by its font-size ("glyph-pair ratio, stable
+   across sizes"), and padding is fixed px that does not scale with the font,
+   so adding any would quietly corrupt that ratio and mis-size the mascot on
+   exactly the roomy screens the measuring exists to serve. Absolute
+   positioning keeps it out of the box the JS measures.
+   Sized in em so the medallion grows with whatever size fitHome lands on,
+   and kept inside the 10px clearance fitHome reserves so it cannot reach
+   the "Choose Difficulty" label. The existing drop-shadow filter already
+   makes this element a stacking context, so z-index:-1 stays safely behind
+   the glyphs without escaping behind anything else.
+   Vertical inset is 0 on purpose. Bleeding it out even 0.14em put the pill
+   4px under the Share chip at every width and 5px into "Add Magic" on a
+   320px phone — measured, not guessed. The line box already carries leading
+   above and below the glyphs, so the pill has room without reaching past
+   its own row, and this avoids buying that room with extra margin, which on
+   a short screen is exactly what pushes Home back into scrolling. */
+.diffMascotEmoji::before{
+  content:''; position:absolute; z-index:-1; inset:0 -0.18em;
+  background:#2E2418; border-radius:999px;
+}
 .diffMascot .diffLabel{ position:absolute; left:0; top:50%; transform:translateY(-50%); }
 
 /* ══ TAP TARGETS — reach without regrowth ══
@@ -8311,8 +8335,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-124 (Animal cards now sit on a dark medallion so every picture pops; ON/OFF cards keep their own colour coding)';
-  window.BETA_VER = 'beta-124';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-125 (Home monkey+dice now sits on the same dark medallion as the animal cards)';
+  window.BETA_VER = 'beta-125';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
