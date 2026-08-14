@@ -2626,6 +2626,25 @@ body{ background:#C9A87C !important; }
    and nested INSIDE .gateEmoji, so the pop animation and the layout above
    apply to it unchanged — nothing else needed a special case. */
 .gateEmoji svg{ display:block; width:56px; height:56px; margin:0 auto; }
+
+/* Raja: "may set black background inside card for emojis" — a dark medallion
+   behind each animal, which does make them read far more sharply than they
+   did floating on cream. Two things learned by rendering it rather than
+   assuming:
+     • Not pure black. On black the ostrich lost its own silhouette (its body
+       IS black) and the disc fought the warm sandalwood palette; this warm
+       near-black sits in the theme and keeps the bird readable. The drawing
+       itself was lifted off flat black for the same reason.
+     • ANIMAL cards only. The ON/OFF cards carry the same .gateEmoji, and a
+       dark disc behind 🟢/🔴 turned them into heavy black donuts arguing with
+       the green/red tint those cards already use to code the answer — they
+       were already high-contrast and needed no help, so :not(.gateChoiceLogic)
+       keeps this off them. */
+.gateChoiceBtn:not(.gateChoiceLogic) .gateEmoji{
+  width:78px; height:78px; margin:0 auto 2px; border-radius:50%;
+  background:#2E2418; display:flex; align-items:center; justify-content:center;
+}
+.gateChoiceBtn:not(.gateChoiceLogic) .gateEmoji svg{ width:58px; height:58px; }
 .gateWinEmoji{ font-size:68px; animation-duration:.7s; }
 /* .gateDiagram used to carry this too, but mrPop's scale(1.14) overshoot on
    a bordered box with aligned monospace text inside it visibly spilled past
@@ -4958,8 +4977,12 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         '<path d="M33 42 V59" fill="none" stroke="#E9A98F" stroke-width="2.8" stroke-linecap="round"/>' +
         '<path d="M25 59 H20.5" fill="none" stroke="#E9A98F" stroke-width="2.4" stroke-linecap="round"/>' +
         '<path d="M33 59 H37.5" fill="none" stroke="#E9A98F" stroke-width="2.4" stroke-linecap="round"/>' +
-        '<ellipse cx="27" cy="33" rx="15" ry="11.5" fill="#34302D"/>' +
-        '<ellipse cx="25.5" cy="34.5" rx="8.5" ry="5.6" fill="#47423E"/>' +
+        // Body is a lifted charcoal with a lighter rim, not flat near-black:
+        // the card now sits it on a dark medallion, and a black bird on a
+        // dark ground loses the one thing that identifies it -- its
+        // silhouette. This tone holds its shape on both.
+        '<ellipse cx="27" cy="33" rx="15" ry="11.5" fill="#4E453E" stroke="#7A6E63" stroke-width="1.2"/>' +
+        '<ellipse cx="25.5" cy="34.5" rx="8.5" ry="5.6" fill="#635850"/>' +
         '<path d="M38.5 27 C43.5 22 45 15 45.4 11" fill="none" stroke="#E9A98F" stroke-width="4.4" stroke-linecap="round"/>' +
         '<circle cx="45.7" cy="8" r="4" fill="#E9A98F"/>' +
         '<path d="M49.2 7.2 L55 8.8 L49.2 10.4 Z" fill="#F2A93F"/>' +
@@ -8288,8 +8311,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-123 (Tallest-bird question is back, with a real ostrich drawn for it since Unicode has no ostrich emoji)';
-  window.BETA_VER = 'beta-123';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-124 (Animal cards now sit on a dark medallion so every picture pops; ON/OFF cards keep their own colour coding)';
+  window.BETA_VER = 'beta-124';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
