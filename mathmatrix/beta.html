@@ -1994,7 +1994,15 @@ body.gateMode .keysChip,
 body.gateMode .targetPill,
 body.gateMode .solvedCounter{ display:none !important; }
 body.binaryMode #binaryPanel{ display:flex !important; }
-body.gateMode #gatePanel{ display:block !important; }
+/* Scrollable, like .difficultyBar already is. .screens is overflow:hidden, so
+   before this a gate room taller than the screen was not merely awkward —
+   it was CLIPPED behind the tab bar with no way to reach it, which is what
+   Raja photographed: the bottom answer cards half-swallowed by the tab bar.
+   The sizing below keeps the common cases fitting without a scroll; this is
+   the guarantee that nothing can ever become unreachable, whatever the
+   phone or the input count. */
+body.gateMode #gatePanel{ display:block !important;
+  flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; }
 /* Raja: "in logic sheet sheet should be shift upward to see all text" —
    #logicBox's content (a 4-line truth table) is short enough that the
    bottom sheet, sized to content, was only claiming the bottom third of
@@ -2637,8 +2645,33 @@ body{ background:#C9A87C !important; }
    same data-val attribute for plain 0-3 indices, no ON/OFF meaning there. */
 .gateChoiceLogic[data-val="1"]{ background:#DFF7E9; border-color:var(--wingreen); }
 .gateChoiceLogic[data-val="0"]{ background:#FFE3DE; border-color:var(--warn); }
-.gateChoiceLogic[data-val="-1"]{ background:#EFEAF9; border-color:#8B7FD6; }
-.gateChoiceLogic[data-val="-2"]{ background:#E1F2FB; border-color:#38BDF8; }
+/* Raja: "remove this cards and instead increase the space for questions
+   table". With the two decoy answers gone the choice grid is one row
+   instead of two, freeing ~164px. It goes where he asked -- the wiring
+   diagram, which is the thing a child has to actually read to answer, and
+   which was being squeezed into a strip while four boxes took the screen.
+   Only the LOGIC rooms change: the warm-up animal cards still need four.
+   Sized against the SCREEN, not a fixed px: a flat 20px looked right on a
+   tall phone and pushed the answer cards behind the tab bar on a 640px one
+   — and a 5-input room draws eleven lines where a 2-input draws six, so the
+   tallest case is nearly double. vh-based clamps grow it on the phones that
+   have room and give it back on the ones that do not. */
+.gateChoicesTwo + .gateFeedback{ margin-top:4px; }
+.gateChoicesTwo .gateChoiceBtn{ min-height:clamp(82px, 14vh, 150px); }
+/* --diagLines is the diagram's own line count, set per room. A 2-input room
+   draws 6 lines and a 5-input 11, so one font size cannot serve both: the
+   5-input diagram pushed the answer cards a full 116px off a 640px screen.
+   Dividing the height budget by the line count sizes each room to what it
+   actually has to draw. max-height is the backstop — whatever is left over
+   scrolls INSIDE the diagram, so the two answer cards can never be pushed
+   off the screen again, which was the original complaint. */
+.gateRoomLogic .gateDiagram{
+  font-size:clamp(10px, min(2.1vh, calc(19vh / var(--diagLines, 6))), 20px);
+  line-height:1.45; max-height:40vh; overflow-y:auto;
+  padding:clamp(11px, 1.5vh, 22px) 18px; margin-bottom:clamp(8px, 1.4vh, 16px); }
+.gateRoomLogic .gateProgress{ margin-bottom:clamp(4px, 1vh, 10px); }
+.gateRoomLogic .gateTip{ font-size:clamp(15px, 1.9vh, 18px);
+  padding:clamp(10px, 1.5vh, 16px) 18px; margin-bottom:clamp(8px, 1.4vh, 16px); }
 .gateFeedback{ min-height:26px; font-size:16px; font-weight:800; color:#5E3D1C; }
 /* A plain colour change on small text was too easy to miss (confirmed:
    Raja still couldn't catch it even at the longer pause) — a filled pill
@@ -5259,10 +5292,6 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       return head + '\n\n' + wires;
     }
 
-    // A confusable-gate decoy — the classic mix-up (AND/OR, and OR for
-    // everything else). Kept to one simple rule rather than a hand-tuned
-    // table per gate: still teaches "this isn't automatically that gate".
-    function decoyGateName(g){ return g.key === 'or' ? 'AND' : 'OR'; }
 
     // Raja: "same like attached image with animated emoji effects" — same
     // room shape as the reference, but the emoji now actually move: a pop-in
@@ -5279,6 +5308,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       var progress = '<div class="gateProgress">Room ' + (st.roomIdx + 1) + ' of ' + total + ' — ' + g.name + levelTag + '</div>';
       var wc = gateWarmupCount(level);
 
+      // Only the LOGIC rooms get the roomier diagram type — the warm-up
+      // rooms still run four animal cards and have no diagram at all.
+      el.classList.toggle('gateRoomLogic', st.roomIdx >= wc);
+
       if (st.roomIdx < wc){                  // pass-through warm-up, count scales with inputs
         var w = gateWarmup(g, st.levelIdx, st.roomIdx);
         el.innerHTML = progress +
@@ -5294,25 +5327,40 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       }
 
       var row = level.rows[st.roomIdx - wc];
+      // Raja, marking the bottom two cards: "the marked option inactive
+      // while answering ... remove this cards and instead increase the
+      // space for questions table". Both readings of that are true at
+      // once. They were never a live answer -- a gate's output is ON or
+      // OFF and nothing else, so "Cannot know" and "Same as OR" existed
+      // only as decoys -- AND on his phone they sat half-behind the tab
+      // bar, so they were barely tappable either. Four boxes were pushing
+      // the thing a child actually has to read, the wiring diagram, up
+      // into a cramped strip. Two boxes, one row, and the room it frees
+      // goes to the diagram (see .gateRoomLogic below).
+      // Losing the decoys costs less than it looks: a wrong answer here
+      // has always let you try again, so four boxes never stopped anyone
+      // brute-forcing a room -- it only took more taps.
       var choices = [
         { emoji:'🟢', text:'ON / TRUE', val:1 },
-        { emoji:'🔴', text:'OFF / FALSE', val:0 },
-        { emoji:'❓', text:'Cannot know', val:-1 },
-        { emoji:'↔️', text:'Same as ' + decoyGateName(g), val:-2 }
+        { emoji:'🔴', text:'OFF / FALSE', val:0 }
       ];
+      // The diagram sizes itself by how many lines it actually draws — 6 for
+      // a 2-input room, 11 for a 5-input one. See .gateRoomLogic .gateDiagram.
+      var diagram = gateDiagramHTML(g, level, row);
+      var diagLines = diagram.split('\n').length;
       el.innerHTML = progress +
         '<div class="gateTip">LOGIC ROOM: What does the ' + g.name.toUpperCase() + ' output for this input?</div>' +
-        '<div class="gateDiagram">' + gateDiagramHTML(g, level, row) + '</div>' +
-        '<div class="gateChoices">' +
+        '<div class="gateDiagram" style="--diagLines:' + diagLines + ';">' + diagram + '</div>' +
+        '<div class="gateChoices gateChoicesTwo">' +
           choices.map(function(c){
             // gateChoiceLogic (not on the warm-up buttons above, which
             // reuse data-val for plain 0-3 indices, not this ON/OFF
-            // meaning) scopes the colour-coding below to only these four.
+            // meaning) scopes the colour-coding below to only these two.
             return '<button class="gateChoiceBtn gateChoiceLogic" data-val="' + c.val + '">' +
               '<span class="gateEmoji">' + c.emoji + '</span> ' + c.text + '</button>';
           }).join('') +
         '</div>' +
-        '<div class="gateFeedback" id="gateFeedback">Touch one of the four boxes.</div>';
+        '<div class="gateFeedback" id="gateFeedback">Touch one of the two boxes.</div>';
     }
 
     function renderGateDone(){
@@ -8379,8 +8427,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-127 (Choose Difficulty label re-aligned with the group headings under it)';
-  window.BETA_VER = 'beta-127';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-128 (Logic rooms: two answer cards instead of four, and the freed space goes to the wiring diagram)';
+  window.BETA_VER = 'beta-128';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
