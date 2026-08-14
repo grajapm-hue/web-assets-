@@ -4911,6 +4911,22 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // inputs (2+3+5 per multi-level gate x 6 gates + NOT's own 2) — still
     // exactly the number gateWarmup's index needs so it never has to wrap
     // and repeat one pair's questions on another's.
+    //
+    // THE RULE FOR EDITING THIS LIST, learned the hard way (beta-122):
+    // an animal goes in here ONLY if Unicode has ITS OWN emoji. Raja put a
+    // real ostrich photo next to the card and it was showing a small blue
+    // songbird — because there is no ostrich emoji and beta-118 had quietly
+    // substituted the generic 🐦. A kid reading "Ostrich" off a sparrow
+    // picture is being taught something false by the thing meant to teach
+    // them. Same trap caught Mole (was drawn with the BEAVER emoji) and
+    // Cheetah (drawn with the LEOPARD emoji, the same picture that is the
+    // right answer to the leopard question). No near-enough lookalikes: if
+    // the animal has no faithful emoji, pick a different animal — the fact
+    // is replaceable, a wrong picture is not. Two cross-checks keep it
+    // honest: every emoji must map to exactly ONE animal name and every
+    // animal name to exactly ONE emoji across all 62 entries (78/78 today),
+    // and nothing newer than Unicode 13 — 🫏 was dropped because phones a
+    // year or two old draw it as an empty box.
     var WARMUPS = [
       { tip:'Choose the animal that gives us milk.', choices:[
           {emoji:'🦁',text:'Lion'},{emoji:'🐘',text:'Elephant'},{emoji:'🐄',text:'Cow',ok:true},{emoji:'🐅',text:'Tiger'}] },
@@ -4937,11 +4953,11 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       { tip:'Choose the animal called the "King of the Jungle".', choices:[
           {emoji:'🦁',text:'Lion',ok:true},{emoji:'🐅',text:'Tiger'},{emoji:'🐘',text:'Elephant'},{emoji:'🐻',text:'Bear'}] },
       { tip:'Choose the animal known for being very slow.', choices:[
-          {emoji:'🐌',text:'Snail',ok:true},{emoji:'🐆',text:'Cheetah'},{emoji:'🐎',text:'Horse'},{emoji:'🐇',text:'Rabbit'}] },
+          {emoji:'🐌',text:'Snail',ok:true},{emoji:'🐆',text:'Leopard'},{emoji:'🐎',text:'Horse'},{emoji:'🐇',text:'Rabbit'}] },
       { tip:'Choose the animal that says "moo".', choices:[
           {emoji:'🐄',text:'Cow',ok:true},{emoji:'🐑',text:'Sheep'},{emoji:'🐐',text:'Goat'},{emoji:'🐖',text:'Pig'}] },
-      { tip:'Choose the fastest land animal.', choices:[
-          {emoji:'🐆',text:'Cheetah',ok:true},{emoji:'🐎',text:'Horse'},{emoji:'🐕',text:'Dog'},{emoji:'🐇',text:'Rabbit'}] },
+      { tip:'Choose the animal people ride in races.', choices:[
+          {emoji:'🐎',text:'Horse',ok:true},{emoji:'🐄',text:'Cow'},{emoji:'🐖',text:'Pig'},{emoji:'🐐',text:'Goat'}] },
       { tip:'Choose the animal that spins a web to catch food.', choices:[
           {emoji:'🕷️',text:'Spider',ok:true},{emoji:'🐜',text:'Ant'},{emoji:'🐝',text:'Bee'},{emoji:'🪰',text:'Fly'}] },
       { tip:'Choose the animal that can change the colour of its skin.', choices:[
@@ -4949,11 +4965,11 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       { tip:'Choose the animal that sleeps hanging upside down.', choices:[
           {emoji:'🦇',text:'Bat',ok:true},{emoji:'🦉',text:'Owl'},{emoji:'🦥',text:'Sloth'},{emoji:'🐿️',text:'Squirrel'}] },
       { tip:'Choose the animal with a hump that stores fat.', choices:[
-          {emoji:'🐫',text:'Camel',ok:true},{emoji:'🐎',text:'Horse'},{emoji:'🫏',text:'Donkey'},{emoji:'🦓',text:'Zebra'}] },
+          {emoji:'🐫',text:'Camel',ok:true},{emoji:'🐎',text:'Horse'},{emoji:'🦌',text:'Deer'},{emoji:'🦓',text:'Zebra'}] },
       { tip:'Choose the animal that makes honey and lives in a hive.', choices:[
           {emoji:'🐝',text:'Bee',ok:true},{emoji:'🦋',text:'Butterfly'},{emoji:'🦗',text:'Cricket'},{emoji:'🐜',text:'Ant'}] },
-      { tip:'Choose the tallest bird in the world.', choices:[
-          {emoji:'🐦',text:'Ostrich',ok:true},{emoji:'🦚',text:'Peacock'},{emoji:'🦅',text:'Eagle'},{emoji:'🦩',text:'Flamingo'}] },
+      { tip:'Choose the bird that lays the eggs we eat for breakfast.', choices:[
+          {emoji:'🐔',text:'Chicken',ok:true},{emoji:'🦚',text:'Peacock'},{emoji:'🦅',text:'Eagle'},{emoji:'🦉',text:'Owl'}] },
       { tip:'Choose the bird that cannot fly.', choices:[
           {emoji:'🐧',text:'Penguin',ok:true},{emoji:'🦅',text:'Eagle'},{emoji:'🐦',text:'Sparrow'},{emoji:'🦜',text:'Parrot'}] },
       { tip:'Choose the animal that builds dams using wood.', choices:[
@@ -4971,21 +4987,21 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       { tip:'Choose the animal that squirts ink to escape danger.', choices:[
           {emoji:'🐙',text:'Octopus',ok:true},{emoji:'🐟',text:'Fish'},{emoji:'🦀',text:'Crab'},{emoji:'🦐',text:'Shrimp'}] },
       { tip:'Choose the bird that can copy human words.', choices:[
-          {emoji:'🦜',text:'Parrot',ok:true},{emoji:'🐦',text:'Crow'},{emoji:'🦅',text:'Eagle'},{emoji:'🦉',text:'Owl'}] },
+          {emoji:'🦜',text:'Parrot',ok:true},{emoji:'🦆',text:'Duck'},{emoji:'🦅',text:'Eagle'},{emoji:'🦉',text:'Owl'}] },
       { tip:'Choose the animal that curls into a spiky ball when scared.', choices:[
           {emoji:'🦔',text:'Hedgehog',ok:true},{emoji:'🐢',text:'Turtle'},{emoji:'🐌',text:'Snail'},{emoji:'🐸',text:'Frog'}] },
       { tip:'Choose the animal that sprays a bad smell to defend itself.', choices:[
           {emoji:'🦨',text:'Skunk',ok:true},{emoji:'🦝',text:'Raccoon'},{emoji:'🦡',text:'Badger'},{emoji:'🦦',text:'Otter'}] },
       { tip:'Choose the animal that lives both on land and in water.', choices:[
-          {emoji:'🐊',text:'Crocodile',ok:true},{emoji:'🐍',text:'Snake'},{emoji:'🦎',text:'Lizard'},{emoji:'🐫',text:'Camel'}] },
+          {emoji:'🐊',text:'Crocodile',ok:true},{emoji:'🐍',text:'Snake'},{emoji:'🐟',text:'Fish'},{emoji:'🐫',text:'Camel'}] },
       { tip:'Choose the animal that purrs when it is happy.', choices:[
           {emoji:'🐈',text:'Cat',ok:true},{emoji:'🐕',text:'Dog'},{emoji:'🐇',text:'Rabbit'},{emoji:'🐹',text:'Hamster'}] },
       { tip:'Choose the insect that changes from a caterpillar into a flying insect.', choices:[
           {emoji:'🦋',text:'Butterfly',ok:true},{emoji:'🐝',text:'Bee'},{emoji:'🐞',text:'Ladybug'},{emoji:'🪰',text:'Fly'}] },
       { tip:'Choose the animal with webbed feet that quacks.', choices:[
           {emoji:'🦆',text:'Duck',ok:true},{emoji:'🦩',text:'Flamingo'},{emoji:'🦢',text:'Swan'},{emoji:'🐔',text:'Chicken'}] },
-      { tip:'Choose the animal that digs tunnels underground to live.', choices:[
-          {emoji:'🦫',text:'Mole',ok:true},{emoji:'🐇',text:'Rabbit'},{emoji:'🐿️',text:'Squirrel'},{emoji:'🐀',text:'Rat'}] },
+      { tip:'Choose the tiny insect that digs tunnels underground and lives in a big colony.', choices:[
+          {emoji:'🐜',text:'Ant',ok:true},{emoji:'🦋',text:'Butterfly'},{emoji:'🐞',text:'Ladybug'},{emoji:'🦗',text:'Cricket'}] },
       { tip:'Choose the largest animal that has ever lived.', choices:[
           {emoji:'🐋',text:'Blue Whale',ok:true},{emoji:'🐘',text:'Elephant'},{emoji:'🦒',text:'Giraffe'},{emoji:'🦈',text:'Shark'}] },
       { tip:'Choose the bird known for hunting at night.', choices:[
@@ -4993,7 +5009,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       { tip:'Choose the animal that claps its flippers and lives near icy water.', choices:[
           {emoji:'🦭',text:'Seal',ok:true},{emoji:'🐧',text:'Penguin'},{emoji:'🐬',text:'Dolphin'},{emoji:'🐳',text:'Whale'}] },
       { tip:'Choose the smart ocean animal that talks to its friends using clicks and whistles.', choices:[
-          {emoji:'🐬',text:'Dolphin',ok:true},{emoji:'🦈',text:'Shark'},{emoji:'🐠',text:'Fish'},{emoji:'🦑',text:'Squid'}] },
+          {emoji:'🐬',text:'Dolphin',ok:true},{emoji:'🦈',text:'Shark'},{emoji:'🐟',text:'Fish'},{emoji:'🦑',text:'Squid'}] },
       { tip:'Choose the animal with a big horn on its nose.', choices:[
           {emoji:'🦏',text:'Rhino',ok:true},{emoji:'🐘',text:'Elephant'},{emoji:'🦛',text:'Hippo'},{emoji:'🐫',text:'Camel'}] },
       { tip:'Choose the animal known as the "river horse".', choices:[
@@ -8230,8 +8246,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-121 (Gate Logic: a finished gate now offers the NEXT gate, not just Play Again -- NOT and every final 5-input win)';
-  window.BETA_VER = 'beta-121';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-122 (Warm-up cards: every animal now shows its OWN picture -- Ostrich was a songbird, Mole a beaver, Cheetah a leopard)';
+  window.BETA_VER = 'beta-122';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
