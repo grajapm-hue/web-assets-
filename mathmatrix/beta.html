@@ -5192,12 +5192,28 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       try { sana('<b>' + g.name + levelTag + ' — solved!</b> Nice work.', 'party', true); } catch(e){}
       gateMarkLevelDone(g.key, st.levelIdx);
       var hasNext = st.levelIdx + 1 < g.levels.length;
+      // Raja, from NOT's win screen: "after not gate missing automated
+      // switch to next level verify same to all plays" — with no next
+      // LEVEL inside the gate, this screen dead-ended on "Play Again":
+      // true for NOT (single level) and for EVERY gate's final 5-input
+      // win. Same tap-to-continue pattern as the "Unlocked" button above
+      // (never a timer — timed auto-advance was already tried and thrown
+      // out in the appreciation saga: whatever fires on its own gets
+      // missed), just pointing at the NEXT GATE in the list instead.
+      // XNOR, the last gate, has nowhere to point — it keeps only the
+      // replay button, as before.
+      var gi = GATES.indexOf(g);
+      var nextGate = (!hasNext && gi > -1 && gi + 1 < GATES.length) ? GATES[gi + 1] : null;
       el.innerHTML =
         '<div class="gateWin"><span class="gateEmoji gateWinEmoji">🎉 🐒🎲</span><br>' + g.name + levelTag + ' solved!' +
           '<span class="gateWinRule">' + g.rule + '</span></div>' +
         (hasNext
           ? '<button class="gateNextLevelBtn" id="gateNextLevelBtn" type="button" disabled>▶ Unlocked: ' +
               g.levels[st.levelIdx + 1].inputs + '-input ' + gateShortName(g) + '</button>'
+          : '') +
+        (nextGate
+          ? '<button class="gateNextLevelBtn" id="gateNextGateBtn" type="button" disabled data-gate="' + nextGate.key + '">▶ Next gate: ' +
+              nextGate.name + '</button>'
           : '') +
         // Raja: "where is 3 input kids play rooms" — traced it to a mix-up,
         // not a code bug: this button correctly replays the SAME level it
@@ -5222,9 +5238,11 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       // cause (ghost click, a real fast double-tap, anything) — same idea
       // already proven for the Next ▶ button's own double-fire guard.
       setTimeout(function(){
-        var nb = document.getElementById('gateNextLevelBtn'), ab = document.getElementById('gateAgainBtn');
+        var nb = document.getElementById('gateNextLevelBtn'), ab = document.getElementById('gateAgainBtn'),
+            gb = document.getElementById('gateNextGateBtn');
         if (nb) nb.disabled = false;
         if (ab) ab.disabled = false;
+        if (gb) gb.disabled = false;
       }, 450);
     }
 
@@ -5486,6 +5504,16 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       if (row){ openGateOrLevels(row.dataset.gate); return; }
       var nextLevel = e.target.closest('#gateNextLevelBtn');
       if (nextLevel && gateState){ sfx('tab'); startGateLevel(gateState.gate.key, gateState.levelIdx + 1); return; }
+      var nextGateBtn = e.target.closest('#gateNextGateBtn');
+      if (nextGateBtn){
+        sfx('tab');
+        var nk = nextGateBtn.dataset.gate, ng = findGate(nk);
+        // Straight into the next gate's first not-yet-completed level (or
+        // its last one if it's already fully done) — never past what
+        // startGateLevel's own lock check allows.
+        if (ng) startGateLevel(nk, Math.min(gateProgressFor(nk), ng.levels.length - 1));
+        return;
+      }
       var cb = e.target.closest('.gateChoiceBtn');
       if (cb && !cb.disabled){ gateChoose(parseInt(cb.dataset.val, 10)); return; }
       var next = e.target.closest('#gateNextBtn');
@@ -8202,8 +8230,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-120 (Gate Logic: the level-picker LOGIC popup now shows a truth table too, matching the per-level one)';
-  window.BETA_VER = 'beta-120';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-121 (Gate Logic: a finished gate now offers the NEXT gate, not just Play Again -- NOT and every final 5-input win)';
+  window.BETA_VER = 'beta-121';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
