@@ -1480,8 +1480,13 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
    left half, so the reserved 36px band goes with it — that height was there
    to stand a big emoji in, and keeping it would have left the blank space
    Raja asked about simply moved down one row instead of removed. */
+/* margin 0, not 11px, on the sides: the label is in normal flow now, so a
+   side margin here stacks on top of the bar's own padding and pushed
+   "Choose Difficulty" 11px further in than the "Add Magic"/"Binary Magic"
+   headings directly beneath it — a misalignment the absolutely-positioned
+   version never had, introduced by the move and measured after it. */
 .diffMascot{ width:100%; position:relative; text-align:left; line-height:1;
-  margin:0 11px 6px; }
+  margin:0 0 6px; }
 /* Raja asked for this twice. First time: "can shift there in monkey dice with
    bigger image", about the chip row's unused left side. I took the safer read
    then — grow it in place rather than relocate it — because this exact row
@@ -8374,8 +8379,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-126 (Monkey+dice moved into the empty left half of the chip row -- fills the blank space and makes Home shorter)';
-  window.BETA_VER = 'beta-126';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-127 (Choose Difficulty label re-aligned with the group headings under it)';
+  window.BETA_VER = 'beta-127';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
