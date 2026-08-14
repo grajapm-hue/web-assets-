@@ -1409,7 +1409,12 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
    and slid them straight through each other — measured 66px of overlap. Two
    guards: a ceiling on both, and flex:0 1 auto with min-width:0 so either can
    give way instead of running over its neighbour. */
-.diffHead{ flex:none; display:flex; align-items:baseline; justify-content:flex-end;
+/* space-between, not flex-end: the mascot now occupies the left half this row
+   was already reserving and leaving empty. align-items:center rather than
+   baseline — baseline existed to line the old heading up with the tip, and
+   that heading no longer lives here; a picture has no meaningful baseline to
+   share with text. */
+.diffHead{ flex:none; display:flex; align-items:center; justify-content:space-between;
   gap:12px; margin:1px 11px 4px; }
 /* .diffMascot .diffLabel, not .diffHead — the label lives beside the monkey
    now, not above it. Renamed the ancestor, kept every declaration: this is
@@ -1471,26 +1476,37 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
    before — the label floating over the left margin never enters that
    calculation, so it cannot shrink or push the monkey no matter how long
    "Choose Difficulty" renders at any lvScale. */
-.diffMascot{ width:100%; position:relative; text-align:center; line-height:1;
-  margin:2px 0 8px; min-height:calc(36px * var(--lvScale, 1)); }
-/* Raja, on the empty band above "Choose Difficulty" on a roomy screen (the
-   .diffHead chip stack is right-aligned, so its own left side sits unused
-   too): "can shift there in monkey dice with bigger image". The safer read
-   of "shift" here is bigger, in place -- not relocating it into .diffHead,
-   which this exact row has a real history of breaking (diffLabel/diffTip,
-   then diffTip/diffShare, both documented above). 64px was a fairly tight
-   ceiling next to LV_MAX's own 40*1.75=70px reach; raised well past both so
-   it visibly grows on a tall/roomy screen instead of hitting a wall early. */
-/* --mascotShift/--mascotMax are set by fitHome() below, from the label's
-   REAL measured footprint on this exact device -- a fixed px formula can't
-   work here: testing found a wider/taller phone (bigger --lvScale, similar
-   container width) overlapping WORSE than a small one, not better, since
-   the two don't grow in lockstep. Rather than just capping the emoji small
-   enough to dodge the label, its centering point shifts into the actual
-   free zone to the label's right, so it can grow to fill that space
-   instead of merely avoiding it. Both vars default to a no-op for the
-   first paint, before fitHome() has run once. */
-.diffMascotEmoji{ position:relative; left:var(--mascotShift, 0px);
+/* Holds only the label now that the mascot moved up into .diffHead's unused
+   left half, so the reserved 36px band goes with it — that height was there
+   to stand a big emoji in, and keeping it would have left the blank space
+   Raja asked about simply moved down one row instead of removed. */
+.diffMascot{ width:100%; position:relative; text-align:left; line-height:1;
+  margin:0 11px 6px; }
+/* Raja asked for this twice. First time: "can shift there in monkey dice with
+   bigger image", about the chip row's unused left side. I took the safer read
+   then — grow it in place rather than relocate it — because this exact row
+   had broken twice on collisions (diffLabel/diffTip, then diffTip/diffShare,
+   both documented above). Second time, pointing at the same gap: "why keep
+   more blank space and why can't monkey and dice to shift there". That is a
+   fair push: growing it in place never addressed what he was actually looking
+   at, which was empty space, and the timid fix left the mascot eating a whole
+   extra row of height to avoid a move worth making. It has moved.
+   --mascotMax is still set by fitHome() from a REAL measurement on this exact
+   device, because a fixed px formula still can't work here for the original
+   reason: the mascot and its neighbour don't grow in lockstep as --lvScale
+   changes, so a size that clears on one phone collides on another. Only the
+   neighbour changed — the chip stack now, the label before. It defaults to a
+   no-op for the first paint, before fitHome() has run once. */
+/* --mascotShift is gone with the move: it existed to slide the mascot's
+   centring point past the "Choose Difficulty" label, and the two are no
+   longer on the same row. --mascotMax stays, retargeted by fitHome() at the
+   room left of the chip stack instead of right of the label — a fixed px
+   size still cannot work here, for the same reason as before: the chips and
+   the mascot do not grow in lockstep as --lvScale changes.
+   flex:none so the mascot keeps the size fitHome computed and the chip
+   column is the side that gives way, matching how this row already
+   protects .diffTip from being run over. */
+.diffMascotEmoji{ position:relative; flex:none;
   font-size:min(calc(42px * var(--lvScale, 1)), var(--mascotMax, 68px));
   filter:drop-shadow(0 3px 0 rgba(94,64,32,.3)); }
 /* Raja, after the warm-up cards got theirs: "can tune the another one monkey
@@ -1517,7 +1533,12 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
   content:''; position:absolute; z-index:-1; inset:0 -0.18em;
   background:#2E2418; border-radius:999px;
 }
-.diffMascot .diffLabel{ position:absolute; left:0; top:50%; transform:translateY(-50%); }
+/* Back in normal flow: it was absolutely positioned only so the mascot could
+   be centred across the full row without the label pushing it — with the
+   mascot gone from this row there is nothing left to dodge, and static means
+   .diffMascot gets its height from the label itself instead of a reserved
+   minimum. */
+.diffMascot .diffLabel{ position:static; transform:none; }
 
 /* ══ TAP TARGETS — reach without regrowth ══
    Share is 24px tall, the Update pill 18px, Logic and Watch 40px. All under the
@@ -2877,6 +2898,14 @@ body{ background:#C9A87C !important; }
          as #installBtn (below, "Install to home screen") -- a real one-tap
          install where the browser supports it, the same per-platform
          instructions sheet only where it genuinely can't. -->
+    <!-- Raja, twice now: "why keep more blank space and why can't monkey and
+         dice to shift there". He is right and I was wrong to defer it the
+         first time — this row is justify-content:flex-end with a single
+         right-aligned child, so its whole left half was reserved and empty
+         while the mascot sat on its own line below using up more height.
+         Moving it in here fills that space AND gives the row below back to
+         the label alone, so Home gets shorter rather than taller. -->
+    <span class="diffMascotEmoji" aria-hidden="true">🐒🎲</span>
     <span class="diffSide">
       <span class="diffTip" id="diffTip" role="button" tabindex="0" aria-label="How to play with no internet">📴 Plays with no internet</span>
       <button class="diffShare" id="diffInstall" type="button">📥 Install App</button>
@@ -2898,7 +2927,6 @@ body{ background:#C9A87C !important; }
        been fixed for before, just avoided differently this time. -->
   <div class="diffMascot">
     <span class="diffLabel">Choose Difficulty</span>
-    <span class="diffMascotEmoji" aria-hidden="true">🐒🎲</span>
   </div>
 
   <!-- ➕ ADD MODE — the six size puzzles, an easy→hard ladder -->
@@ -7105,24 +7133,35 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // avoiding the label's space, shift the emoji's own centering point
     // into the real free zone to the label's right (measured, not
     // guessed), so it can grow to fill exactly that room.
-    var mascot = document.querySelector('.diffMascot');
-    var mLabel = mascot && mascot.querySelector('.diffLabel');
-    var mEmoji = mascot && mascot.querySelector('.diffMascotEmoji');
-    if (mascot && mLabel && mEmoji){
-      mascot.style.setProperty('--mascotShift', '0px');
-      mascot.style.setProperty('--mascotMax', '999px');   // uncap to read the natural (unclamped) size
-      var mRect = mascot.getBoundingClientRect();
-      var lRect = mLabel.getBoundingClientRect();
+    /* The mascot now shares .diffHead with the chip stack, so what it must
+       fit inside is the room left of .diffSide, not right of the label.
+       Same technique as before and for the same documented reason (a fixed
+       px formula cannot work: the chips and the mascot do not grow in
+       lockstep as --lvScale changes), just measured against its new
+       neighbour.
+
+       Order matters here. The mascot is flex:none, so while it is large it
+       SQUEEZES .diffSide and reading the chips' width then would measure
+       them already compressed — the answer would feed back on itself and
+       creep smaller every call. Shrinking the mascot to ~nothing first lets
+       .diffSide relax to its natural width, which is the real constraint. */
+    var head = document.querySelector('.diffHead');
+    var side = head && head.querySelector('.diffSide');
+    var mEmoji = head && head.querySelector('.diffMascotEmoji');
+    if (head && side && mEmoji){
+      head.style.setProperty('--mascotMax', '1px');       // collapse it so the chips relax to their natural width
+      var sNatural = side.getBoundingClientRect().width;
+      head.style.setProperty('--mascotMax', '999px');     // uncap to read the natural (unclamped) glyph size
+      var hRect = head.getBoundingClientRect();
       var eRect = mEmoji.getBoundingClientRect();
       var curFont = parseFloat(getComputedStyle(mEmoji).fontSize) || 1;
-      var widthPerFont = eRect.width / curFont;     // "🐒🎲" glyph-pair ratio, stable across sizes
-      var gap = 10;
-      var availLeft = (lRect.right - mRect.left) + gap;   // clearance the label needs, from the container's own left edge
-      var availWidth = mRect.width - availLeft - gap;     // room to its right, minus a matching margin on that side too
-      var shift = availLeft / 2;                          // re-centering within [availLeft, mRect.width] shifts the midpoint right by half of what's reserved
+      // + 0.36: the medallion behind the glyphs bleeds 0.18em past each side,
+      // so the space this occupies is wider than the glyph pair alone.
+      var widthPerFont = (eRect.width / curFont) + 0.36;
+      var gap = 12;                                       // matches .diffHead's own gap
+      var availWidth = hRect.width - sNatural - gap;
       var maxFont = Math.max(24, availWidth / widthPerFont);   // 24px floor: never smaller than it always was
-      mascot.style.setProperty('--mascotShift', shift.toFixed(1) + 'px');
-      mascot.style.setProperty('--mascotMax', maxFont.toFixed(1) + 'px');
+      head.style.setProperty('--mascotMax', maxFont.toFixed(1) + 'px');
     }
   }
   /* The header pill is the update button now. It counted puzzles before, which
@@ -8335,8 +8374,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-125 (Home monkey+dice now sits on the same dark medallion as the animal cards)';
-  window.BETA_VER = 'beta-125';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-126 (Monkey+dice moved into the empty left half of the chip row -- fills the blank space and makes Home shorter)';
+  window.BETA_VER = 'beta-126';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
