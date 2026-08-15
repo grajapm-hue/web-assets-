@@ -2066,11 +2066,20 @@ body.slideMode #slidePanel{ display:block !important;
    whatever order the rules end up in. */
 .slideBoard .slideTile.picked{ outline:4px solid #f59e0b; outline-offset:-4px;
   box-shadow:0 0 0 4px rgba(245,158,11,.3), 0 3px 0 rgba(94,64,32,.35); }
+/* touch-action:none only on blocks that can actually move, so a finger
+   starting on a stuck block still scrolls the page normally. Without it the
+   browser claims the gesture as a scroll and the block never follows. */
+.slideTile.canMove{ touch-action:none; }
 .slideTile{ aspect-ratio:1; border-radius:var(--slideRadius); border:0; cursor:pointer;
+  transition:transform .15s ease;
   font-family:inherit; font-size:var(--slideFont); font-weight:900; color:#3A2A14;
   background:linear-gradient(152deg,#FFE9BF,#F3C97E);
   box-shadow:0 3px 0 rgba(94,64,32,.35); touch-action:manipulation; }
-.slideTile:active{ transform:translateY(2px); box-shadow:0 1px 0 rgba(94,64,32,.35); }
+/* While a finger is on it the block must track that finger exactly, so no
+   transition and no :active nudge fighting the drag transform. */
+.slideTile.dragging{ transition:none; z-index:6; position:relative;
+  box-shadow:0 6px 10px rgba(94,64,32,.45); }
+.slideTile:active:not(.dragging){ transform:translateY(2px); box-shadow:0 1px 0 rgba(94,64,32,.35); }
 /* The movable ones say so. A child should not have to guess which tiles are
    next to a space — that is the puzzle's difficulty, not the interface's. */
 .slideTile.canMove{ outline:3px solid #4ade80; outline-offset:-3px; }
@@ -2961,7 +2970,7 @@ body{ background:#C9A87C !important; }
   <!-- Neutral: whichever board you pick replaces this immediately via
        slideSetPrompt(), and naming one board here is how the letter board
        ended up being told to put "1 to 9" in order. -->
-  <div class="slideHead" id="slideHead">Put the blocks back in order. Tap one next to a free space to slide it.</div>
+  <div class="slideHead" id="slideHead">Put the blocks back in order. Slide a block with your finger into a free space.</div>
   <div class="slideBoard" id="slideBoard"></div>
   <!-- Sits under the board, so it must not say "below" — it points UP at the
        row beneath the dotted line, which is the parking shelf. -->
@@ -6009,7 +6018,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
        hardcoded "1 to 9". On the A–Z board that meant every shuffle silently
        relabelled a board of letters as a board of numbers. */
     function slidePromptText(){
-      return 'Put <b>' + slideLv.name + '</b> back in order. Tap one next to a free space to slide it.';
+      return 'Put <b>' + slideLv.name + '</b> back in order. <b>Slide a block with your finger</b> into a free space — or just tap it.';
     }
     function slideSetPrompt(){
       var head = document.getElementById('slideHead');
@@ -6107,7 +6116,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         if (!slideDemo) return;
         if (step >= 3 || slideSolved){
           slideDemoStop();
-          try { sana('Now you try — tap any block with a <b>green edge</b>.', 'cheer', true); } catch(e){}
+          try { sana('Now you try — slide any block with a <b>green edge</b>.', 'cheer', true); } catch(e){}
           return;
         }
         // Prefer a block with exactly one space beside it: one tap, one
@@ -6133,8 +6142,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         slideHandOn(pick.from);
         try {
           sana(step === 0
-            ? 'Put your finger on <b>' + slideCells[pick.from] + '</b> — the green space beside it is where it can go.'
-            : 'Touch <b>' + slideCells[pick.from] + '</b>, and it slides into the empty place.', 'think', true);
+            ? 'Put your finger on <b>' + slideCells[pick.from] + '</b> and slide it into the orange space.'
+            : 'Slide <b>' + slideCells[pick.from] + '</b> across into the empty place.', 'think', true);
         } catch(e){}
 
         slideDemoTimers.push(setTimeout(function(){
@@ -6148,7 +6157,84 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       next();
     }
 
+    /* DRAG. Raja, after playing: "why can't do Direct slide option that keep
+       hand thump or point fingers to number and drag the finger slide to
+       empty block which give mechanical slide feel and easy to understand".
+       He is right, and it does more than feel better: the DIRECTION you drag
+       already says which space you mean, so the whole tap-then-choose step
+       disappears for anyone who drags. Tapping still works — it is the
+       fallback for a block with one space, and for anyone who cannot drag.
+
+       The block follows the finger only toward a space that really is next to
+       it, and only as far as that space; drag anywhere else and it does not
+       budge, which teaches the rule by feel rather than by a message. */
+    var slideDrag = null, slideDragEndedAt = 0;
+    function slideCellStep(){
+      var el = document.querySelector('#slideBoard .slideTile, #slideBoard .slideCell');
+      if (!el) return 60;
+      var r = el.getBoundingClientRect();
+      var gap = parseFloat(getComputedStyle(document.getElementById('slideBoard')).gap) || 8;
+      return r.width + gap;
+    }
+    function slideDragStart(e){
+      if (slideSolved || slideDemo) return;
+      var tile = e.target.closest('#slideBoard .slideTile');
+      if (!tile || !tile.classList.contains('canMove')) return;
+      var from = parseInt(tile.dataset.slide, 10);
+      slideDrag = { from: from, el: tile, x: e.clientX, y: e.clientY,
+                    step: slideCellStep(), moved: 0, to: null };
+      tile.classList.add('dragging');
+      try { tile.setPointerCapture(e.pointerId); } catch(err){}
+    }
+    function slideDragMove(e){
+      if (!slideDrag) return;
+      var dx = e.clientX - slideDrag.x, dy = e.clientY - slideDrag.y;
+      slideDrag.moved = Math.max(slideDrag.moved, Math.abs(dx), Math.abs(dy));
+      var horiz = Math.abs(dx) > Math.abs(dy);
+      var dir = horiz ? (dx > 0 ? 1 : -1) : (dy > 0 ? SLIDE_COLS : -SLIDE_COLS);
+      var from = slideDrag.from, r = Math.floor(from / SLIDE_COLS), c = from % SLIDE_COLS;
+      // Reject a step that would wrap round the edge of the board.
+      var ok = horiz ? (dir === 1 ? c < SLIDE_COLS - 1 : c > 0)
+                     : (dir > 0 ? r < SLIDE_ROWS - 1 : r > 0);
+      var to = ok ? from + dir : -1;
+      if (to < 0 || to >= SLIDE_N || slideCells[to] !== null){
+        slideDrag.to = null;
+        slideDrag.el.style.transform = '';
+        return;
+      }
+      slideDrag.to = to;
+      var amount = Math.min(Math.abs(horiz ? dx : dy), slideDrag.step);
+      slideDrag.el.style.transform = horiz
+        ? 'translateX(' + (dir === 1 ? amount : -amount) + 'px)'
+        : 'translateY(' + (dir > 0 ? amount : -amount) + 'px)';
+    }
+    function slideDragEnd(){
+      if (!slideDrag) return;
+      var d = slideDrag; slideDrag = null;
+      d.el.classList.remove('dragging');
+      d.el.style.transform = '';
+      // A third of a cell is enough to mean it: less is a wobble, and a real
+      // tap (barely any movement) falls through to the tap handler instead.
+      if (d.to !== null && d.moved > d.step * 0.33){
+        /* A TIMESTAMP, not a flag. The flag version waited to be consumed by
+           the click that follows a drag -- but a long drag often produces no
+           click at all, so it sat set and swallowed the next honest tap
+           instead. This expires on its own. */
+        slideDragEndedAt = Date.now();
+        slideMoveTo(d.from, d.to);
+      }
+    }
+    (function wireSlideDrag(){
+      var board = document.getElementById('slideBoard');
+      if (!board) return;
+      board.addEventListener('pointerdown', slideDragStart);
+      board.addEventListener('pointermove', slideDragMove);
+      board.addEventListener('pointerup', slideDragEnd);
+      board.addEventListener('pointercancel', slideDragEnd);
+    })();
+
     function slideTap(i){
+      if (Date.now() - slideDragEndedAt < 320) return;   // the drag already moved it
       if (slideDemo) { slideDemoStop(); return; }   // a real tap takes over from the demo
       if (slideSolved) return;
       if (slideCells[i] === null){
@@ -6173,7 +6259,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         slideDemoStop();
         slideSetPrompt();
         slideShuffle();
-        try { sana('Fresh scatter. Tap a block with a <b>green edge</b> — those are the ones with a free space beside them.', 'think', true); } catch(e){}
+        try { sana('Fresh scatter. Slide any block with a <b>green edge</b> — those have a free space beside them.', 'think', true); } catch(e){}
       }
     });
 
@@ -6209,7 +6295,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         // Raja: "need sana hints along show play". The first thing a child
         // needs is not the goal — it is which blocks can even be touched.
         try {
-          sana('Blocks with a <b>green edge</b> have a free space beside them — those are the ones that can move. ' +
+          sana('Put your finger on a block with a <b>green edge</b> and <b>slide it</b> into the empty space beside it. A tap works too. ' +
                'Not sure? Tap <b>👆 Show me how</b>.', 'think', true);
         } catch(e){}
       });
@@ -8997,8 +9083,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-137 (Slide: stray highlights after shuffle fixed; green means can-move, amber means the move you are making)';
-  window.BETA_VER = 'beta-137';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-138 (Slide: drag a block with your finger into the space -- real sliding, not just tapping)';
+  window.BETA_VER = 'beta-138';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
