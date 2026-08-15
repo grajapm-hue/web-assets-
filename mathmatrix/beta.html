@@ -2069,8 +2069,19 @@ body.slideMode #slidePanel{ display:block !important;
 .slideBoard .slideRowGap{ grid-column:1 / -1; height:10px; border-top:3px dotted #B08D5E; }
 .slideSpareLabel{ max-width:330px; margin:8px auto 0; font-size:11.5px;
   font-weight:800; color:#7A5A32; text-align:center; }
-.slideFoot{ display:flex; align-items:center; justify-content:space-between;
-  max-width:330px; margin:14px auto 0; gap:10px; }
+.slideFoot{ display:flex; align-items:center; justify-content:center;
+  flex-wrap:wrap; max-width:330px; margin:14px auto 0; gap:10px; }
+.slideShow{ background:#10b981; color:#FFF6E7; border-color:#0f9c6c; }
+/* The demo points at two things at once, because they are the two halves of
+   the idea: the block you touch, and the space it is going to. */
+.slideHand{ position:fixed; z-index:70; font-size:38px; pointer-events:none;
+  transform:translate(-46%, -22%); filter:drop-shadow(0 3px 4px rgba(0,0,0,.35));
+  animation:slideHandTap .8s ease-in-out infinite; }
+@keyframes slideHandTap{ 0%,100%{ transform:translate(-46%,-22%) scale(1); }
+  50%{ transform:translate(-46%,-30%) scale(1.12); } }
+.slideTile.demoFrom{ outline:4px solid #f59e0b; outline-offset:-4px;
+  box-shadow:0 0 0 5px rgba(245,158,11,.3), 0 3px 0 rgba(94,64,32,.35); }
+.slideCell.demoTo{ border:3px solid #10b981; background:rgba(16,185,129,.22); }
 .slideBtn{ padding:9px 16px; border-radius:999px; border:2px solid #8A5E31;
   background:#FFF6E7; color:#5E3D1C; font-family:inherit; font-size:13px;
   font-weight:800; cursor:pointer; touch-action:manipulation; }
@@ -2943,6 +2954,13 @@ body{ background:#C9A87C !important; }
        row beneath the dotted line, which is the parking shelf. -->
   <div class="slideSpareLabel">↑ the row under the dotted line is spare — park a number there to open up the board</div>
   <div class="slideFoot">
+    <!-- Raja: "need sana hints along show play for how to use slide such how
+         thump or finger to touch how where if one to shift to empty place".
+         The grids have "Watch Me Solve"; this is the same idea sized to this
+         game — not a full solve, just three real moves with a finger shown on
+         the block being tapped and the space it goes to, which is the entire
+         thing a child has to understand here. -->
+    <button class="slideBtn slideShow" id="slideShow" type="button">👆 Show me how</button>
     <button class="slideBtn" id="slideShuffle" type="button">🔀 Shuffle again</button>
     <span class="slideMoves" id="slideMoves">Moves: 0</span>
   </div>
@@ -3872,6 +3890,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     document.body.classList.toggle('slideMode', !!on);
     var sp = document.getElementById('slidePanel');
     if (sp) sp.style.display = on ? 'block' : 'none';
+    // The demo's finger is position:fixed on the body, so leaving mid-demo
+    // would strand it floating over whatever screen comes next.
+    if (!on && window.__slideDemoStop) window.__slideDemoStop();
   }
 
   // Difficulty toggle — every level is open to free choice (grade labels are the guide).
@@ -6021,7 +6042,94 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         try { sana('<b>' + slideLv.name + ' — all in order!</b> That is the whole idea.', 'party', true); } catch(e){}
       }
     }
+    /* "Show me how" — three real moves on the child's own board, each one
+       pointed at: the block to touch (orange, with a finger on it) and the
+       space it will go to (green). Real moves rather than a canned animation,
+       so what they watch is exactly what their own tap will do.
+       It counts as moves because they ARE moves; Shuffle again is right there
+       if they would rather start clean. */
+    var slideDemo = false, slideDemoTimers = [];
+    function slideHandOn(idx){
+      slideHandOff();
+      var el = document.querySelector('#slideBoard [data-slide="' + idx + '"]');
+      if (!el) return;
+      var r = el.getBoundingClientRect();
+      var h = document.createElement('div');
+      h.className = 'slideHand'; h.id = 'slideHand'; h.textContent = '👆';
+      h.style.left = (r.left + r.width / 2) + 'px';
+      h.style.top = (r.top + r.height * 0.62) + 'px';
+      document.body.appendChild(h);
+    }
+    function slideHandOff(){
+      var h = document.getElementById('slideHand'); if (h) h.remove();
+    }
+    function slideDemoStop(){
+      slideDemo = false;
+      slideDemoTimers.forEach(clearTimeout); slideDemoTimers = [];
+      slideHandOff();
+      document.querySelectorAll('.demoFrom, .demoTo').forEach(function(n){
+        n.classList.remove('demoFrom', 'demoTo');
+      });
+      var b = document.getElementById('slideShow');
+      if (b) b.textContent = '👆 Show me how';
+    }
+    // showSlideMode lives outside this IIFE and has to be able to stop a demo
+    // when the player leaves the puzzle mid-way.
+    window.__slideDemoStop = slideDemoStop;
+    function slideDemoRun(){
+      if (slideDemo){ slideDemoStop(); return; }
+      if (slideSolved) return;
+      slideDemo = true;
+      var b = document.getElementById('slideShow');
+      if (b) b.textContent = '✋ Stop showing';
+      var step = 0;
+      function next(){
+        if (!slideDemo) return;
+        if (step >= 3 || slideSolved){
+          slideDemoStop();
+          try { sana('Now you try — tap any block with a <b>green edge</b>.', 'cheer', true); } catch(e){}
+          return;
+        }
+        // Prefer a block with exactly one space beside it: one tap, one
+        // outcome, nothing to explain twice.
+        var pick = null;
+        for (var i = 0; i < SLIDE_N && !pick; i++){
+          if (slideCells[i] === null) continue;
+          if (slideBlanksBy(i).length === 1) pick = { from: i, to: slideBlanksBy(i)[0] };
+        }
+        if (!pick){
+          for (var j = 0; j < SLIDE_N && !pick; j++){
+            if (slideCells[j] === null) continue;
+            var bl = slideBlanksBy(j);
+            if (bl.length) pick = { from: j, to: bl[0] };
+          }
+        }
+        if (!pick){ slideDemoStop(); return; }
+
+        var fromEl = document.querySelector('#slideBoard [data-slide="' + pick.from + '"]');
+        var toEl = document.querySelector('#slideBoard [data-slide="' + pick.to + '"]');
+        if (fromEl) fromEl.classList.add('demoFrom');
+        if (toEl) toEl.classList.add('demoTo');
+        slideHandOn(pick.from);
+        try {
+          sana(step === 0
+            ? 'Put your finger on <b>' + slideCells[pick.from] + '</b> — the green space beside it is where it can go.'
+            : 'Touch <b>' + slideCells[pick.from] + '</b>, and it slides into the empty place.', 'think', true);
+        } catch(e){}
+
+        slideDemoTimers.push(setTimeout(function(){
+          if (!slideDemo) return;
+          slideHandOff();
+          slideMoveTo(pick.from, pick.to);        // the real move, exactly as a tap would
+          step++;
+          slideDemoTimers.push(setTimeout(next, 900));
+        }, 1500));
+      }
+      next();
+    }
+
     function slideTap(i){
+      if (slideDemo) { slideDemoStop(); return; }   // a real tap takes over from the demo
       if (slideSolved) return;
       if (slideCells[i] === null){
         // Tapped a space: only means anything if a number is waiting to move.
@@ -6037,12 +6145,15 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     document.addEventListener('click', function(e){
       var t = e.target.closest('[data-slide]');
       if (t){ slideTap(parseInt(t.dataset.slide, 10)); return; }
+      var sw = e.target.closest('#slideShow');
+      if (sw){ sfx('card'); slideDemoRun(); return; }
       var sh = e.target.closest('#slideShuffle');
       if (sh){
         sfx('card');
-        var head = document.getElementById('slideHead');
+        slideDemoStop();
         slideSetPrompt();
         slideShuffle();
+        try { sana('Fresh scatter. Tap a block with a <b>green edge</b> — those are the ones with a free space beside them.', 'think', true); } catch(e){}
       }
     });
 
@@ -6075,6 +6186,12 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           '<p>Every deal is built by shuffling a finished board with real moves, so <b>every game can always be solved</b>. ' +
           'A puzzle scattered at random would not be: half of those cannot be finished at all.</p>';
         slideShuffle();
+        // Raja: "need sana hints along show play". The first thing a child
+        // needs is not the goal — it is which blocks can even be touched.
+        try {
+          sana('Blocks with a <b>green edge</b> have a free space beside them — those are the ones that can move. ' +
+               'Not sure? Tap <b>👆 Show me how</b>.', 'think', true);
+        } catch(e){}
       });
     });
 
@@ -8860,8 +8977,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-135 (Slide Magic scrolls, so Shuffle is reachable on short screens)';
-  window.BETA_VER = 'beta-135';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-136 (Slide Magic: Show me how demo with a finger, plus SaNa hints)';
+  window.BETA_VER = 'beta-136';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
