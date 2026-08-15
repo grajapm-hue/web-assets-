@@ -2040,8 +2040,8 @@ body.slideMode #slidePanel{ display:block !important; }
    parking row. One grid, not two, so a tile slides between them by the same
    rule it slides anywhere else — the seam is drawn, not structural. */
 .slideBoard{ display:grid; grid-template-columns:repeat(3, 1fr);
-  gap:8px; max-width:330px; margin:0 auto; }
-.slideCell{ aspect-ratio:1; border-radius:16px; border:2px dashed #C4A277;
+  gap:8px; max-width:330px; margin:0 auto; --slideFont:30px; --slideRadius:16px; }
+.slideCell{ aspect-ratio:1; border-radius:var(--slideRadius); border:2px dashed #C4A277;
   background:rgba(255,246,231,.35); padding:0; font:inherit; }
 /* A space only becomes tappable while a number is waiting to move into it,
    and it says so loudly — this is the moment a child is being asked to
@@ -2050,8 +2050,8 @@ body.slideMode #slidePanel{ display:block !important; }
   cursor:pointer; animation:starPop .35s var(--spring); }
 .slideTile.picked{ outline:4px solid #10b981; outline-offset:-4px;
   box-shadow:0 0 0 4px rgba(16,185,129,.25), 0 3px 0 rgba(94,64,32,.35); }
-.slideTile{ aspect-ratio:1; border-radius:16px; border:0; cursor:pointer;
-  font-family:inherit; font-size:30px; font-weight:900; color:#3A2A14;
+.slideTile{ aspect-ratio:1; border-radius:var(--slideRadius); border:0; cursor:pointer;
+  font-family:inherit; font-size:var(--slideFont); font-weight:900; color:#3A2A14;
   background:linear-gradient(152deg,#FFE9BF,#F3C97E);
   box-shadow:0 3px 0 rgba(94,64,32,.35); touch-action:manipulation; }
 .slideTile:active{ transform:translateY(2px); box-shadow:0 1px 0 rgba(94,64,32,.35); }
@@ -2928,7 +2928,10 @@ body{ background:#C9A87C !important; }
      is really 3 wide x 4 tall, the top nine cells are the puzzle and the
      bottom three are the parking he drew. -->
 <div id="slidePanel" style="display:none;">
-  <div class="slideHead" id="slideHead">Put <b>1 to 9</b> back in order. Tap a number next to a free space to slide it.</div>
+  <!-- Neutral: whichever board you pick replaces this immediately via
+       slideSetPrompt(), and naming one board here is how the letter board
+       ended up being told to put "1 to 9" in order. -->
+  <div class="slideHead" id="slideHead">Put the blocks back in order. Tap one next to a free space to slide it.</div>
   <div class="slideBoard" id="slideBoard"></div>
   <!-- Sits under the board, so it must not say "below" — it points UP at the
        row beneath the dotted line, which is the parking shelf. -->
@@ -3230,9 +3233,15 @@ body{ background:#C9A87C !important; }
       <span><b>Slide Magic</b><i>slide the numbers back into order — the spaces below are what let them move</i></span>
     </div>
     <div class="toggleSwitch">
-      <button class="toggleBtn lvCard" id="slideTab" type="button" data-name="🔢 Slide 1–9" style="color:#10b981; border-color:#10b981; --c1:#a7f3d0; --c2:#34d399;">
+      <button class="toggleBtn lvCard" id="slideTab" type="button" data-slide-level="nine" data-name="🔢 Slide 1–9" style="color:#10b981; border-color:#10b981; --c1:#a7f3d0; --c2:#34d399;">
         <span class="lvGlyph" aria-hidden="true">🔢</span>
         <span class="lvText"><b class="lvName">Slide 1–9</b><span class="lvDiff">3×3 · with a parking row</span><span class="lvMeta">nine numbers, three spare spaces — put them back 1 to 9</span></span>
+      </button>
+      <!-- The board Raja drew first, and the app he sent later ("Magic Slide
+           Puzzle - Letters and Numbers"): six across, A-Z then 1-9 and 0. -->
+      <button class="toggleBtn lvCard" id="slideAzTab" type="button" data-slide-level="az" data-name="🔤 Slide A–Z" style="color:#0ea5e9; border-color:#0ea5e9; --c1:#bae6fd; --c2:#38bdf8;">
+        <span class="lvGlyph" aria-hidden="true">🔤</span>
+        <span class="lvText"><b class="lvName">Slide A–Z</b><span class="lvDiff">6×6 · the full block set</span><span class="lvMeta">all 26 letters and 10 numbers, six spare spaces</span></span>
       </button>
     </div>
   </div>
@@ -3246,10 +3255,6 @@ body{ background:#C9A87C !important; }
       <button class="toggleBtn lvCard lvSoon" type="button" tabindex="-1" aria-disabled="true">
         <span class="lvGlyph" aria-hidden="true">🔢</span>
         <span class="lvText"><b class="lvName">Sudoku</b><span class="lvDiff">Coming soon</span><span class="lvMeta">some numbers given, you work out the rest</span></span>
-      </button>
-      <button class="toggleBtn lvCard lvSoon" type="button" tabindex="-1" aria-disabled="true">
-        <span class="lvGlyph" aria-hidden="true">🔤</span>
-        <span class="lvText"><b class="lvName">A–Z Blocks</b><span class="lvDiff">Coming soon</span><span class="lvMeta">the bigger letter boards, once the numbers one is proven</span></span>
       </button>
     </div>
   </div>
@@ -5873,9 +5878,36 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
        the finished board makes every deal reachable by construction, so the
        question never arises. (Three blanks would likely make parity moot
        anyway; building it this way means not having to be right about that.) */
-    var SLIDE_COLS = 3, SLIDE_ROWS = 4, SLIDE_N = SLIDE_COLS * SLIDE_ROWS;
+    /* Raja, sending "Magic Slide Puzzle - Letters and Numbers": "can give
+       through this too". That is the "later can expand" from his first note,
+       and the board he originally drew — A to Z then 1 to 9 and 0, six across.
+       So the engine takes a SIZE rather than hard-coding 3x3: same rules, same
+       parking row, more tiles. The spare row is always one full row wide, so
+       the bigger board gets six spaces to work with rather than three — which
+       is what keeps 36 tiles humane instead of a 15-puzzle nightmare. */
+    var SLIDE_LEVELS = {
+      nine: {
+        cols: 3, rows: 3, title: '🔢 Slide 1–9',
+        tiles: ['1','2','3','4','5','6','7','8','9'], name: '1 to 9',
+        goal: 'Finish with <b>1 2 3</b> on the top row, <b>4 5 6</b> next, <b>7 8 9</b> on the third.'
+      },
+      az: {
+        cols: 6, rows: 6, title: '🔤 Slide A–Z',
+        tiles: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').concat(['1','2','3','4','5','6','7','8','9','0']), name: 'A to Z, then 1 to 0',
+        goal: 'Finish with <b>A</b> to <b>Z</b> reading across, then <b>1</b> to <b>9</b> and <b>0</b> — exactly like a box of alphabet blocks.'
+      }
+    };
+    var slideLv = SLIDE_LEVELS.nine;
+    var SLIDE_COLS = 3, SLIDE_ROWS = 4, SLIDE_N = 12, SLIDE_TILES = 9;
     var slideCells = [], slideMoves = 0, slideSolved = false;
 
+    function slideUseLevel(key){
+      slideLv = SLIDE_LEVELS[key] || SLIDE_LEVELS.nine;
+      SLIDE_COLS = slideLv.cols;
+      SLIDE_ROWS = slideLv.rows + 1;            // +1 = the parking row underneath
+      SLIDE_N = SLIDE_COLS * SLIDE_ROWS;
+      SLIDE_TILES = slideLv.tiles.length;
+    }
     function slideNeighbours(i){
       var r = Math.floor(i / SLIDE_COLS), c = i % SLIDE_COLS, out = [];
       if (r > 0) out.push(i - SLIDE_COLS);
@@ -5885,20 +5917,21 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       return out;
     }
     function slideFinished(){
-      for (var i = 0; i < 9; i++) if (slideCells[i] !== i + 1) return false;
+      for (var i = 0; i < SLIDE_TILES; i++) if (slideCells[i] !== slideLv.tiles[i]) return false;
       return true;
     }
     function slideReset(){
       slideCells = [];
-      for (var i = 0; i < SLIDE_N; i++) slideCells.push(i < 9 ? i + 1 : null);
+      for (var i = 0; i < SLIDE_N; i++) slideCells.push(i < SLIDE_TILES ? slideLv.tiles[i] : null);
       slideMoves = 0; slideSolved = false;
     }
     function slideShuffle(){
       slideReset();
-      // 160 legal moves from solved: enough to look thoroughly scattered,
-      // and every one of them is reversible, so the board stays solvable.
-      var last = -1;
-      for (var n = 0; n < 160; n++){
+      // Legal moves from the solved board — scaled to the size, since 160
+      // barely disturbs 36 tiles though it thoroughly scrambles 9. Every one
+      // is reversible, so the board stays solvable however long this runs.
+      var last = -1, rounds = SLIDE_TILES * 20;
+      for (var n = 0; n < rounds; n++){
         var holes = [];
         for (var i = 0; i < SLIDE_N; i++) if (slideCells[i] === null) holes.push(i);
         var hole = holes[Math.floor(Math.random() * holes.length)];
@@ -5924,15 +5957,33 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
        slider, which is the common case), and a choice when there is more than
        one — tap the number, its options light up, tap the one you want. */
     var slideSel = null;
+    /* One place the prompt is written, because there are three moments that
+       set it — entering a level, shuffling, and winning — and the shuffle one
+       hardcoded "1 to 9". On the A–Z board that meant every shuffle silently
+       relabelled a board of letters as a board of numbers. */
+    function slidePromptText(){
+      return 'Put <b>' + slideLv.name + '</b> back in order. Tap one next to a free space to slide it.';
+    }
+    function slideSetPrompt(){
+      var head = document.getElementById('slideHead');
+      if (head) head.innerHTML = slidePromptText();
+    }
     function slideBlanksBy(i){
       return slideNeighbours(i).filter(function(j){ return slideCells[j] === null; });
     }
     function renderSlide(){
       var el = document.getElementById('slideBoard'); if (!el) return;
       var targets = slideSel === null ? [] : slideBlanksBy(slideSel);
+      // The grid and the type size come from the level, not the stylesheet:
+      // six columns of letters need smaller tiles than three of digits, and
+      // the dotted seam has to fall wherever this board's parking row starts.
+      el.style.gridTemplateColumns = 'repeat(' + SLIDE_COLS + ', 1fr)';
+      el.style.setProperty('--slideFont', slideLv.cols >= 6 ? '17px' : '30px');
+      el.style.setProperty('--slideRadius', slideLv.cols >= 6 ? '9px' : '16px');
+      el.style.gap = slideLv.cols >= 6 ? '5px' : '8px';
       var html = '';
       for (var k = 0; k < SLIDE_N; k++){
-        if (k === 9) html += '<div class="slideRowGap" aria-hidden="true"></div>';
+        if (k === SLIDE_TILES) html += '<div class="slideRowGap" aria-hidden="true"></div>';
         var v = slideCells[k];
         if (v === null){
           var isTarget = targets.indexOf(k) > -1;
@@ -5958,10 +6009,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       if (slideFinished()){
         slideSolved = true;
         var head = document.getElementById('slideHead');
-        if (head) head.innerHTML = '🎉 <b>In order, 1 to 9!</b> Solved in ' + slideMoves + ' moves.';
+        if (head) head.innerHTML = '🎉 <b>All in order!</b> ' + slideLv.name + ' — solved in ' + slideMoves + ' moves.';
         try { celebrate(); } catch(e){}
         try { sfx('unlock'); } catch(e){}
-        try { sana('<b>1 to 9, all in order!</b> That is the whole idea.', 'party', true); } catch(e){}
+        try { sana('<b>' + slideLv.name + ' — all in order!</b> That is the whole idea.', 'party', true); } catch(e){}
       }
     }
     function slideTap(i){
@@ -5984,38 +6035,42 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       if (sh){
         sfx('card');
         var head = document.getElementById('slideHead');
-        if (head) head.innerHTML = 'Put <b>1 to 9</b> back in order. Tap a number next to a free space to slide it.';
+        slideSetPrompt();
         slideShuffle();
       }
     });
 
-    var slideBtn = document.getElementById('slideTab');
-    if (slideBtn){
-      slideBtn.addEventListener('click', function(){
+    // Both sizes share one entry path — the level is read off the card, so
+    // adding another board later means adding a card and a SLIDE_LEVELS entry,
+    // nothing else.
+    document.querySelectorAll('.toggleBtn[data-slide-level]').forEach(function(btn){
+      btn.addEventListener('click', function(){
         if (_congratsAutoTimer){ clearInterval(_congratsAutoTimer); _congratsAutoTimer = null; }
         var cm = document.getElementById('congratsModal');
         if (cm && cm.style.display === 'flex') cm.style.display = 'none';
         sfx('card');
         document.querySelectorAll('.toggleBtn').forEach(function(b){ b.classList.remove('active'); });
-        slideBtn.classList.add('active');
+        btn.classList.add('active');
         applyAccent();
         if (currentSize === 'binary' || currentSize === 'binary2') showBinaryMode(false);
         if (currentSize === 'gatelogic') showGateMode(false);
         currentSize = 'slide';
         goScreen('scPlay');
         showSlideMode(true);
+        slideUseLevel(btn.dataset.slideLevel);
+        slideSetPrompt();
         var title = document.getElementById('appBarTitle');
-        if (title) title.innerHTML = boxedTitle('🔢 Slide 1–9');
+        if (title) title.innerHTML = boxedTitle(slideLv.title);
         var lb = document.getElementById('logicBox');
-        if (lb) lb.innerHTML = '<h3>📐 Slide 1–9</h3>' +
-          '<p>Nine numbers, twelve places. The three spaces at the bottom are what let anything move at all — ' +
-          'slide a number down into one, and the gap it leaves lets the next number move.</p>' +
-          '<p>Finish with <b>1 2 3</b> on the top row, <b>4 5 6</b> in the middle, <b>7 8 9</b> on the third — ' +
-          'and the bottom shelf empty again.</p>' +
-          '<p>Every deal is built by shuffling a finished board with real moves, so <b>every game can always be solved</b>.</p>';
+        if (lb) lb.innerHTML = '<h3>📐 ' + slideLv.title + '</h3>' +
+          '<p>' + SLIDE_TILES + ' blocks, ' + SLIDE_N + ' places. The spare row at the bottom is what lets anything ' +
+          'move at all — slide a block down into it, and the gap it leaves lets the next one move.</p>' +
+          '<p>' + slideLv.goal + ' The bottom shelf ends up empty again.</p>' +
+          '<p>Every deal is built by shuffling a finished board with real moves, so <b>every game can always be solved</b>. ' +
+          'A puzzle scattered at random would not be: half of those cannot be finished at all.</p>';
         slideShuffle();
       });
-    }
+    });
 
     var gateListBtn = document.getElementById('gateListBtn');
     if (gateListBtn){
@@ -8799,8 +8854,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-133 (new puzzle: Slide 1-9, a 3x3 slider with a parking row)';
-  window.BETA_VER = 'beta-133';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-134 (Slide A-Z: the full 6x6 letter and number board)';
+  window.BETA_VER = 'beta-134';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
