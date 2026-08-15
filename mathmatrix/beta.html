@@ -2100,6 +2100,10 @@ body.slideMode #slidePanel{ display:block !important;
   50%{ transform:translate(-46%,-30%) scale(1.12); } }
 .slideTile.demoFrom{ outline:4px solid #f59e0b; outline-offset:-4px;
   box-shadow:0 0 0 5px rgba(245,158,11,.3), 0 3px 0 rgba(94,64,32,.35); }
+/* Slower than a real drag's snap, and lifted above its neighbours, so the
+   journey itself is what you watch rather than the destination. */
+.slideTile.demoSliding{ transition:transform .5s cubic-bezier(.34,1,.64,1);
+  z-index:7; position:relative; box-shadow:0 8px 14px rgba(94,64,32,.45); }
 /* Amber, matching the block the finger is on — the demo is showing the same
    "this one goes there" pairing the player makes by hand, so it should not
    invent a second colour language to say it. */
@@ -6092,6 +6096,24 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     function slideHandOff(){
       var h = document.getElementById('slideHand'); if (h) h.remove();
     }
+    /* The finger and the block travel together, from the block's cell to the
+       empty one — the same journey a child's own finger makes. The block is
+       moved with a transform rather than by re-rendering, so it glides over
+       its neighbours instead of jumping between grid slots. */
+    function slideDemoGlide(from, to){
+      var a = document.querySelector('#slideBoard [data-slide="' + from + '"]');
+      var b = document.querySelector('#slideBoard [data-slide="' + to + '"]');
+      if (!a || !b) return;
+      var ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
+      a.classList.add('demoSliding');
+      a.style.transform = 'translate(' + (rb.left - ra.left) + 'px,' + (rb.top - ra.top) + 'px)';
+      var h = document.getElementById('slideHand');
+      if (h){
+        h.style.transition = 'left .5s cubic-bezier(.34,1,.64,1), top .5s cubic-bezier(.34,1,.64,1)';
+        h.style.left = (rb.left + rb.width / 2) + 'px';
+        h.style.top = (rb.top + rb.height * 0.62) + 'px';
+      }
+    }
     function slideDemoStop(){
       slideDemo = false;
       slideDemoTimers.forEach(clearTimeout); slideDemoTimers = [];
@@ -6155,13 +6177,24 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
             : 'Slide <b>' + slideCells[pick.from] + '</b> across into the empty place.', 'think', true);
         } catch(e){}
 
+        /* Raja: "instead keep finger emoji to drag to empty cell and the
+           number is placed then the emoji should laps". The first version
+           pointed and the block TELEPORTED, which shows the outcome but not
+           the gesture — and the gesture is the whole thing being taught now
+           that sliding is how you play. So the finger travels to the empty
+           cell and the block travels under it, arriving together; only then
+           is the move committed and the finger let go. */
         slideDemoTimers.push(setTimeout(function(){
           if (!slideDemo) return;
-          slideHandOff();
-          slideMoveTo(pick.from, pick.to);        // the real move, exactly as a tap would
-          step++;
-          slideDemoTimers.push(setTimeout(next, 900));
-        }, 1500));
+          slideDemoGlide(pick.from, pick.to);
+          slideDemoTimers.push(setTimeout(function(){
+            if (!slideDemo) return;
+            slideHandOff();
+            slideMoveTo(pick.from, pick.to);      // the real move, exactly as a drag would
+            step++;
+            slideDemoTimers.push(setTimeout(next, 800));
+          }, 560));                                // matches the glide's own timing
+        }, 1400));
       }
       next();
     }
@@ -9092,8 +9125,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-139 (Show me how works after a win instead of doing nothing)';
-  window.BETA_VER = 'beta-139';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-140 (Show me how: the finger now carries the block across instead of it teleporting)';
+  window.BETA_VER = 'beta-140';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
