@@ -6107,7 +6107,16 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     window.__slideDemoStop = slideDemoStop;
     function slideDemoRun(){
       if (slideDemo){ slideDemoStop(); return; }
-      if (slideSolved) return;
+      /* Raja: "show me how not active". On a finished board this used to
+         return silently — a button that looks alive and does nothing, which
+         is worse than one that is greyed out. There is nothing to demonstrate
+         on a solved board, so deal a fresh one first and then show it: that
+         is what someone asking to be shown how actually wants next. */
+      if (slideSolved){
+        slideSetPrompt();
+        slideShuffle();
+        try { sana('Here is a fresh one — watch how a block slides.', 'think', true); } catch(e){}
+      }
       slideDemo = true;
       var b = document.getElementById('slideShow');
       if (b) b.textContent = '✋ Stop showing';
@@ -9083,8 +9092,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-138 (Slide: drag a block with your finger into the space -- real sliding, not just tapping)';
-  window.BETA_VER = 'beta-138';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-139 (Show me how works after a win instead of doing nothing)';
+  window.BETA_VER = 'beta-139';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
