@@ -2049,13 +2049,23 @@ body.slideMode #slidePanel{ display:block !important;
   gap:8px; max-width:330px; margin:0 auto; --slideFont:30px; --slideRadius:16px; }
 .slideCell{ aspect-ratio:1; border-radius:var(--slideRadius); border:2px dashed #C4A277;
   background:rgba(255,246,231,.35); padding:0; font:inherit; }
-/* A space only becomes tappable while a number is waiting to move into it,
-   and it says so loudly — this is the moment a child is being asked to
-   choose, so it should not look like the same dormant square as before. */
-.slideCell.slideTarget{ border:3px solid #10b981; background:rgba(16,185,129,.18);
+/* TWO COLOURS, TWO MEANINGS. Raja: "use of two green shades" — and he was
+   being generous, there were three. Green outline said "this can move",
+   darker green outline said "you picked this", green fill said "it can go
+   here": three different ideas in one hue, so none of them read.
+   Now green means one thing only — THIS CAN MOVE, the steady state of the
+   board. Amber means the choice you are making right now: the amber block
+   goes to the amber space. The demo already spoke amber for the block it
+   points at, so it says the same thing the game does. */
+.slideCell.slideTarget{ border:3px solid #f59e0b; background:rgba(245,158,11,.28);
   cursor:pointer; animation:starPop .35s var(--spring); }
-.slideTile.picked{ outline:4px solid #10b981; outline-offset:-4px;
-  box-shadow:0 0 0 4px rgba(16,185,129,.25), 0 3px 0 rgba(94,64,32,.35); }
+/* Scoped through .slideBoard on purpose. A picked block ALSO carries
+   .canMove, and that rule is declared further down at the same specificity —
+   so the green "can move" outline was quietly winning and the block you had
+   just chosen never turned amber. Weighting this one higher settles it
+   whatever order the rules end up in. */
+.slideBoard .slideTile.picked{ outline:4px solid #f59e0b; outline-offset:-4px;
+  box-shadow:0 0 0 4px rgba(245,158,11,.3), 0 3px 0 rgba(94,64,32,.35); }
 .slideTile{ aspect-ratio:1; border-radius:var(--slideRadius); border:0; cursor:pointer;
   font-family:inherit; font-size:var(--slideFont); font-weight:900; color:#3A2A14;
   background:linear-gradient(152deg,#FFE9BF,#F3C97E);
@@ -2081,7 +2091,10 @@ body.slideMode #slidePanel{ display:block !important;
   50%{ transform:translate(-46%,-30%) scale(1.12); } }
 .slideTile.demoFrom{ outline:4px solid #f59e0b; outline-offset:-4px;
   box-shadow:0 0 0 5px rgba(245,158,11,.3), 0 3px 0 rgba(94,64,32,.35); }
-.slideCell.demoTo{ border:3px solid #10b981; background:rgba(16,185,129,.22); }
+/* Amber, matching the block the finger is on — the demo is showing the same
+   "this one goes there" pairing the player makes by hand, so it should not
+   invent a second colour language to say it. */
+.slideCell.demoTo{ border:3px solid #f59e0b; background:rgba(245,158,11,.28); }
 .slideBtn{ padding:9px 16px; border-radius:999px; border:2px solid #8A5E31;
   background:#FFF6E7; color:#5E3D1C; font-family:inherit; font-size:13px;
   font-weight:800; cursor:pointer; touch-action:manipulation; }
@@ -5951,6 +5964,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       slideCells = [];
       for (var i = 0; i < SLIDE_N; i++) slideCells.push(i < SLIDE_TILES ? slideLv.tiles[i] : null);
       slideMoves = 0; slideSolved = false;
+      /* Clearing the selection matters as much as clearing the board. It is
+         a CELL INDEX, so a shuffle that leaves it set points it at whatever
+         now happens to sit there: if that is a block it renders as picked on
+         a fresh deal, and if it is a space its neighbours light up as
+         destinations with nothing selected at all — which is the pair of
+         stray green squares Raja photographed. */
+      slideSel = null;
     }
     function slideShuffle(){
       slideReset();
@@ -8977,8 +8997,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-136 (Slide Magic: Show me how demo with a finger, plus SaNa hints)';
-  window.BETA_VER = 'beta-136';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-137 (Slide: stray highlights after shuffle fixed; green means can-move, amber means the move you are making)';
+  window.BETA_VER = 'beta-137';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
