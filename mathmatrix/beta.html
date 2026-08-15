@@ -2083,6 +2083,12 @@ body.slideMode #slidePanel{ display:block !important;
 /* The movable ones say so. A child should not have to guess which tiles are
    next to a space — that is the puzzle's difficulty, not the interface's. */
 .slideTile.canMove{ outline:3px solid #4ade80; outline-offset:-3px; }
+/* Letters get their own tint. Raja: "keep differentiate to alpha and
+   numerical" — the two boards no longer mix the two kinds, and colouring
+   them apart means a child can tell at a glance which puzzle they are in
+   even before reading a block. Cool blue for letters, the warm honey for
+   numbers; both keep the same dark text, so contrast is unchanged. */
+.slideAlpha .slideTile{ background:linear-gradient(152deg,#D8ECFB,#A8CFF0); }
 .slideTile.locked{ opacity:.92; cursor:default; }
 /* The parking row reads as a shelf under the board, not as four equal rows. */
 .slideBoard .slideRowGap{ grid-column:1 / -1; height:10px; border-top:3px dotted #B08D5E; }
@@ -2978,7 +2984,7 @@ body{ background:#C9A87C !important; }
   <div class="slideBoard" id="slideBoard"></div>
   <!-- Sits under the board, so it must not say "below" — it points UP at the
        row beneath the dotted line, which is the parking shelf. -->
-  <div class="slideSpareLabel">↑ the row under the dotted line is spare — park a number there to open up the board</div>
+  <div class="slideSpareLabel">↑ the row under the dotted line is spare — park a block there to open up the board</div>
   <div class="slideFoot">
     <!-- Raja: "need sana hints along show play for how to use slide such how
          thump or finger to touch how where if one to shift to empty place".
@@ -3291,7 +3297,7 @@ body{ background:#C9A87C !important; }
            Puzzle - Letters and Numbers"): six across, A-Z then 1-9 and 0. -->
       <button class="toggleBtn lvCard" id="slideAzTab" type="button" data-slide-level="az" data-name="🔤 Slide A–Z" style="color:#0ea5e9; border-color:#0ea5e9; --c1:#bae6fd; --c2:#38bdf8;">
         <span class="lvGlyph" aria-hidden="true">🔤</span>
-        <span class="lvText"><b class="lvName">Slide A–Z</b><span class="lvDiff">6×6 · the full block set</span><span class="lvMeta">all 26 letters and 10 numbers, six spare spaces</span></span>
+        <span class="lvText"><b class="lvName">Slide A–Z</b><span class="lvDiff">5×6 · the alphabet</span><span class="lvMeta">all 26 letters, bigger blocks — numbers have their own board</span></span>
       </button>
     </div>
   </div>
@@ -5944,10 +5950,19 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         tiles: ['1','2','3','4','5','6','7','8','9'], name: '1 to 9',
         goal: 'Finish with <b>1 2 3</b> on the top row, <b>4 5 6</b> next, <b>7 8 9</b> on the third.'
       },
+      /* Raja: "can remove number block in alphabetical table to increase room
+         box sizes also keep differentiate to alpha and numerical". Letters
+         only here, numbers only on the other board — each puzzle is one kind
+         of thing, which is the differentiating he asked for.
+         Dropping the ten digits is what buys the bigger blocks: 26 letters fit
+         five across instead of six, and a block's width is the board divided
+         by its columns, so they grow by about a fifth. 26 does not fill a
+         rectangle, so the last puzzle row is Z followed by four spaces —
+         harmless, and extra room to manoeuvre. */
       az: {
-        cols: 6, rows: 6, title: '🔤 Slide A–Z',
-        tiles: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').concat(['1','2','3','4','5','6','7','8','9','0']), name: 'A to Z, then 1 to 0',
-        goal: 'Finish with <b>A</b> to <b>Z</b> reading across, then <b>1</b> to <b>9</b> and <b>0</b> — exactly like a box of alphabet blocks.'
+        cols: 5, rows: 6, title: '🔤 Slide A–Z', alpha: true,
+        tiles: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''), name: 'A to Z',
+        goal: 'Finish with <b>A</b> to <b>Z</b> reading across — exactly like a box of alphabet blocks.'
       }
     };
     var slideLv = SLIDE_LEVELS.nine;
@@ -6038,12 +6053,23 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       // six columns of letters need smaller tiles than three of digits, and
       // the dotted seam has to fall wherever this board's parking row starts.
       el.style.gridTemplateColumns = 'repeat(' + SLIDE_COLS + ', 1fr)';
-      el.style.setProperty('--slideFont', slideLv.cols >= 6 ? '17px' : '30px');
-      el.style.setProperty('--slideRadius', slideLv.cols >= 6 ? '9px' : '16px');
-      el.style.gap = slideLv.cols >= 6 ? '5px' : '8px';
+      // Sized from the column count, so a board with fewer columns really does
+      // get bigger blocks rather than just more air around them.
+      var wide = slideLv.cols >= 5;
+      el.style.setProperty('--slideFont', wide ? '24px' : '30px');
+      el.style.setProperty('--slideRadius', wide ? '12px' : '16px');
+      el.style.gap = wide ? '6px' : '8px';
+      el.style.maxWidth = wide ? '352px' : '330px';
+      el.classList.toggle('slideAlpha', !!slideLv.alpha);
       var html = '';
       for (var k = 0; k < SLIDE_N; k++){
-        if (k === SLIDE_TILES) html += '<div class="slideRowGap" aria-hidden="true"></div>';
+        /* The dotted line marks where the PARKING ROW starts, which is after
+           every puzzle row — not after the last block. Those were the same
+           number while the blocks exactly filled the grid (9 in 3x3, 36 in
+           6x6); with 26 letters in a 5x6 area they are not, and keying it off
+           the block count would have drawn the line through the middle of the
+           last row. */
+        if (k === SLIDE_COLS * slideLv.rows) html += '<div class="slideRowGap" aria-hidden="true"></div>';
         var v = slideCells[k];
         if (v === null){
           var isTarget = targets.indexOf(k) > -1;
@@ -9125,8 +9151,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-140 (Show me how: the finger now carries the block across instead of it teleporting)';
-  window.BETA_VER = 'beta-140';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-141 (Slide A-Z is letters only, bigger blocks, and tinted apart from the numbers board)';
+  window.BETA_VER = 'beta-141';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
