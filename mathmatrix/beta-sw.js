@@ -25,7 +25,12 @@ const ASSETS = [
   './cheat-10x10.png',
   './cheat-3cube.png',
   './cheat-ramanujan.jpg',
-  './cheat-binary.png',
+  // No cheat-binary.png here. It has never existed (beta.html says so itself,
+  // where the CHEAT map deliberately has no 'binary' entry) -- and listing a
+  // file that 404s is not a harmless spare line: cache.addAll() rejects if ANY
+  // single request fails, so the install event failed and this worker cached
+  // NOTHING. Beta's offline play has been silently dead the whole time it was
+  // listed. Found while auditing both asset lists before the promotion.
   './icon-192.png',
   './icon-512.png',
   './icon-512-maskable.png'

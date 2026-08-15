@@ -16,6 +16,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0d0d0d">
+<!-- The real app's own manifest: this is what an installed icon on a child's
+     home screen points at. While this build lived in beta it deliberately used
+     a SEPARATE manifest (own name, own start_url, own scope) so an installed
+     preview could never collide with or shadow this one; promoting it back to
+     production restores the shared manifest.json the installed app expects. -->
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <!-- without this the browser asks for /favicon.ico, 404s, and the tab sits blank -->
@@ -796,7 +801,19 @@
      chosen level button, so the whole app changes personality per puzzle. */
   :root{ --accent:#60a5fa; --accent2:#3b82f6; }
   body{ padding:0 !important; display:block !important; }
-  .appShell{ display:flex; flex-direction:column; min-height:100vh; width:100%; }
+  /* No min-height here on purpose. Raja, Brave on Android: "scrolling is
+     locked unable to scroll" -- the real .appShell sizing rule further down
+     (height:100dvh / height:100vh / max-height:100dvh) already fully
+     specifies height, and per spec min-height ALWAYS overrides max-height
+     when they conflict. A leftover min-height:100vh here was silently
+     defeating that dvh cap on any browser whose persistent chrome (Brave's
+     own extra toolbar, on top of Android's) makes 100vh taller than what is
+     actually visible -- forcing the shell past the real screen with no way
+     to reach the rest, since outer page scroll is deliberately blocked
+     everywhere else in this app. Confirmed with a plain min/max-height
+     conflict on a throwaway element: it renders at the min, ignoring the
+     cap, exactly this shape. */
+  .appShell{ display:flex; flex-direction:column; width:100%; }
   .appBar{ position:sticky; top:0; z-index:50; display:flex; align-items:center; gap:10px;
     padding:10px 12px; background:rgba(6,6,16,.88); -webkit-backdrop-filter:blur(14px);
     backdrop-filter:blur(14px); border-bottom:1px solid rgba(255,255,255,.09); }
@@ -894,15 +911,15 @@
   }
 
   /* clay depth — light from top-left, shadow beneath, soft inner rim */
-  .cell, .toggleBtn, .kp, .btnRow button, #timerBox, .binCard, .comingChip, .convBit, .convDec{
+  .cell, .toggleBtn, .kp, .btnRow button, #timerBox, .binCard, .comingChip, .convBit, .convDec, .gateChoiceBtn{
     box-shadow: 4px 4px 10px rgba(0,0,0,.42), -3px -3px 8px rgba(255,255,255,.05),
                 inset 1px 1px 2px rgba(255,255,255,.08), inset -2px -2px 4px rgba(0,0,0,.22) !important;
   }
   /* squish on press — like real silicone */
-  .cell, .toggleBtn, .kp, .btnRow button, .comingChip, .binCard, .convBit{
+  .cell, .toggleBtn, .kp, .btnRow button, .comingChip, .binCard, .convBit, .gateChoiceBtn{
     transition: transform .13s cubic-bezier(.34,1.56,.64,1), box-shadow .13s ease, background .2s ease;
   }
-  .toggleBtn:active, .kp:active, .btnRow button:active, .binCard:active, .convBit:active{
+  .toggleBtn:active, .kp:active, .btnRow button:active, .binCard:active, .convBit:active, .gateChoiceBtn:active{
     transform: scale(.93) !important;
     box-shadow: inset 4px 4px 9px rgba(0,0,0,.45), inset -2px -2px 6px rgba(255,255,255,.06) !important;
   }
@@ -1371,7 +1388,8 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
    falls back to flex-start the moment the list is taller than the box, so a
    tall tablet gets the leftover split evenly and a short phone still starts
    at the first puzzle. */
-.difficultyBar{ flex:1; min-height:0; overflow:hidden; display:flex; flex-direction:column;
+.difficultyBar{ flex:1; min-height:0; overflow-x:hidden; overflow-y:auto;
+  -webkit-overflow-scrolling:touch; display:flex; flex-direction:column;
   justify-content:safe center;
   gap:calc(3px * var(--lvScale, 1));
   background:transparent !important; border:0 !important; padding:0 !important; margin:0 !important;
@@ -1390,13 +1408,21 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
    and slid them straight through each other — measured 66px of overlap. Two
    guards: a ceiling on both, and flex:0 1 auto with min-width:0 so either can
    give way instead of running over its neighbour. */
-.diffHead{ flex:none; display:flex; align-items:baseline; justify-content:space-between;
+/* space-between, not flex-end: the mascot now occupies the left half this row
+   was already reserving and leaving empty. align-items:center rather than
+   baseline — baseline existed to line the old heading up with the tip, and
+   that heading no longer lives here; a picture has no meaningful baseline to
+   share with text. */
+.diffHead{ flex:none; display:flex; align-items:center; justify-content:space-between;
   gap:12px; margin:1px 11px 4px; }
-.diffHead .diffLabel{ display:inline !important; writing-mode:horizontal-tb !important;
+/* .diffMascot .diffLabel, not .diffHead — the label lives beside the monkey
+   now, not above it. Renamed the ancestor, kept every declaration: this is
+   the exact same pill it always was, just relocated. */
+.diffMascot .diffLabel{ display:inline !important; writing-mode:horizontal-tb !important;
   transform:none !important;
-  font-size:calc(11px * var(--lvScale, 1)) !important;
-  font-size:min(calc(11px * var(--lvScale, 1)), 14.5px) !important;
-  font-weight:900 !important; letter-spacing:.9px; text-transform:uppercase;
+  font-size:calc(9px * var(--lvScale, 1)) !important;
+  font-size:min(calc(9px * var(--lvScale, 1)), 11px) !important;
+  font-weight:900 !important; letter-spacing:.7px; text-transform:uppercase;
   color:#5E2A0A !important; background:none !important; padding:0 !important;
   border:0 !important; white-space:nowrap;
   flex:0 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; }
@@ -1439,14 +1465,84 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
 .diffShare:active{ transform:translateY(2px); box-shadow:0 0 0 rgba(0,0,0,.22); }
 
 /* The mascot, moved down from the app-bar title — see the HTML comment by
-   .diffMascot. Its own centred row rather than squeezed between the label
-   and the tip/share pair: at "as big as possible" it does not fit beside
-   either without recreating the exact crowding this row has already been
-   fixed for twice (diffLabel/diffTip overlap, then diffTip/diffShare). */
-.diffMascot{ width:100%; text-align:center; line-height:1;
-  font-size:min(calc(40px * var(--lvScale, 1)), 64px);
-  margin:2px 0 8px;
+   .diffMascot. Raja: "place choose Difficulty ... left to monkey", "can't
+   reduce monkey" — so the label sits here now too, absolutely positioned
+   rather than flexed alongside the emoji. That's deliberate: a flex layout
+   would have the label and the monkey compete for width, recreating the
+   exact crowding this row has already been fixed for twice (diffLabel/
+   diffTip overlap, then diffTip/diffShare). Absolute positioning means the
+   monkey's centring is computed from .diffMascot's full width same as
+   before — the label floating over the left margin never enters that
+   calculation, so it cannot shrink or push the monkey no matter how long
+   "Choose Difficulty" renders at any lvScale. */
+/* Holds only the label now that the mascot moved up into .diffHead's unused
+   left half, so the reserved 36px band goes with it — that height was there
+   to stand a big emoji in, and keeping it would have left the blank space
+   Raja asked about simply moved down one row instead of removed. */
+/* margin 0, not 11px, on the sides: the label is in normal flow now, so a
+   side margin here stacks on top of the bar's own padding and pushed
+   "Choose Difficulty" 11px further in than the "Add Magic"/"Binary Magic"
+   headings directly beneath it — a misalignment the absolutely-positioned
+   version never had, introduced by the move and measured after it. */
+.diffMascot{ width:100%; position:relative; text-align:left; line-height:1;
+  margin:0 0 6px; }
+/* Raja asked for this twice. First time: "can shift there in monkey dice with
+   bigger image", about the chip row's unused left side. I took the safer read
+   then — grow it in place rather than relocate it — because this exact row
+   had broken twice on collisions (diffLabel/diffTip, then diffTip/diffShare,
+   both documented above). Second time, pointing at the same gap: "why keep
+   more blank space and why can't monkey and dice to shift there". That is a
+   fair push: growing it in place never addressed what he was actually looking
+   at, which was empty space, and the timid fix left the mascot eating a whole
+   extra row of height to avoid a move worth making. It has moved.
+   --mascotMax is still set by fitHome() from a REAL measurement on this exact
+   device, because a fixed px formula still can't work here for the original
+   reason: the mascot and its neighbour don't grow in lockstep as --lvScale
+   changes, so a size that clears on one phone collides on another. Only the
+   neighbour changed — the chip stack now, the label before. It defaults to a
+   no-op for the first paint, before fitHome() has run once. */
+/* --mascotShift is gone with the move: it existed to slide the mascot's
+   centring point past the "Choose Difficulty" label, and the two are no
+   longer on the same row. --mascotMax stays, retargeted by fitHome() at the
+   room left of the chip stack instead of right of the label — a fixed px
+   size still cannot work here, for the same reason as before: the chips and
+   the mascot do not grow in lockstep as --lvScale changes.
+   flex:none so the mascot keeps the size fitHome computed and the chip
+   column is the side that gives way, matching how this row already
+   protects .diffTip from being run over. */
+.diffMascotEmoji{ position:relative; flex:none;
+  font-size:min(calc(42px * var(--lvScale, 1)), var(--mascotMax, 68px));
   filter:drop-shadow(0 3px 0 rgba(94,64,32,.3)); }
+/* Raja, after the warm-up cards got theirs: "can tune the another one monkey
+   dice like attached" — the same dark medallion behind Home's mascot, which
+   was the last picture still floating bare on the wood.
+   A PSEUDO-ELEMENT, not padding on the span: fitHome() sizes this emoji by
+   dividing its measured width by its font-size ("glyph-pair ratio, stable
+   across sizes"), and padding is fixed px that does not scale with the font,
+   so adding any would quietly corrupt that ratio and mis-size the mascot on
+   exactly the roomy screens the measuring exists to serve. Absolute
+   positioning keeps it out of the box the JS measures.
+   Sized in em so the medallion grows with whatever size fitHome lands on,
+   and kept inside the 10px clearance fitHome reserves so it cannot reach
+   the "Choose Difficulty" label. The existing drop-shadow filter already
+   makes this element a stacking context, so z-index:-1 stays safely behind
+   the glyphs without escaping behind anything else.
+   Vertical inset is 0 on purpose. Bleeding it out even 0.14em put the pill
+   4px under the Share chip at every width and 5px into "Add Magic" on a
+   320px phone — measured, not guessed. The line box already carries leading
+   above and below the glyphs, so the pill has room without reaching past
+   its own row, and this avoids buying that room with extra margin, which on
+   a short screen is exactly what pushes Home back into scrolling. */
+.diffMascotEmoji::before{
+  content:''; position:absolute; z-index:-1; inset:0 -0.18em;
+  background:#2E2418; border-radius:999px;
+}
+/* Back in normal flow: it was absolutely positioned only so the mascot could
+   be centred across the full row without the label pushing it — with the
+   mascot gone from this row there is nothing left to dodge, and static means
+   .diffMascot gets its height from the label itself instead of a reserved
+   minimum. */
+.diffMascot .diffLabel{ position:static; transform:none; }
 
 /* ══ TAP TARGETS — reach without regrowth ══
    Share is 24px tall, the Update pill 18px, Logic and Watch 40px. All under the
@@ -1601,8 +1697,8 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
   background:#FFF6E7; border:1.5px solid #8A5E31; border-radius:8px;
   padding:1px 4px; margin-right:5px;
   box-shadow:0 2px 0 rgba(94,64,32,.3); line-height:1; font-size:.92em; }
-.diffHead .diffLabel{ background:#F3E4C9 !important; border:1.5px solid #C4A277 !important;
-  border-radius:999px !important; padding:2px 10px !important; }
+.diffMascot .diffLabel{ background:#F3E4C9 !important; border:1.5px solid #C4A277 !important;
+  border-radius:999px !important; padding:2px 8px !important; }
 .diffTip{ background:#F3E4C9; border:2px solid #C4A277;
   border-radius:999px; padding:3px 11px; }
 
@@ -1804,6 +1900,15 @@ body.onPlay .solvedCounter{ font-size:9px !important; padding:3px 9px !important
 .rowBtn.gold{ background:var(--gold); color:#1a1204; }
 .rowBtn.gold i{ background:rgba(0,0,0,.13); }
 .rowBtn.gold small{ color:#5c4405; }
+/* Gate Logic's level chooser: a locked level reads as genuinely inert (not
+   just a slightly duller version of a real choice), and the "back to all
+   gates" row sits visually apart from the numbered level rows below it so
+   it doesn't read as a fourth level. */
+.rowBtn.gateLevelLocked{ opacity:.5; cursor:not-allowed; }
+.rowBtn.gateLevelLocked:active{ transform:none; box-shadow:var(--clay); }
+.rowBtn.gateLevelBack{ background:transparent; box-shadow:none; margin-bottom:6px;
+  color:var(--bink2); font-weight:800; }
+.rowBtn.gateLevelBack i{ background:transparent; font-size:16px; }
 
 /* ── GET APP / FEEDBACK: compact ── */
 .screen.on[data-screen="scApp"] > div,
@@ -1870,8 +1975,53 @@ body.binaryMode #learnRow,
 body.binaryMode #learnHint,
 body.binaryMode .keysChip,
 body.binaryMode .targetPill,
-body.binaryMode .solvedCounter{ display:none !important; }
+body.binaryMode .solvedCounter,
+/* Raja: "when select level to go play rooms, but in logic select shows
+   only logic notes ... not play room like ChatGPT presenting" — gate
+   rooms live in scPlay now, same as every other puzzle, not a sheet.
+   Same proven mechanism as binaryMode (a body class + !important CSS),
+   not just JS inline styles — the comment above explains why: inline
+   styles lose to this layout's own !important rules elsewhere. */
+body.gateMode #barWatch,           /* no board to build, so nothing to watch */
+body.gateMode #boardWrap,
+body.gateMode #playRow,
+body.gateMode #keypad,
+body.gateMode #rotateHint,
+body.gateMode #learnRow,
+body.gateMode #learnHint,
+body.gateMode .keysChip,
+body.gateMode .targetPill,
+body.gateMode .solvedCounter{ display:none !important; }
 body.binaryMode #binaryPanel{ display:flex !important; }
+/* Scrollable, like .difficultyBar already is. .screens is overflow:hidden, so
+   before this a gate room taller than the screen was not merely awkward —
+   it was CLIPPED behind the tab bar with no way to reach it, which is what
+   Raja photographed: the bottom answer cards half-swallowed by the tab bar.
+   The sizing below keeps the common cases fitting without a scroll; this is
+   the guarantee that nothing can ever become unreachable, whatever the
+   phone or the input count. */
+body.gateMode #gatePanel{ display:block !important;
+  flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; }
+/* Raja: "in logic sheet sheet should be shift upward to see all text" —
+   #logicBox's content (a 4-line truth table) is short enough that the
+   bottom sheet, sized to content, was only claiming the bottom third of
+   the screen. Scoped to gateMode only, not the shared .shBody used by
+   every other sheet — this doesn't touch Learn/About/Offline's own sizing. */
+body.gateMode #logicBox{ min-height:44vh; }
+/* Raja: "may better if white text was sheet cover four side with cream
+   background" — #logicBox (#FFF6E7) floated as a visibly separate card
+   with a 25px gap of .shBody's own tan (#F3E4C9) showing around it on
+   every side. Same cream on both now, so the seam disappears and the
+   whole sheet reads as one surface, edge to edge — scoped to gateMode,
+   not the shared .shBody every other sheet also uses. */
+body.gateMode .shBody{ background:#FFF6E7 !important; }
+/* Raja, marking the same screenshot again: matching the colour wasn't
+   enough — #logicBox still carried the shared "clay" card treatment
+   (a real box-shadow plus 20px rounded corners plus its own margin),
+   which draws a visible edge on 3-4 sides regardless of background
+   colour. Flattened to nothing: no shadow, no radius, no margin — a
+   true edge-to-edge surface, not just a colour match. */
+body.gateMode #logicBox{ box-shadow:none !important; border-radius:0 !important; margin:0 !important; }
 
 /* ══ MIND READER — one card at a time ══ */
 /* safe center: on the reveal every child is flex:none, so the answer used to
@@ -2034,8 +2184,17 @@ body.binaryMode #binaryPanel{ display:flex !important; }
 .splash.out{ animation:splashOut .42s ease forwards; pointer-events:none; }
 @keyframes splashOut{ to{ opacity:0; transform:scale(1.05); } }
 .splashInner{ position:relative; z-index:1; text-align:center; padding:0 26px; }
+/* Raja: recommend Chrome on Android / Safari on iPhone, right above the
+   monkey-dice roll -- only rendered when detectBrowserTip() below finds the
+   visitor is NOT already on the recommended browser, so nobody sees a tip
+   telling them to do what they are already doing. */
+.splashBrowserTip{ display:inline-block; margin:0 0 12px; padding:6px 14px;
+  border-radius:999px; background:rgba(0,0,0,.24); color:#fff; font-size:12px;
+  font-weight:800; letter-spacing:.2px;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.22); }
 .splashStage{ position:relative; width:230px; height:230px; margin:0 auto;
   display:grid; place-items:center; }
+.splashStage.big{ transform:scale(1.14); margin-top:8px; margin-bottom:8px; }
 .splashFace{ width:118px; height:118px; margin:0 auto 4px; border-radius:50%; display:grid;
   place-items:center; font-size:64px; position:relative;
   background:linear-gradient(160deg,#FFD675,var(--gold));
@@ -2435,6 +2594,151 @@ body{ background:#C9A87C !important; }
   border-radius:9px !important; padding:7px 10px !important; margin:0 0 9px !important;
   color:#0E5A34 !important; font-weight:800 !important; font-size:12.5px !important; }
 
+/* ══ GATE LOGIC — a real Play-screen game (#gatePanel), not a sheet ══
+   Raja: "as much possible choices of using gate logic which creates eager
+   to kids play and learn gate logics" -- room-by-room like the reference,
+   but scoped one card per gate (matches every other puzzle: pick any,
+   any time, no forced order) and covering the WHOLE truth table per gate,
+   not one lucky row. Sandalwood, not the reference's dark theme. */
+.gateBackBtn{ display:block; margin:0 0 14px; padding:9px 18px; border-radius:999px;
+  border:2px solid #8A5E31; background:#FFF6E7; color:#5E3D1C; font-size:14px;
+  font-weight:800; cursor:pointer; }
+/* The LOGIC sheet's truth table — a real A/B/Output grid, not a sentence
+   per row. font-variant-numeric isn't relevant here (these are words, not
+   digits) but tabular alignment is exactly the same idea: every column
+   lines up regardless of how long "OFF" vs "ON" render. */
+.gateTruthTable{ width:100%; border-collapse:collapse; margin-top:10px; font-size:15px; }
+.gateTruthTable th, .gateTruthTable td{ border:1.5px solid #C4A277; padding:8px 6px;
+  text-align:center; font-weight:800; }
+.gateTruthTable th{ background:#F3E4C9; color:#5E2A0A; text-transform:uppercase;
+  font-size:12px; letter-spacing:.4px; }
+.gateTruthTable td{ color:#33220F; }
+.gateTruthOut{ background:#F3E4C9; }
+.gateProgress{ font-size:13px; font-weight:900; letter-spacing:.6px; text-transform:uppercase;
+  color:#8A5E31; margin-bottom:10px; }
+.gateTip{ background:#F3E4C9; border:2px solid #C4A277; border-radius:14px;
+  padding:16px 18px; margin:0 0 16px; font-size:17px; font-weight:800; color:#33220F; }
+.gateDiagram{ font-family:'Courier New', monospace; background:#FFF6E7; border:2px solid #8A5E31;
+  border-radius:14px; padding:16px 18px; margin:0 0 16px; font-size:16px; line-height:1.65;
+  white-space:pre-wrap; text-align:left; color:#33220F; }
+/* Raja: "have more space in down, increase room size according and
+   animated emoji size to cover as much possible in side room like
+   attached ... may increase more than shows in attached" — the reference
+   itself still leaves blank space below Restart; going bigger than it,
+   not just matching it. Choice boxes near double their old height, emoji
+   promoted from "inherits the button's 14px" (effectively invisible) to
+   its own large, centred, block-level size — the actual focal point of
+   each box now, same as the reference's own layout intent. */
+.gateChoices{ display:grid; grid-template-columns:repeat(2, 1fr); gap:14px; margin-bottom:16px; }
+/* Raja: "keep animated images to fit in card box as much possible to
+   bigger and colorfull to attract kids" — the box grows enough to hold a
+   bigger emoji without cramping the label under it (checked: still fits
+   two-line labels on a narrow phone), and each LOGIC ROOM answer gets its
+   own tint so the four choices read apart at a glance, not just by text. */
+.gateChoiceBtn{ min-height:150px; border:2px solid #8A5E31; border-radius:18px;
+  background:#FFF6E7; color:#33220F; font-size:17px; font-weight:800;
+  padding:14px; cursor:pointer; touch-action:manipulation;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; }
+.gateChoiceBtn:disabled{ opacity:.45; cursor:default; }
+/* Scoped to gateChoiceLogic only -- the warm-up buttons above reuse the
+   same data-val attribute for plain 0-3 indices, no ON/OFF meaning there. */
+.gateChoiceLogic[data-val="1"]{ background:#DFF7E9; border-color:var(--wingreen); }
+.gateChoiceLogic[data-val="0"]{ background:#FFE3DE; border-color:var(--warn); }
+/* Raja: "remove this cards and instead increase the space for questions
+   table". With the two decoy answers gone the choice grid is one row
+   instead of two, freeing ~164px. It goes where he asked -- the wiring
+   diagram, which is the thing a child has to actually read to answer, and
+   which was being squeezed into a strip while four boxes took the screen.
+   Only the LOGIC rooms change: the warm-up animal cards still need four.
+   Sized against the SCREEN, not a fixed px: a flat 20px looked right on a
+   tall phone and pushed the answer cards behind the tab bar on a 640px one
+   — and a 5-input room draws eleven lines where a 2-input draws six, so the
+   tallest case is nearly double. vh-based clamps grow it on the phones that
+   have room and give it back on the ones that do not. */
+.gateChoicesTwo + .gateFeedback{ margin-top:4px; }
+.gateChoicesTwo .gateChoiceBtn{ min-height:clamp(82px, 14vh, 150px); }
+/* --diagLines is the diagram's own line count, set per room. A 2-input room
+   draws 6 lines and a 5-input 11, so one font size cannot serve both: the
+   5-input diagram pushed the answer cards a full 116px off a 640px screen.
+   Dividing the height budget by the line count sizes each room to what it
+   actually has to draw. max-height is the backstop — whatever is left over
+   scrolls INSIDE the diagram, so the two answer cards can never be pushed
+   off the screen again, which was the original complaint. */
+.gateRoomLogic .gateDiagram{
+  font-size:clamp(10px, min(2.1vh, calc(19vh / var(--diagLines, 6))), 20px);
+  line-height:1.45; max-height:40vh; overflow-y:auto;
+  padding:clamp(11px, 1.5vh, 22px) 18px; margin-bottom:clamp(8px, 1.4vh, 16px); }
+.gateRoomLogic .gateProgress{ margin-bottom:clamp(4px, 1vh, 10px); }
+.gateRoomLogic .gateTip{ font-size:clamp(15px, 1.9vh, 18px);
+  padding:clamp(10px, 1.5vh, 16px) 18px; margin-bottom:clamp(8px, 1.4vh, 16px); }
+.gateFeedback{ min-height:26px; font-size:16px; font-weight:800; color:#5E3D1C; }
+/* A plain colour change on small text was too easy to miss (confirmed:
+   Raja still couldn't catch it even at the longer pause) — a filled pill
+   reads as a toast, not just a line of text. */
+.gateFeedback-ok{ color:#0E5A34; background:#DFF7E9; border:2px solid #22c55e;
+  border-radius:12px; padding:10px 14px; font-size:18px; }
+.gateFeedback-bad{ color:#9A3412; }
+/* Tap-to-continue instead of a timer — see the comment in gateChoose()
+   for why. Block-level so it sits on its own line under the message,
+   not squeezed inline beside it. */
+.gateNextBtn{ display:block; margin:10px auto 2px; padding:10px 26px;
+  border-radius:999px; border:2px solid #0E5A34; background:#0E5A34;
+  color:#FFF6E7; font-size:15px; font-weight:800; cursor:pointer; }
+.gateWin{ font-size:24px; font-weight:900; padding:24px 6px; line-height:1.5; color:#33220F; }
+.gateWinRule{ display:block; font-size:16px; font-weight:700; color:#5E3D1C; margin-top:8px; }
+/* Block-level and full-width, same reasoning as .gateNextBtn: without an
+   explicit width these two sat side by side and overlapped their own
+   text (confirmed by screenshot) instead of stacking. Gold/primary since
+   progressing to the next level is the main action; Play Again (replaying
+   what's already done) stays the plain secondary one below it. */
+.gateNextLevelBtn{ display:block; width:100%; max-width:340px; margin:10px auto 0; padding:14px 24px;
+  border-radius:14px; border:2px solid var(--gold); background:var(--gold);
+  color:#1a1204; font-size:16px; font-weight:900; cursor:pointer; box-sizing:border-box; }
+.gateAgainBtn{ display:block; width:100%; max-width:340px; margin:10px auto 0; padding:14px 24px;
+  border-radius:14px; border:2px solid #8A5E31;
+  background:#8A5E31; color:#FFF6E7; font-size:16px; font-weight:800; cursor:pointer; box-sizing:border-box; }
+
+/* "same like attached image with animated emoji effects" — the reference's
+   own emoji (🟢🔴❓) sit static; these move, reusing keyframes already built
+   elsewhere (Mind Reader's reveal, a completed line, SaNa's own "oops") so
+   nothing new is defined here, just pointed at gate logic's own elements. */
+.gateEmoji{ display:block; font-size:56px; line-height:1; animation:starPop .5s var(--spring); }
+/* A card whose animal Unicode simply does not have (the ostrich) carries a
+   drawn picture instead of a glyph. Sized to match the emoji cards exactly
+   and nested INSIDE .gateEmoji, so the pop animation and the layout above
+   apply to it unchanged — nothing else needed a special case. */
+.gateEmoji svg{ display:block; width:56px; height:56px; margin:0 auto; }
+
+/* Raja: "may set black background inside card for emojis" — a dark medallion
+   behind each animal, which does make them read far more sharply than they
+   did floating on cream. Two things learned by rendering it rather than
+   assuming:
+     • Not pure black. On black the ostrich lost its own silhouette (its body
+       IS black) and the disc fought the warm sandalwood palette; this warm
+       near-black sits in the theme and keeps the bird readable. The drawing
+       itself was lifted off flat black for the same reason.
+     • ANIMAL cards only. The ON/OFF cards carry the same .gateEmoji, and a
+       dark disc behind 🟢/🔴 turned them into heavy black donuts arguing with
+       the green/red tint those cards already use to code the answer — they
+       were already high-contrast and needed no help, so :not(.gateChoiceLogic)
+       keeps this off them. */
+.gateChoiceBtn:not(.gateChoiceLogic) .gateEmoji{
+  width:78px; height:78px; margin:0 auto 2px; border-radius:50%;
+  background:#2E2418; display:flex; align-items:center; justify-content:center;
+}
+.gateChoiceBtn:not(.gateChoiceLogic) .gateEmoji svg{ width:58px; height:58px; }
+.gateWinEmoji{ font-size:68px; animation-duration:.7s; }
+/* .gateDiagram used to carry this too, but mrPop's scale(1.14) overshoot on
+   a bordered box with aligned monospace text inside it visibly spilled past
+   its own edges for a fraction of a second before settling back to a
+   perfect fit — confirmed by measuring mid-animation vs after (368px both
+   times; only the transform was different). Real for the instant it's
+   visible, so removed there — kept everywhere else (feedback text, emoji),
+   where an untextured element overshooting its own bounds isn't visible. */
+.gatePop{ animation:mrPop .5s var(--spring); }
+.gateBounce{ animation:badgePop .32s cubic-bezier(.34,1.56,.64,1); }
+.gateShake{ animation:sanaOops .45s ease; }
+
 @media(prefers-reduced-motion:reduce){ *{ animation:none !important; } }
 </style>
 </head>
@@ -2506,6 +2810,17 @@ body{ background:#C9A87C !important; }
   </div>
 </div>
 
+<!-- Gate Logic: a real Play-screen panel, same pattern as #binaryPanel above
+     (a non-grid game living inside scPlay), not a sheet. #gatePicker holds
+     the 7-gate chooser; #gateRoomWrap holds whichever gate is active. -->
+<div id="gatePanel" style="display:none;">
+  <div id="gatePicker"></div>
+  <div id="gateRoomWrap" style="display:none;">
+    <button class="gateBackBtn" id="gateBackBtn" type="button">← All Gates</button>
+    <div id="gateRoom"></div>
+  </div>
+</div>
+
 <div id="rotateHint">📱 Turn your phone sideways for a much bigger board (scroll down to see it all)</div>
 
 <!-- Built-in puzzle keypad: numbers + navigation, so the OS keyboard never covers the board -->
@@ -2551,6 +2866,17 @@ body{ background:#C9A87C !important; }
 <div style="display:flex; gap:10px; width:100%; max-width:560px; margin:0 auto 12px; padding:0 10px; box-sizing:border-box;">
   <button id="offlineBtn" style="flex:1; width:auto; max-width:none; margin:0;">📲 Play Offline ▼</button>
   <button id="updateBtn" style="flex:1; background:#000; border:2px solid #f59e0b; border-radius:12px; height:48px; line-height:44px; padding:0 10px; font-size:15px; font-weight:700; color:#fbbf24; cursor:pointer;">🔄 Online Update</button>
+</div>
+
+<!-- Raja: the native share sheet's own "copy" grabs the whole title +
+     description + link as one paragraph on Android (see #shareBtn's own
+     comment) — not something this page can fix, since that concat happens
+     one layer down, inside the OS. A genuinely separate action, never
+     routed through navigator.share(), is the only version of "copy a
+     link" that can't have its result overwritten by something else the
+     user taps a moment later. -->
+<div style="display:flex; width:100%; max-width:560px; margin:0 auto 12px; padding:0 10px; box-sizing:border-box;">
+  <button id="copyLinkBtn" style="flex:1; background:#2a1f05; border:2px solid #F7B32B; border-radius:12px; height:48px; font-size:15px; font-weight:800; color:#F7B32B; cursor:pointer;">🔗 Copy Link</button>
 </div>
 <div id="offlineBox">
   <h3>📲 Play Offline — Add to Home Screen</h3>
@@ -2598,13 +2924,28 @@ body{ background:#C9A87C !important; }
        with no internet is worth saying once, here, rather than only inside the
        Get App tab. -->
   <div class="diffHead">
-    <span class="diffLabel">Choose Difficulty</span>
     <!-- Share sits under the offline line, where Raja asked for it. This is the
          moment a parent thinks to pass the game on — standing in front of the
          puzzle list — not three taps away inside the Get App tab. Same link and
-         same share sheet as the big button there; one source, two ways in. -->
+         same share sheet as the big button there; one source, two ways in.
+         #diffInstall went through two earlier shapes chasing the same fix
+         (relabel the fallback sheet, then navigate to the Get App screen
+         instead) before landing on the real one: beta now has its own
+         manifest, so this is wired into the SAME live install-state logic
+         as #installBtn (below, "Install to home screen") -- a real one-tap
+         install where the browser supports it, the same per-platform
+         instructions sheet only where it genuinely can't. -->
+    <!-- Raja, twice now: "why keep more blank space and why can't monkey and
+         dice to shift there". He is right and I was wrong to defer it the
+         first time — this row is justify-content:flex-end with a single
+         right-aligned child, so its whole left half was reserved and empty
+         while the mascot sat on its own line below using up more height.
+         Moving it in here fills that space AND gives the row below back to
+         the label alone, so Home gets shorter rather than taller. -->
+    <span class="diffMascotEmoji" aria-hidden="true">🐒🎲</span>
     <span class="diffSide">
       <span class="diffTip" id="diffTip" role="button" tabindex="0" aria-label="How to play with no internet">📴 Plays with no internet</span>
+      <button class="diffShare" id="diffInstall" type="button">📥 Install App</button>
       <button class="diffShare" id="diffShare" type="button">📤 Share</button>
     </span>
   </div>
@@ -2613,8 +2954,17 @@ body{ background:#C9A87C !important; }
        much as possible bigger visible" — moved down from the tiny app-bar
        title glyph (freed that space for bigger LOGIC/WATCH buttons) to be
        the centrepiece of this band instead, where it actually has room to
-       be seen. -->
-  <div class="diffMascot" aria-hidden="true">🐒🎲</div>
+       be seen.
+       Raja later: "place choose Difficulty ... left to monkey" and,
+       confirmed, "can't reduce monkey" — so the label moved back in here
+       (it lived in .diffHead originally) but absolutely positioned, not
+       flexed: the monkey stays exactly its own centred size regardless of
+       the label's width, and the label shrinks to whatever's left rather
+       than fighting the monkey for space — the same crowding this row's
+       been fixed for before, just avoided differently this time. -->
+  <div class="diffMascot">
+    <span class="diffLabel">Choose Difficulty</span>
+  </div>
 
   <!-- ➕ ADD MODE — the six size puzzles, an easy→hard ladder -->
   <div class="modeGroup">
@@ -2715,9 +3065,33 @@ body{ background:#C9A87C !important; }
     </div>
   </div>
 
-  <div class="comingWrap">
-    <span class="comingLabel">🔜 Coming Soon</span>
-    <button class="comingChip" data-soon="Logic Gates">🔀 Logic Gates</button>
+  <!-- 🔀 GATE LOGIC — ONE compact entry, not 7 full rows: the 7 individual
+       gate cards inflated .difficultyBar's natural content height enough
+       to push fitHome()'s --lvScale to its floor (measured: 0.92, the
+       hard-coded LV_MIN) and force the whole list to scroll. That's what
+       squeezed "Choose Difficulty" on Raja's real device — same fragile
+       spot the diffHead row has broken at before, now tripped by content
+       volume elsewhere in the list, not a diffHead change itself. Still
+       ONE card here, for that reason — Home's list height stays what it
+       was before Gate Logic existed.
+       Raja later: "when select level to go play rooms, but in logic
+       select shows only logic notes ... not play room like ChatGPT
+       presenting" — tapping this now goes to the real Play screen
+       (#gatePanel, wired like #binaryPanel) instead of opening a sheet.
+       No data-size: this deliberately stays outside the grid-puzzle
+       click handler (which assumes PUZZLES[newSize] and calls
+       initBoard()) — its own handler drives goScreen('scPlay') instead. -->
+  <div class="modeGroup solo">
+    <div class="modeHead" style="--m1:#c4b5fd; --m2:#8b5cf6;">
+      <span class="mIco">🔀</span>
+      <span><b>Gate Logic</b><i>flip the inputs, watch each gate decide ON or OFF</i></span>
+    </div>
+    <div class="toggleSwitch">
+      <button class="toggleBtn lvCard" id="gateListBtn" type="button" data-name="🔀 Gate Logic" style="color:#8b5cf6; border-color:#8b5cf6; --c1:#c4b5fd; --c2:#8b5cf6;">
+        <span class="lvGlyph" aria-hidden="true">🔀</span>
+        <span class="lvText"><b class="lvName">7 Logic Gates</b><span class="lvDiff">AND · OR · NOT · NAND · NOR · XOR · XNOR</span><span class="lvMeta">pick one, then walk its whole truth table</span></span>
+      </button>
+    </div>
   </div>
   <!-- Raja: keep the version at the bottom of the puzzle table too, not just
        the BETA flag up top — so it's still checkable after scrolling all the
@@ -3307,9 +3681,23 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     setTimeout(function(){ fl.remove(); }, 560);
   }
   var timerInt = null, startTime = null;
+
+  // Top-level like showBinaryMode (defined below, called here — function
+  // hoisting makes the order fine), not nested in the Gate Logic IIFE: this
+  // handler needs to call it directly when leaving gate mode for a real
+  // puzzle, same as it already does for showBinaryMode(false).
+  function showGateMode(on){
+    document.body.classList.toggle('gateMode', !!on);
+    var gp = document.getElementById('gatePanel');
+    if (gp) gp.style.display = on ? 'block' : 'none';
+  }
+
   // Difficulty toggle — every level is open to free choice (grade labels are the guide).
   // Reward/applause on solving stays; there is no lock.
-  document.querySelectorAll('.toggleBtn').forEach(function(btn){
+  // [data-size]: Gate Logic reuses .toggleBtn/.lvCard for identical styling but
+  // has its own data-gate + click handling (not a grid puzzle) — must not fall
+  // into this handler, which assumes a PUZZLES[newSize] grid exists.
+  document.querySelectorAll('.toggleBtn[data-size]').forEach(function(btn){
     btn.addEventListener('click', function(){
       // If a congrats countdown is running, cancel it — player chose their own level
       if (_congratsAutoTimer){ clearInterval(_congratsAutoTimer); _congratsAutoTimer = null; }
@@ -3328,12 +3716,14 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       applyAccent();                      // this puzzle's colour takes over the whole app
       goScreen('scPlay');                 // picking a level takes you straight to the board
       if (newSize === 'binary' || newSize === 'binary2'){   // card games, not grid puzzles
+        if (currentSize === 'gatelogic') showGateMode(false);
         currentSize = newSize;
         showBinaryMode(true);
         highlightNowPlaying();
         return;
       }
       if (currentSize === 'binary' || currentSize === 'binary2') showBinaryMode(false);   // back to the grids
+      if (currentSize === 'gatelogic') showGateMode(false);                               // back to the grids
       if (newSize !== currentSize) {
         currentSize = newSize;
         initBoard();
@@ -4462,21 +4852,44 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
 
   // ---- Install to home screen -------------------------------------------------
-  // Chrome/Edge fire beforeinstallprompt, so one tap can install. iOS Safari has
-  // no such API, so there we open the step-by-step panel instead.
+  // Raja, across three rounds: "'Plays with no internet' [and] 'How to
+  // Install' both show same notes" (true — both opened the identical
+  // instructions sheet, beta had no manifest so a real install could never
+  // fire), then, once beta-108 pointed the chip at the Get App screen
+  // instead: "get app not meant for install or download ... same of play
+  // with no internet" (also true — that screen's own notes were still the
+  // same fallback). Both were symptoms of the same missing piece. Now that
+  // beta has its own manifest (above), this can go back to what it always
+  // should have been: a DIRECT install trigger, not a chip that leads
+  // somewhere else first. Chrome/Edge/Brave fire beforeinstallprompt now, so
+  // one tap can genuinely install. iOS Safari has no such API, so there it
+  // still opens the same offline/install sheet as before — that fallback
+  // was never the bug, a manifest-less beta always falling back to it was.
   (function(){
-    var iBtn = document.getElementById('installBtn');
-    if (!iBtn) return;
+    var iBtns = [document.getElementById('installBtn'), document.getElementById('diffInstall')].filter(Boolean);
+    if (!iBtns.length) return;
     var deferred = null;
 
     function markInstalled(){
-      iBtn.textContent = '✅ Installed';
-      iBtn.style.borderColor = '#22c55e'; iBtn.style.color = '#4ade80';
-      iBtn.disabled = true; iBtn.style.opacity = '.75';
+      // Raja: the green-on-warm-brown combo didn't suit the sandalwood
+      // background. Reusing --gold + dark text instead -- the exact recipe
+      // .lvNow already uses for "PLAYING" elsewhere in this app (a proven
+      // high-contrast "this is the active/confirmed one" treatment on this
+      // same palette, not a new colour invented for just this chip. No
+      // opacity fade either: Installed is a confirmed positive state, not
+      // a disabled-looking one, even though it stays non-clickable.
+      iBtns.forEach(function(b){
+        b.textContent = '✅ Installed';
+        b.style.background = 'var(--gold)'; b.style.borderColor = 'var(--gold)'; b.style.color = '#1a1204';
+        b.disabled = true;
+      });
     }
     function markHowTo(){                        // cannot install directly here
-      iBtn.textContent = '📲 How to Install';
-      iBtn.style.borderColor = '#64748b'; iBtn.style.color = '#cbd5e1';
+      iBtns.forEach(function(b){
+        if (b.disabled) return;                   // already Installed — leave it
+        b.textContent = '📲 How to Install';
+        b.style.borderColor = '#64748b'; b.style.color = '#cbd5e1';
+      });
     }
 
     var standalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
@@ -4492,47 +4905,806 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     window.addEventListener('beforeinstallprompt', function(e){
       e.preventDefault();
       deferred = e;
-      if (!iBtn.disabled){                       // a real one-tap install is available
-        iBtn.textContent = '📥 Install App';
-        iBtn.style.borderColor = '#38bdf8'; iBtn.style.color = '#7dd3fc';
-      }
+      iBtns.forEach(function(b){
+        if (!b.disabled){                       // a real one-tap install is available
+          b.textContent = '📥 Install App';
+          b.style.borderColor = '#38bdf8'; b.style.color = '#7dd3fc';
+        }
+      });
     });
 
     // No install event (iPhone, unsupported browser, or already installed):
     // stop promising a one-tap install and offer the instructions instead.
-    setTimeout(function(){ if (!deferred && !iBtn.disabled) markHowTo(); }, 2500);
+    setTimeout(function(){ if (!deferred) markHowTo(); }, 2500);
 
     window.addEventListener('appinstalled', function(){
       deferred = null;
-      iBtn.textContent = '✅ Installed';
-      iBtn.style.borderColor = '#22c55e'; iBtn.style.color = '#4ade80';
+      markInstalled();
       sfx('unlock');
     });
 
-    iBtn.addEventListener('click', function(){
-      if (soundOn) ensureAudio();
-      if (deferred){
-        deferred.prompt();
-        deferred.userChoice.then(function(res){
-          if (res && res.outcome === 'accepted'){ iBtn.textContent = '✅ Installing…'; }
-          deferred = null;
-        }).catch(function(){});
+    iBtns.forEach(function(b){
+      b.addEventListener('click', function(){
+        if (soundOn) ensureAudio();
+        if (deferred){
+          deferred.prompt();
+          deferred.userChoice.then(function(res){
+            if (res && res.outcome === 'accepted'){ b.textContent = '✅ Installing…'; }
+            deferred = null;
+          }).catch(function(){});
+          return;
+        }
+        // No install API (iPhone/iPad, or already dismissed): the full
+        // per-platform instructions, same sheet Home's offline chip opens.
+        openSheet('offline', '📲 Play offline');
+      });
+    });
+  })();
+
+  // ---- Gate Logic — a real Play-screen game, not a sheet -------------------
+  // Raja: "as much possible choices of using gate logic which creates eager
+  // to kids play and learn gate logics" — every standard gate, every row of
+  // its table, not one lucky guess.
+  // Raja later: "when select level to go play rooms, but in logic select
+  // shows only logic notes ... not play room like ChatGPT presenting" —
+  // moved from a sheet (openSheet, like a notes page) into #gatePanel
+  // inside scPlay, wired exactly like #binaryPanel: a body class + the
+  // same !important CSS rules, goScreen('scPlay'), the real app bar.
+  (function(){
+    // Raja: "give new Logic gate puzzle with 3 input ABC and 5 input ABCDE
+    // one by one by sub level of previous one completed" — every gate that
+    // has a real multi-input meaning (all but NOT) now has a `levels` array
+    // instead of one fixed inputs/rows pair: 2-input first (unchanged table,
+    // same as always), then 3-input, then 5-input, unlocked in order.
+    //
+    // Rows are GENERATED, never hand-transcribed — a 32-row table typed by
+    // hand is exactly the kind of place a transcription slip hides. truthRows
+    // walks every combination of n inputs (2^n rows) and applies the gate's
+    // own boolean rule. XOR/XNOR past 2 inputs have more than one common
+    // reading; this app uses the real digital-electronics one — the one
+    // actual multi-input XOR/XNOR gates implement (chained 2-input XORs):
+    // XOR = ON when an ODD number of inputs are ON, XNOR = EVEN (including
+    // all-off). Every row of every table (2/3/5-input × 6 gates, 264 rows
+    // total) is cross-checked against an independently-written ground truth
+    // in _verifytruth.js before ever reaching this file.
+    function truthRows(n, fn){
+      var rows = [];
+      for (var i = 0; i < (1 << n); i++){
+        var bits = [];
+        for (var b = n - 1; b >= 0; b--) bits.push((i >> b) & 1);
+        bits.push(fn(bits) ? 1 : 0);
+        rows.push(bits);
+      }
+      return rows;
+    }
+    var GATE_FN = {
+      and:  function(b){ return b.every(function(v){ return v === 1; }); },
+      or:   function(b){ return b.some(function(v){ return v === 1; }); },
+      nand: function(b){ return !b.every(function(v){ return v === 1; }); },
+      nor:  function(b){ return !b.some(function(v){ return v === 1; }); },
+      xor:  function(b){ return b.reduce(function(a,v){ return a+v; }, 0) % 2 === 1; },
+      xnor: function(b){ return b.reduce(function(a,v){ return a+v; }, 0) % 2 === 0; }
+    };
+    function multiLevels(key){ return [2,3,5].map(function(n){ return { inputs:n, rows:truthRows(n, GATE_FN[key]) }; }); }
+
+    var GATES = [
+      { key:'and',  name:'AND Gate',  glyph:'∧', levels:multiLevels('and'),
+        diff:'Both must be ON', rule:'AND is ON only when ALL inputs are ON.' },
+      { key:'or',   name:'OR Gate',   glyph:'∨', levels:multiLevels('or'),
+        diff:'Either one is enough', rule:'OR is ON when ANY input is ON.' },
+      { key:'not',  name:'NOT Gate',  glyph:'¬', levels:[{ inputs:1, rows:[[0,1],[1,0]] }],
+        diff:'Flips the input', rule:'NOT flips the input — ON becomes OFF, OFF becomes ON.' },
+      { key:'nand', name:'NAND Gate', glyph:'⊼', levels:multiLevels('nand'),
+        diff:'Opposite of AND', rule:'NAND is the opposite of AND — OFF only when ALL inputs are ON.' },
+      { key:'nor',  name:'NOR Gate',  glyph:'⊽', levels:multiLevels('nor'),
+        diff:'Opposite of OR', rule:'NOR is the opposite of OR — ON only when ALL inputs are OFF.' },
+      { key:'xor',  name:'XOR Gate',  glyph:'⊕', levels:multiLevels('xor'),
+        diff:'ON when different', rule:'XOR is ON when an ODD number of inputs are ON.' },
+      { key:'xnor', name:'XNOR Gate', glyph:'⊙', levels:multiLevels('xnor'),
+        diff:'ON when the same', rule:'XNOR is ON when an EVEN number of inputs are ON.' }
+    ];
+    // Raja, pointing straight at the ChatGPT draft's own 4 screenshots:
+    // rooms 1-3 are easy pass-through questions (an animal fact), room 4
+    // is the first real "LOGIC ROOM" — that shape, not what shipped in
+    // beta-83 where every room was already a logic question. beta-114
+    // deliberately trimmed this to a flat 2 warm-ups per level ("kept small
+    // ... a shared pool so 7 gates don't all open on the identical 2
+    // questions") — Raja pushed back on that exact call, re-pointing at the
+    // same draft: a 3-input adventure gets 3 warm-up rooms in it, matching
+    // its input count, not a flat 2. Warm-up count now scales with inputs
+    // (gateWarmupCount below) instead of being fixed.
+    // Raja: "show different animals in each card to another card room" —
+    // ORIGINALLY 14 entries (7 gates x 2 warm-ups). Raja later, after every
+    // LEVEL of a gate started warming up too (beta-117): "you opted same
+    // 2input card selection to 3 input without adding any cards ... what
+    // difference in both in practical" — fair catch: reusing the identical
+    // 2 questions across a gate's 2/3/5-input levels gave levels no real
+    // sense of progression. Expanded to 38 entries (beta-118) for that fix,
+    // then to 62 (beta-119) once warm-up count itself started scaling with
+    // inputs (2+3+5 per multi-level gate x 6 gates + NOT's own 2) — still
+    // exactly the number gateWarmup's index needs so it never has to wrap
+    // and repeat one pair's questions on another's.
+    //
+    // THE RULE FOR EDITING THIS LIST, learned the hard way (beta-122/123):
+    // an animal goes in here only with a picture that is ITS OWN -- either
+    // Unicode has an emoji for it, or it gets drawn (one card does, see
+    // OSTRICH_PIC below). Raja put a
+    // real ostrich photo next to the card and it was showing a small blue
+    // songbird — because there is no ostrich emoji and beta-118 had quietly
+    // substituted the generic 🐦. A kid reading "Ostrich" off a sparrow
+    // picture is being taught something false by the thing meant to teach
+    // them. Same trap caught Mole (was drawn with the BEAVER emoji) and
+    // Cheetah (drawn with the LEOPARD emoji, the same picture that is the
+    // right answer to the leopard question). No near-enough lookalikes ever:
+    // if the animal has no faithful emoji, either draw it or pick a
+    // different animal — a wrong picture is the one thing that is not
+    // allowed. Two cross-checks keep it
+    // honest: every emoji must map to exactly ONE animal name and every
+    // animal name to exactly ONE emoji across all 62 entries (78/78 today),
+    // and nothing newer than Unicode 13 — 🫏 was dropped because phones a
+    // year or two old draw it as an empty box.
+    // Raja, after beta-122 swapped the ostrich question out entirely: put it
+    // back, the tallest-bird fact is worth keeping -- so the missing picture
+    // gets drawn instead of the animal being dropped. Flat shapes in the same
+    // spirit as the emoji beside it, and built from the four things that make
+    // an ostrich readable at 56px even to a child who has never seen one:
+    // a big round dark body, a white tail plume, a very long bare neck under
+    // a tiny head, and long bare legs. Inline SVG, not an image file -- it
+    // stays inside the single HTML file the whole app ships as, so it works
+    // offline and needs nothing added to the service worker's asset list.
+    var OSTRICH_PIC =
+      '<svg viewBox="0 0 64 64" role="img" aria-label="Ostrich">' +
+        // Scaled up about the drawing's own centre so it carries the same
+        // visual weight as the emoji sitting next to it -- an ostrich is a
+        // thin shape (wire neck, wire legs) and at matched box size it read
+        // noticeably fainter than the peacock and flamingo beside it.
+        '<g transform="translate(29.75,31.5) scale(1.12) translate(-29.75,-31.5)">' +
+        // Tail plume is outlined, not just pale: the card behind it is cream,
+        // and a white-on-cream shape simply vanished on the first attempt.
+        '<ellipse cx="12.5" cy="28" rx="8" ry="6" fill="#FFFDF8" stroke="#C4B9A6" stroke-width="1.3"/>' +
+        '<path d="M25 42 V59" fill="none" stroke="#E9A98F" stroke-width="2.8" stroke-linecap="round"/>' +
+        '<path d="M33 42 V59" fill="none" stroke="#E9A98F" stroke-width="2.8" stroke-linecap="round"/>' +
+        '<path d="M25 59 H20.5" fill="none" stroke="#E9A98F" stroke-width="2.4" stroke-linecap="round"/>' +
+        '<path d="M33 59 H37.5" fill="none" stroke="#E9A98F" stroke-width="2.4" stroke-linecap="round"/>' +
+        // Body is a lifted charcoal with a lighter rim, not flat near-black:
+        // the card now sits it on a dark medallion, and a black bird on a
+        // dark ground loses the one thing that identifies it -- its
+        // silhouette. This tone holds its shape on both.
+        '<ellipse cx="27" cy="33" rx="15" ry="11.5" fill="#4E453E" stroke="#7A6E63" stroke-width="1.2"/>' +
+        '<ellipse cx="25.5" cy="34.5" rx="8.5" ry="5.6" fill="#635850"/>' +
+        '<path d="M38.5 27 C43.5 22 45 15 45.4 11" fill="none" stroke="#E9A98F" stroke-width="4.4" stroke-linecap="round"/>' +
+        '<circle cx="45.7" cy="8" r="4" fill="#E9A98F"/>' +
+        '<path d="M49.2 7.2 L55 8.8 L49.2 10.4 Z" fill="#F2A93F"/>' +
+        '<circle cx="46.3" cy="6.9" r="1.1" fill="#241F1C"/>' +
+        '</g>' +
+      '</svg>';
+
+    var WARMUPS = [
+      { tip:'Choose the animal that gives us milk.', choices:[
+          {emoji:'🦁',text:'Lion'},{emoji:'🐘',text:'Elephant'},{emoji:'🐄',text:'Cow',ok:true},{emoji:'🐅',text:'Tiger'}] },
+      { tip:'Choose the animal that can fly.', choices:[
+          {emoji:'🐟',text:'Fish'},{emoji:'🦅',text:'Eagle',ok:true},{emoji:'🐄',text:'Cow'},{emoji:'🐕',text:'Dog'}] },
+      { tip:'Choose the animal that lives in water.', choices:[
+          {emoji:'🐕',text:'Dog'},{emoji:'🐟',text:'Fish',ok:true},{emoji:'🐘',text:'Elephant'},{emoji:'🐎',text:'Horse'}] },
+      { tip:'Choose the biggest land animal.', choices:[
+          {emoji:'🐘',text:'Elephant',ok:true},{emoji:'🦁',text:'Lion'},{emoji:'🐎',text:'Horse'},{emoji:'🐕',text:'Dog'}] },
+      { tip:'Choose the animal known for its loud roar.', choices:[
+          {emoji:'🦁',text:'Lion',ok:true},{emoji:'🐄',text:'Cow'},{emoji:'🐟',text:'Fish'},{emoji:'🐇',text:'Rabbit'}] },
+      { tip:'Choose the animal with a long trunk.', choices:[
+          {emoji:'🐘',text:'Elephant',ok:true},{emoji:'🦒',text:'Giraffe'},{emoji:'🦓',text:'Zebra'},{emoji:'🐻',text:'Bear'}] },
+      { tip:'Choose the animal with black and white stripes.', choices:[
+          {emoji:'🦓',text:'Zebra',ok:true},{emoji:'🦁',text:'Lion'},{emoji:'🐼',text:'Panda'},{emoji:'🦊',text:'Fox'}] },
+      { tip:'Choose the animal that loves bananas.', choices:[
+          {emoji:'🐒',text:'Monkey',ok:true},{emoji:'🐘',text:'Elephant'},{emoji:'🐅',text:'Tiger'},{emoji:'🦉',text:'Owl'}] },
+      { tip:'Choose the animal that hops instead of walking.', choices:[
+          {emoji:'🐇',text:'Rabbit',ok:true},{emoji:'🐕',text:'Dog'},{emoji:'🐈',text:'Cat'},{emoji:'🐄',text:'Cow'}] },
+      { tip:'Choose the animal with a very long neck.', choices:[
+          {emoji:'🦒',text:'Giraffe',ok:true},{emoji:'🦓',text:'Zebra'},{emoji:'🐎',text:'Horse'},{emoji:'🐫',text:'Camel'}] },
+      { tip:'Choose the animal that carries its home on its back.', choices:[
+          {emoji:'🐢',text:'Turtle',ok:true},{emoji:'🐸',text:'Frog'},{emoji:'🐍',text:'Snake'},{emoji:'🐟',text:'Fish'}] },
+      { tip:'Choose the animal called the "King of the Jungle".', choices:[
+          {emoji:'🦁',text:'Lion',ok:true},{emoji:'🐅',text:'Tiger'},{emoji:'🐘',text:'Elephant'},{emoji:'🐻',text:'Bear'}] },
+      { tip:'Choose the animal known for being very slow.', choices:[
+          {emoji:'🐌',text:'Snail',ok:true},{emoji:'🐆',text:'Leopard'},{emoji:'🐎',text:'Horse'},{emoji:'🐇',text:'Rabbit'}] },
+      { tip:'Choose the animal that says "moo".', choices:[
+          {emoji:'🐄',text:'Cow',ok:true},{emoji:'🐑',text:'Sheep'},{emoji:'🐐',text:'Goat'},{emoji:'🐖',text:'Pig'}] },
+      { tip:'Choose the animal people ride in races.', choices:[
+          {emoji:'🐎',text:'Horse',ok:true},{emoji:'🐄',text:'Cow'},{emoji:'🐖',text:'Pig'},{emoji:'🐐',text:'Goat'}] },
+      { tip:'Choose the animal that spins a web to catch food.', choices:[
+          {emoji:'🕷️',text:'Spider',ok:true},{emoji:'🐜',text:'Ant'},{emoji:'🐝',text:'Bee'},{emoji:'🪰',text:'Fly'}] },
+      { tip:'Choose the animal that can change the colour of its skin.', choices:[
+          {emoji:'🦎',text:'Chameleon',ok:true},{emoji:'🐢',text:'Turtle'},{emoji:'🐸',text:'Frog'},{emoji:'🐍',text:'Snake'}] },
+      { tip:'Choose the animal that sleeps hanging upside down.', choices:[
+          {emoji:'🦇',text:'Bat',ok:true},{emoji:'🦉',text:'Owl'},{emoji:'🦥',text:'Sloth'},{emoji:'🐿️',text:'Squirrel'}] },
+      { tip:'Choose the animal with a hump that stores fat.', choices:[
+          {emoji:'🐫',text:'Camel',ok:true},{emoji:'🐎',text:'Horse'},{emoji:'🦌',text:'Deer'},{emoji:'🦓',text:'Zebra'}] },
+      { tip:'Choose the animal that makes honey and lives in a hive.', choices:[
+          {emoji:'🐝',text:'Bee',ok:true},{emoji:'🦋',text:'Butterfly'},{emoji:'🦗',text:'Cricket'},{emoji:'🐜',text:'Ant'}] },
+      // The one card in the whole list that is drawn rather than typed --
+      // see OSTRICH_PIC and the rule note above the list.
+      { tip:'Choose the tallest bird in the world.', choices:[
+          {svg:OSTRICH_PIC,text:'Ostrich',ok:true},{emoji:'🦚',text:'Peacock'},{emoji:'🦅',text:'Eagle'},{emoji:'🦩',text:'Flamingo'}] },
+      { tip:'Choose the bird that cannot fly.', choices:[
+          {emoji:'🐧',text:'Penguin',ok:true},{emoji:'🦅',text:'Eagle'},{emoji:'🐦',text:'Sparrow'},{emoji:'🦜',text:'Parrot'}] },
+      { tip:'Choose the animal that builds dams using wood.', choices:[
+          {emoji:'🦫',text:'Beaver',ok:true},{emoji:'🦦',text:'Otter'},{emoji:'🐿️',text:'Squirrel'},{emoji:'🐀',text:'Rat'}] },
+      { tip:'Choose the animal that hunts alone and has orange and black stripes.', choices:[
+          {emoji:'🐅',text:'Tiger',ok:true},{emoji:'🦁',text:'Lion'},{emoji:'🐆',text:'Leopard'},{emoji:'🐺',text:'Wolf'}] },
+      { tip:'Choose the animal called "man\'s best friend".', choices:[
+          {emoji:'🐕',text:'Dog',ok:true},{emoji:'🐈',text:'Cat'},{emoji:'🐎',text:'Horse'},{emoji:'🐄',text:'Cow'}] },
+      { tip:'Choose the animal that catches insects with a long sticky tongue.', choices:[
+          {emoji:'🐸',text:'Frog',ok:true},{emoji:'🐢',text:'Turtle'},{emoji:'🐟',text:'Fish'},{emoji:'🐌',text:'Snail'}] },
+      { tip:'Choose the animal that carries its baby in a pouch.', choices:[
+          {emoji:'🦘',text:'Kangaroo',ok:true},{emoji:'🐨',text:'Koala'},{emoji:'🐼',text:'Panda'},{emoji:'🐻',text:'Bear'}] },
+      { tip:'Choose the animal with black eye patches that eats bamboo.', choices:[
+          {emoji:'🐼',text:'Panda',ok:true},{emoji:'🐻',text:'Bear'},{emoji:'🦝',text:'Raccoon'},{emoji:'🐨',text:'Koala'}] },
+      { tip:'Choose the animal that squirts ink to escape danger.', choices:[
+          {emoji:'🐙',text:'Octopus',ok:true},{emoji:'🐟',text:'Fish'},{emoji:'🦀',text:'Crab'},{emoji:'🦐',text:'Shrimp'}] },
+      { tip:'Choose the bird that can copy human words.', choices:[
+          {emoji:'🦜',text:'Parrot',ok:true},{emoji:'🦆',text:'Duck'},{emoji:'🦅',text:'Eagle'},{emoji:'🦉',text:'Owl'}] },
+      { tip:'Choose the animal that curls into a spiky ball when scared.', choices:[
+          {emoji:'🦔',text:'Hedgehog',ok:true},{emoji:'🐢',text:'Turtle'},{emoji:'🐌',text:'Snail'},{emoji:'🐸',text:'Frog'}] },
+      { tip:'Choose the animal that sprays a bad smell to defend itself.', choices:[
+          {emoji:'🦨',text:'Skunk',ok:true},{emoji:'🦝',text:'Raccoon'},{emoji:'🦡',text:'Badger'},{emoji:'🦦',text:'Otter'}] },
+      { tip:'Choose the animal that lives both on land and in water.', choices:[
+          {emoji:'🐊',text:'Crocodile',ok:true},{emoji:'🐍',text:'Snake'},{emoji:'🐟',text:'Fish'},{emoji:'🐫',text:'Camel'}] },
+      { tip:'Choose the animal that purrs when it is happy.', choices:[
+          {emoji:'🐈',text:'Cat',ok:true},{emoji:'🐕',text:'Dog'},{emoji:'🐇',text:'Rabbit'},{emoji:'🐹',text:'Hamster'}] },
+      { tip:'Choose the insect that changes from a caterpillar into a flying insect.', choices:[
+          {emoji:'🦋',text:'Butterfly',ok:true},{emoji:'🐝',text:'Bee'},{emoji:'🐞',text:'Ladybug'},{emoji:'🪰',text:'Fly'}] },
+      { tip:'Choose the animal with webbed feet that quacks.', choices:[
+          {emoji:'🦆',text:'Duck',ok:true},{emoji:'🦩',text:'Flamingo'},{emoji:'🦢',text:'Swan'},{emoji:'🐔',text:'Chicken'}] },
+      { tip:'Choose the tiny insect that digs tunnels underground and lives in a big colony.', choices:[
+          {emoji:'🐜',text:'Ant',ok:true},{emoji:'🦋',text:'Butterfly'},{emoji:'🐞',text:'Ladybug'},{emoji:'🦗',text:'Cricket'}] },
+      { tip:'Choose the largest animal that has ever lived.', choices:[
+          {emoji:'🐋',text:'Blue Whale',ok:true},{emoji:'🐘',text:'Elephant'},{emoji:'🦒',text:'Giraffe'},{emoji:'🦈',text:'Shark'}] },
+      { tip:'Choose the bird known for hunting at night.', choices:[
+          {emoji:'🦉',text:'Owl',ok:true},{emoji:'🦅',text:'Eagle'},{emoji:'🦆',text:'Duck'},{emoji:'🦜',text:'Parrot'}] },
+      { tip:'Choose the animal that claps its flippers and lives near icy water.', choices:[
+          {emoji:'🦭',text:'Seal',ok:true},{emoji:'🐧',text:'Penguin'},{emoji:'🐬',text:'Dolphin'},{emoji:'🐳',text:'Whale'}] },
+      { tip:'Choose the smart ocean animal that talks to its friends using clicks and whistles.', choices:[
+          {emoji:'🐬',text:'Dolphin',ok:true},{emoji:'🦈',text:'Shark'},{emoji:'🐟',text:'Fish'},{emoji:'🦑',text:'Squid'}] },
+      { tip:'Choose the animal with a big horn on its nose.', choices:[
+          {emoji:'🦏',text:'Rhino',ok:true},{emoji:'🐘',text:'Elephant'},{emoji:'🦛',text:'Hippo'},{emoji:'🐫',text:'Camel'}] },
+      { tip:'Choose the animal known as the "river horse".', choices:[
+          {emoji:'🦛',text:'Hippo',ok:true},{emoji:'🐎',text:'Horse'},{emoji:'🐊',text:'Crocodile'},{emoji:'🦏',text:'Rhino'}] },
+      { tip:'Choose the animal with branching antlers on its head.', choices:[
+          {emoji:'🦌',text:'Deer',ok:true},{emoji:'🐐',text:'Goat'},{emoji:'🐑',text:'Sheep'},{emoji:'🦒',text:'Giraffe'}] },
+      { tip:'Choose the fluffy animal that spits when it gets annoyed.', choices:[
+          {emoji:'🦙',text:'Llama',ok:true},{emoji:'🐑',text:'Sheep'},{emoji:'🐐',text:'Goat'},{emoji:'🐫',text:'Camel'}] },
+      { tip:'Choose the tiny animal famous for loving cheese.', choices:[
+          {emoji:'🐁',text:'Mouse',ok:true},{emoji:'🐀',text:'Rat'},{emoji:'🐹',text:'Hamster'},{emoji:'🐇',text:'Rabbit'}] },
+      { tip:'Choose the sea animal with TEN arms, cousin of the octopus.', choices:[
+          {emoji:'🦑',text:'Squid',ok:true},{emoji:'🐙',text:'Octopus'},{emoji:'🦀',text:'Crab'},{emoji:'🦞',text:'Lobster'}] },
+      { tip:'Choose the fish that puffs up into a spiky ball underwater.', choices:[
+          {emoji:'🐡',text:'Pufferfish',ok:true},{emoji:'🐠',text:'Tropical Fish'},{emoji:'🦈',text:'Shark'},{emoji:'🐟',text:'Fish'}] },
+      { tip:'Choose the small desert animal with a stinger on its tail.', choices:[
+          {emoji:'🦂',text:'Scorpion',ok:true},{emoji:'🕷️',text:'Spider'},{emoji:'🐍',text:'Snake'},{emoji:'🦟',text:'Mosquito'}] },
+      { tip:'Choose the tiny flying insect that buzzes and bites at night.', choices:[
+          {emoji:'🦟',text:'Mosquito',ok:true},{emoji:'🪰',text:'Fly'},{emoji:'🐝',text:'Bee'},{emoji:'🦗',text:'Cricket'}] },
+      { tip:'Choose the small round beetle with red and black spots.', choices:[
+          {emoji:'🐞',text:'Ladybug',ok:true},{emoji:'🦋',text:'Butterfly'},{emoji:'🐜',text:'Ant'},{emoji:'🦗',text:'Cricket'}] },
+      { tip:'Choose the big bird people often cook for festival dinners.', choices:[
+          {emoji:'🦃',text:'Turkey',ok:true},{emoji:'🐔',text:'Chicken'},{emoji:'🦢',text:'Swan'},{emoji:'🦆',text:'Duck'}] },
+      { tip:'Choose the bird that crows loudly to wake everyone at sunrise.', choices:[
+          {emoji:'🐓',text:'Rooster',ok:true},{emoji:'🐔',text:'Chicken'},{emoji:'🦃',text:'Turkey'},{emoji:'🦅',text:'Eagle'}] },
+      { tip:'Choose the bird famous for its huge, colourful tail feathers.', choices:[
+          {emoji:'🦚',text:'Peacock',ok:true},{emoji:'🦜',text:'Parrot'},{emoji:'🦩',text:'Flamingo'},{emoji:'🐓',text:'Rooster'}] },
+      { tip:'Choose the animal that moves so slowly that algae can grow on its fur.', choices:[
+          {emoji:'🦥',text:'Sloth',ok:true},{emoji:'🐒',text:'Monkey'},{emoji:'🐿️',text:'Squirrel'},{emoji:'🐨',text:'Koala'}] },
+      { tip:'Choose the animal with a black mask around its eyes that washes its food.', choices:[
+          {emoji:'🦝',text:'Raccoon',ok:true},{emoji:'🐼',text:'Panda'},{emoji:'🦡',text:'Badger'},{emoji:'🐨',text:'Koala'}] },
+      { tip:'Choose the animal that floats on its back and cracks shells open with a rock.', choices:[
+          {emoji:'🦦',text:'Otter',ok:true},{emoji:'🦫',text:'Beaver'},{emoji:'🐬',text:'Dolphin'},{emoji:'🦭',text:'Seal'}] },
+      { tip:'Choose the pink bird that often stands balanced on just one leg.', choices:[
+          {emoji:'🦩',text:'Flamingo',ok:true},{emoji:'🦢',text:'Swan'},{emoji:'🦆',text:'Duck'},{emoji:'🐓',text:'Rooster'}] },
+      { tip:'Choose the graceful white bird known for staying with one partner for life.', choices:[
+          {emoji:'🦢',text:'Swan',ok:true},{emoji:'🦩',text:'Flamingo'},{emoji:'🦆',text:'Duck'},{emoji:'🦅',text:'Eagle'}] },
+      { tip:'Choose the ocean animal with rows of sharp teeth that never stop growing back.', choices:[
+          {emoji:'🦈',text:'Shark',ok:true},{emoji:'🐬',text:'Dolphin'},{emoji:'🐡',text:'Pufferfish'},{emoji:'🐙',text:'Octopus'}] },
+      { tip:'Choose the animal that howls at the moon and lives in a pack.', choices:[
+          {emoji:'🐺',text:'Wolf',ok:true},{emoji:'🦊',text:'Fox'},{emoji:'🐕',text:'Dog'},{emoji:'🦝',text:'Raccoon'}] },
+      { tip:'Choose the big cat with dark rosette spots that drags its food up a tree.', choices:[
+          {emoji:'🐆',text:'Leopard',ok:true},{emoji:'🐅',text:'Tiger'},{emoji:'🦁',text:'Lion'},{emoji:'🐈',text:'Cat'}] }
+    ];
+    // Raja, pointing at his own ChatGPT-drafted prototype: a 3-input
+    // adventure gets 3 warm-up rooms before logic starts, not a flat 2 --
+    // the warm-up count itself should track the level's input count. NOT's
+    // one level keeps 2 (its only level, nothing to show progression
+    // between, and 1 warm-up felt too thin on its own).
+    function gateWarmupCount(level){ return Math.max(2, level.inputs); }
+    // Every (gate, level) pair gets its own warmupCount-sized question
+    // block -- a running offset built once from GATES itself (6 gates x
+    // (2+3+5) + NOT's own 2 = 62, matching WARMUPS.length exactly, so this
+    // index never wraps and repeats one pair's questions on another's).
+    var GATE_WARMUP_OFFSET = {};
+    (function(){
+      var acc = 0;
+      GATES.forEach(function(g){
+        GATE_WARMUP_OFFSET[g.key] = [];
+        g.levels.forEach(function(level){
+          GATE_WARMUP_OFFSET[g.key].push(acc);
+          acc += gateWarmupCount(level);
+        });
+      });
+    })();
+    function gateWarmup(g, levelIdx, roomIdx){
+      var base = GATE_WARMUP_OFFSET[g.key][levelIdx];
+      return WARMUPS[(base + roomIdx) % WARMUPS.length];
+    }
+    // Rotated per correct answer so 4-6 in a row don't all say the same
+    // thing — same short "cheer" voice SaNa already uses for a finished
+    // puzzle line elsewhere.
+    var GATE_CHEERS = ['Nice!', 'Great job!', 'You got it!', 'Correct!', 'Well done!', 'Exactly right!'];
+
+    // { gate, levelIdx, roomIdx } — levelIdx indexes g.levels; roomIdx
+    // 0..gateWarmupCount(level)-1 are warm-ups (2/3/5, matching the
+    // level's own input count), the rest index g.levels[levelIdx].rows.
+    var gateState = null;
+
+    // Raja: "sub level of previous one completed" — how far a player has
+    // gotten per gate, kept the same way puzzle wins already are
+    // (localStorage), so finishing 2-input AND today still counts tomorrow.
+    var GATE_PROGRESS_KEY = 'mm.gateProgress';
+    function loadGateProgress(){
+      try { return JSON.parse(localStorage.getItem(GATE_PROGRESS_KEY)) || {}; } catch(e){ return {}; }
+    }
+    function saveGateProgress(p){
+      try { localStorage.setItem(GATE_PROGRESS_KEY, JSON.stringify(p)); } catch(e){}
+    }
+    // Number of levels completed so far for this gate (0 if none). Level
+    // idx is playable once idx <= this value (idx 0 is always playable).
+    function gateProgressFor(key){ return loadGateProgress()[key] || 0; }
+    function gateMarkLevelDone(key, levelIdx){
+      var p = loadGateProgress(), next = levelIdx + 1;
+      if ((p[key] || 0) < next){ p[key] = next; saveGateProgress(p); }
+    }
+
+    function gateShortName(g){ return g.name.replace(' Gate', ''); }
+    // Raja: "need is like 2 input play be tune accordingly" — the warm-up
+    // rooms run at the start of every level now, not just the first. Same
+    // 2 animal questions each time (gateWarmup only ever looks at the
+    // gate, not which level it's warming up for) rather than writing a
+    // whole second/third pool per gate -- it is a quick "hands on the
+    // controls" ritual before the real questions, not meant to be unique
+    // trivia every time.
+    function gateTotalRooms(g, levelIdx){
+      var level = g.levels[levelIdx];
+      return gateWarmupCount(level) + level.rows.length;
+    }
+
+    // 1-input and 2-input keep the exact diagram they always had (proven,
+    // don't touch). 3/5-input reuse the same box-drawing style: every wire
+    // converges on the LAST input line rather than trying to hand-centre a
+    // junction between an odd number of lines — simpler to keep correct for
+    // any input count than fiddly per-n alignment math.
+    function gateDiagramHTML(g, level, row){
+      var n = level.inputs, labels = ['A','B','C','D','E'];
+      var head = labels.slice(0, n).map(function(L, i){ return L + ' = ' + (row[i] ? 'ON' : 'OFF'); }).join('\n');
+      if (n === 1) return head + '\n\nA ──► ' + gateShortName(g) + ' ──► ?';
+      if (n === 2) return head + '\n\nA ──┐\n    ├── ' + gateShortName(g) + ' ──► ?\nB ──┘';
+      var wires = labels.slice(0, n).map(function(L, i){
+        if (i === n - 1) return L + ' ──┘── ' + gateShortName(g) + ' ──► ?';
+        if (i === 0) return L + ' ──┐';
+        return L + ' ──┤';
+      }).join('\n');
+      return head + '\n\n' + wires;
+    }
+
+
+    // Raja: "same like attached image with animated emoji effects" — same
+    // room shape as the reference, but the emoji now actually move: a pop-in
+    // on the icon and gate diagram (reusing .mrPop's keyframe, already built
+    // for the Mind Reader reveal), a bounce on a correct tap (badgePop,
+    // already built for a completed line), and a shake on a wrong one
+    // (sanaOops, already built for SaNa's own "oops"). No new keyframes.
+    function renderGateRoom(){
+      var st = gateState; if (!st) return;
+      var g = st.gate, level = g.levels[st.levelIdx], total = gateTotalRooms(g, st.levelIdx);
+      var el = document.getElementById('gateRoom');
+      if (!el) return;
+      var levelTag = g.levels.length > 1 ? (' · ' + level.inputs + '-input') : '';
+      var progress = '<div class="gateProgress">Room ' + (st.roomIdx + 1) + ' of ' + total + ' — ' + g.name + levelTag + '</div>';
+      var wc = gateWarmupCount(level);
+
+      // Only the LOGIC rooms get the roomier diagram type — the warm-up
+      // rooms still run four animal cards and have no diagram at all.
+      el.classList.toggle('gateRoomLogic', st.roomIdx >= wc);
+
+      if (st.roomIdx < wc){                  // pass-through warm-up, count scales with inputs
+        var w = gateWarmup(g, st.levelIdx, st.roomIdx);
+        el.innerHTML = progress +
+          '<div class="gateTip">' + w.tip + '</div>' +
+          '<div class="gateChoices">' +
+            w.choices.map(function(c, i){
+              return '<button class="gateChoiceBtn" data-val="' + i + '">' +
+                '<span class="gateEmoji">' + (c.svg || c.emoji) + '</span> ' + c.text + '</button>';
+            }).join('') +
+          '</div>' +
+          '<div class="gateFeedback" id="gateFeedback">Touch one of the four boxes.</div>';
         return;
       }
-      // No install API (iPhone/iPad, or already dismissed): show how to do it by hand
-      var box = document.getElementById('offlineBox');
-      var btn = document.getElementById('offlineBtn');
-      if (box){
-        box.style.display = 'block';
-        if (btn) btn.textContent = '📲 Play Offline ▲';
-        try { box.scrollIntoView({ behavior:'smooth', block:'center' }); }
-        catch(e){ box.scrollIntoView(); }
+
+      var row = level.rows[st.roomIdx - wc];
+      // Raja, marking the bottom two cards: "the marked option inactive
+      // while answering ... remove this cards and instead increase the
+      // space for questions table". Both readings of that are true at
+      // once. They were never a live answer -- a gate's output is ON or
+      // OFF and nothing else, so "Cannot know" and "Same as OR" existed
+      // only as decoys -- AND on his phone they sat half-behind the tab
+      // bar, so they were barely tappable either. Four boxes were pushing
+      // the thing a child actually has to read, the wiring diagram, up
+      // into a cramped strip. Two boxes, one row, and the room it frees
+      // goes to the diagram (see .gateRoomLogic below).
+      // Losing the decoys costs less than it looks: a wrong answer here
+      // has always let you try again, so four boxes never stopped anyone
+      // brute-forcing a room -- it only took more taps.
+      var choices = [
+        { emoji:'🟢', text:'ON / TRUE', val:1 },
+        { emoji:'🔴', text:'OFF / FALSE', val:0 }
+      ];
+      // The diagram sizes itself by how many lines it actually draws — 6 for
+      // a 2-input room, 11 for a 5-input one. See .gateRoomLogic .gateDiagram.
+      var diagram = gateDiagramHTML(g, level, row);
+      var diagLines = diagram.split('\n').length;
+      el.innerHTML = progress +
+        '<div class="gateTip">LOGIC ROOM: What does the ' + g.name.toUpperCase() + ' output for this input?</div>' +
+        '<div class="gateDiagram" style="--diagLines:' + diagLines + ';">' + diagram + '</div>' +
+        '<div class="gateChoices gateChoicesTwo">' +
+          choices.map(function(c){
+            // gateChoiceLogic (not on the warm-up buttons above, which
+            // reuse data-val for plain 0-3 indices, not this ON/OFF
+            // meaning) scopes the colour-coding below to only these two.
+            return '<button class="gateChoiceBtn gateChoiceLogic" data-val="' + c.val + '">' +
+              '<span class="gateEmoji">' + c.emoji + '</span> ' + c.text + '</button>';
+          }).join('') +
+        '</div>' +
+        '<div class="gateFeedback" id="gateFeedback">Touch one of the two boxes.</div>';
+    }
+
+    function renderGateDone(){
+      var st = gateState; if (!st) return;
+      var g = st.gate, level = g.levels[st.levelIdx], el = document.getElementById('gateRoom');
+      if (!el) return;
+      sfx('unlock');
+      // Raja: "when end the puzzle ... will Pop appreciation by monkey dice
+      // will better look" — same celebration a real puzzle win already
+      // gets (celebrate()'s confetti burst, SaNa's own 'party' line), not
+      // new code, just Gate Logic reaching for what already exists. 🐒🎲
+      // is the same mascot pair Home's own diffMascot uses.
+      try { celebrate(); } catch(e){}
+      var levelTag = g.levels.length > 1 ? (' (' + level.inputs + '-input)') : '';
+      try { sana('<b>' + g.name + levelTag + ' — solved!</b> Nice work.', 'party', true); } catch(e){}
+      gateMarkLevelDone(g.key, st.levelIdx);
+      var hasNext = st.levelIdx + 1 < g.levels.length;
+      // Raja, from NOT's win screen: "after not gate missing automated
+      // switch to next level verify same to all plays" — with no next
+      // LEVEL inside the gate, this screen dead-ended on "Play Again":
+      // true for NOT (single level) and for EVERY gate's final 5-input
+      // win. Same tap-to-continue pattern as the "Unlocked" button above
+      // (never a timer — timed auto-advance was already tried and thrown
+      // out in the appreciation saga: whatever fires on its own gets
+      // missed), just pointing at the NEXT GATE in the list instead.
+      // XNOR, the last gate, has nowhere to point — it keeps only the
+      // replay button, as before.
+      var gi = GATES.indexOf(g);
+      var nextGate = (!hasNext && gi > -1 && gi + 1 < GATES.length) ? GATES[gi + 1] : null;
+      el.innerHTML =
+        '<div class="gateWin"><span class="gateEmoji gateWinEmoji">🎉 🐒🎲</span><br>' + g.name + levelTag + ' solved!' +
+          '<span class="gateWinRule">' + g.rule + '</span></div>' +
+        (hasNext
+          ? '<button class="gateNextLevelBtn" id="gateNextLevelBtn" type="button" disabled>▶ Unlocked: ' +
+              g.levels[st.levelIdx + 1].inputs + '-input ' + gateShortName(g) + '</button>'
+          : '') +
+        (nextGate
+          ? '<button class="gateNextLevelBtn" id="gateNextGateBtn" type="button" disabled data-gate="' + nextGate.key + '">▶ Next gate: ' +
+              nextGate.name + '</button>'
+          : '') +
+        // Raja: "where is 3 input kids play rooms" — traced it to a mix-up,
+        // not a code bug: this button correctly replays the SAME level it
+        // always has, but "Play Again" alone doesn't say which level, so it
+        // reads just as easily as "play the next thing" — an honest tap on
+        // the wrong of two buttons sitting right next to each other. Naming
+        // the level explicitly, same as the gold button right above it
+        // already does, removes the ambiguity — only where that ambiguity
+        // exists (a gate with more than one level); NOT only ever has the
+        // one, so plain "Play Again" there was never actually confusing.
+        '<button class="gateAgainBtn" id="gateAgainBtn" type="button" disabled>↻ ' +
+          (g.levels.length > 1 ? ('Replay ' + level.inputs + '-input ' + gateShortName(g)) : 'Play Again') +
+          '</button>';
+      // Raja: "after win the 2input puzzle not showing 3input card ...
+      // directly shows ask question" — the tap that answers the LAST
+      // question (or taps Next ▶) can register a second time immediately
+      // after this screen renders, landing on whichever button now sits
+      // where that tap was — skipping straight past the win screen the
+      // player should actually see and choose from. A disabled button
+      // fires no click at all natively, so a brief window where these two
+      // genuinely cannot be tapped closes this off regardless of the exact
+      // cause (ghost click, a real fast double-tap, anything) — same idea
+      // already proven for the Next ▶ button's own double-fire guard.
+      setTimeout(function(){
+        var nb = document.getElementById('gateNextLevelBtn'), ab = document.getElementById('gateAgainBtn'),
+            gb = document.getElementById('gateNextGateBtn');
+        if (nb) nb.disabled = false;
+        if (ab) ab.disabled = false;
+        if (gb) gb.disabled = false;
+      }, 450);
+    }
+
+    function gateChoose(val){
+      var st = gateState; if (!st) return;
+      var g = st.gate, level = g.levels[st.levelIdx], total = gateTotalRooms(g, st.levelIdx);
+      var fb = document.getElementById('gateFeedback');
+      var btn = document.querySelector('.gateChoiceBtn[data-val="' + val + '"]');
+      if (!fb) return;
+      // Raja: "instead of shifting to next question show hanged above" —
+      // a correct answer had already run (all 4 choices were visibly
+      // disabled) but no pill/Next button was showing, so nothing was
+      // left to tap. Root cause not fully pinned down (a double-fire on
+      // the same tap is the leading suspect), but this guard closes it
+      // off regardless of cause: once a Next button is showing, a room
+      // is already answered and waiting on the child, not on another tap.
+      if (document.getElementById('gateNextBtn')) return;
+
+      var wc = gateWarmupCount(level);
+      var isWarmup = st.roomIdx < wc;   // count scales with the level's inputs
+      var correct, wrongMsg;
+      if (isWarmup){
+        var w = gateWarmup(g, st.levelIdx, st.roomIdx);
+        correct = !!(w.choices[val] && w.choices[val].ok);
+        wrongMsg = '❌ Not quite — try again!';
+      } else {
+        var row = level.rows[st.roomIdx - wc];
+        correct = (val === row[row.length - 1]);
+        wrongMsg = '❌ Not quite. ' + g.rule;
       }
-      var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-      msg.innerHTML = isIOS
-        ? '📲 On iPhone: tap <b>Share ⬆️</b> at the bottom of Safari, then <b>Add to Home Screen</b>.'
-        : '📲 Use your browser menu <b>⋮</b> → <b>Install app</b> / <b>Add to Home screen</b>.';
-      msg.className = '';
+
+      if (correct){
+        sfx('yes');
+        var enteringLogic = isWarmup && st.roomIdx === wc - 1;
+        // Raja: "observe the appreciation still failed ... may the delay
+        // wrongly placed instead of appreciation" — traced it: SaNa's
+        // bubble sits at the very top of the screen, well above the
+        // choice grid and this feedback line, which is where a child's
+        // eyes actually are right after tapping. The bubble WAS updating
+        // (confirmed) — it just was not where anyone was looking. Same
+        // cheer text now goes in both places, but the feedback line here
+        // is the one guaranteed to be seen — it is what the tap itself
+        // just changed.
+        var cheer = GATE_CHEERS[Math.floor(Math.random() * GATE_CHEERS.length)];
+        // Raja's actual, consistent ask since the very first message on
+        // this: "Pop appreciation by monkey dice" — every pass so far
+        // fixed WHERE/HOW text showed (SaNa's distant bubble, then this
+        // pill) but never actually put 🐒🎲 itself into the per-answer
+        // moment, only the final win screen got it. That was the gap.
+        // .gateEmoji (not the whole pill) carries the pop animation —
+        // small and inline, so it cannot spill past the pill's own edges
+        // the way animating the whole bordered box did (beta-94's bug).
+        var mascotPop = ' <span class="gateEmoji" style="display:inline-block; font-size:28px;">🐒🎲</span>';
+        // Raja: "remain same ... application should appreciation Pop
+        // before attached level" — every timing tweak so far (1.6s, then
+        // 3.5s/5s, then 1.2s/3.2s) was still a race against whenever he
+        // happened to look or screenshot. A screenshot taken even a moment
+        // after a timed pop-up fires will NEVER catch it, no matter how
+        // long the delay — that's not a tuning problem, it's the model
+        // being wrong. The win screen never had this complaint because it
+        // does not auto-advance — it waits for a tap. Same fix here: no
+        // more setTimeout, a real "Next" button. The appreciation is now
+        // guaranteed seen because moving on requires seeing it first.
+        fb.innerHTML = (enteringLogic
+          ? '🎉 Warm-up done! Now the real logic begins…' + mascotPop
+          : '✅ ' + cheer + mascotPop)
+          + '<button class="gateNextBtn" id="gateNextBtn" type="button">Next ▶</button>';
+        // No .gatePop on the pill itself: same bug as the diagram
+        // (beta-89) — mrPop's scale(1.14) overshoot on an element with a
+        // real background and border visibly spills past its own
+        // container for a fraction of a second.
+        fb.className = 'gateFeedback gateFeedback-ok';
+        if (btn) btn.classList.add('gateBounce');
+        document.querySelectorAll('.gateChoiceBtn').forEach(function(b){ b.disabled = true; });
+        try {
+          if (enteringLogic){
+            sana('<b>Warm-up done!</b> Now for the real ' + g.name + ' logic.', 'cheer', true);
+          } else {
+            sana('<b>' + cheer + '</b>', 'cheer');
+          }
+        } catch(e){}
+        // Belt and braces: the Next button is what the child needs to
+        // find, so make sure it is actually on screen rather than trusting
+        // it always lands inside the visible viewport on every device.
+        try { fb.scrollIntoView({ behavior:'smooth', block:'end' }); } catch(e){}
+      } else {
+        sfx('no');
+        if (btn){
+          btn.classList.remove('gateShake'); void btn.offsetWidth; btn.classList.add('gateShake');
+        }
+        fb.textContent = wrongMsg;
+        fb.className = 'gateFeedback gateFeedback-bad';
+      }
+    }
+
+    // Tapped after seeing the appreciation — see the comment in
+    // gateChoose() on why this replaced the setTimeout auto-advance.
+    function gateAdvance(){
+      var st = gateState; if (!st) return;
+      var g = st.gate, total = gateTotalRooms(g, st.levelIdx);
+      st.roomIdx++;
+      if (st.roomIdx >= total) renderGateDone();
+      else renderGateRoom();
+    }
+
+    // The 📐 LOGIC button reads whatever is already sitting in #logicBox
+    // (openLearn('logic') just opens a sheet around it) — same mechanism
+    // showBinaryMode uses to keep LOGIC honest for its own two games.
+    // Raja: "add or put it as a output like A B = output" — a real
+    // columnar table (A / B / Output headers) instead of a sentence per
+    // row, matching how a truth table normally reads in a textbook.
+    function findGate(key){
+      for (var i = 0; i < GATES.length; i++) if (GATES[i].key === key) return GATES[i];
+      return null;
+    }
+
+    function gateLogicBoxHTML(g, levelIdx){
+      var level = g.levels[levelIdx];
+      var labels = ['A','B','C','D','E'].slice(0, level.inputs);
+      var head = '<tr>' + labels.map(function(L){ return '<th>' + L + '</th>'; }).join('') + '<th>Output</th></tr>';
+      var rows = level.rows.map(function(row){
+        var out = row[row.length - 1];
+        var ins = row.slice(0, row.length - 1).map(function(v){ return '<td>' + (v ? 'ON' : 'OFF') + '</td>'; }).join('');
+        return '<tr>' + ins + '<td class="gateTruthOut">' + (out ? 'ON' : 'OFF') + '</td></tr>';
+      }).join('');
+      var titleTag = g.levels.length > 1 ? (' (' + level.inputs + '-input)') : '';
+      return '<h3>📐 ' + g.name + titleTag + ' — truth table</h3><p>' + g.rule + '</p>' +
+        '<table class="gateTruthTable">' + head + rows + '</table>';
+    }
+
+    function openGatePicker(){
+      gateState = null;
+      var picker = document.getElementById('gatePicker'), wrap = document.getElementById('gateRoomWrap');
+      if (picker){
+        picker.innerHTML = '<div class="learnRows sheetLearn">' + GATES.map(function(g){
+          var sub = g.levels.length > 1
+            ? (g.diff + ' · 2/3/5-input, 3 levels')
+            : (g.diff + ' · ' + g.levels[0].rows.length + ' rooms');
+          return '<button class="rowBtn" data-gate="' + g.key + '" type="button"><i>' + g.glyph + '</i>' +
+            '<span><b>' + g.name + '</b><small>' + sub + '</small></span></button>';
+        }).join('') + '</div>';
+        picker.style.display = 'block';
+      }
+      if (wrap) wrap.style.display = 'none';
+      var title = document.getElementById('appBarTitle');
+      if (title) title.innerHTML = boxedTitle('🔀 Gate Logic');
+      var lb = document.getElementById('logicBox');
+      if (lb) lb.innerHTML = '<h3>📐 Gate Logic</h3><p>Pick a gate below — each one walks through its whole truth table, one input at a time.</p>';
+    }
+
+    // Tapping a gate with multiple levels shows this chooser first; a
+    // single-level gate (NOT) skips straight into its rooms, same as
+    // before this feature existed — see the delegated click handler below.
+    function openGateLevels(key){
+      var g = findGate(key); if (!g) return;
+      gateState = null;
+      var picker = document.getElementById('gatePicker'), wrap = document.getElementById('gateRoomWrap');
+      if (wrap) wrap.style.display = 'none';
+      var title = document.getElementById('appBarTitle');
+      if (title) title.innerHTML = boxedTitle(g.name);
+      var completed = gateProgressFor(g.key);
+      if (picker){
+        picker.innerHTML = '<div class="learnRows sheetLearn">' +
+          '<button class="rowBtn gateLevelBack" type="button"><i>◀</i>' +
+            '<span><b>All Gates</b><small>back to the list</small></span></button>' +
+          g.levels.map(function(lv, idx){
+            var locked = idx > completed, isDone = idx < completed;
+            var status = locked ? ('🔒 Finish the ' + g.levels[idx - 1].inputs + '-input level first')
+                       : isDone ? '✅ Completed — tap to play again'
+                       : 'Tap to play';
+            return '<button class="rowBtn' + (locked ? ' gateLevelLocked' : '') + '" type="button"' +
+              (locked ? ' disabled' : '') + ' data-gate="' + g.key + '" data-level="' + idx + '">' +
+              '<i>' + (idx + 1) + '</i><span><b>' + lv.inputs + '-input ' + g.name + '</b>' +
+              '<small>' + status + '</small></span></button>';
+          }).join('') +
+        '</div>';
+        picker.style.display = 'block';
+      }
+      var lb = document.getElementById('logicBox');
+      // Raja: "some tune unified to all logic notes like truth table along
+      // instructions" — this popup (before a level is picked) had only the
+      // rule sentence, while the SAME 💡 button inside a room already shows
+      // a full truth table (gateLogicBoxHTML). Reuses that, level 0 (2-input,
+      // every multi-level gate's first/simplest table) standing in for the
+      // gate as a whole here, same shared function so any future gate gets
+      // it automatically too.
+      if (lb) lb.innerHTML = gateLogicBoxHTML(g, 0) + '<p>Pick a level below to begin.</p>';
+    }
+
+    // Multi-level gate → the level chooser above. Single-level (NOT) →
+    // straight into its rooms, unchanged from before this feature.
+    function openGateOrLevels(key){
+      var g = findGate(key); if (!g) return;
+      if (g.levels.length > 1) openGateLevels(key);
+      else startGateLevel(key, 0);
+    }
+
+    function startGateLevel(key, levelIdx){
+      var g = findGate(key); if (!g) return;
+      if (levelIdx < 0 || levelIdx >= g.levels.length) return;
+      if (levelIdx > gateProgressFor(g.key)) return;   // defensive: UI already disables locked levels
+      gateState = { gate: g, levelIdx: levelIdx, roomIdx: 0 };
+      sfx('card');
+      var picker = document.getElementById('gatePicker'), wrap = document.getElementById('gateRoomWrap');
+      if (picker) picker.style.display = 'none';
+      if (wrap) wrap.style.display = 'block';
+      var level = g.levels[levelIdx];
+      var titleTxt = g.levels.length > 1 ? (g.name + ' (' + level.inputs + '-input)') : g.name;
+      var title = document.getElementById('appBarTitle');
+      if (title) title.innerHTML = boxedTitle(titleTxt);
+      var lb = document.getElementById('logicBox');
+      if (lb) lb.innerHTML = gateLogicBoxHTML(g, levelIdx);
+      renderGateRoom();
+    }
+
+    // Entry point from Home — same shape as the real puzzle-select handler
+    // (cancel any congrats countdown, clear .active, recolour via
+    // applyAccent, goScreen('scPlay')) but its own currentSize sentinel
+    // ('gatelogic') rather than a PUZZLES key, same precedent as 'binary'/
+    // 'binary2' — neither of those is in PUZZLES either.
+    var gateListBtn = document.getElementById('gateListBtn');
+    if (gateListBtn){
+      gateListBtn.addEventListener('click', function(){
+        if (_congratsAutoTimer){ clearInterval(_congratsAutoTimer); _congratsAutoTimer = null; }
+        var cm = document.getElementById('congratsModal');
+        if (cm && cm.style.display === 'flex') cm.style.display = 'none';
+        sfx('card');
+        document.querySelectorAll('.toggleBtn').forEach(function(b){ b.classList.remove('active'); });
+        gateListBtn.classList.add('active');
+        applyAccent();
+        if (currentSize === 'binary' || currentSize === 'binary2') showBinaryMode(false);
+        currentSize = 'gatelogic';
+        goScreen('scPlay');
+        showGateMode(true);
+        openGatePicker();
+      });
+    }
+
+    // One step back at a time: from a multi-level gate's rooms, back goes
+    // to that gate's level chooser, not all the way out to the 7-gate list.
+    var gateBackBtn = document.getElementById('gateBackBtn');
+    if (gateBackBtn) gateBackBtn.addEventListener('click', function(){
+      sfx('back');
+      if (gateState && gateState.gate.levels.length > 1) openGateLevels(gateState.gate.key);
+      else openGatePicker();
+    });
+
+    // Delegated on document: .rowBtn[data-gate] lives in #gatePicker, which
+    // is rebuilt via innerHTML on every openGatePicker()/openGateLevels()
+    // call, so a direct listener would need re-attaching each time —
+    // delegation sidesteps that (same reasoning as the app's own keypad
+    // delegation).
+    document.addEventListener('click', function(e){
+      var backRow = e.target.closest('.gateLevelBack');
+      if (backRow){ sfx('back'); openGatePicker(); return; }
+      var levelRow = e.target.closest('.rowBtn[data-level]');
+      if (levelRow && !levelRow.disabled){ startGateLevel(levelRow.dataset.gate, parseInt(levelRow.dataset.level, 10)); return; }
+      var row = e.target.closest('.rowBtn[data-gate]:not([data-level])');
+      if (row){ openGateOrLevels(row.dataset.gate); return; }
+      var nextLevel = e.target.closest('#gateNextLevelBtn');
+      if (nextLevel && gateState){ sfx('tab'); startGateLevel(gateState.gate.key, gateState.levelIdx + 1); return; }
+      var nextGateBtn = e.target.closest('#gateNextGateBtn');
+      if (nextGateBtn){
+        sfx('tab');
+        var nk = nextGateBtn.dataset.gate, ng = findGate(nk);
+        // Straight into the next gate's first not-yet-completed level (or
+        // its last one if it's already fully done) — never past what
+        // startGateLevel's own lock check allows.
+        if (ng) startGateLevel(nk, Math.min(gateProgressFor(nk), ng.levels.length - 1));
+        return;
+      }
+      var cb = e.target.closest('.gateChoiceBtn');
+      if (cb && !cb.disabled){ gateChoose(parseInt(cb.dataset.val, 10)); return; }
+      var next = e.target.closest('#gateNextBtn');
+      if (next){ sfx('tab'); gateAdvance(); return; }
+      var again = e.target.closest('#gateAgainBtn');
+      if (again && gateState){ gateState.roomIdx = 0; sfx('card'); renderGateRoom(); }
     });
   })();
 
@@ -5640,7 +6812,18 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   // but one link, one message, one code path. Each button restores its own
   // label, so the feedback appears where the finger actually was.
   (function(){
-    var LINK = 'https://kidsmathsmatrixpuzzle.github.io';
+    // Raja: "copy link doing to old v132" — this was hardcoded to
+    // production's own nice URL, copied over from KidsMathsMatrixPuzzle.html
+    // verbatim without adjusting it for beta. Made sense there (production
+    // wants people sharing the clean branded link, not a raw path) but on
+    // beta it silently sent every tester to a completely different, frozen,
+    // months-old build with none of this work in it. location.origin +
+    // location.pathname (no query string, no #fragment -- this app uses
+    // neither for routing) always reflects wherever THIS exact file is
+    // actually being served, so Share/Copy Link point at what's really on
+    // screen, on beta now and just as correctly once this becomes the real
+    // production file later -- nothing to remember to change at promotion time.
+    var LINK = location.origin + location.pathname;
     var TEXT = '🐒🎲 MathMatrix Pro++ — magic square puzzles for kids (5th grade & up). '
              + '3×3 to 10×10 plus 3³ Multiply Magic. Free, works offline, no ads.';
     function wire(btn){
@@ -5649,6 +6832,18 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       btn.addEventListener('click', function(e){
         e.stopPropagation();                // the chip sits inside the puzzle list
         if (navigator.share){
+          // Raja tried the silent-copy-alongside-share idea (previous beta)
+          // and confirmed it's not reliable: the native share sheet's OWN
+          // copy icon sits right there, visible, and tapping it overwrites
+          // whatever this page wrote a moment earlier — the last write to
+          // the clipboard wins, and that one is completely outside this
+          // page's control. Rather than layer a hidden side-effect onto
+          // Share that can silently lose the race, this stays exactly what
+          // the label says: opens the native picker, nothing else. A
+          // dedicated "Copy Link" now lives on the Get App screen instead
+          // (below, near installBtn) for anyone who wants a clean, directly
+          // pastable URL — its own action, never routed through the share
+          // sheet, so there's nothing else that can overwrite it.
           navigator.share({ title: 'Kids Maths Matrix Puzzle', text: TEXT, url: LINK })
             .catch(function(){});           // user cancelling is not an error
           return;
@@ -5666,6 +6861,24 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     }
     wire(document.getElementById('shareBtn'));
     wire(document.getElementById('diffShare'));
+
+    // Copy Link — deliberately its own action, never routed through
+    // navigator.share(). Same LINK as above (one source), but plain and
+    // clean: no title, no description, just the URL, so there is exactly
+    // one thing on the clipboard and nothing else can overwrite it after.
+    var copyBtn = document.getElementById('copyLinkBtn');
+    if (copyBtn){
+      var copyIdle = copyBtn.textContent;
+      copyBtn.addEventListener('click', function(){
+        var done = function(ok){
+          copyBtn.textContent = ok ? '✅ Link copied!' : '⚠️ Copy failed';
+          setTimeout(function(){ copyBtn.textContent = copyIdle; }, 3000);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText){
+          navigator.clipboard.writeText(LINK).then(function(){ done(true); }, function(){ done(false); });
+        } else { done(false); }
+      });
+    }
   })();
 
   // Custom keypad (numbers + navigation), so the OS keyboard never covers the board
@@ -5773,8 +6986,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   initBoard = function(){ _initBoard.apply(null, arguments); tagCorners(); };
   tagCorners();
 
-  // SaNa introduces each puzzle as you pick it
-  document.querySelectorAll('.toggleBtn').forEach(function(btn){
+  // SaNa introduces each puzzle as you pick it (Gate Logic excluded — see
+  // the [data-size] guard above; its own handler below has its own line)
+  document.querySelectorAll('.toggleBtn[data-size]').forEach(function(btn){
     btn.addEventListener('click', function(){
       sfx('card');
       var nm = this.dataset.name || this.textContent.trim();
@@ -5793,7 +7007,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     /* scLearn is no longer reachable — Learn is the 💡 sheet beside settings.
        The section stays in the DOM only because #logicBox lives there and is
        parked into the sheet system from it. */
-    if (id === 'scFeed')  sana('Found something odd? <b>Tell us</b> — that\'s what a beta is for.', 'think');
+    if (id === 'scFeed')  sana('Found something odd? <b>Tell us</b> — it helps the next child.', 'think');
     if (id === 'scApp')   sana('Install it once and it works with <b>no internet</b>.', null);
   };
   ['scHome','scPlay','scLearn','scApp','scFeed'].forEach(function(s){
@@ -5925,7 +7139,22 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       return last.getBoundingClientRect().bottom - first.getBoundingClientRect().top;
     }
 
-    var box = bar.clientHeight;
+    // Raja: "bottom side version not covered properly ... may same issue
+    // persist in iphone" — measured on the live site: the fit was landing
+    // 0.7px short of the tab bar. Technically not overflow, but that is not
+    // a margin, it is a rounding error waiting to become one on any device
+    // that renders half a pixel differently (a real risk: iOS's own home-
+    // indicator safe-area works through this exact box).
+    //
+    // Raja later, on browser chrome varying (Brave's own bottom toolbar vs
+    // plain Chrome's bare minimum): "may allow one line scrolling in
+    // common" — right idea, and deliberately NOT per-browser detection
+    // (chrome height can't be reliably fingerprinted, and .difficultyBar is
+    // scroll-reachable either way since beta-102 / the dvh cap is honoured
+    // since beta-104). What a bigger universal reserve actually buys is
+    // fewer real devices ever NEEDING that scroll in the first place. 28px
+    // is roughly one line of the puzzle-list's own text at this scale.
+    var box = bar.clientHeight - 28;
     var natural = spanAt(1);
     var s = natural > 0 ? Math.max(LV_MIN, Math.min(LV_MAX, box / natural)) : 1;
 
@@ -5934,8 +7163,58 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     for (var i = 0; i < 14 && spanAt(s) > box && s > LV_MIN; i++) s = Math.max(LV_MIN, s - 0.03);
     bar.style.setProperty('--lvScale', s.toFixed(3));
 
-    // if even the smallest type will not fit, scrolling beats illegible text
-    bar.style.overflowY = spanAt(s) > box + 1 ? 'auto' : 'hidden';
+    // Scrolling used to be gated behind this same spanAt() measurement --
+    // 'auto' only if it thought content still overflowed at LV_MIN. Raja:
+    // "gate logic tag only shows not showing list below" + "unable to
+    // scroll" on a real iPhone -- the list's last item (Gate Logic) was
+    // clipped by overflow:hidden AND unreachable, meaning this measurement
+    // under-counted the real on-device height (the same class of gap as the
+    // 0.7px story above). The CSS is unconditionally scrollable now, so
+    // there is nothing left to toggle here -- a wrong measurement can no
+    // longer strand content with zero way to reach it.
+
+    // Raja: "shift there in monkey dice with bigger image" -- the empty
+    // band above "Choose Difficulty" on a roomy screen. The monkey used to
+    // be centred across .diffMascot's FULL width while the label sits fixed
+    // at its own left edge (deliberately -- see .diffMascot .diffLabel's
+    // own comment: the label must never push or shrink the monkey). Simply
+    // capping the emoji small enough to dodge the label only proved it
+    // couldn't safely grow much at all -- container width and --lvScale
+    // don't grow in lockstep across devices, so on a wider/taller phone the
+    // safe cap came out SMALLER, not bigger, than before. Instead of
+    // avoiding the label's space, shift the emoji's own centering point
+    // into the real free zone to the label's right (measured, not
+    // guessed), so it can grow to fill exactly that room.
+    /* The mascot now shares .diffHead with the chip stack, so what it must
+       fit inside is the room left of .diffSide, not right of the label.
+       Same technique as before and for the same documented reason (a fixed
+       px formula cannot work: the chips and the mascot do not grow in
+       lockstep as --lvScale changes), just measured against its new
+       neighbour.
+
+       Order matters here. The mascot is flex:none, so while it is large it
+       SQUEEZES .diffSide and reading the chips' width then would measure
+       them already compressed — the answer would feed back on itself and
+       creep smaller every call. Shrinking the mascot to ~nothing first lets
+       .diffSide relax to its natural width, which is the real constraint. */
+    var head = document.querySelector('.diffHead');
+    var side = head && head.querySelector('.diffSide');
+    var mEmoji = head && head.querySelector('.diffMascotEmoji');
+    if (head && side && mEmoji){
+      head.style.setProperty('--mascotMax', '1px');       // collapse it so the chips relax to their natural width
+      var sNatural = side.getBoundingClientRect().width;
+      head.style.setProperty('--mascotMax', '999px');     // uncap to read the natural (unclamped) glyph size
+      var hRect = head.getBoundingClientRect();
+      var eRect = mEmoji.getBoundingClientRect();
+      var curFont = parseFloat(getComputedStyle(mEmoji).fontSize) || 1;
+      // + 0.36: the medallion behind the glyphs bleeds 0.18em past each side,
+      // so the space this occupies is wider than the glyph pair alone.
+      var widthPerFont = (eRect.width / curFont) + 0.36;
+      var gap = 12;                                       // matches .diffHead's own gap
+      var availWidth = hRect.width - sNatural - gap;
+      var maxFont = Math.max(24, availWidth / widthPerFont);   // 24px floor: never smaller than it always was
+      head.style.setProperty('--mascotMax', maxFont.toFixed(1) + 'px');
+    }
   }
   /* The header pill is the update button now. It counted puzzles before, which
      the list underneath already showed.
@@ -6253,8 +7532,15 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   function openLearn(k, fromSheet){
       // tapped from the sheet over the board? get out of the way first
       if (fromSheet) closeSheet();
+      // Gate Logic: .toggleBtn.active is always #gateListBtn ("🔀 Gate
+      // Logic") no matter which gate room is open — there's no per-gate
+      // Home card to read a name from any more. The app bar's own title
+      // is already kept correct per gate (see openGate), so read that
+      // instead, same source the child is already looking at.
       var lvl = document.querySelector('.toggleBtn.active');
-      var nm = lvl ? (lvl.dataset.name || 'this puzzle') : 'this puzzle';
+      var nm = (currentSize === 'gatelogic')
+        ? ((document.getElementById('appBarTitle') || {}).textContent || 'Gate Logic').trim()
+        : (lvl ? (lvl.dataset.name || 'this puzzle') : 'this puzzle');
       if (k === 'logic') openSheet('logic', '📐 How ' + nm + ' works');
       if (k === 'sheet'){
         /* Straight to the big view — v131's behaviour, and Raja is right that
@@ -6840,13 +8126,39 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     try { if (sessionStorage.getItem('mm.resume')) return; } catch (e) {}
     var tag = document.querySelector('#vault .tagline');
     var name = (SCREEN_TITLE && SCREEN_TITLE.scHome) ? SCREEN_TITLE.scHome.replace(/^[^A-Za-z]+/, '') : 'MathMatrix';
+
+    // Raja: recommend Chrome on Android, Safari on iPhone -- only when the
+    // visitor is on neither. Both UAs carry "Safari" (WebKit's own token,
+    // inherited by every iOS browser) and both carry "Chrome" (Chromium's
+    // token, inherited by Edge/Opera/Samsung Internet), so each is only
+    // trustworthy once the OTHER platform's impostor tokens are excluded.
+    function browserTip(){
+      var ua = navigator.userAgent;
+      var isAndroid = /Android/.test(ua);
+      var isIOS = /iPhone|iPad|iPod/.test(ua);
+      var isRealChrome = /Chrome\//.test(ua) && !/Edg\/|OPR\/|SamsungBrowser/.test(ua);
+      var isRealSafari = /Safari\//.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
+      if (isAndroid && !isRealChrome) return '⚡ Runs best in Google Chrome';
+      if (isIOS && !isRealSafari) return '⚡ Runs best in Safari';
+      return '';
+    }
+    var tipText = browserTip();
+
     var s = document.createElement('div');
     s.className = 'splash';
     s.setAttribute('role', 'button');
     s.setAttribute('aria-label', 'Start');
+    // Raja: "have a More place in marked can shift there in monkey dice with
+    // bigger image" -- when the browser tip above isn't showing (the usual
+    // case: most visitors are already on the recommended browser), that
+    // space is free. .splashStage.big scales the whole monkey+dice+orbit up
+    // as one unit -- every keyframe in it is a rotation/percentage, not a
+    // fixed px path, so a single transform:scale() enlarges it correctly
+    // without hand-recalculating the orbit radius.
     s.innerHTML =
       '<div class="splashInner">' +
-        '<div class="splashStage">' +
+        (tipText ? '<div class="splashBrowserTip">' + tipText + '</div>' : '') +
+        '<div class="splashStage' + (tipText ? '' : ' big') + '">' +
           '<span class="splashSpark" style="left:6%;  top:44%; animation-delay:.0s">✨</span>' +
           '<span class="splashSpark" style="left:82%; top:30%; animation-delay:.9s">⭐</span>' +
           '<span class="splashSpark" style="left:20%; top:16%; animation-delay:1.7s">✨</span>' +
@@ -7076,10 +8388,18 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   applyTheme(); // Apply colors and diagonal guide
 })();
 
-// PWA: register service worker for full offline play
+// PWA: register a service worker so "Get App"/install can be a real, distinct
+// action instead of always falling back to the same manual instructions.
+/* sw.js at its natural scope — this is the real app, so it is entitled to
+   the whole directory. While this build lived in beta it registered a
+   separate worker pinned to an explicit narrow scope, precisely so it could
+   never claim these pages or fight this worker's cache namespace. That
+   pinning is what promotion removes: a scope of './beta.html' would match
+   nothing here, leaving the page with no service worker and no offline
+   play at all. */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function () {
-    navigator.serviceWorker.register('sw.js');
+    navigator.serviceWorker.register('sw.js').catch(function(){});
   });
 }
 
@@ -7101,24 +8421,49 @@ if (navigator.storage && navigator.storage.persist) {
 // Show the current cached build, and give a one-tap "clear cache & reload to newest"
 // button — the reliable escape hatch when a device is stuck on an old cached version.
 (function(){
-  /* Frozen at v131 by design (Raja: "live view continue as v131") even
-     though the code underneath is the accumulated beta-77 build — so the
-     beta's own auto-refresh-on-version-change mechanic (built for a
-     multiple-times-a-day push cadence, detecting a new build by diffing
-     this very string) is dropped here rather than carried over: with a
-     label that deliberately never changes across future promotions, it
-     would become permanently inert dead code, checking a signal that by
-     definition can't change. Freshness here is what production already
-     had and proved: the service worker's network-first fetch for HTML
-     pages, plus the manual Online Update button below as the explicit
-     escape hatch — unchanged from how this file worked before. */
-  var BUILD_VER = 'v131';
-  window.BETA_VER = 'v131';   // kept as window.BETA_VER: read elsewhere (debug/feedback info), renaming it everywhere risked more than it was worth
+  // Build baked into this HTML — always reflects the exact version being run,
+  // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
+  var BUILD_VER = 'v133';
+  window.BETA_VER = 'v133';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
-  // bottom-of-puzzle-table version footer, added during beta -- kept, harmless and still useful
+  // the short form on the BETA flag, where it is seen without looking for it
+  var flagVer = document.getElementById('flagVer');
+  if (flagVer) flagVer.textContent = window.BETA_VER;
+  // same short form again at the bottom of the puzzle table, past Coming
+  // Soon — so it is still checkable after scrolling through the whole list
   var footVer = document.getElementById('verFooter');
   if (footVer) footVer.textContent = window.BETA_VER;
+
+  /* ── AUTO ONLINE REFRESH ──
+     Raja asked for this in as many words — "auto forced app online refresh" —
+     and a manual button turned out not to be enough. GitHub Pages serves this
+     file with Cache-Control: max-age=600, so a plain revisit can hand back a
+     ten-minute-old build; twice now he has reported a change as missing when
+     it had shipped and his phone simply had a different file.
+
+     So on each online launch the app asks the network which build is newest,
+     and if it is not the one running, takes it. Once per session, guarded in
+     sessionStorage, so this can never become a reload loop — and the query
+     string is what actually defeats the cache, since a plain reload is free
+     to hand back the very copy we are trying to replace. */
+  (function autoFresh(){
+    if (!navigator.onLine || !window.fetch) return;
+    var ONCE = 'mm.freshChecked';
+    try {
+      if (sessionStorage.getItem(ONCE)) return;
+      sessionStorage.setItem(ONCE, '1');
+    } catch (e) { return; }        // no sessionStorage means no loop guard, so do not risk it
+    fetch(location.pathname + '?fresh=' + Date.now(), { cache: 'no-store' })
+      .then(function(r){ return r.ok ? r.text() : null; })
+      .then(function(txt){
+        if (!txt) return;
+        var m = txt.match(/window\.BETA_VER\s*=\s*'([^']+)'/);
+        if (!m || !m[1] || m[1] === window.BETA_VER) return;
+        location.replace(location.pathname + '?v=' + encodeURIComponent(m[1]));
+      })
+      .catch(function(){});        // offline mid-flight, or blocked: keep playing
+  })();
 
   var upBtn = document.getElementById('updateBtn');
   // Reflect the network state on the button so users never trigger a destructive
@@ -7161,14 +8506,23 @@ if (navigator.storage && navigator.storage.persist) {
       } catch (e) {}
       var jobs = [];
       try {
-        if ('serviceWorker' in navigator && navigator.serviceWorker.getRegistrations){
-          jobs.push(navigator.serviceWorker.getRegistrations().then(function(rs){
-            return Promise.all(rs.map(function(r){ return r.unregister(); }));
+        // getRegistration() (singular, no scope arg) -- the registration that
+        // actually controls THIS document. Deliberately not getRegistrations()
+        // (plural): that returns every SW registered for the whole origin, so
+        // it would also unregister any OTHER build installed on the same
+        // device (a beta preview alongside this one) -- this button should
+        // only ever touch the state of the page it is on.
+        if ('serviceWorker' in navigator && navigator.serviceWorker.getRegistration){
+          jobs.push(navigator.serviceWorker.getRegistration().then(function(r){
+            return r ? r.unregister() : null;
           }));
         }
         if (window.caches && caches.keys){
           jobs.push(caches.keys().then(function(ks){
-            return Promise.all(ks.map(function(k){ return caches.delete(k); }));
+            // Same reasoning: only this file's own 'mathmatrix-beta-*'
+            // namespace, never the real app's 'mathmatrix-v*' caches.
+            return Promise.all(ks.filter(function(k){ return k.indexOf('mathmatrix-beta-') === 0; })
+              .map(function(k){ return caches.delete(k); }));
           }));
         }
       } catch (e) {}
