@@ -2601,9 +2601,20 @@ body{ background:#C9A87C !important; }
    but scoped one card per gate (matches every other puzzle: pick any,
    any time, no forced order) and covering the WHOLE truth table per gate,
    not one lucky row. Sandalwood, not the reference's dark theme. */
-.gateBackBtn{ display:block; margin:0 0 14px; padding:9px 18px; border-radius:999px;
+/* Back and Skip share a row: leaving the gate entirely and moving on to the
+   next level are the two ways out, so they belong side by side rather than
+   stacked, and the row costs the same height the lone Back button did. */
+.gateTopRow{ display:flex; align-items:center; justify-content:space-between;
+  gap:10px; margin:0 0 14px; }
+.gateBackBtn{ display:block; margin:0; padding:9px 18px; border-radius:999px;
   border:2px solid #8A5E31; background:#FFF6E7; color:#5E3D1C; font-size:14px;
   font-weight:800; cursor:pointer; }
+/* Quieter than Back on purpose. Skipping is always available but it is not
+   the thing to reach for first — the questions are. */
+.gateSkipBtn{ padding:9px 16px; border-radius:999px; border:2px dashed #B08D5E;
+  background:transparent; color:#7A5A32; font-size:13px; font-weight:800;
+  cursor:pointer; touch-action:manipulation; white-space:nowrap; }
+.gateSkipBtn:active{ transform:translateY(1px); }
 /* The LOGIC sheet's truth table — a real A/B/Output grid, not a sentence
    per row. font-variant-numeric isn't relevant here (these are words, not
    digits) but tabular alignment is exactly the same idea: every column
@@ -2817,7 +2828,18 @@ body{ background:#C9A87C !important; }
 <div id="gatePanel" style="display:none;">
   <div id="gatePicker"></div>
   <div id="gateRoomWrap" style="display:none;">
-    <button class="gateBackBtn" id="gateBackBtn" type="button">← All Gates</button>
+    <!-- Raja: "skip to next puzzle in any time is too better one depends
+         player Will", and the app is deliberately for both the child who
+         wants every row of the truth table and the one just passing time.
+         So the choice sits here, OUTSIDE #gateRoom, which means it is
+         present in every room of every level without the per-room render
+         needing to know about it — including room 1, where tapping it is
+         exactly the "choose before the questions" he first described. -->
+    <div class="gateTopRow">
+      <button class="gateBackBtn" id="gateBackBtn" type="button">← All Gates</button>
+      <button class="gateSkipBtn" id="gateSkipBtn" type="button"
+              aria-label="Skip these questions and go to the next level">Skip ▶</button>
+    </div>
     <div id="gateRoom"></div>
   </div>
 </div>
@@ -5259,12 +5281,26 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     function saveGateProgress(p){
       try { localStorage.setItem(GATE_PROGRESS_KEY, JSON.stringify(p)); } catch(e){}
     }
-    // Number of levels completed so far for this gate (0 if none). Level
-    // idx is playable once idx <= this value (idx 0 is always playable).
-    function gateProgressFor(key){ return loadGateProgress()[key] || 0; }
+    /* WHICH levels are done, not HOW MANY. A count only ever described the
+       truth while levels had to be played in order; now that any level is
+       playable at any time, finishing 5-input first would have set the count
+       to 3 and quietly claimed the 2- and 3-input levels were done too.
+       Stored as a sorted array of level indexes under the same key, with a
+       one-time read of the old shape so nobody loses the ticks they earned:
+       under the old rules a count of N genuinely did mean levels 0..N-1. */
+    function gateDoneFor(key){
+      var v = loadGateProgress()[key];
+      if (typeof v === 'number'){                 // old shape: N levels, in order
+        var out = []; for (var i = 0; i < v; i++) out.push(i); return out;
+      }
+      return Array.isArray(v) ? v : [];
+    }
+    function gateLevelDone(key, levelIdx){ return gateDoneFor(key).indexOf(levelIdx) > -1; }
     function gateMarkLevelDone(key, levelIdx){
-      var p = loadGateProgress(), next = levelIdx + 1;
-      if ((p[key] || 0) < next){ p[key] = next; saveGateProgress(p); }
+      if (gateLevelDone(key, levelIdx)) return;
+      var p = loadGateProgress();
+      p[key] = gateDoneFor(key).concat([levelIdx]).sort(function(a, b){ return a - b; });
+      saveGateProgress(p);
     }
 
     function gateShortName(g){ return g.name.replace(' Gate', ''); }
@@ -5595,18 +5631,24 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       if (wrap) wrap.style.display = 'none';
       var title = document.getElementById('appBarTitle');
       if (title) title.innerHTML = boxedTitle(g.name);
-      var completed = gateProgressFor(g.key);
+      /* No locks. Raja: "give option to any time select any level of logic
+         gate puzzle like earlier history that password to skip the puzzle
+         after got feed back from groups" — the app already made this exact
+         call once, in v64, when the unlock ladder AND the supervisor PIN
+         were both removed because the parent group pointed out the audience
+         runs from small children to adults. Gate Logic had quietly
+         reintroduced the same gating (my own earlier spec, "one by one by
+         sub level of previous one completed"); this reverses it deliberately.
+         The ✅ stays, but as a record of what you played, never a gate. */
       if (picker){
         picker.innerHTML = '<div class="learnRows sheetLearn">' +
           '<button class="rowBtn gateLevelBack" type="button"><i>◀</i>' +
             '<span><b>All Gates</b><small>back to the list</small></span></button>' +
           g.levels.map(function(lv, idx){
-            var locked = idx > completed, isDone = idx < completed;
-            var status = locked ? ('🔒 Finish the ' + g.levels[idx - 1].inputs + '-input level first')
-                       : isDone ? '✅ Completed — tap to play again'
-                       : 'Tap to play';
-            return '<button class="rowBtn' + (locked ? ' gateLevelLocked' : '') + '" type="button"' +
-              (locked ? ' disabled' : '') + ' data-gate="' + g.key + '" data-level="' + idx + '">' +
+            var isDone = gateLevelDone(g.key, idx);
+            var status = isDone ? '✅ Completed — tap to play again' : 'Tap to play';
+            return '<button class="rowBtn" type="button"' +
+              ' data-gate="' + g.key + '" data-level="' + idx + '">' +
               '<i>' + (idx + 1) + '</i><span><b>' + lv.inputs + '-input ' + g.name + '</b>' +
               '<small>' + status + '</small></span></button>';
           }).join('') +
@@ -5632,10 +5674,29 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       else startGateLevel(key, 0);
     }
 
+    /* Where "move on" goes, from any level of any gate. One function so the
+       Skip button and the win screen's own next buttons can never drift
+       apart: the whole promise of Skip is that it lands you where finishing
+       would have. Next level in this gate; else the next gate, on its first
+       level not yet completed; else — the very last level of the last gate —
+       back to the gate list, since there is nothing after it. */
+    function gateGoNext(g, levelIdx){
+      if (levelIdx + 1 < g.levels.length){ startGateLevel(g.key, levelIdx + 1); return; }
+      var gi = GATES.indexOf(g);
+      var next = (gi > -1 && gi + 1 < GATES.length) ? GATES[gi + 1] : null;
+      if (!next){ openGatePicker(); return; }
+      var land = 0;
+      for (var i = 0; i < next.levels.length; i++){
+        if (!gateLevelDone(next.key, i)){ land = i; break; }
+      }
+      startGateLevel(next.key, land);
+    }
+
     function startGateLevel(key, levelIdx){
       var g = findGate(key); if (!g) return;
       if (levelIdx < 0 || levelIdx >= g.levels.length) return;
-      if (levelIdx > gateProgressFor(g.key)) return;   // defensive: UI already disables locked levels
+      // No progress check any more — every level is playable at any time.
+      // The only bound left is the array itself, above.
       gateState = { gate: g, levelIdx: levelIdx, roomIdx: 0 };
       sfx('card');
       var picker = document.getElementById('gatePicker'), wrap = document.getElementById('gateRoomWrap');
@@ -5688,6 +5749,11 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // delegation sidesteps that (same reasoning as the app's own keypad
     // delegation).
     document.addEventListener('click', function(e){
+      // Skip: leaves this level for the next one WITHOUT marking it done —
+      // the ✅ has to keep meaning "played", or it tells the curious child
+      // nothing about what is left.
+      var skipBtn = e.target.closest('#gateSkipBtn');
+      if (skipBtn && gateState){ sfx('tab'); gateGoNext(gateState.gate, gateState.levelIdx); return; }
       var backRow = e.target.closest('.gateLevelBack');
       if (backRow){ sfx('back'); openGatePicker(); return; }
       var levelRow = e.target.closest('.rowBtn[data-level]');
@@ -5699,11 +5765,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       var nextGateBtn = e.target.closest('#gateNextGateBtn');
       if (nextGateBtn){
         sfx('tab');
-        var nk = nextGateBtn.dataset.gate, ng = findGate(nk);
-        // Straight into the next gate's first not-yet-completed level (or
-        // its last one if it's already fully done) — never past what
-        // startGateLevel's own lock check allows.
-        if (ng) startGateLevel(nk, Math.min(gateProgressFor(nk), ng.levels.length - 1));
+        // Same landing rule as Skip — see gateGoNext. This button only ever
+        // appears on the LAST level of a gate, so "next" is the next gate.
+        if (gateState) gateGoNext(gateState.gate, gateState.levelIdx);
         return;
       }
       var cb = e.target.closest('.gateChoiceBtn');
@@ -8433,8 +8497,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-129 (version footer no longer doubles the v)';
-  window.BETA_VER = 'beta-129';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-130 (Gate Logic: skip any time, and every level unlocked)';
+  window.BETA_VER = 'beta-130';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
