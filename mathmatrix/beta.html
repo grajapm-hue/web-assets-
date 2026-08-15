@@ -1905,8 +1905,10 @@ body.onPlay .solvedCounter{ font-size:9px !important; padding:3px 9px !important
    just a slightly duller version of a real choice), and the "back to all
    gates" row sits visually apart from the numbered level rows below it so
    it doesn't read as a fourth level. */
-.rowBtn.gateLevelLocked{ opacity:.5; cursor:not-allowed; }
-.rowBtn.gateLevelLocked:active{ transform:none; box-shadow:var(--clay); }
+/* .gateLevelLocked's rules lived here until beta-131. Nothing applies the
+   class any more -- levels stopped being locked in beta-130 -- and a greyed
+   "not-allowed" style is exactly the thing a future edit might reach for by
+   accident, so it goes rather than sitting around looking available. */
 .rowBtn.gateLevelBack{ background:transparent; box-shadow:none; margin-bottom:6px;
   color:var(--bink2); font-weight:800; }
 .rowBtn.gateLevelBack i{ background:transparent; font-size:16px; }
@@ -8497,8 +8499,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-130 (Gate Logic: skip any time, and every level unlocked)';
-  window.BETA_VER = 'beta-130';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-131 (removed the now-dead level-lock styling)';
+  window.BETA_VER = 'beta-131';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
