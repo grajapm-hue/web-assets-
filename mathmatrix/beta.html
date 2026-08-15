@@ -2032,7 +2032,13 @@ body.slideMode #learnHint,
 body.slideMode .keysChip,
 body.slideMode .targetPill,
 body.slideMode .solvedCounter{ display:none !important; }
-body.slideMode #slidePanel{ display:block !important; }
+/* Scrollable, exactly as #gatePanel is and for the same reason: .screens is
+   overflow:hidden, so anything taller than the screen is not merely awkward,
+   it is CLIPPED with no way to reach it. Measured before fixing: on a 360x740
+   and a 320x640 phone the Shuffle button and the move counter sat behind the
+   tab bar, so a child who wanted a fresh deal simply could not get one. */
+body.slideMode #slidePanel{ display:block !important;
+  flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; }
 
 .slideHead{ background:#F3E4C9; border:2px solid #C4A277; border-radius:14px;
   padding:12px 14px; margin:0 0 14px; font-size:15px; font-weight:800; color:#33220F; }
@@ -8854,8 +8860,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-134 (Slide A-Z: the full 6x6 letter and number board)';
-  window.BETA_VER = 'beta-134';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-135 (Slide Magic scrolls, so Shuffle is reachable on short screens)';
+  window.BETA_VER = 'beta-135';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
