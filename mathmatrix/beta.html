@@ -864,7 +864,29 @@
   .modeHead b{ display:block; font-size:14.5px; font-weight:900; color:#fff; letter-spacing:.2px; }
   .modeHead i{ display:block; font-style:normal; font-size:11.5px; font-weight:600;
                color:#a49bcb; line-height:1.45; margin-top:1px; }
-  .modeGroup.solo .toggleSwitch{ grid-template-columns:1fr; }
+  /* .modeGroup.solo used to collapse a one-card group to a single full-width
+     column. Raja: "why can't split the row tab ... for easy to get room For
+     further coming soon puzzles addup" — every group is the same two-column
+     grid now, so a lone puzzle sits in the left slot with its family's empty
+     seat visible beside it. The rule is gone rather than merely unused, so
+     nothing re-collapses a group by accident later. */
+
+  /* A puzzle that is announced but not built yet: readable, clearly not
+     ready, and not tappable. Deliberately NOT disabled-looking-but-clickable
+     — a child tapping a coming-soon card and getting nothing is worse than a
+     card that never invited the tap. */
+  .toggleBtn.lvCard.lvSoon{
+    background:linear-gradient(152deg, rgba(255,255,255,.14), rgba(255,255,255,.06)) !important;
+    color:#e6dcc6 !important; cursor:default; pointer-events:none;
+    outline:2px dashed rgba(255,255,255,.28); outline-offset:-6px; box-shadow:none !important;
+  }
+  .lvSoon .lvGlyph{ opacity:.65; }
+  /* #4A2E12, not the pale gold this started as: the card is translucent, so
+     what is actually painted behind it is the sandalwood (rgb 201,168,124),
+     and pale-on-pale measured 1.63:1 against it — the app holds itself to
+     4.5:1 for small text. This measures 5.55:1, still visibly quieter than
+     the puzzle name above it (7.81:1) so it reads as secondary, not equal. */
+  .lvSoon .lvDiff{ color:#4A2E12 !important; font-weight:800; }
 
   .toggleBtn.lvCard{
     display:flex; align-items:center; gap:11px; text-align:left;
@@ -3026,7 +3048,7 @@ body{ background:#C9A87C !important; }
   </div>
 
   <!-- ✖️ MULTIPLY MODE -->
-  <div class="modeGroup solo">
+  <div class="modeGroup">
     <div class="modeHead" style="--m1:#fcd98a; --m2:#f59e0b;">
       <span class="mIco">✖️</span>
       <span><b>Multiply Magic</b><i>the lines multiply to the same answer instead of adding</i></span>
@@ -3040,7 +3062,7 @@ body{ background:#C9A87C !important; }
   </div>
 
   <!-- 🔺 TRIANGLE MODE -->
-  <div class="modeGroup solo">
+  <div class="modeGroup">
     <div class="modeHead" style="--m1:#fdba8c; --m2:#ea580c;">
       <span class="mIco">🔺</span>
       <span><b>Triangle Magic</b><i>3 sides, not rows and columns — only 5 targets ever work</i></span>
@@ -3054,7 +3076,7 @@ body{ background:#C9A87C !important; }
   </div>
 
   <!-- 🎂 BIRTHDAY MODE -->
-  <div class="modeGroup solo">
+  <div class="modeGroup">
     <div class="modeHead" style="--m1:#ffb3bf; --m2:#e11d48;">
       <span class="mIco">🎂</span>
       <span><b>Birthday Magic</b><i>type any date of birth and the square builds itself</i></span>
@@ -3106,7 +3128,7 @@ body{ background:#C9A87C !important; }
        No data-size: this deliberately stays outside the grid-puzzle
        click handler (which assumes PUZZLES[newSize] and calls
        initBoard()) — its own handler drives goScreen('scPlay') instead. -->
-  <div class="modeGroup solo">
+  <div class="modeGroup">
     <div class="modeHead" style="--m1:#c4b5fd; --m2:#8b5cf6;">
       <span class="mIco">🔀</span>
       <span><b>Gate Logic</b><i>flip the inputs, watch each gate decide ON or OFF</i></span>
@@ -3115,6 +3137,30 @@ body{ background:#C9A87C !important; }
       <button class="toggleBtn lvCard" id="gateListBtn" type="button" data-name="🔀 Gate Logic" style="color:#8b5cf6; border-color:#8b5cf6; --c1:#c4b5fd; --c2:#8b5cf6;">
         <span class="lvGlyph" aria-hidden="true">🔀</span>
         <span class="lvText"><b class="lvName">7 Logic Gates</b><span class="lvDiff">AND · OR · NOT · NAND · NOR · XOR · XNOR</span><span class="lvMeta">pick one, then walk its whole truth table</span></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 🔜 COMING SOON — the two puzzles Raja named ("plan to add sudako and
+       physical A to Z, 0 to 9 contains in scattered and to arrange uniform
+       puzzle"). Their own group rather than filling the empty seats above,
+       because Sudoku is not a Multiply puzzle and the blocks one is not a
+       Triangle puzzle — those seats stay reserved for puzzles that genuinely
+       belong to those families. Two cards, so this group fills its own row
+       with no gap. Announced, not playable: pointer-events are off. -->
+  <div class="modeGroup">
+    <div class="modeHead" style="--m1:#cbd5e1; --m2:#94a3b8;">
+      <span class="mIco">🔜</span>
+      <span><b>Coming Soon</b><i>being built next — not ready to play yet</i></span>
+    </div>
+    <div class="toggleSwitch">
+      <button class="toggleBtn lvCard lvSoon" type="button" tabindex="-1" aria-disabled="true">
+        <span class="lvGlyph" aria-hidden="true">🔢</span>
+        <span class="lvText"><b class="lvName">Sudoku</b><span class="lvDiff">Coming soon</span><span class="lvMeta">some numbers given, you work out the rest</span></span>
+      </button>
+      <button class="toggleBtn lvCard lvSoon" type="button" tabindex="-1" aria-disabled="true">
+        <span class="lvGlyph" aria-hidden="true">🔤</span>
+        <span class="lvText"><b class="lvName">A–Z · 0–9 Blocks</b><span class="lvDiff">Coming soon</span><span class="lvMeta">scattered letters and numbers — park them in the spare row and put them back in order</span></span>
       </button>
     </div>
   </div>
@@ -8499,8 +8545,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-131 (removed the now-dead level-lock styling)';
-  window.BETA_VER = 'beta-131';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-132 (puzzle list: every group split into two columns, plus a Coming Soon group)';
+  window.BETA_VER = 'beta-132';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
