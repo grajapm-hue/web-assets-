@@ -3098,7 +3098,13 @@ body{ background:#C9A87C !important; }
        the BETA flag up top — so it's still checkable after scrolling all the
        way through the list. Same #flagVer/#verLabel source, so it can never
        disagree with the top of the page. -->
-  <div class="verFooter">v<span id="verFooter">…</span></div>
+  <!-- No literal "v" here. The span is filled with window.BETA_VER, which
+       already carries its own prefix ("v133", "beta-129"), so the hardcoded
+       one doubled it: the live app has been showing "vv132" and then "vv133",
+       and beta "vbeta-128". Long-standing -- the pre-promotion live file
+       carries the same markup -- and it matters more than it looks, because
+       this footer is the thing you read to check which build you are on. -->
+  <div class="verFooter"><span id="verFooter">…</span></div>
 </div>
 
 
@@ -8427,8 +8433,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-128 (Logic rooms: two answer cards instead of four, and the freed space goes to the wiring diagram)';
-  window.BETA_VER = 'beta-128';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-129 (version footer no longer doubles the v)';
+  window.BETA_VER = 'beta-129';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
