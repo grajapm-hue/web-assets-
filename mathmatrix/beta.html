@@ -2984,7 +2984,7 @@ body{ background:#C9A87C !important; }
   <div class="slideBoard" id="slideBoard"></div>
   <!-- Sits under the board, so it must not say "below" — it points UP at the
        row beneath the dotted line, which is the parking shelf. -->
-  <div class="slideSpareLabel">↑ the row under the dotted line is spare — park a block there to open up the board</div>
+  <div class="slideSpareLabel" id="slideSpareLabel">↑ only blocks touching an empty space can move — think a step ahead</div>
   <div class="slideFoot">
     <!-- Raja: "need sana hints along show play for how to use slide such how
          thump or finger to touch how where if one to shift to empty place".
@@ -3291,13 +3291,13 @@ body{ background:#C9A87C !important; }
     <div class="toggleSwitch">
       <button class="toggleBtn lvCard" id="slideTab" type="button" data-slide-level="fifteen" data-name="🔢 Slide 1–15" style="color:#10b981; border-color:#10b981; --c1:#a7f3d0; --c2:#34d399;">
         <span class="lvGlyph" aria-hidden="true">🔢</span>
-        <span class="lvText"><b class="lvName">Slide 1–15</b><span class="lvDiff">4×4 · the classic</span><span class="lvMeta">fifteen numbers, big blocks — put them back 1 to 15</span></span>
+        <span class="lvText"><b class="lvName">Slide 1–15</b><span class="lvDiff">4×4 · one empty space</span><span class="lvMeta">the classic fifteen puzzle — only one gap to work with</span></span>
       </button>
       <!-- The board Raja drew first, and the app he sent later ("Magic Slide
            Puzzle - Letters and Numbers"): six across, A-Z then 1-9 and 0. -->
       <button class="toggleBtn lvCard" id="slideAzTab" type="button" data-slide-level="az" data-name="🔤 Slide A–Z" style="color:#0ea5e9; border-color:#0ea5e9; --c1:#bae6fd; --c2:#38bdf8;">
         <span class="lvGlyph" aria-hidden="true">🔤</span>
-        <span class="lvText"><b class="lvName">Slide A–Z</b><span class="lvDiff">5×6 · the alphabet</span><span class="lvMeta">all 26 letters, bigger blocks — numbers have their own board</span></span>
+        <span class="lvText"><b class="lvName">Slide A–Z</b><span class="lvDiff">4×7 · two empty spaces</span><span class="lvMeta">all 26 letters — numbers have their own board</span></span>
       </button>
     </div>
   </div>
@@ -5955,7 +5955,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
          Like A-Z, the blocks no longer fill the grid: 15 in 16, so the last
          puzzle cell is a space — one more place to manoeuvre. */
       fifteen: {
-        cols: 4, rows: 4, title: '🔢 Slide 1–15',
+        cols: 4, rows: 4, title: '🔢 Slide 1–15',   // 16 places, 15 blocks -> ONE gap
         tiles: ['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15'], name: '1 to 15',
         goal: 'Finish with <b>1 2 3 4</b> on the top row, then <b>5</b> to <b>8</b>, <b>9</b> to <b>12</b>, and <b>13 14 15</b> — the classic sliding puzzle.'
       },
@@ -5969,7 +5969,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
          rectangle, so the last puzzle row is Z followed by four spaces —
          harmless, and extra room to manoeuvre. */
       az: {
-        cols: 5, rows: 6, title: '🔤 Slide A–Z', alpha: true,
+        cols: 4, rows: 7, title: '🔤 Slide A–Z', alpha: true,   // 28 places, 26 blocks -> TWO gaps
         tiles: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''), name: 'A to Z',
         goal: 'Finish with <b>A</b> to <b>Z</b> reading across — exactly like a box of alphabet blocks.'
       }
@@ -5981,7 +5981,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     function slideUseLevel(key){
       slideLv = SLIDE_LEVELS[key] || SLIDE_LEVELS.fifteen;
       SLIDE_COLS = slideLv.cols;
-      SLIDE_ROWS = slideLv.rows + 1;            // +1 = the parking row underneath
+      SLIDE_ROWS = slideLv.rows;               // rows is the whole grid now — no parking row
       SLIDE_N = SLIDE_COLS * SLIDE_ROWS;
       SLIDE_TILES = slideLv.tiles.length;
     }
@@ -6072,13 +6072,6 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       el.classList.toggle('slideAlpha', !!slideLv.alpha);
       var html = '';
       for (var k = 0; k < SLIDE_N; k++){
-        /* The dotted line marks where the PARKING ROW starts, which is after
-           every puzzle row — not after the last block. Those were the same
-           number while the blocks exactly filled the grid (9 in 3x3, 36 in
-           6x6); with 26 letters in a 5x6 area they are not, and keying it off
-           the block count would have drawn the line through the middle of the
-           last row. */
-        if (k === SLIDE_COLS * slideLv.rows) html += '<div class="slideRowGap" aria-hidden="true"></div>';
         var v = slideCells[k];
         if (v === null){
           var isTarget = targets.indexOf(k) > -1;
@@ -6363,8 +6356,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         if (title) title.innerHTML = boxedTitle(slideLv.title);
         var lb = document.getElementById('logicBox');
         if (lb) lb.innerHTML = '<h3>📐 ' + slideLv.title + '</h3>' +
-          '<p>' + SLIDE_TILES + ' blocks, ' + SLIDE_N + ' places. The spare row at the bottom is what lets anything ' +
-          'move at all — slide a block down into it, and the gap it leaves lets the next one move.</p>' +
+          '<p>' + SLIDE_TILES + ' blocks, ' + SLIDE_N + ' places — so only ' + (SLIDE_N - SLIDE_TILES) +
+          ' of them are empty. That gap is the whole puzzle: a block can only move into it, and moving one ' +
+          'leaves a new gap somewhere else.</p>' +
           '<p>' + slideLv.goal + ' The bottom shelf ends up empty again.</p>' +
           '<p>Every deal is built by shuffling a finished board with real moves, so <b>every game can always be solved</b>. ' +
           'A puzzle scattered at random would not be: half of those cannot be finished at all.</p>';
@@ -9160,8 +9154,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-142 (numbers board is now 1 to 15, the classic 4x4 -- 1 to 9 finished too fast)';
-  window.BETA_VER = 'beta-142';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-143 (one empty space on 1-15, two on A-Z -- the parking row made it too easy)';
+  window.BETA_VER = 'beta-143';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
