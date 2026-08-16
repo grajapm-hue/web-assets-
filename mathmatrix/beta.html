@@ -6928,10 +6928,60 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     function sudRender(){
       var el = document.getElementById('sudBoard'); if (!el) return;
       var L = sudLv, n = L.n;
-      // sized to the width available, the same way every other board here is
+
+      /* THE PAD AND LEGEND ARE BUILT FIRST, before the board is measured and
+         sized. They used to be built at the end, which meant the first render
+         measured an EMPTY pad, thought there was ~90px more room than there is,
+         let the width win, and produced a board that pushed the clock and the
+         counter under the tab bar. Nothing re-rendered afterwards to correct
+         it, so it stayed wrong for the whole game. Measure what is really
+         there. */
+      var used = {}, k;
+      for (k = 0; k < n * n; k++) if (sudCells[k]) used[sudCells[k]] = (used[sudCells[k]] || 0) + 1;
+      var pad = document.getElementById('sudPad');
+      if (pad){
+        /* A digit placed all n times is finished. sudoku.com swaps it for a
+           tick, which reads at a glance where a dimmed number does not, and it
+           answers the same question the shading answers: which numbers are
+           already placed. Losing the digit costs nothing, because a spent key
+           has no use — pressing it could only ever make an n+1th copy, which
+           always breaks a rule. It stays pressable rather than disabled, so it
+           simply flashes red like any other collision. */
+        var ph = '<div class="sudPadRow">';
+        for (var d = 1; d <= n; d++)
+          ph += '<button class="sudKey' + (used[d] === n ? ' spent' : '') + '" type="button" data-sudkey="' + d + '">' +
+                (used[d] === n ? '✓' : d) + '</button>';
+        ph += '</div><div class="sudPadRow"><button class="sudKey wide" type="button" data-sudkey="0">⌫ Erase</button></div>';
+        pad.innerHTML = ph;
+      }
+      var legend = document.getElementById('sudLegend');
+      if (legend) legend.innerHTML = L.diag
+        ? 'The two shaded diagonals must hold 1 to ' + n + ' as well'
+        : 'Each number once in every row and column';
+
+      /* Sized by WIDTH ALONE this pushed the clock and the counter below the tab
+         bar on a 360x740 phone — the exact fault beta-148 fixed on the slide
+         board, repeated here because the lesson was applied to that board and
+         not carried to the next one. A 9x9 is tall; the height has to have a
+         say. Squares stay square, so capping the square by the room left above
+         the tab bar caps the board. */
       var vw = document.documentElement.clientWidth || window.innerWidth || 360;
-      var cell = Math.floor((Math.min(vw - 24, 380)) / n);
-      cell = Math.max(26, Math.min(cell, 74));
+      var byW = Math.floor((Math.min(vw - 24, 380)) / n);
+      var bar = document.querySelector('.tabBar');
+      var floor = bar ? bar.getBoundingClientRect().top : window.innerHeight;
+      var below = 0;
+      ['sudLegend', 'sudPad'].forEach(function(id){
+        var e = document.getElementById(id); if (e) below += e.offsetHeight;
+      });
+      var foot = document.querySelector('.sudFoot');
+      if (foot) below += foot.offsetHeight;
+      below += 26;                                   // the margins between them
+      var room = floor - el.getBoundingClientRect().top - below;
+      var byH = Math.floor(room / n);
+      // room <= 0 means the panel is not laid out yet; fall back to the width
+      // fit rather than to a nonsense negative square
+      var cell = room > 0 ? Math.min(byW, byH) : byW;
+      cell = Math.max(22, Math.min(cell, 74));       // 22px is what 10x10 already ships
       el.style.gridTemplateColumns = 'repeat(' + n + ', ' + cell + 'px)';
       var peers = sudPick >= 0 ? sudPeers(sudPick) : {};
       var html = '';
@@ -6959,29 +7009,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       }
       el.innerHTML = html;
 
-      // the pad: 1..n, plus an eraser. A digit already used n times is spent.
-      var pad = document.getElementById('sudPad');
-      if (pad){
-        var used = {}, k;
-        for (k = 0; k < n * n; k++) if (sudCells[k]) used[sudCells[k]] = (used[sudCells[k]] || 0) + 1;
-        var ph = '<div class="sudPadRow">';
-        /* A digit placed all n times is finished. sudoku.com swaps it for a
-           tick, which reads at a glance where a dimmed number does not, and it
-           answers the same question the shading answers: which numbers are
-           already placed. Losing the digit costs nothing, because a spent key
-           has no use — pressing it could only ever make an n+1th copy, which
-           always breaks a rule. It stays pressable rather than disabled, so it
-           simply flashes red like any other collision. */
-        for (var d = 1; d <= n; d++)
-          ph += '<button class="sudKey' + (used[d] === n ? ' spent' : '') + '" type="button" data-sudkey="' + d + '">' +
-                (used[d] === n ? '✓' : d) + '</button>';
-        ph += '</div><div class="sudPadRow"><button class="sudKey wide" type="button" data-sudkey="0">⌫ Erase</button></div>';
-        pad.innerHTML = ph;
-      }
-      var legend = document.getElementById('sudLegend');
-      if (legend) legend.innerHTML = L.diag
-        ? 'The two shaded diagonals must hold 1 to ' + n + ' as well'
-        : 'Each number once in every row and column';
+      // the pad and the legend were built at the top, before the board was
+      // measured — see the note there for why the order matters
       var filledCount = 0, blanks = 0;
       for (k = 0; k < n * n; k++){ if (sudCells[k]) filledCount++; if (!sudGiven[k]) blanks++; }
       var mine = filledCount - (n * n - blanks);
@@ -9904,7 +9933,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-158 (the Sudoku clock gets a box, like the magic squares have)';
+  var BUILD_VER = 'beta-159 (the Sudoku board no longer pushes its own clock off short phones)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
