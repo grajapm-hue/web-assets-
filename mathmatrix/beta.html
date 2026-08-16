@@ -2046,6 +2046,67 @@ body.gateMode .targetPill,
 body.gateMode .solvedCounter{ display:none !important; }
 body.binaryMode #binaryPanel{ display:flex !important; }
 
+/* Sudoku hides the same grid furniture the other card games do — no magic
+   square to build, no target to preview, nothing to Watch. Same body-class
+   mechanism as binaryMode, gateMode and slideMode rather than a fourth way. */
+body.sudokuMode #barWatch,
+body.sudokuMode #boardWrap,
+body.sudokuMode #playRow,
+body.sudokuMode #keypad,
+body.sudokuMode #rotateHint,
+body.sudokuMode #learnRow,
+body.sudokuMode #learnHint,
+body.sudokuMode .keysChip,
+body.sudokuMode .targetPill,
+body.sudokuMode .solvedCounter{ display:none !important; }
+#sudokuPanel{ width:100%; max-width:560px; margin:0 auto; }
+.sudHead{ background:rgba(255,246,231,.72); border-radius:18px; padding:11px 13px;
+  margin:0 0 11px; font-size:14.5px; font-weight:800; color:#33220F; line-height:1.4; }
+.sudBoardWrap{ display:flex; justify-content:center; }
+/* One grid, not nine boxes of nine: the thick box lines are BORDERS on the
+   cells that sit at a box edge, so nothing has to be nested and the whole thing
+   stays one flat grid the renderer can index by cell number. */
+.sudBoard{ display:grid; background:#8A6A3C; border:3px solid #8A6A3C;
+  border-radius:10px; overflow:hidden; }
+.sudCell{ display:grid; place-items:center; background:#FFF6E7; border:1px solid #D8C39C;
+  font-family:inherit; font-weight:900; color:#3A2A14; padding:0; box-sizing:border-box;
+  cursor:pointer; -webkit-tap-highlight-color:transparent; }
+/* The two diagonals are tinted on the 9x9 levels, because a rule you cannot see
+   is a rule a child will not use. */
+.sudCell.diag{ background:#F7D9A0; }
+/* A given is the puzzle, not your answer: darker, and it never takes input. */
+.sudCell.given{ color:#5A3D18; background:#F0E2C8; cursor:default; }
+.sudCell.given.diag{ background:#E8CD9B; }
+.sudCell.mine{ color:#1D4ED8; }
+/* Raja's colour language, carried over from Slide Magic: red is what is still
+   wrong, green is what is finished. Nothing here ever ends the game. */
+.sudCell.bad{ color:#C0453C; background:#FDE2E0; }
+.sudCell.bad.diag{ background:#F8D2C6; }
+.sudCell.pick{ outline:4px solid #f59e0b; outline-offset:-4px; z-index:2; }
+.sudCell.peer{ background:#FBF0DA; }
+.sudCell.peer.diag{ background:#F2D6A2; }
+.sudBoard .bt{ border-top:3px solid #8A6A3C; }
+.sudBoard .bl{ border-left:3px solid #8A6A3C; }
+.sudLegend{ text-align:center; font-size:11.5px; font-weight:800; color:#6B4E2A;
+  margin:8px 0 2px; line-height:1.4; }
+/* The digits belong on ONE line. Left to wrap, 1-8 sat on the first row and 9
+   was stranded next to Erase on a second, which reads as though 9 were some
+   other kind of key. Nine keys plus their gaps have to fit 366px on the
+   narrowest phone, so they are narrow and the eraser gets its own row. */
+.sudPad{ display:flex; flex-direction:column; align-items:center; gap:6px; margin:9px 0 4px; }
+.sudPadRow{ display:flex; justify-content:center; gap:4px; }
+.sudKey{ min-width:34px; height:44px; padding:0 6px; border-radius:12px; border:0;
+  background:linear-gradient(152deg,#FFE9BF,#F3C97E); box-shadow:0 3px 0 rgba(94,64,32,.35);
+  font-family:inherit; font-size:20px; font-weight:900; color:#3A2A14; cursor:pointer;
+  touch-action:manipulation; }
+.sudKey:active{ transform:translateY(2px); box-shadow:0 1px 0 rgba(94,64,32,.35); }
+.sudKey.wide{ font-size:15px; }
+/* A number that is already used up everywhere is not a mistake to discover the
+   hard way — it is simply spent, so it stops offering itself. */
+.sudKey.spent{ opacity:.4; }
+.sudFoot{ display:flex; align-items:center; justify-content:center; gap:9px;
+  flex-wrap:wrap; margin-top:6px; }
+
 /* Slide Magic hides the same grid furniture the other card games do — there
    is no magic square to build, no target to preview, nothing to Watch. Same
    body-class mechanism as binaryMode and gateMode rather than a third way. */
@@ -3058,6 +3119,25 @@ body{ background:#C9A87C !important; }
   </div>
 </div>
 
+<!-- 🧩 SUDOKU — its own panel, like Gate Logic and Slide Magic, because it is
+     not a magic square: the grid-puzzle click handler assumes PUZZLES[size] and
+     calls initBoard(), and this has neither a target nor lines that add up.
+     Its own number pad too, rather than the shared #keypad: that one is wired
+     to the magic-square cursor and carries a long history of iOS focus fixes,
+     and a puzzle that only ever needs 1-9 and an eraser does not justify
+     reaching into it. -->
+<div id="sudokuPanel" style="display:none;">
+  <div class="sudHead" id="sudHead">Fill every row and column with each number once.</div>
+  <div class="sudBoardWrap"><div class="sudBoard" id="sudBoard"></div></div>
+  <div class="sudLegend" id="sudLegend"></div>
+  <div class="sudPad" id="sudPad"></div>
+  <div class="sudFoot">
+    <button class="slideBtn" id="sudNew" type="button">🔀 New puzzle</button>
+    <button class="slideBtn" id="sudCheck" type="button">👀 Check my work</button>
+    <span class="slideMoves" id="sudFilled">0 of 0 filled</span>
+  </div>
+</div>
+
 <div id="rotateHint">📱 Turn your phone sideways for a much bigger board (scroll down to see it all)</div>
 
 <!-- Built-in puzzle keypad: numbers + navigation, so the OS keyboard never covers the board -->
@@ -3376,15 +3456,38 @@ body{ background:#C9A87C !important; }
     </div>
   </div>
 
+  <!-- 🧩 SUDOKU — Raja: "be prepare to sudoku, take reference at
+       sudoku.com/extreme". His ladder, in his words: "easy 3x3 for just enters
+       into sudoku, and make medium for 9x9 with more filled, and continue as
+       hard master by reduce the fills."
+       The 3x3 carries NO boxes and NO diagonals, and that is forced, not a
+       shortcut: a 3x3 has no room to be divided into boxes, and no 3x3 can
+       satisfy both diagonals at once — all twelve possible 3x3 squares were
+       enumerated and every one fails. Raja: "3x3 without diagonal is ok, it's
+       just entry level for beginner."
+       The 9x9 levels DO carry both diagonals — he chose the X-Sudoku variant,
+       which also echoes his magic squares, where diagonals always mattered. -->
   <div class="modeGroup">
-    <div class="modeHead" style="--m1:#cbd5e1; --m2:#94a3b8;">
-      <span class="mIco">🔜</span>
-      <span><b>Coming Soon</b><i>being built next — not ready to play yet</i></span>
+    <div class="modeHead" style="--m1:#fca5a5; --m2:#ef4444;">
+      <span class="mIco">🧩</span>
+      <span><b>Sudoku</b><i>every row, column and box holds each number once — work out the rest</i></span>
     </div>
     <div class="toggleSwitch">
-      <button class="toggleBtn lvCard lvSoon" type="button" tabindex="-1" aria-disabled="true">
-        <span class="lvGlyph" aria-hidden="true">🔢</span>
-        <span class="lvText"><b class="lvName">Sudoku</b><span class="lvDiff">Coming soon</span><span class="lvMeta">some numbers given, you work out the rest</span></span>
+      <button class="toggleBtn lvCard" id="sudMiniTab" type="button" data-sud-level="mini" data-name="🧩 Sudoku 3×3" style="color:#f87171; border-color:#ef4444; --c1:#fecaca; --c2:#f87171;">
+        <span class="lvGlyph" aria-hidden="true">🧩</span>
+        <span class="lvText"><b class="lvName">Sudoku 3×3</b><span class="lvDiff">Easy · 1–3 · rows &amp; columns</span><span class="lvMeta">the beginner's way in — no boxes, no diagonals</span></span>
+      </button>
+      <button class="toggleBtn lvCard" id="sudMediumTab" type="button" data-sud-level="medium" data-name="🧩 Sudoku 9×9" style="color:#fb923c; border-color:#f97316; --c1:#fed7aa; --c2:#fb923c;">
+        <span class="lvGlyph" aria-hidden="true">🧩</span>
+        <span class="lvText"><b class="lvName">Sudoku 9×9</b><span class="lvDiff">Medium · most filled in</span><span class="lvMeta">boxes and both diagonals count too</span></span>
+      </button>
+      <button class="toggleBtn lvCard" id="sudHardTab" type="button" data-sud-level="hard" data-name="🧩 Sudoku 9×9 Hard" style="color:#a78bfa; border-color:#8b5cf6; --c1:#ddd6fe; --c2:#a78bfa;">
+        <span class="lvGlyph" aria-hidden="true">🧩</span>
+        <span class="lvText"><b class="lvName">Sudoku 9×9</b><span class="lvDiff">Hard · fewer given</span><span class="lvMeta">same rules, more of it left to you</span></span>
+      </button>
+      <button class="toggleBtn lvCard" id="sudMasterTab" type="button" data-sud-level="master" data-name="🧩 Sudoku 9×9 Master" style="color:#f472b6; border-color:#ec4899; --c1:#fbcfe8; --c2:#f472b6;">
+        <span class="lvGlyph" aria-hidden="true">🧩</span>
+        <span class="lvText"><b class="lvName">Sudoku 9×9</b><span class="lvDiff">Master · fewest given</span><span class="lvMeta">the long one — take your time</span></span>
       </button>
     </div>
   </div>
@@ -3992,6 +4095,11 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     var gp = document.getElementById('gatePanel');
     if (gp) gp.style.display = on ? 'block' : 'none';
   }
+  function showSudokuMode(on){
+    document.body.classList.toggle('sudokuMode', !!on);
+    var sp = document.getElementById('sudokuPanel');
+    if (sp) sp.style.display = on ? 'block' : 'none';
+  }
   function showSlideMode(on){
     document.body.classList.toggle('slideMode', !!on);
     var sp = document.getElementById('slidePanel');
@@ -4027,6 +4135,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       if (newSize === 'binary' || newSize === 'binary2'){   // card games, not grid puzzles
         if (currentSize === 'gatelogic') showGateMode(false);
         if (currentSize === 'slide') showSlideMode(false);
+      if (currentSize === 'sudoku') showSudokuMode(false);
         currentSize = newSize;
         showBinaryMode(true);
         highlightNowPlaying();
@@ -4034,7 +4143,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       }
       if (currentSize === 'binary' || currentSize === 'binary2') showBinaryMode(false);   // back to the grids
       if (currentSize === 'gatelogic') showGateMode(false);                               // back to the grids
-      if (currentSize === 'slide') showSlideMode(false);                                  // back to the grids
+      if (currentSize === 'slide') showSlideMode(false);
+      if (currentSize === 'sudoku') showSudokuMode(false);                                  // back to the grids
       if (newSize !== currentSize) {
         currentSize = newSize;
         initBoard();
@@ -6585,6 +6695,298 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       });
     });
 
+    /* ══ SUDOKU ═══════════════════════════════════════════════════════════
+       Raja's ladder, in his words: "easy 3x3 for just enters into sudoku, and
+       make medium for 9x9 with more filled, and continue as hard master by
+       reduce the fills" — so difficulty here is honestly just how many numbers
+       you start with, which is how Sudoku difficulty actually works.
+
+       The 3x3 has NO boxes and NO diagonals. Both are forced: a 3x3 cannot be
+       divided into boxes at all, and no 3x3 square can satisfy both diagonals —
+       all twelve possible ones were enumerated and every single one fails
+       (diagonal Latin squares exist at every size except 2 and 3). Raja, told
+       this: "3x3 without diagonal is ok, it's just entry level for beginner."
+       The 9x9 levels DO count both diagonals, which he chose deliberately.
+
+       NOTHING here can be lost. Raja: "our motivation is not test the players
+       ability, to try play and get interested to maths, along improve their
+       maths skill and keep and retain memory power." So there is no mistake
+       limit and no game over — a wrong number simply shows red until it is
+       fixed, the same language the slide rows already speak. */
+    var SUD_LEVELS = {
+      mini:   { n: 3, bh: 0, bw: 0, diag: false, clues: 4,
+                title: '🧩 Sudoku Easy', name: '3×3',
+                goal: 'Every <b>row</b> and every <b>column</b> holds <b>1, 2 and 3</b> — each one once.' },
+      medium: { n: 9, bh: 3, bw: 3, diag: true, clues: 45,
+                title: '🧩 Sudoku Medium', name: '9×9 Medium',
+                goal: 'Every <b>row</b>, <b>column</b>, <b>3×3 box</b> and <b>both shaded diagonals</b> hold <b>1 to 9</b> — each one once.' },
+      hard:   { n: 9, bh: 3, bw: 3, diag: true, clues: 34,
+                title: '🧩 Sudoku Hard', name: '9×9 Hard',
+                goal: 'Same rules as Medium — every row, column, 3×3 box and both shaded diagonals hold 1 to 9 once. Fewer numbers are given.' },
+      master: { n: 9, bh: 3, bw: 3, diag: true, clues: 28,
+                title: '🧩 Sudoku Master', name: '9×9 Master',
+                goal: 'Same rules again, with the fewest numbers given. Take your time — there is no clock to beat and nothing to lose.' }
+    };
+    var sudLv = SUD_LEVELS.mini, sudGiven = [], sudCells = [], sudSolution = [], sudPick = -1, sudDone = false;
+
+    function sudOk(g, r, c, v, L){
+      var n = L.n, i, j;
+      for (i = 0; i < n; i++){
+        if (i !== c && g[r * n + i] === v) return false;
+        if (i !== r && g[i * n + c] === v) return false;
+      }
+      if (L.bh){
+        var br = Math.floor(r / L.bh) * L.bh, bc = Math.floor(c / L.bw) * L.bw;
+        for (i = 0; i < L.bh; i++) for (j = 0; j < L.bw; j++){
+          var k = (br + i) * n + bc + j;
+          if (k !== r * n + c && g[k] === v) return false;
+        }
+      }
+      if (L.diag){
+        if (r === c) for (i = 0; i < n; i++) if (i !== r && g[i * n + i] === v) return false;
+        if (r + c === n - 1) for (i = 0; i < n; i++) if (i !== r && g[i * n + (n - 1 - i)] === v) return false;
+      }
+      return true;
+    }
+    /* Stops as soon as it has seen `cap` answers. We never need the true count,
+       only "is it exactly one?", and stopping at two turns a search that could
+       run for minutes into one that runs in milliseconds. */
+    function sudCount(grid, L, cap){
+      var n = L.n, g = grid.slice(), found = 0;
+      function go(){
+        if (found >= cap) return;
+        var idx = -1, i;
+        for (i = 0; i < n * n; i++) if (!g[i]){ idx = i; break; }
+        if (idx < 0){ found++; return; }
+        var r = Math.floor(idx / n), c = idx % n;
+        for (var v = 1; v <= n; v++){
+          if (!g[idx] && sudOk(g, r, c, v, L)){
+            g[idx] = v; go(); g[idx] = 0;
+            if (found >= cap) return;
+          }
+        }
+      }
+      go();
+      return found;
+    }
+    function sudShuffle(a){
+      for (var i = a.length - 1; i > 0; i--){ var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; }
+      return a;
+    }
+    function sudFull(L){
+      var n = L.n, g = new Array(n * n).fill(0), digits = [];
+      for (var d = 1; d <= n; d++) digits.push(d);
+      function go(idx){
+        if (idx === n * n) return true;
+        var r = Math.floor(idx / n), c = idx % n, order = sudShuffle(digits.slice());
+        for (var i = 0; i < order.length; i++){
+          if (sudOk(g, r, c, order[i], L)){
+            g[idx] = order[i];
+            if (go(idx + 1)) return true;
+            g[idx] = 0;
+          }
+        }
+        return false;
+      }
+      return go(0) ? g : null;
+    }
+    /* Dig clues out one at a time, keeping a removal ONLY while exactly one
+       answer remains. That check is what makes the puzzle honest: a board with
+       two answers would mark a child wrong for a filling that is genuinely
+       correct. The clue count is therefore a target, not a promise — the dig
+       stops early rather than ever leaving an ambiguous board. */
+    function sudMake(L){
+      var sol = sudFull(L);
+      if (!sol) return null;
+      var n = L.n, puz = sol.slice(), order = sudShuffle(Array.from({ length: n * n }, function(_, i){ return i; })), filled = n * n;
+      for (var i = 0; i < order.length && filled > L.clues; i++){
+        var idx = order[i], keep = puz[idx];
+        puz[idx] = 0;
+        if (sudCount(puz, L, 2) !== 1) puz[idx] = keep; else filled--;
+      }
+      return { puzzle: puz, solution: sol };
+    }
+
+    function sudUseLevel(key){
+      sudLv = SUD_LEVELS[key] || SUD_LEVELS.mini;
+      sudNewPuzzle();
+    }
+    function sudNewPuzzle(){
+      var made = sudMake(sudLv);
+      if (!made) return;
+      sudGiven = made.puzzle.slice();
+      sudCells = made.puzzle.slice();
+      sudSolution = made.solution.slice();
+      sudPick = -1; sudDone = false;
+      var head = document.getElementById('sudHead');
+      if (head) head.innerHTML = sudLv.goal;
+      sudRender();
+      try {
+        sana('Tap a square, then tap a number. A wrong one turns <b>red</b> — nothing is ever lost, just fix it.', 'think', true);
+      } catch(e){}
+    }
+    // which cells share a row, column, box or diagonal with the picked one —
+    // shading them is the "eye shifting logic" Raja described as the whole skill
+    function sudPeers(idx){
+      var L = sudLv, n = L.n, r = Math.floor(idx / n), c = idx % n, out = {};
+      for (var i = 0; i < n; i++){ out[r * n + i] = 1; out[i * n + c] = 1; }
+      if (L.bh){
+        var br = Math.floor(r / L.bh) * L.bh, bc = Math.floor(c / L.bw) * L.bw;
+        for (var a = 0; a < L.bh; a++) for (var b = 0; b < L.bw; b++) out[(br + a) * n + bc + b] = 1;
+      }
+      if (L.diag){
+        if (r === c) for (i = 0; i < n; i++) out[i * n + i] = 1;
+        if (r + c === n - 1) for (i = 0; i < n; i++) out[i * n + (n - 1 - i)] = 1;
+      }
+      return out;
+    }
+    function sudRender(){
+      var el = document.getElementById('sudBoard'); if (!el) return;
+      var L = sudLv, n = L.n;
+      // sized to the width available, the same way every other board here is
+      var vw = document.documentElement.clientWidth || window.innerWidth || 360;
+      var cell = Math.floor((Math.min(vw - 24, 380)) / n);
+      cell = Math.max(26, Math.min(cell, 74));
+      el.style.gridTemplateColumns = 'repeat(' + n + ', ' + cell + 'px)';
+      var peers = sudPick >= 0 ? sudPeers(sudPick) : {};
+      var html = '';
+      for (var i = 0; i < n * n; i++){
+        var r = Math.floor(i / n), c = i % n, v = sudCells[i];
+        var isDiag = L.diag && (r === c || r + c === n - 1);
+        var given = !!sudGiven[i];
+        var bad = false;
+        if (v && !given) bad = !sudOk(sudCells, r, c, v, L);
+        var cls = 'sudCell';
+        if (isDiag) cls += ' diag';
+        if (given) cls += ' given';
+        else if (v) cls += bad ? ' bad' : ' mine';
+        if (!given && peers[i] && i !== sudPick) cls += ' peer';
+        if (i === sudPick) cls += ' pick';
+        if (L.bh && r % L.bh === 0 && r > 0) cls += ' bt';
+        if (L.bw && c % L.bw === 0 && c > 0) cls += ' bl';
+        html += '<button class="' + cls + '" type="button" data-sud="' + i + '"' +
+                ' style="height:' + cell + 'px; font-size:' + Math.round(cell * 0.52) + 'px">' +
+                (v ? v : '') + '</button>';
+      }
+      el.innerHTML = html;
+
+      // the pad: 1..n, plus an eraser. A digit already used n times is spent.
+      var pad = document.getElementById('sudPad');
+      if (pad){
+        var used = {}, k;
+        for (k = 0; k < n * n; k++) if (sudCells[k]) used[sudCells[k]] = (used[sudCells[k]] || 0) + 1;
+        var ph = '<div class="sudPadRow">';
+        for (var d = 1; d <= n; d++)
+          ph += '<button class="sudKey' + (used[d] === n ? ' spent' : '') + '" type="button" data-sudkey="' + d + '">' + d + '</button>';
+        ph += '</div><div class="sudPadRow"><button class="sudKey wide" type="button" data-sudkey="0">⌫ Erase</button></div>';
+        pad.innerHTML = ph;
+      }
+      var legend = document.getElementById('sudLegend');
+      if (legend) legend.innerHTML = L.diag
+        ? 'The two shaded diagonals must hold 1 to ' + n + ' as well'
+        : 'Each number once in every row and column';
+      var filledCount = 0, blanks = 0;
+      for (k = 0; k < n * n; k++){ if (sudCells[k]) filledCount++; if (!sudGiven[k]) blanks++; }
+      var mine = filledCount - (n * n - blanks);
+      var fEl = document.getElementById('sudFilled');
+      if (fEl) fEl.textContent = mine + ' of ' + blanks + ' filled in';
+
+      if (!sudDone && sudSolved()){
+        sudDone = true;
+        if (head2()) head2().innerHTML = '🎉 <b>Solved!</b> ' + sudLv.name + ' — every row, column' +
+          (L.bh ? ', box' : '') + (L.diag ? ' and diagonal' : '') + ' is right.';
+        try { celebrate(); } catch(e){}
+        try { sfx('unlock'); } catch(e){}
+        try { sana('<b>' + sudLv.name + ' solved!</b> Every number in its place.', 'party', true); } catch(e){}
+      }
+    }
+    function head2(){ return document.getElementById('sudHead'); }
+    function sudSolved(){
+      var n = sudLv.n;
+      for (var i = 0; i < n * n; i++){
+        if (!sudCells[i]) return false;
+        var r = Math.floor(i / n), c = i % n;
+        if (!sudOk(sudCells, r, c, sudCells[i], sudLv)) return false;
+      }
+      return true;
+    }
+    document.addEventListener('click', function(e){
+      var cell = e.target.closest('#sudBoard [data-sud]');
+      if (cell){
+        var i = parseInt(cell.dataset.sud, 10);
+        if (sudGiven[i]) { sudPick = i; sudRender(); return; }   // a given still shows its peers
+        sudPick = (sudPick === i ? -1 : i);
+        sudRender();
+        return;
+      }
+      var key = e.target.closest('#sudPad [data-sudkey]');
+      if (key){
+        if (sudPick < 0 || sudGiven[sudPick]) { try { sfx('no'); } catch(err){} return; }
+        var v = parseInt(key.dataset.sudkey, 10);
+        sudCells[sudPick] = v || 0;
+        try { sfx(v ? 'yes' : 'card'); } catch(err){}
+        sudRender();
+        return;
+      }
+      var nb = e.target.closest('#sudNew');
+      if (nb){ try { sfx('card'); } catch(err){} sudNewPuzzle(); return; }
+      var cb = e.target.closest('#sudCheck');
+      if (cb){
+        try { sfx('card'); } catch(err){}
+        var n = sudLv.n, wrong = 0, blank = 0;
+        for (var i = 0; i < n * n; i++){
+          if (!sudCells[i]) { blank++; continue; }
+          if (sudCells[i] !== sudSolution[i]) wrong++;
+        }
+        /* Compared against the stored answer, not just against the rules: a
+           number can break no rule yet still be wrong, because it makes the
+           puzzle unfinishable further down. Saying "nothing is wrong yet" in
+           that case would be a lie a child only discovers much later. */
+        try {
+          sana(wrong ? '<b>' + wrong + '</b> ' + (wrong === 1 ? 'number is' : 'numbers are') +
+                 ' in the wrong place. Nothing is lost — change them when you spot them.'
+               : (blank ? 'Everything you have put in so far is <b>right</b>. Keep going!'
+                        : '<b>All correct!</b>'), wrong ? 'oops' : 'cheer', true);
+        } catch(err){}
+        return;
+      }
+    });
+    document.querySelectorAll('.toggleBtn[data-sud-level]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        if (_congratsAutoTimer){ clearInterval(_congratsAutoTimer); _congratsAutoTimer = null; }
+        var cm = document.getElementById('congratsModal');
+        if (cm && cm.style.display === 'flex') cm.style.display = 'none';
+        sfx('card');
+        document.querySelectorAll('.toggleBtn').forEach(function(b){ b.classList.remove('active'); });
+        btn.classList.add('active');
+        applyAccent();
+        if (currentSize === 'binary' || currentSize === 'binary2') showBinaryMode(false);
+        if (currentSize === 'gatelogic') showGateMode(false);
+        showSlideMode(false);
+        showSudokuMode(false);
+        currentSize = 'sudoku';
+        goScreen('scPlay');
+        showSudokuMode(true);
+        sudUseLevel(btn.dataset.sudLevel);
+        var title = document.getElementById('appBarTitle');
+        if (title) title.innerHTML = boxedTitle(sudLv.title);
+        var lb = document.getElementById('logicBox');
+        if (lb) lb.innerHTML = '<h3>📐 ' + sudLv.title + '</h3>' +
+          '<p>' + sudLv.goal + '</p>' +
+          '<p>The trick is the one Raja described: <b>look along the row, down the column' +
+          (sudLv.bh ? ', and around the box' : '') + '</b> to see which numbers are already spoken for. ' +
+          'Whatever is left is what can go in. Tap a square and the squares it can see are shaded for you.</p>' +
+          '<p>Every puzzle is dug out of a finished grid one number at a time, and a number is only ' +
+          'taken away while <b>exactly one answer</b> still remains — so every puzzle has one answer, ' +
+          'and it can always be reasoned out rather than guessed.</p>' +
+          '<p>Nothing here can be lost. A wrong number turns <b>red</b> and waits for you.</p>';
+      });
+    });
+    window.addEventListener('resize', function(){
+      var p = document.getElementById('sudokuPanel');
+      if (p && p.style.display !== 'none') sudRender();
+    });
+
     var gateListBtn = document.getElementById('gateListBtn');
     if (gateListBtn){
       gateListBtn.addEventListener('click', function(){
@@ -6597,6 +6999,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         applyAccent();
         if (currentSize === 'binary' || currentSize === 'binary2') showBinaryMode(false);
         if (currentSize === 'slide') showSlideMode(false);
+      if (currentSize === 'sudoku') showSudokuMode(false);
         currentSize = 'gatelogic';
         goScreen('scPlay');
         showGateMode(true);
@@ -9367,7 +9770,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-154 (the silent self-update works again, it was reading a version that stopped being a literal)';
+  var BUILD_VER = 'beta-155 (Sudoku, four levels, every puzzle proved to have one answer)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
