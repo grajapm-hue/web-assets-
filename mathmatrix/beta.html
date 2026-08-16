@@ -2089,6 +2089,16 @@ body.sudokuMode .solvedCounter{ display:none !important; }
 .sudCell.given{ color:#5A3D18; background:#F0E2C8; cursor:default; }
 .sudCell.given.diag{ background:#E8CD9B; }
 .sudCell.mine{ color:#1D4ED8; }
+/* Raja: "if any sub box 3x3 we'll finished, turn all number in 9 cells to green
+   to build eye show confidence to do further more eagerly."
+   The same reward the slide rows already give, and for the same reason — a
+   finished piece of the board should be visible without hunting for it. Colour
+   only, no background: these squares already sit on four different fills
+   (plain, given, diagonal, given-on-diagonal) and a fifth would fight them all.
+   Beaten by .bad below, which is deliberate: a completed unit cannot contain a
+   clash, so the two can never both be right about the same square. */
+.sudCell.done{ color:#1F7A45; }
+.sudCell.done.given{ color:#186B3B; }
 /* Raja's colour language, carried over from Slide Magic: red is what is still
    wrong, green is what is finished. Nothing here ever ends the game. */
 .sudCell.bad{ color:#C0453C; background:#FDE2E0; }
@@ -6913,6 +6923,12 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       sudCells = made.puzzle.slice();
       sudSolution = made.solution.slice();
       sudPick = -1; sudDone = false;
+      /* A fresh puzzle can already hold a complete box among its givens, and
+         that is not something the player just achieved. The next render adopts
+         whatever the new board starts with instead of comparing against the old
+         one — setting the count to -1 here would have made every new puzzle
+         chime immediately, which is the opposite of marking an achievement. */
+      sudFresh = true;
       var head = document.getElementById('sudHead');
       if (head) head.innerHTML = sudLv.goal;
       sudRender();
@@ -6936,6 +6952,43 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       }
       return out;
     }
+    /* Which squares belong to a FINISHED unit — every square filled, every digit
+       present once. On the 9x9 that unit is the 3x3 box, which is what Raja
+       asked for. The 3x3 level has no boxes at all, so there the unit is the
+       row: the beginner is exactly who needs the encouragement most, and a
+       level that never turns green would be the one level that never rewards
+       anything. */
+    function sudDoneCells(){
+      var L = sudLv, n = L.n, out = {}, i, j, k;
+      function unitComplete(idx){
+        var seen = {};
+        for (k = 0; k < idx.length; k++){
+          var v = sudCells[idx[k]];
+          if (!v || seen[v]) return false;
+          seen[v] = 1;
+        }
+        return idx.length === n;
+      }
+      var units = [];
+      if (L.bh){
+        for (var br = 0; br < n; br += L.bh) for (var bc = 0; bc < n; bc += L.bw){
+          var box = [];
+          for (i = 0; i < L.bh; i++) for (j = 0; j < L.bw; j++) box.push((br + i) * n + bc + j);
+          units.push(box);
+        }
+      } else {
+        for (var r = 0; r < n; r++){
+          var row = [];
+          for (var c = 0; c < n; c++) row.push(r * n + c);
+          units.push(row);
+        }
+      }
+      for (i = 0; i < units.length; i++)
+        if (unitComplete(units[i])) for (k = 0; k < units[i].length; k++) out[units[i][k]] = 1;
+      return { cells: out, count: units.filter(unitComplete).length, total: units.length };
+    }
+    var sudDoneSeen = 0, sudFresh = true;
+
     function sudRender(){
       var el = document.getElementById('sudBoard'); if (!el) return;
       var L = sudLv, n = L.n;
@@ -6995,6 +7048,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       cell = Math.max(22, Math.min(cell, 74));       // 22px is what 10x10 already ships
       el.style.gridTemplateColumns = 'repeat(' + n + ', ' + cell + 'px)';
       var peers = sudPick >= 0 ? sudPeers(sudPick) : {};
+      var done = sudDoneCells();
       var html = '';
       for (var i = 0; i < n * n; i++){
         var r = Math.floor(i / n), c = i % n, v = sudCells[i];
@@ -7006,6 +7060,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         if (isDiag) cls += ' diag';
         if (given) cls += ' given';
         else if (v) cls += bad ? ' bad' : ' mine';
+        // a finished box (or row, on the 3x3) goes green — givens included, so
+        // the whole block reads as one completed piece rather than a patchwork
+        if (done.cells[i] && !bad) cls += ' done';
         // every cell this one can see, GIVENS INCLUDED — they are the ones
         // holding the numbers already spoken for, which is the whole point
         if (peers[i] && i !== sudPick) cls += ' peer';
@@ -7022,6 +7079,22 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
       // the pad and the legend were built at the top, before the board was
       // measured — see the note there for why the order matters
+      /* Finishing one should be FELT, not only seen — that is the "confidence to
+         do further more eagerly" Raja is after. Fired only when the number of
+         finished units GOES UP, so it marks the moment rather than chiming on
+         every keystroke, and it stays quiet while a puzzle is being set up. */
+      if (sudFresh){ sudDoneSeen = done.count; sudFresh = false; }
+      else if (done.count > sudDoneSeen && !sudDone){
+        try { sfx('line'); } catch(err){}
+        try {
+          sana(done.count === done.total
+            ? 'Every ' + (L.bh ? 'box' : 'row') + ' is finished!'
+            : '<b>' + (L.bh ? 'That box is complete' : 'That row is complete') + '</b> — ' +
+              done.count + ' of ' + done.total + ' done. Keep going!', 'cheer', true);
+        } catch(err){}
+      }
+      sudDoneSeen = done.count;
+
       var filledCount = 0, blanks = 0;
       for (k = 0; k < n * n; k++){ if (sudCells[k]) filledCount++; if (!sudGiven[k]) blanks++; }
       var mine = filledCount - (n * n - blanks);
@@ -9944,7 +10017,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-160 (the tab bar gets its safe-area allowance back, for iPhone)';
+  var BUILD_VER = 'beta-161 (a finished box turns green)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that

@@ -367,6 +367,68 @@ function countAnswers(grid, L, cap){
   ok('the counter reads all 36 filled', /36 of 36/.test(B.counter), B.counter);
   await shot('sudoku-win-9x9.png');
 
+  /* Raja: "if any sub box 3x3 we'll finished, turn all number in 9 cells to
+     green to build eye show confidence." Complete one box deliberately — the
+     answer is worked out here, not read from the app — and check all nine go
+     green, that the rest of the board does NOT, and that breaking it takes the
+     green away again. A reward that never leaves would stop meaning anything. */
+  await ev(`document.getElementById('tab-scHome').click()`); await sleep(250);
+  await ev(`document.querySelector('.toggleBtn[data-sud-level="medium"]').click()`); await sleep(1500);
+  const boardB = await ev(`Array.from(document.querySelectorAll('#sudBoard [data-sud]')).map(function(c){
+    return c.textContent.trim() ? parseInt(c.textContent, 10) : 0; })`);
+  const ansB = (function solveIt(grid, L){
+    const n = L.n, g = grid.slice();
+    (function go(){
+      let idx = -1;
+      for (let i = 0; i < n * n; i++) if (!g[i]){ idx = i; break; }
+      if (idx < 0) return true;
+      const r = Math.floor(idx / n), c = idx % n;
+      for (let v = 1; v <= n; v++) if (okAt(g, r, c, v, L)){ g[idx] = v; if (go()) return true; g[idx] = 0; }
+      return false;
+    })();
+    return g;
+  })(boardB, LEVELS.medium);
+  // fill only the top-left box
+  const boxIdx = [];
+  for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) boxIdx.push(r * 9 + c);
+  const boxRes = await ev(`(function(){
+    var answer = ${JSON.stringify(ansB)}, box = ${JSON.stringify(boxIdx)};
+    for (var b = 0; b < box.length; b++){
+      var i = box[b];
+      var cells = document.querySelectorAll('#sudBoard [data-sud]');
+      if (cells[i].classList.contains('given')) continue;
+      cells[i].click();
+      var k = document.querySelector('#sudPad [data-sudkey="' + answer[i] + '"]');
+      if (k) k.click();
+    }
+    var after = Array.from(document.querySelectorAll('#sudBoard [data-sud]'));
+    var greenInBox = box.filter(function(i){ return after[i].classList.contains('done'); }).length;
+    var greenOutside = after.filter(function(c, i){
+      return box.indexOf(i) < 0 && c.classList.contains('done'); }).length;
+    return JSON.stringify({ greenInBox: greenInBox, greenOutside: greenOutside }); })()`);
+  const BX = JSON.parse(boxRes);
+  ok('finishing a 3×3 box turns all nine of its numbers green',
+    BX.greenInBox === 9, BX.greenInBox + ' of 9 green');
+  ok('and only that box — the unfinished ones stay as they were',
+    BX.greenOutside === 0, BX.greenOutside + ' green squares outside it');
+  await shot('sudoku-box-done.png');
+
+  // breaking it must take the green back
+  const broke = await ev(`(function(){
+    var box = ${JSON.stringify(boxIdx)};
+    var cells = Array.from(document.querySelectorAll('#sudBoard [data-sud]'));
+    var mine = box.filter(function(i){ return !cells[i].classList.contains('given'); });
+    if (!mine.length) return JSON.stringify({ error: 'the box was entirely given' });
+    document.querySelectorAll('#sudBoard [data-sud]')[mine[0]].click();
+    document.querySelector('#sudPad [data-sudkey="0"]').click();
+    var after = Array.from(document.querySelectorAll('#sudBoard [data-sud]'));
+    return JSON.stringify({ stillGreen: box.filter(function(i){
+      return after[i].classList.contains('done'); }).length }); })()`);
+  const BR = JSON.parse(broke);
+  ok('erasing one number takes the green back off the whole box',
+    BR.error ? false : BR.stillGreen === 0,
+    BR.error || BR.stillGreen + ' still green');
+
   ok('no JS errors', errs.length === 0, errs.join(' | '));
   ws.close(); ch.kill();
   console.log('\n' + (fail === 0 ? 'ALL GREEN' : fail + ' FAILURES'));
