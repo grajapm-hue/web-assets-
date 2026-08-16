@@ -168,6 +168,86 @@ function countAnswers(grid, L, cap){
     !/mistake|lost this game|game over/i.test(visible || ''),
     (visible || '').match(/mistake|lost this game|game over/i) || 'clean');
 
+  /* Raja: "instantly temporary grey shade ... to know the number are already
+     placed and should avoid to enter." The count is worked out here from the
+     rules, independently, so the app agreeing with itself proves nothing. The
+     FIRST version shaded only empty peers and hid the cells holding numbers —
+     exactly the ones worth seeing — so givens must be shaded too. */
+  for (const key of ['mini', 'medium']){
+    const L = LEVELS[key], n = L.n;
+    await ev(`document.getElementById('tab-scHome').click()`); await sleep(250);
+    await ev(`document.querySelector('.toggleBtn[data-sud-level="${key}"]').click()`); await sleep(1300);
+    const probe = await ev(`(function(){
+      var cells = Array.from(document.querySelectorAll('#sudBoard [data-sud]'));
+      cells[0].click();
+      var after = Array.from(document.querySelectorAll('#sudBoard [data-sud]'));
+      return JSON.stringify({
+        shaded: after.filter(function(c){ return c.classList.contains('peer'); }).length,
+        shadedGivens: after.filter(function(c){ return c.classList.contains('peer') && c.classList.contains('given'); }).length,
+        pickShaded: after[0].classList.contains('peer')
+      }); })()`);
+    const P2 = JSON.parse(probe);
+    // cell 0 sees: its row, its column, its box, and (on 9x9) the main diagonal
+    const seen = new Set();
+    for (let i = 0; i < n; i++){ seen.add(0 * n + i); seen.add(i * n + 0); }
+    if (L.bh) for (let a = 0; a < L.bh; a++) for (let b = 0; b < L.bw; b++) seen.add(a * n + b);
+    if (L.diag) for (let i = 0; i < n; i++) seen.add(i * n + i);   // cell 0 is on the main diagonal
+    seen.delete(0);
+    ok(key + ': picking a square shades every square it can see', P2.shaded === seen.size,
+      P2.shaded + ' shaded, ' + seen.size + ' expected');
+    ok(key + ': the shading includes squares that already hold a number',
+      P2.shadedGivens > 0, P2.shadedGivens + ' given squares shaded');
+    ok(key + ': the picked square itself is not shaded', P2.pickShaded === false);
+    if (key === 'medium') await shot('sudoku-shading.png');
+  }
+
+  /* The timer: Raja asked for it "to know one how long take spend time to play,
+     not for competitive". So it must actually advance, and it must STOP when
+     the puzzle is done — a clock still running afterwards makes the number mean
+     nothing. Solved here by writing the stored answer straight in. */
+  await ev(`document.getElementById('tab-scHome').click()`); await sleep(250);
+  await ev(`document.querySelector('.toggleBtn[data-sud-level="mini"]').click()`); await sleep(900);
+  const t1 = await ev(`document.getElementById('sudTime').textContent`);
+  await sleep(2600);
+  const t2 = await ev(`document.getElementById('sudTime').textContent`);
+  ok('the timer counts the time spent playing', t1 !== t2, t1 + ' -> ' + t2);
+
+  /* The answer is worked out HERE rather than read out of the app — production
+     code should not grow a hook that exists only so a test can cheat. */
+  const board = await ev(`Array.from(document.querySelectorAll('#sudBoard [data-sud]')).map(function(c){
+    return c.textContent.trim() ? parseInt(c.textContent, 10) : 0; })`);
+  const answer = (function solveIt(grid, L){
+    const n = L.n, g = grid.slice();
+    (function go(){
+      let idx = -1;
+      for (let i = 0; i < n * n; i++) if (!g[i]){ idx = i; break; }
+      if (idx < 0) return true;
+      const r = Math.floor(idx / n), c = idx % n;
+      for (let v = 1; v <= n; v++) if (okAt(g, r, c, v, L)){
+        g[idx] = v; if (go()) return true; g[idx] = 0;
+      }
+      return false;
+    })();
+    return g;
+  })(board, LEVELS.mini);
+  const solved = await ev(`(function(){
+    var answer = ${JSON.stringify(answer)};
+    var cells = Array.from(document.querySelectorAll('#sudBoard [data-sud]'));
+    for (var i = 0; i < cells.length; i++){
+      if (cells[i].classList.contains('given')) continue;
+      document.querySelectorAll('#sudBoard [data-sud]')[i].click();
+      var k = document.querySelector('#sudPad [data-sudkey="' + answer[i] + '"]');
+      if (k) k.click();
+    }
+    return document.getElementById('sudHead').textContent;
+  })()`);
+  ok('solving stops the clock and reports the time spent',
+    /Solved/.test(solved || '') && /took you/.test(solved || ''), (solved || '').slice(0, 90));
+  const tSolved = await ev(`document.getElementById('sudTime').textContent`);
+  await sleep(2400);
+  const tLater = await ev(`document.getElementById('sudTime').textContent`);
+  ok('and the clock does not keep running after the win', tSolved === tLater, tSolved + ' -> ' + tLater);
+
   ok('no JS errors', errs.length === 0, errs.join(' | '));
   ws.close(); ch.kill();
   console.log('\n' + (fail === 0 ? 'ALL GREEN' : fail + ' FAILURES'));

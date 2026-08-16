@@ -2083,8 +2083,15 @@ body.sudokuMode .solvedCounter{ display:none !important; }
 .sudCell.bad{ color:#C0453C; background:#FDE2E0; }
 .sudCell.bad.diag{ background:#F8D2C6; }
 .sudCell.pick{ outline:4px solid #f59e0b; outline-offset:-4px; z-index:2; }
-.sudCell.peer{ background:#FBF0DA; }
-.sudCell.peer.diag{ background:#F2D6A2; }
+/* Raja: "instantly temporary grey shade ... for reference of to know the number
+   are already placed and should avoid to enter."
+   A flat grey OVERLAY rather than a replacement background, because these cells
+   have four different bases underneath — plain, given, diagonal, and given-on-a
+   -diagonal — and setting a colour would need a rule for each and would lose the
+   diagonal tint under it. An inset shadow greys whatever is there, uniformly.
+   The first version shaded only the EMPTY peers, which hid exactly the cells
+   worth looking at: the ones already holding a number. */
+.sudCell.peer{ box-shadow:inset 0 0 0 999px rgba(84,72,54,.20); }
 .sudBoard .bt{ border-top:3px solid #8A6A3C; }
 .sudBoard .bl{ border-left:3px solid #8A6A3C; }
 .sudLegend{ text-align:center; font-size:11.5px; font-weight:800; color:#6B4E2A;
@@ -3135,6 +3142,10 @@ body{ background:#C9A87C !important; }
     <button class="slideBtn" id="sudNew" type="button">🔀 New puzzle</button>
     <button class="slideBtn" id="sudCheck" type="button">👀 Check my work</button>
     <span class="slideMoves" id="sudFilled">0 of 0 filled</span>
+    <!-- Raja: "implement timer for to know one how long take spend time to play,
+         NOT for competitive." So it counts up quietly and is never compared to
+         anything — no best time, no par, no pressure to beat it. -->
+    <span class="slideHome" id="sudTime">Time 0:00</span>
   </div>
 </div>
 
@@ -4099,6 +4110,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     document.body.classList.toggle('sudokuMode', !!on);
     var sp = document.getElementById('sudokuPanel');
     if (sp) sp.style.display = on ? 'block' : 'none';
+    // leaving the puzzle must stop the clock, or the time on screen when you
+    // come back counts a walk to the kitchen as time spent playing
+    if (!on && window.__sudTimerStop) window.__sudTimerStop();
   }
   function showSlideMode(on){
     document.body.classList.toggle('slideMode', !!on);
@@ -6728,6 +6742,36 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
                 goal: 'Same rules again, with the fewest numbers given. Take your time — there is no clock to beat and nothing to lose.' }
     };
     var sudLv = SUD_LEVELS.mini, sudGiven = [], sudCells = [], sudSolution = [], sudPick = -1, sudDone = false;
+    /* The timer answers one question — "how long did that take me?" — and Raja
+       was explicit that it is "not for competitive". So it is never stored,
+       never compared, and there is nothing to beat. It also stops the moment
+       the puzzle is solved, so the number you are left looking at is how long
+       you played, not how long the phone sat on the table afterwards. */
+    var sudSeconds = 0, sudTick = null;
+    function sudClock(){
+      var m = Math.floor(sudSeconds / 60), s = sudSeconds % 60;
+      var el = document.getElementById('sudTime');
+      if (el) el.textContent = 'Time ' + m + ':' + (s < 10 ? '0' : '') + s;
+    }
+    function sudTimerStop(){ if (sudTick){ clearInterval(sudTick); sudTick = null; } }
+    // showSudokuMode() lives in the other IIFE, so it reaches the clock this way
+    window.__sudTimerStop = sudTimerStop;
+    function sudTimerStart(){
+      sudTimerStop();
+      sudSeconds = 0; sudClock();
+      sudTick = setInterval(function(){
+        // a puzzle solved, or a panel left open in the background, should not
+        // keep counting — the number would stop meaning anything
+        var panel = document.getElementById('sudokuPanel');
+        if (sudDone || !panel || panel.style.display === 'none'){ sudTimerStop(); return; }
+        sudSeconds++; sudClock();
+      }, 1000);
+    }
+    function sudTimeSpent(){
+      var m = Math.floor(sudSeconds / 60), s = sudSeconds % 60;
+      if (!m) return s + (s === 1 ? ' second' : ' seconds');
+      return m + (m === 1 ? ' minute ' : ' minutes ') + s + (s === 1 ? ' second' : ' seconds');
+    }
 
     function sudOk(g, r, c, v, L){
       var n = L.n, i, j;
@@ -6821,6 +6865,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       var head = document.getElementById('sudHead');
       if (head) head.innerHTML = sudLv.goal;
       sudRender();
+      sudTimerStart();
       try {
         sana('Tap a square, then tap a number. A wrong one turns <b>red</b> — nothing is ever lost, just fix it.', 'think', true);
       } catch(e){}
@@ -6860,7 +6905,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         if (isDiag) cls += ' diag';
         if (given) cls += ' given';
         else if (v) cls += bad ? ' bad' : ' mine';
-        if (!given && peers[i] && i !== sudPick) cls += ' peer';
+        // every cell this one can see, GIVENS INCLUDED — they are the ones
+        // holding the numbers already spoken for, which is the whole point
+        if (peers[i] && i !== sudPick) cls += ' peer';
         if (i === sudPick) cls += ' pick';
         if (L.bh && r % L.bh === 0 && r > 0) cls += ' bt';
         if (L.bw && c % L.bw === 0 && c > 0) cls += ' bl';
@@ -6893,8 +6940,18 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
       if (!sudDone && sudSolved()){
         sudDone = true;
-        if (head2()) head2().innerHTML = '🎉 <b>Solved!</b> ' + sudLv.name + ' — every row, column' +
-          (L.bh ? ', box' : '') + (L.diag ? ' and diagonal' : '') + ' is right.';
+        /* Name the rules as a LIST and join it, rather than gluing commas on and
+           hoping the last piece supplies the "and". On the 3x3, which has
+           neither boxes nor diagonals, that glued version ended mid-list:
+           "every row, column is right". Raja's screenshot caught it. */
+        var parts = ['row', 'column'];
+        if (L.bh) parts.push('box');
+        if (L.diag) parts.push('diagonal');
+        var lastPart = parts.pop();
+        sudTimerStop();
+        if (head2()) head2().innerHTML = '🎉 <b>Solved!</b> ' + sudLv.name + ' — every ' +
+          parts.join(', ') + ' and ' + lastPart + ' is right. That took you <b>' +
+          sudTimeSpent() + '</b>.';
         try { celebrate(); } catch(e){}
         try { sfx('unlock'); } catch(e){}
         try { sana('<b>' + sudLv.name + ' solved!</b> Every number in its place.', 'party', true); } catch(e){}
@@ -9770,7 +9827,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-155 (Sudoku, four levels, every puzzle proved to have one answer)';
+  var BUILD_VER = 'beta-156 (a quiet timer, and picking a square shades everything it can see)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
