@@ -1,0 +1,27 @@
+# Scratch produced by the checks and the promotion pipeline. None of it is source.
+# NOTE: git does not support trailing comments on a pattern line — a comment
+# after a pattern becomes part of the pattern and silently matches nothing.
+
+# throwaway Chrome profiles
+_cp*/
+
+# staged backup folders
+_stage/
+
+# screenshots from the checks: look at them, do not commit them
+shots/
+
+# promotion build artifacts
+_index-built.html
+_sw-built.js
+_commit-message.txt
+
+# GitHub API payloads
+_blob.json
+_tree.json
+_commit.json
+_ref.json
+
+# downloaded copies of the live files
+_live*.html
+_live*.js
