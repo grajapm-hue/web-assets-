@@ -3289,9 +3289,9 @@ body{ background:#C9A87C !important; }
       <span><b>Slide Magic</b><i>slide the numbers back into order — the spaces below are what let them move</i></span>
     </div>
     <div class="toggleSwitch">
-      <button class="toggleBtn lvCard" id="slideTab" type="button" data-slide-level="nine" data-name="🔢 Slide 1–9" style="color:#10b981; border-color:#10b981; --c1:#a7f3d0; --c2:#34d399;">
+      <button class="toggleBtn lvCard" id="slideTab" type="button" data-slide-level="fifteen" data-name="🔢 Slide 1–15" style="color:#10b981; border-color:#10b981; --c1:#a7f3d0; --c2:#34d399;">
         <span class="lvGlyph" aria-hidden="true">🔢</span>
-        <span class="lvText"><b class="lvName">Slide 1–9</b><span class="lvDiff">3×3 · with a parking row</span><span class="lvMeta">nine numbers, three spare spaces — put them back 1 to 9</span></span>
+        <span class="lvText"><b class="lvName">Slide 1–15</b><span class="lvDiff">4×4 · the classic</span><span class="lvMeta">fifteen numbers, big blocks — put them back 1 to 15</span></span>
       </button>
       <!-- The board Raja drew first, and the app he sent later ("Magic Slide
            Puzzle - Letters and Numbers"): six across, A-Z then 1-9 and 0. -->
@@ -5945,10 +5945,19 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
        the bigger board gets six spaces to work with rather than three — which
        is what keeps 36 tiles humane instead of a 15-puzzle nightmare. */
     var SLIDE_LEVELS = {
-      nine: {
-        cols: 3, rows: 3, title: '🔢 Slide 1–9',
-        tiles: ['1','2','3','4','5','6','7','8','9'], name: '1 to 9',
-        goal: 'Finish with <b>1 2 3</b> on the top row, <b>4 5 6</b> next, <b>7 8 9</b> on the third.'
+      /* Raja: "can replace 1 to 15, hence 1 to 9 look too short to finish even
+         kids doing is easy after watch show implement" — nine blocks with
+         three spare spaces was over almost as soon as it started, and once a
+         child has watched Show me how there is nothing left to work out.
+         Fifteen in a 4x4 is the classic sliding puzzle everyone recognises,
+         and the blocks come out BIGGER than the old 3x3 board's neighbours on
+         the letter board (76px) because four columns divide the width kindly.
+         Like A-Z, the blocks no longer fill the grid: 15 in 16, so the last
+         puzzle cell is a space — one more place to manoeuvre. */
+      fifteen: {
+        cols: 4, rows: 4, title: '🔢 Slide 1–15',
+        tiles: ['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15'], name: '1 to 15',
+        goal: 'Finish with <b>1 2 3 4</b> on the top row, then <b>5</b> to <b>8</b>, <b>9</b> to <b>12</b>, and <b>13 14 15</b> — the classic sliding puzzle.'
       },
       /* Raja: "can remove number block in alphabetical table to increase room
          box sizes also keep differentiate to alpha and numerical". Letters
@@ -5965,12 +5974,12 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         goal: 'Finish with <b>A</b> to <b>Z</b> reading across — exactly like a box of alphabet blocks.'
       }
     };
-    var slideLv = SLIDE_LEVELS.nine;
+    var slideLv = SLIDE_LEVELS.fifteen;
     var SLIDE_COLS = 3, SLIDE_ROWS = 4, SLIDE_N = 12, SLIDE_TILES = 9;
     var slideCells = [], slideMoves = 0, slideSolved = false;
 
     function slideUseLevel(key){
-      slideLv = SLIDE_LEVELS[key] || SLIDE_LEVELS.nine;
+      slideLv = SLIDE_LEVELS[key] || SLIDE_LEVELS.fifteen;
       SLIDE_COLS = slideLv.cols;
       SLIDE_ROWS = slideLv.rows + 1;            // +1 = the parking row underneath
       SLIDE_N = SLIDE_COLS * SLIDE_ROWS;
@@ -9151,8 +9160,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-141 (Slide A-Z is letters only, bigger blocks, and tinted apart from the numbers board)';
-  window.BETA_VER = 'beta-141';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-142 (numbers board is now 1 to 15, the classic 4x4 -- 1 to 9 finished too fast)';
+  window.BETA_VER = 'beta-142';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
