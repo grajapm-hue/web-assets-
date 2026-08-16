@@ -2096,10 +2096,16 @@ body.slideMode #slidePanel{ display:block !important;
    A movable block keeps a lifted shadow instead of an outline, so the
    affordance survives without spending a colour on it. */
 .slideTile.canMove{ box-shadow:0 5px 0 rgba(94,64,32,.4); }
-.slideBoard .slideTile.placed{
-  background:linear-gradient(152deg,#CBF3D6,#8AD9A4);
-  box-shadow:0 3px 0 rgba(43,92,58,.4); }
-.slideBoard .slideTile.placed.canMove{ box-shadow:0 5px 0 rgba(43,92,58,.45); }
+/* RED until the row is right, GREEN when every cell in it is home — and back
+   to red the moment a slide disturbs it. Border, not fill: the fill still
+   says which board you are on (honey numbers, blue letters), and the amber
+   outline still says which move you are making, so each channel keeps one
+   job. box-sizing so adding a border does not shrink the block. */
+.slideTile, .slideCell{ box-sizing:border-box; }
+.slideTile.rowBad{ border:3px solid #C0453C; }
+.slideTile.rowOk{ border:3px solid #2E9E5B; }
+.slideCell.rowBad{ border:3px dashed #C0453C; }
+.slideCell.rowOk{ border:3px dashed #2E9E5B; }
 /* Letters get their own tint. Raja: "keep differentiate to alpha and
    numerical" — the two boards no longer mix the two kinds, and colouring
    them apart means a child can tell at a glance which puzzle they are in
@@ -3005,7 +3011,7 @@ body{ background:#C9A87C !important; }
   <div class="slideBoard" id="slideBoard"></div>
   <!-- Sits under the board, so it must not say "below" — it points UP at the
        row beneath the dotted line, which is the parking shelf. -->
-  <div class="slideSpareLabel" id="slideSpareLabel">↑ a block turns green when it is in the right place — the ones that are not green still need moving</div>
+  <div class="slideSpareLabel" id="slideSpareLabel">↑ a row turns green when every block in it is right — red rows are the ones still to fix</div>
   <div class="slideFoot">
     <!-- Raja: "need sana hints along show play for how to use slide such how
          thump or finger to touch how where if one to shift to empty place".
@@ -6074,6 +6080,25 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       var head = document.getElementById('slideHead');
       if (head) head.innerHTML = slidePromptText();
     }
+    /* Raja, correcting me: "in initial keep all box border be red color and
+       the border colour turn to green if all completed in right manner rows
+       in one by one if did wrong by slide again that rows box color should be
+       red it will help which rows is still need to correct."
+       ROWS, not blocks, and the BORDER, not the fill. His design is the better
+       one: row by row is how these puzzles are actually solved, so lighting up
+       a finished row rewards the real technique and tells a player exactly
+       which row still needs work — and takes it back the moment they disturb
+       it. A row counts only when every cell in it is right, including any cell
+       that is supposed to be EMPTY (the last row of a board whose blocks do
+       not fill the grid). */
+    function slideRowDone(r){
+      for (var c = 0; c < SLIDE_COLS; c++){
+        var i = r * SLIDE_COLS + c;
+        var want = i < SLIDE_TILES ? slideLv.tiles[i] : null;
+        if (slideCells[i] !== want) return false;
+      }
+      return true;
+    }
     function slideBlanksBy(i){
       return slideNeighbours(i).filter(function(j){ return slideCells[j] === null; });
     }
@@ -6092,19 +6117,21 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       el.style.gap = wide ? '6px' : '8px';
       el.style.maxWidth = wide ? '352px' : '330px';
       el.classList.toggle('slideAlpha', !!slideLv.alpha);
+      var rowOk = [];
+      for (var r = 0; r < SLIDE_ROWS; r++) rowOk.push(slideRowDone(r));
       var html = '';
       for (var k = 0; k < SLIDE_N; k++){
+        var rowCls = rowOk[Math.floor(k / SLIDE_COLS)] ? ' rowOk' : ' rowBad';
         var v = slideCells[k];
         if (v === null){
           var isTarget = targets.indexOf(k) > -1;
-          html += '<button class="slideCell' + (isTarget ? ' slideTarget' : '') + '" type="button"' +
+          html += '<button class="slideCell' + rowCls + (isTarget ? ' slideTarget' : '') + '" type="button"' +
             ' data-slide="' + k + '"' + (isTarget ? '' : ' tabindex="-1" aria-hidden="true"') +
             (isTarget ? ' aria-label="move it here"' : '') + '></button>';
           continue;
         }
         var can = slideBlanksBy(k).length > 0;
-        var atHome = (k < SLIDE_TILES && v === slideLv.tiles[k]);
-        html += '<button class="slideTile' + (can ? ' canMove' : ' locked') + (atHome ? ' placed' : '') + (slideSel === k ? ' picked' : '') +
+        html += '<button class="slideTile' + rowCls + (can ? ' canMove' : ' locked') + (slideSel === k ? ' picked' : '') +
           '" type="button" data-slide="' + k + '" aria-label="' + v +
           (can ? ', can move' : ', blocked') + '">' + v + '</button>';
       }
@@ -6120,10 +6147,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
          number and not another colour: green already means "can move" and
          amber "the move you are making", and a third colour was the exact
          confusion that got flagged before. */
-      var home = 0;
-      for (var h = 0; h < SLIDE_TILES; h++) if (slideCells[h] === slideLv.tiles[h]) home++;
+      var doneRows = 0;
+      for (var rr = 0; rr < SLIDE_ROWS; rr++) if (rowOk[rr]) doneRows++;
       var hp = document.getElementById('slideHome');
-      if (hp) hp.textContent = home === SLIDE_TILES ? '' : ('In place: ' + home + ' of ' + SLIDE_TILES);
+      if (hp) hp.textContent = doneRows === SLIDE_ROWS ? '' : ('Rows done: ' + doneRows + ' of ' + SLIDE_ROWS);
     }
     function slideMoveTo(from, to){
       slideCells[to] = slideCells[from]; slideCells[from] = null;
@@ -6211,7 +6238,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         if (!slideDemo) return;
         if (step >= 3 || slideSolved){
           slideDemoStop();
-          try { sana('Now you try — get every block <b>green</b> and they are all home.', 'cheer', true); } catch(e){}
+          try { sana('Now you try — turn every row <b>green</b>, one row at a time.', 'cheer', true); } catch(e){}
           return;
         }
         // Prefer a block with exactly one space beside it: one tap, one
@@ -6365,7 +6392,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         slideDemoStop();
         slideSetPrompt();
         slideShuffle();
-        try { sana('Fresh scatter. Slide the blocks next to the empty space — each one turns <b>green</b> when it lands in the right place.', 'think', true); } catch(e){}
+        try { sana('Fresh scatter. Finish the top row first — a row turns <b>green</b> when every block in it is right.', 'think', true); } catch(e){}
       }
     });
 
@@ -6395,16 +6422,18 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           '<p>' + SLIDE_TILES + ' blocks, ' + SLIDE_N + ' places — so only ' + (SLIDE_N - SLIDE_TILES) +
           ' of them are empty. That gap is the whole puzzle: a block can only move into it, and moving one ' +
           'leaves a new gap somewhere else.</p>' +
-          '<p>' + slideLv.goal + '</p><p>A block turns <b>green</b> the moment it is standing in its own place, so the ones still out of order are the ones that are not green.</p>' +
+          '<p>' + slideLv.goal + '</p><p>Rows start <b>red</b> and turn <b>green</b> when every block in them is right, so the red rows are the ones still to fix — and a row goes back to red if you disturb it. Finish the top row, then the next: that is how these puzzles are solved.</p>' +
           '<p>Every deal is built by shuffling a finished board with real moves, so <b>every game can always be solved</b>. ' +
           'A puzzle scattered at random would not be: half of those cannot be finished at all.</p>';
         slideShuffle();
         // Raja: "need sana hints along show play". The first thing a child
         // needs is not the goal — it is which blocks can even be touched.
         try {
-          sana('Slide any block next to the empty space with your finger — a tap works too. ' +
-               'A block turns <b>green</b> once it is in the right place. ' +
-               'Not sure? Tap <b>👆 Show me how</b>.', 'think', true);
+          // Three lines is the bubble's hard ceiling (see .sanaBub) — the row
+          // rule had to be said in fewer words, not given a taller bubble.
+          sana('Slide a block into the empty space — a tap works too. ' +
+               'A row turns <b>green</b> once every block in it is right; ' +
+               'red rows still need fixing.', 'think', true);
         } catch(e){}
       });
     });
@@ -9191,8 +9220,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-146 (a block turns green when it is home, so the wrong ones stand out)';
-  window.BETA_VER = 'beta-146';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-147 (rows are red until every block in them is right, then green)';
+  window.BETA_VER = 'beta-147';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
