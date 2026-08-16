@@ -860,6 +860,28 @@
     color:#f87171; padding:0; margin:0 0 2px;
   }
   .modeGroup{ width:100%; }
+  /* Raja, marking the empty band on the right of the puzzle list: "shift binary
+     magic and gate logic sidewards of multiply, triangle, Sir Ramanujan tabs."
+     Every group carries its own two-column card grid, so a group holding ONE
+     puzzle leaves its right seat empty — and four groups in a row did that,
+     which is the tall gap he drew a box around. Pairing those groups puts two
+     of them on a line and the gap disappears.
+     A flex row of two groups, NOT a change to .difficultyBar: that container is
+     the scroller, it is flex-centred and fitHome() measures it, so turning it
+     into a grid to get the same effect would put a tuned layout at risk for a
+     cosmetic gain. Binary Magic keeps a full row of its own — it holds two
+     cards, so both seats are already used and there is nothing to reclaim. */
+  .modePair{ display:flex; gap:10px; align-items:flex-start; }
+  .modePair > .modeGroup{ flex:1 1 0; min-width:0; }
+  /* A paired group is already half the width, so its card grid must drop to ONE
+     column. Left at two, the single card took half of a half — a quarter of the
+     screen — and "3³ Multiply" came out as "3³ Multip / ly". The card should be
+     the same width as one in Binary Magic's row, because that is exactly what
+     it is: one of two cards on a line. */
+  .modePair .toggleSwitch{ grid-template-columns:1fr; }
+  /* Below 360px the card grid is already one column; pairing there would give
+     each group half of a narrow screen. Same breakpoint, same reason. */
+  @media (max-width:359px){ .modePair{ display:block; } }
   .modeHead{ display:flex; align-items:center; gap:10px; margin:14px 0 9px; }
   .modeHead .mIco{
     width:36px; height:36px; flex:none; border-radius:12px; display:grid; place-items:center;
@@ -3210,6 +3232,8 @@ body{ background:#C9A87C !important; }
     </div>
   </div>
 
+  <!-- Two one-card groups on one line, so neither leaves an empty seat. -->
+  <div class="modePair">
   <!-- ✖️ MULTIPLY MODE -->
   <div class="modeGroup">
     <div class="modeHead" style="--m1:#fcd98a; --m2:#f59e0b;">
@@ -3237,7 +3261,11 @@ body{ background:#C9A87C !important; }
       </button>
     </div>
   </div>
+  </div><!-- /.modePair -->
 
+  <!-- Sir Ramanujan pairs with Gate Logic, which moved up from below Binary to
+       fill the seat beside him — the shift Raja drew an arrow for. -->
+  <div class="modePair">
   <!-- 🎂 BIRTHDAY MODE -->
   <div class="modeGroup">
     <div class="modeHead" style="--m1:#ffb3bf; --m2:#e11d48;">
@@ -3250,27 +3278,6 @@ body{ background:#C9A87C !important; }
       <button class="toggleBtn lvCard" data-size="ramanujan" data-name="🎂 Sir Ramanujan MathMagic" data-short="🎂 Ramanujan" style="color:#fb7185; border-color:#e11d48; --c1:#ffb3bf; --c2:#fb7185;">
         <span class="lvGlyph" aria-hidden="true">🎂</span>
         <span class="lvText"><b class="lvName">Sir Ramanujan MathMagic</b><span class="lvDiff">Your own birthday</span><span class="lvMeta">4×4 · 18 magic groups · works with any date</span><span class="lvNow">PLAYING</span></span>
-      </button>
-    </div>
-  </div>
-
-  <!-- 🔢 BINARY MODE — Raja: split into the same 2-column grid as Add Magic
-       (3x3/4x4 etc.), instead of stacking full-width, to leave more room
-       for the puzzles still coming (Logic Gates). Angle Magic became
-       Triangle Magic, a real puzzle now, not a "coming soon" chip. -->
-  <div class="modeGroup">
-    <div class="modeHead" style="--m1:#f0e58a; --m2:#84cc16;">
-      <span class="mIco">🔢</span>
-      <span><b>Binary Magic</b><i>no grid at all — eight cards read your mind</i></span>
-    </div>
-    <div class="toggleSwitch">
-      <button class="toggleBtn lvCard" data-size="binary" data-name="🔢 Guess My Number · Junior" style="color:#fcd34d; border-color:#84cc16; --c1:#f0e58a; --c2:#fcd34d;">
-        <span class="lvGlyph" aria-hidden="true">🔢</span>
-        <span class="lvText"><b class="lvName">Guess My Number · Junior</b><span class="lvDiff">1 to 99</span><span class="lvMeta">8 cards · tens and units, four bits each</span><span class="lvNow">PLAYING</span></span>
-      </button>
-      <button class="toggleBtn lvCard" data-size="binary2" data-name="🔢 Guess My Number · Advance" style="color:#a3e635; border-color:#4d7c0f; --c1:#d9f99d; --c2:#a3e635;">
-        <span class="lvGlyph" aria-hidden="true">🔢</span>
-        <span class="lvText"><b class="lvName">Guess My Number · Advance</b><span class="lvDiff">1 to 255</span><span class="lvMeta">the same 8 cards · real binary, nothing wasted</span><span class="lvNow">PLAYING</span></span>
       </button>
     </div>
   </div>
@@ -3300,6 +3307,28 @@ body{ background:#C9A87C !important; }
       <button class="toggleBtn lvCard" id="gateListBtn" type="button" data-name="🔀 Gate Logic" style="color:#8b5cf6; border-color:#8b5cf6; --c1:#c4b5fd; --c2:#8b5cf6;">
         <span class="lvGlyph" aria-hidden="true">🔀</span>
         <span class="lvText"><b class="lvName">7 Logic Gates</b><span class="lvDiff">AND · OR · NOT · NAND · NOR · XOR · XNOR</span><span class="lvMeta">pick one, then walk its whole truth table</span></span>
+      </button>
+    </div>
+  </div>
+  </div><!-- /.modePair -->
+
+  <!-- 🔢 BINARY MODE — Raja: split into the same 2-column grid as Add Magic
+       (3x3/4x4 etc.), instead of stacking full-width, to leave more room
+       for the puzzles still coming (Logic Gates). Angle Magic became
+       Triangle Magic, a real puzzle now, not a "coming soon" chip. -->
+  <div class="modeGroup">
+    <div class="modeHead" style="--m1:#f0e58a; --m2:#84cc16;">
+      <span class="mIco">🔢</span>
+      <span><b>Binary Magic</b><i>no grid at all — eight cards read your mind</i></span>
+    </div>
+    <div class="toggleSwitch">
+      <button class="toggleBtn lvCard" data-size="binary" data-name="🔢 Guess My Number · Junior" style="color:#fcd34d; border-color:#84cc16; --c1:#f0e58a; --c2:#fcd34d;">
+        <span class="lvGlyph" aria-hidden="true">🔢</span>
+        <span class="lvText"><b class="lvName">Guess My Number · Junior</b><span class="lvDiff">1 to 99</span><span class="lvMeta">8 cards · tens and units, four bits each</span><span class="lvNow">PLAYING</span></span>
+      </button>
+      <button class="toggleBtn lvCard" data-size="binary2" data-name="🔢 Guess My Number · Advance" style="color:#a3e635; border-color:#4d7c0f; --c1:#d9f99d; --c2:#a3e635;">
+        <span class="lvGlyph" aria-hidden="true">🔢</span>
+        <span class="lvText"><b class="lvName">Guess My Number · Advance</b><span class="lvDiff">1 to 255</span><span class="lvMeta">the same 8 cards · real binary, nothing wasted</span><span class="lvNow">PLAYING</span></span>
       </button>
     </div>
   </div>
@@ -9285,7 +9314,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-150 (A-Z on its own is back, as the medium rung between the numbers and the combo)';
+  var BUILD_VER = 'beta-151 (the puzzle list pairs its one-card groups, so the empty column is gone)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
