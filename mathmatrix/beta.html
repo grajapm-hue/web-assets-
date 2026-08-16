@@ -2120,6 +2120,8 @@ body.slideMode #slidePanel{ display:block !important;
   background:#FFF6E7; color:#5E3D1C; font-family:inherit; font-size:13px;
   font-weight:800; cursor:pointer; touch-action:manipulation; }
 .slideMoves{ font-size:13px; font-weight:900; color:#5E3D1C; }
+/* Quieter than the move count: it is a nudge when you are close, not a score. */
+.slideHome{ font-size:12.5px; font-weight:800; color:#7A5A32; }
 /* Scrollable, like .difficultyBar already is. .screens is overflow:hidden, so
    before this a gate room taller than the screen was not merely awkward —
    it was CLIPPED behind the tab bar with no way to reach it, which is what
@@ -2997,6 +2999,7 @@ body{ background:#C9A87C !important; }
     <button class="slideBtn slideShow" id="slideShow" type="button">👆 Show me how</button>
     <button class="slideBtn" id="slideShuffle" type="button">🔀 Shuffle again</button>
     <span class="slideMoves" id="slideMoves">Moves: 0</span>
+    <span class="slideHome" id="slideHome"></span>
   </div>
 </div>
 
@@ -6090,6 +6093,19 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       el.innerHTML = html;
       var mv = document.getElementById('slideMoves');
       if (mv) mv.textContent = 'Moves: ' + slideMoves;
+      /* Raja finished the letter board to within a single swap — M and N
+         transposed in the fourth row — and could not see why no celebration
+         came. On 26 blocks that is genuinely invisible; the app was right and
+         the player had no way to know it. So say how many are home. It costs
+         one line of text and turns "nothing happened" into "24 of 26", which
+         is a hint about where to look rather than a verdict. Deliberately a
+         number and not another colour: green already means "can move" and
+         amber "the move you are making", and a third colour was the exact
+         confusion that got flagged before. */
+      var home = 0;
+      for (var h = 0; h < SLIDE_TILES; h++) if (slideCells[h] === slideLv.tiles[h]) home++;
+      var hp = document.getElementById('slideHome');
+      if (hp) hp.textContent = home === SLIDE_TILES ? '' : ('In place: ' + home + ' of ' + SLIDE_TILES);
     }
     function slideMoveTo(from, to){
       slideCells[to] = slideCells[from]; slideCells[from] = null;
@@ -9156,8 +9172,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-144 (removed the dead parking-row styling)';
-  window.BETA_VER = 'beta-144';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-145 (shows how many blocks are home, so being one swap short is visible)';
+  window.BETA_VER = 'beta-145';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
