@@ -2129,6 +2129,11 @@ body.slideMode #slidePanel{ display:block !important;
    outline still says which move you are making, so each channel keeps one
    job. box-sizing so adding a border does not shrink the block. */
 .slideTile, .slideCell{ box-sizing:border-box; }
+/* Square is the default, but a board squeezed by height would rather be wide:
+   drop the square ratio and take the height the fit worked out, so the blocks
+   reach both edges instead of leaving dead margins. */
+.slideBoard.slideWideCells .slideTile,
+.slideBoard.slideWideCells .slideCell{ aspect-ratio:auto; height:var(--slideCellH); }
 .slideTile.rowBad{ border:3px solid #C0453C; }
 .slideTile.rowOk{ border:3px solid #2E9E5B; }
 .slideCell.rowBad{ border:3px dashed #C0453C; }
@@ -6213,8 +6218,30 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
          so it is set below where any board lands (the 10x10 magic square already
          ships 22px cells) and the height fit is left to win. */
       cell = Math.max(26, cell);
-      el.style.maxWidth = (cell * SLIDE_COLS + gap * (SLIDE_COLS - 1)) + 'px';
-      el.style.setProperty('--slideFont', Math.max(15, Math.round(cell * (wide ? 0.36 : 0.40))) + 'px');
+      /* Raja, on the 3x9 letter board: "make 3 boxes ... to rectangle box by fit
+         horizontally, vertical view not good to see, so many blank portions
+         shows left and right."
+         A board only three columns wide is squeezed by HEIGHT, so keeping the
+         blocks square left the width unused — a thin ribbon down the middle
+         with dead margins either side. Blocks do not have to be square. Let the
+         height decide how TALL a block is and the width decide how WIDE, and
+         the board fills the screen.
+         Derived from the measurements rather than flagged per level, so any
+         future board that wastes width gets the same treatment: stretch only
+         when the width genuinely allows more than the height does. */
+      var cellH = cell;
+      var cellW = Math.max(cellH, byW);
+      var stretched = cellW > cellH + 1;
+      el.classList.toggle('slideWideCells', stretched);
+      /* A 16px radius on a 40px-tall block rounds away most of its height and
+         the result reads as a lozenge, not the "rectangle box" asked for. Cap
+         the corner against the SHORT side so a stretched block still looks like
+         a block. */
+      if (stretched) el.style.setProperty('--slideRadius', Math.min(16, Math.round(cellH * 0.28)) + 'px');
+      el.style.setProperty('--slideCellH', cellH + 'px');
+      el.style.maxWidth = (cellW * SLIDE_COLS + gap * (SLIDE_COLS - 1)) + 'px';
+      // the glyph is bounded by the SHORT side, so it scales with the height
+      el.style.setProperty('--slideFont', Math.max(15, Math.round(cellH * (wide ? 0.36 : 0.40))) + 'px');
       el.classList.toggle('slideAlpha', !!slideLv.alpha);
       var rowOk = [];
       for (var r = 0; r < SLIDE_ROWS; r++) rowOk.push(slideRowDone(r));
@@ -6401,12 +6428,18 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
        it, and only as far as that space; drag anywhere else and it does not
        budge, which teaches the rule by feel rather than by a message. */
     var slideDrag = null, slideDragEndedAt = 0;
+    /* Two steps, not one. Blocks are no longer always square: the letter board
+       stretches them into wide rectangles to use the full width, so how far a
+       block travels sideways is no longer how far it travels up. One shared
+       step would let a vertical drag run a whole extra row past the finger, and
+       would set the commit threshold at a third of the WIDTH — most of a row's
+       height — so an honest upward drag would rarely register at all. */
     function slideCellStep(){
       var el = document.querySelector('#slideBoard .slideTile, #slideBoard .slideCell');
-      if (!el) return 60;
+      if (!el) return { x: 60, y: 60 };
       var r = el.getBoundingClientRect();
       var gap = parseFloat(getComputedStyle(document.getElementById('slideBoard')).gap) || 8;
-      return r.width + gap;
+      return { x: r.width + gap, y: r.height + gap };
     }
     function slideDragStart(e){
       if (slideSolved || slideDemo) return;
@@ -6435,10 +6468,12 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         return;
       }
       slideDrag.to = to;
-      var amount = Math.min(Math.abs(horiz ? dx : dy), slideDrag.step);
+      var span = horiz ? slideDrag.step.x : slideDrag.step.y;
+      var amount = Math.min(Math.abs(horiz ? dx : dy), span);
       slideDrag.el.style.transform = horiz
         ? 'translateX(' + (dir === 1 ? amount : -amount) + 'px)'
         : 'translateY(' + (dir > 0 ? amount : -amount) + 'px)';
+      slideDrag.span = span;      // whichever axis this drag settled on
     }
     function slideDragEnd(){
       if (!slideDrag) return;
@@ -6447,7 +6482,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       d.el.style.transform = '';
       // A third of a cell is enough to mean it: less is a wobble, and a real
       // tap (barely any movement) falls through to the tap handler instead.
-      if (d.to !== null && d.moved > d.step * 0.33){
+      // a third of the cell ALONG THE AXIS actually dragged, not a third of its
+      // width regardless of direction
+      if (d.to !== null && d.moved > (d.span || Math.min(d.step.x, d.step.y)) * 0.33){
         /* A TIMESTAMP, not a flag. The flag version waited to be consumed by
            the click that follows a drag -- but a long drag often produces no
            click at all, so it sat set and swallowed the next honest tap
@@ -9330,7 +9367,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-152 (one empty space on every slide board, A-Z included)';
+  var BUILD_VER = 'beta-153 (the letter board stretches to the full width, no dead margins)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
