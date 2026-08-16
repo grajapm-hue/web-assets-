@@ -2082,7 +2082,24 @@ body.slideMode #slidePanel{ display:block !important;
 .slideTile:active:not(.dragging){ transform:translateY(2px); box-shadow:0 1px 0 rgba(94,64,32,.35); }
 /* The movable ones say so. A child should not have to guess which tiles are
    next to a space — that is the puzzle's difficulty, not the interface's. */
-.slideTile.canMove{ outline:3px solid #4ade80; outline-offset:-3px; }
+/* Raja: "color of box should change when properly completed else ... should
+   retain such boxes is help notice to player know". He is right, and it is a
+   better answer than the counter alone: one glance and the two blocks that
+   are wrong are the two that are not green.
+   Green USED to mean "this can move", which cost more than it gave once the
+   board went down to a single gap — the blocks that can move are the ones
+   touching the hole, and the hole is right there. Correctness is the thing
+   that cannot be seen. So green moves to the more valuable job, and the
+   colours stay at two meanings rather than three:
+       green  = this block is HOME
+       amber  = the move you are making right now
+   A movable block keeps a lifted shadow instead of an outline, so the
+   affordance survives without spending a colour on it. */
+.slideTile.canMove{ box-shadow:0 5px 0 rgba(94,64,32,.4); }
+.slideBoard .slideTile.placed{
+  background:linear-gradient(152deg,#CBF3D6,#8AD9A4);
+  box-shadow:0 3px 0 rgba(43,92,58,.4); }
+.slideBoard .slideTile.placed.canMove{ box-shadow:0 5px 0 rgba(43,92,58,.45); }
 /* Letters get their own tint. Raja: "keep differentiate to alpha and
    numerical" — the two boards no longer mix the two kinds, and colouring
    them apart means a child can tell at a glance which puzzle they are in
@@ -2988,7 +3005,7 @@ body{ background:#C9A87C !important; }
   <div class="slideBoard" id="slideBoard"></div>
   <!-- Sits under the board, so it must not say "below" — it points UP at the
        row beneath the dotted line, which is the parking shelf. -->
-  <div class="slideSpareLabel" id="slideSpareLabel">↑ only blocks touching an empty space can move — think a step ahead</div>
+  <div class="slideSpareLabel" id="slideSpareLabel">↑ a block turns green when it is in the right place — the ones that are not green still need moving</div>
   <div class="slideFoot">
     <!-- Raja: "need sana hints along show play for how to use slide such how
          thump or finger to touch how where if one to shift to empty place".
@@ -6086,7 +6103,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           continue;
         }
         var can = slideBlanksBy(k).length > 0;
-        html += '<button class="slideTile' + (can ? ' canMove' : ' locked') + (slideSel === k ? ' picked' : '') +
+        var atHome = (k < SLIDE_TILES && v === slideLv.tiles[k]);
+        html += '<button class="slideTile' + (can ? ' canMove' : ' locked') + (atHome ? ' placed' : '') + (slideSel === k ? ' picked' : '') +
           '" type="button" data-slide="' + k + '" aria-label="' + v +
           (can ? ', can move' : ', blocked') + '">' + v + '</button>';
       }
@@ -6193,7 +6211,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         if (!slideDemo) return;
         if (step >= 3 || slideSolved){
           slideDemoStop();
-          try { sana('Now you try — slide any block with a <b>green edge</b>.', 'cheer', true); } catch(e){}
+          try { sana('Now you try — get every block <b>green</b> and they are all home.', 'cheer', true); } catch(e){}
           return;
         }
         // Prefer a block with exactly one space beside it: one tap, one
@@ -6347,7 +6365,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         slideDemoStop();
         slideSetPrompt();
         slideShuffle();
-        try { sana('Fresh scatter. Slide any block with a <b>green edge</b> — those have a free space beside them.', 'think', true); } catch(e){}
+        try { sana('Fresh scatter. Slide the blocks next to the empty space — each one turns <b>green</b> when it lands in the right place.', 'think', true); } catch(e){}
       }
     });
 
@@ -6377,14 +6395,15 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           '<p>' + SLIDE_TILES + ' blocks, ' + SLIDE_N + ' places — so only ' + (SLIDE_N - SLIDE_TILES) +
           ' of them are empty. That gap is the whole puzzle: a block can only move into it, and moving one ' +
           'leaves a new gap somewhere else.</p>' +
-          '<p>' + slideLv.goal + ' The bottom shelf ends up empty again.</p>' +
+          '<p>' + slideLv.goal + '</p><p>A block turns <b>green</b> the moment it is standing in its own place, so the ones still out of order are the ones that are not green.</p>' +
           '<p>Every deal is built by shuffling a finished board with real moves, so <b>every game can always be solved</b>. ' +
           'A puzzle scattered at random would not be: half of those cannot be finished at all.</p>';
         slideShuffle();
         // Raja: "need sana hints along show play". The first thing a child
         // needs is not the goal — it is which blocks can even be touched.
         try {
-          sana('Put your finger on a block with a <b>green edge</b> and <b>slide it</b> into the empty space beside it. A tap works too. ' +
+          sana('Slide any block next to the empty space with your finger — a tap works too. ' +
+               'A block turns <b>green</b> once it is in the right place. ' +
                'Not sure? Tap <b>👆 Show me how</b>.', 'think', true);
         } catch(e){}
       });
@@ -9172,8 +9191,8 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-145 (shows how many blocks are home, so being one swap short is visible)';
-  window.BETA_VER = 'beta-145';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-146 (a block turns green when it is home, so the wrong ones stand out)';
+  window.BETA_VER = 'beta-146';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
