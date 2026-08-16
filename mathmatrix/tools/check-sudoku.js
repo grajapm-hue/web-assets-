@@ -482,6 +482,76 @@ function countAnswers(grid, L, cap){
     await shot('sudoku-legal-but-wrong.png');
   }
 
+  /* Raja: "why can't turn green if horizontal or vertical strips number too
+     turn green — will ensure the numbers are locked."
+     Complete a ROW that is not contained in any single box, so a pass cannot be
+     the box rule in disguise: a 9-wide row spans three boxes, none of which is
+     finished by it. Then the same for a column. */
+  await ev(`document.getElementById('tab-scHome').click()`); await sleep(250);
+  await ev(`document.querySelector('.toggleBtn[data-sud-level="medium"]').click()`); await sleep(1500);
+  const solveBoard = (grid, L) => {
+    const n = L.n, g = grid.slice();
+    (function go(){
+      let idx = -1;
+      for (let i = 0; i < n * n; i++) if (!g[i]){ idx = i; break; }
+      if (idx < 0) return true;
+      const r = Math.floor(idx / n), c = idx % n;
+      for (let v = 1; v <= n; v++) if (okAt(g, r, c, v, L)){ g[idx] = v; if (go()) return true; g[idx] = 0; }
+      return false;
+    })();
+    return g;
+  };
+
+  for (const kind of ['row', 'column']){
+    /* The answer is recomputed per pass. "New puzzle" between them replaces the
+       board, and reusing the first board's answer would have filled the second
+       with numbers belonging to a puzzle that no longer exists. */
+    const boardD = await ev(`Array.from(document.querySelectorAll('#sudBoard [data-sud]')).map(function(c){
+      return c.textContent.trim() ? parseInt(c.textContent, 10) : 0; })`);
+    const ansD = solveBoard(boardD, LEVELS.medium);
+    const idxs = [];
+    for (let k = 0; k < 9; k++) idxs.push(kind === 'row' ? 3 * 9 + k : k * 9 + 3);  // row 4 / column 4
+    const res = await ev(`(function(){
+      var answer = ${JSON.stringify(ansD)}, unit = ${JSON.stringify(idxs)};
+      for (var u = 0; u < unit.length; u++){
+        var i = unit[u];
+        var cells = document.querySelectorAll('#sudBoard [data-sud]');
+        if (cells[i].classList.contains('given')) continue;
+        cells[i].click();
+        var k = document.querySelector('#sudPad [data-sudkey="' + answer[i] + '"]');
+        if (k) k.click();
+      }
+      var after = Array.from(document.querySelectorAll('#sudBoard [data-sud]'));
+      /* Whether a box HAPPENS to finish at the same time is luck, and the first
+         version of this check called that "inconclusive" and failed. Decide it
+         properly instead: find a green square in this unit whose own box is NOT
+         complete. Only the row/column rule can have greened that one. */
+      function boxComplete(i){
+        var br = Math.floor(Math.floor(i / 9) / 3) * 3, bc = Math.floor((i % 9) / 3) * 3;
+        for (var a = 0; a < 3; a++) for (var b = 0; b < 3; b++){
+          var k = (br + a) * 9 + bc + b;
+          if (!after[k].textContent.trim()) return false;
+        }
+        return true;
+      }
+      var provenByUnit = unit.filter(function(i){
+        return after[i].classList.contains('done') && !boxComplete(i); }).length;
+      return JSON.stringify({
+        greenInUnit: unit.filter(function(i){ return after[i].classList.contains('done'); }).length,
+        provenByUnit: provenByUnit,
+        sana: (document.querySelector('.sanaBub')||{}).textContent || '' }); })()`);
+    const U = JSON.parse(res);
+    ok('completing a ' + kind + ' turns all nine of its numbers green',
+      U.greenInUnit === 9, U.greenInUnit + ' of 9 green');
+    ok('and the ' + kind + ' rule is what greened them, not a box',
+      U.provenByUnit > 0,
+      U.provenByUnit + ' green squares sit in boxes that are not complete');
+    ok('SaNa names what finished', /complete/i.test(U.sana), U.sana.slice(0, 60));
+    if (kind === 'row') await shot('sudoku-row-green.png');
+    // start fresh so the second unit is measured on a clean board
+    if (kind === 'row'){ await ev(`document.getElementById('sudNew').click()`); await sleep(1400); }
+  }
+
   ok('no JS errors', errs.length === 0, errs.join(' | '));
   ws.close(); ch.kill();
   console.log('\n' + (fail === 0 ? 'ALL GREEN' : fail + ' FAILURES'));

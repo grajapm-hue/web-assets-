@@ -6982,25 +6982,41 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         }
         return idx.length === n;
       }
-      var units = [];
+      /* Raja: "why can't turn green if horizontal or vertical strips number too
+         turn green — will ensure the numbers are locked and don't aim to fill
+         any within sub boxes." Exactly right: a finished row or column is
+         settled, and a player should be able to see that it needs no more
+         thought rather than re-scanning it every time.
+         Rows and columns on every level; boxes as well where the level has
+         them. Diagonals are deliberately left out even though they are units
+         too — they are not a strip the eye follows, and their squares are
+         already tinted, so a second colour there would fight the first. */
+      var units = { row: [], col: [], box: [] };
+      for (var r = 0; r < n; r++){
+        var row = [], col = [];
+        for (var c = 0; c < n; c++){ row.push(r * n + c); col.push(c * n + r); }
+        units.row.push(row); units.col.push(col);
+      }
       if (L.bh){
         for (var br = 0; br < n; br += L.bh) for (var bc = 0; bc < n; bc += L.bw){
           var box = [];
           for (i = 0; i < L.bh; i++) for (j = 0; j < L.bw; j++) box.push((br + i) * n + bc + j);
-          units.push(box);
-        }
-      } else {
-        for (var r = 0; r < n; r++){
-          var row = [];
-          for (var c = 0; c < n; c++) row.push(r * n + c);
-          units.push(row);
+          units.box.push(box);
         }
       }
-      for (i = 0; i < units.length; i++)
-        if (unitComplete(units[i])) for (k = 0; k < units[i].length; k++) out[units[i][k]] = 1;
-      return { cells: out, count: units.filter(unitComplete).length, total: units.length };
+      var counts = { row: 0, col: 0, box: 0 }, total = 0, totalUnits = 0;
+      ['row', 'col', 'box'].forEach(function(kind){
+        totalUnits += units[kind].length;
+        units[kind].forEach(function(u){
+          if (unitComplete(u)){
+            counts[kind]++; total++;
+            for (var q = 0; q < u.length; q++) out[u[q]] = 1;
+          }
+        });
+      });
+      return { cells: out, counts: counts, count: total, total: totalUnits };
     }
-    var sudDoneSeen = 0, sudFresh = true;
+    var sudDoneSeen = 0, sudSeenKinds = { row:0, col:0, box:0 }, sudFresh = true;
     /* Sizing the board needs to KNOW what the layout did, and a single pass
        cannot: it measures the space under a board it is about to replace, so
        the answer is always one step stale. Twice now that produced a footer
@@ -7148,17 +7164,29 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       }
       sudFitPass = 0;
 
-      if (sudFresh){ sudDoneSeen = done.count; sudFresh = false; }
+      if (sudFresh){ sudDoneSeen = done.count; sudSeenKinds = done.counts; sudFresh = false; }
       else if (done.count > sudDoneSeen && !sudDone){
+        /* Name what actually finished. One number can close a row and its box at
+           the same moment, so this reads the kinds that ROSE rather than
+           assuming a single one — "that box is complete" while a row also
+           finished would be telling the player half of what just happened. */
+        var grew = [];
+        if (done.counts.row > sudSeenKinds.row) grew.push('row');
+        if (done.counts.col > sudSeenKinds.col) grew.push('column');
+        if (done.counts.box > sudSeenKinds.box) grew.push('box');
+        var what = grew.length === 0 ? 'unit'
+                 : grew.length === 1 ? grew[0]
+                 : grew.slice(0, -1).join(', ') + ' and ' + grew[grew.length - 1];
         try { sfx('line'); } catch(err){}
         try {
           sana(done.count === done.total
-            ? 'Every ' + (L.bh ? 'box' : 'row') + ' is finished!'
-            : '<b>' + (L.bh ? 'That box is complete' : 'That row is complete') + '</b> — ' +
-              done.count + ' of ' + done.total + ' done. Keep going!', 'cheer', true);
+            ? 'Every row, column' + (L.bh ? ' and box' : '') + ' is finished!'
+            : '<b>That ' + what + ' is complete</b> — ' + done.count + ' of ' +
+              done.total + ' done. Keep going!', 'cheer', true);
         } catch(err){}
       }
       sudDoneSeen = done.count;
+      sudSeenKinds = done.counts;
 
       var filledCount = 0, blanks = 0;
       for (k = 0; k < n * n; k++){ if (sudCells[k]) filledCount++; if (!sudGiven[k]) blanks++; }
@@ -10086,7 +10114,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-162 (red now means not the answer, the way sudoku.com does it)';
+  var BUILD_VER = 'beta-163 (finished rows and columns lock green too)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
