@@ -95,6 +95,11 @@
   }
   /* one wide column on very narrow phones so names never get cramped */
   @media (max-width:359px){ .toggleSwitch { grid-template-columns:1fr; } }
+  /* An odd card out would sit alone in the left column with a gap beside it,
+     which reads as a missing puzzle rather than a deliberate third rung. Let it
+     take the whole row instead — on the one-column phone layout the span is a
+     no-op, so this needs no media query of its own. */
+  .toggleSwitch .toggleBtn.lvWide { grid-column:1 / -1; }
   .toggleBtn {
     border:2px solid #555; border-radius:8px;
     padding:8px 16px;
@@ -3317,15 +3322,22 @@ body{ background:#C9A87C !important; }
       <span><b>Slide Magic</b><i>slide the numbers back into order — the spaces below are what let them move</i></span>
     </div>
     <div class="toggleSwitch">
+      <!-- Raja's ladder: "level 1 number easy, level 2 alpha medium, 3 combo
+           hard". The grade is named on each card, so the order is not something
+           a player has to infer from the grid size. -->
       <button class="toggleBtn lvCard" id="slideTab" type="button" data-slide-level="fifteen" data-name="🔢 Slide 1–15" style="color:#10b981; border-color:#10b981; --c1:#a7f3d0; --c2:#34d399;">
         <span class="lvGlyph" aria-hidden="true">🔢</span>
-        <span class="lvText"><b class="lvName">Slide 1–15</b><span class="lvDiff">4×4 · one empty space</span><span class="lvMeta">the classic fifteen puzzle — only one gap to work with</span></span>
+        <span class="lvText"><b class="lvName">Slide 1–15</b><span class="lvDiff">Easy · 4×4 · one space</span><span class="lvMeta">15 blocks — the classic fifteen puzzle</span></span>
+      </button>
+      <button class="toggleBtn lvCard" id="slideAzTab" type="button" data-slide-level="az" data-name="🔤 Slide A–Z" style="color:#0ea5e9; border-color:#0ea5e9; --c1:#bae6fd; --c2:#38bdf8;">
+        <span class="lvGlyph" aria-hidden="true">🔤</span>
+        <span class="lvText"><b class="lvName">Slide A–Z</b><span class="lvDiff">Medium · 4×7 · two spaces</span><span class="lvMeta">26 letters, and a spare space to park one in</span></span>
       </button>
       <!-- The board Raja drew first, and the app he sent later ("Magic Slide
            Puzzle - Letters and Numbers"): six across, A-Z then 1-9 and 0. -->
-      <button class="toggleBtn lvCard" id="slideAzTab" type="button" data-slide-level="az" data-name="🔤 Slide A–Z + 1–9" style="color:#0ea5e9; border-color:#0ea5e9; --c1:#bae6fd; --c2:#38bdf8;">
-        <span class="lvGlyph" aria-hidden="true">🔤</span>
-        <span class="lvText"><b class="lvName">Slide A–Z + 1–9</b><span class="lvDiff">6×6 · one empty space</span><span class="lvMeta">35 blocks, a single gap — the hard one</span></span>
+      <button class="toggleBtn lvCard lvWide" id="slideAznTab" type="button" data-slide-level="azn" data-name="🔤 Slide A–Z + 1–9" style="color:#f59e0b; border-color:#f59e0b; --c1:#fde68a; --c2:#fbbf24;">
+        <span class="lvGlyph" aria-hidden="true">🔠</span>
+        <span class="lvText"><b class="lvName">Slide A–Z + 1–9</b><span class="lvDiff">Hard · 6×6 · one space</span><span class="lvMeta">35 blocks and a single gap — no spare room at all</span></span>
       </button>
     </div>
   </div>
@@ -5987,26 +5999,35 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         tiles: ['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15'], name: '1 to 15',
         goal: 'Finish with <b>1 2 3 4</b> on the top row, then <b>5</b> to <b>8</b>, <b>9</b> to <b>12</b>, and <b>13 14 15</b> — the classic sliding puzzle.'
       },
-      /* Raja, on the 4x7 letters-only board: "feel easy to finish, hence
-         provide a two blank slot ... The blank slot should be ONE like original
-         physical play board." He is right, and for the reason he gives: a
-         second space lets you park a block while you rearrange, which removes
-         most of the forced sequences. One space is the real puzzle.
+      /* Raja: "can add stand alone A to Z before combo — level 1 number easy,
+         level 2 alpha medium, 3 combo hard." So letters on their own are the
+         middle rung, between fifteen blocks and thirty-five.
 
-         Getting to one space needs the tile count to be one short of the grid,
-         and 26 letters cannot do that on any sensible rectangle — 27 would mean
-         inventing a 27th block, whose home square a child has no way of
-         knowing, in a puzzle whose whole point is order they already know.
-         Adding the digits solves it exactly: 26 + 9 = 35 in a 6x6 of 36. Which
-         lands back on the board Raja DREW FIRST (see above) — A to Z then the
-         digits, six across — now with the one space that makes it playable.
-         (His "1 to 10" would be 36 blocks needing 37 squares, and 37 is not a
-         rectangle; 1 to 9 is the count that fits.)
+         This board keeps TWO spaces, and that is forced rather than chosen.
+         One space needs the block count to be one short of the grid, and 26
+         letters cannot do that on any rectangle a phone can show: 4x7 would
+         need an invented 27th block whose home square a child has no way of
+         knowing, and 3x9 fits 26 in 27 but drives the blocks to 37px, under the
+         44px a finger needs. Two spaces is what 26 letters allow.
+
+         Which suits the middle rung anyway. The second space is the training
+         wheel — somewhere to park a block while you rearrange, which is exactly
+         the help that disappears on the hard board. */
+      az: {
+        cols: 4, rows: 7, title: '🔤 Slide A–Z', alpha: true,   // 28 places, 26 blocks -> TWO gaps
+        tiles: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''), name: 'A to Z',
+        goal: 'Finish with <b>A</b> to <b>Z</b> reading across — exactly like a box of alphabet blocks. Two spaces to work with, so there is always somewhere to park a block.'
+      },
+      /* The hard one, and the board Raja DREW FIRST (see above) — A to Z then
+         the digits, six across — with the single space that makes it playable.
+         The digits are what buy that space: 26 + 9 = 35 blocks in a 6x6 of 36,
+         one short of the grid exactly. (His "1 to 10" would be 36 blocks needing
+         37 squares, and 37 is not a rectangle; 1 to 9 is the count that fits.)
 
          Six columns means smaller blocks, ~51px on a 360px phone, still above
-         the 44px a finger needs. One gap also removes the pick-then-choose
-         step entirely: a block can only ever have one place to go. */
-      az: {
+         the 44px a finger needs. One gap also removes the pick-then-choose step
+         entirely: a block can only ever have one place to go. */
+      azn: {
         cols: 6, rows: 6, title: '🔤 Slide A–Z + 1–9', alpha: true,  // 36 places, 35 blocks -> ONE gap
         tiles: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').concat(['1','2','3','4','5','6','7','8','9']),
         name: 'A to Z and 1 to 9',
@@ -9264,8 +9285,14 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-149 (the letter board is A-Z plus 1-9 with a single space, like a real sliding board)';
-  window.BETA_VER = 'beta-147';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'beta-150 (A-Z on its own is back, as the medium rung between the numbers and the combo)';
+  /* DERIVED, not a second literal. This was its own hardcoded string and it sat
+     at beta-147 through two releases, so the footer and the BETA flag told
+     anyone who looked that the update had not arrived. Two version numbers that
+     must agree will eventually disagree; one of them has to come from the other.
+     (The test that "checked" it asserted the literal, so it pinned the stale
+     value instead of catching it — it now asserts the two AGREE.) */
+  window.BETA_VER = BUILD_VER.split(' ')[0];   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
