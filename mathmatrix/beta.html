@@ -2071,6 +2071,17 @@ body.sudokuMode .keysChip,
 body.sudokuMode .targetPill,
 body.sudokuMode .solvedCounter{ display:none !important; }
 #sudokuPanel{ width:100%; max-width:560px; margin:0 auto; }
+/* Scrollable, exactly as #slidePanel and #gatePanel are, and for the same
+   reason: .screens is overflow:hidden, so anything taller than the screen is
+   not merely awkward, it is CLIPPED with no way to reach it.
+   The board shrinks itself to avoid ever needing this — but it will not go
+   below 22px a square, and on a 340x780 phone the 9x9 plus its instructions,
+   pad and buttons genuinely does not fit above the tab bar at that size.
+   Shrinking further would make the numbers too small to read; scrolling costs
+   nothing and is what every other panel here already does. */
+body.sudokuMode #sudokuPanel{ display:block !important;
+  flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden;
+  -webkit-overflow-scrolling:touch; }
 .sudHead{ background:rgba(255,246,231,.72); border-radius:18px; padding:11px 13px;
   margin:0 0 11px; font-size:14.5px; font-weight:800; color:#33220F; line-height:1.4; }
 .sudBoardWrap{ display:flex; justify-content:center; }
@@ -6928,13 +6939,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
          whatever the new board starts with instead of comparing against the old
          one — setting the count to -1 here would have made every new puzzle
          chime immediately, which is the opposite of marking an achievement. */
-      sudFresh = true;
+      sudFresh = true; sudCellCap = 0;
       var head = document.getElementById('sudHead');
       if (head) head.innerHTML = sudLv.goal;
       sudRender();
       sudTimerStart();
       try {
-        sana('Tap a square, then tap a number. A wrong one turns <b>red</b> — nothing is ever lost, just fix it.', 'think', true);
+        sana('Tap a square, then a number. A wrong one turns <b>red</b> at once — nothing is lost, just change it.', 'think', true);
       } catch(e){}
     }
     // which cells share a row, column, box or diagonal with the picked one —
@@ -6960,12 +6971,14 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
        anything. */
     function sudDoneCells(){
       var L = sudLv, n = L.n, out = {}, i, j, k;
+      /* Complete now means "every square matches the answer", the same standard
+         the red uses. Judged by the rules alone, a box could hold all nine
+         digits in the wrong arrangement and go green while its numbers were
+         red — two marks contradicting each other on the same squares. */
       function unitComplete(idx){
-        var seen = {};
         for (k = 0; k < idx.length; k++){
-          var v = sudCells[idx[k]];
-          if (!v || seen[v]) return false;
-          seen[v] = 1;
+          var i2 = idx[k];
+          if (!sudCells[i2] || sudCells[i2] !== sudSolution[i2]) return false;
         }
         return idx.length === n;
       }
@@ -6988,6 +7001,15 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       return { cells: out, count: units.filter(unitComplete).length, total: units.length };
     }
     var sudDoneSeen = 0, sudFresh = true;
+    /* Sizing the board needs to KNOW what the layout did, and a single pass
+       cannot: it measures the space under a board it is about to replace, so
+       the answer is always one step stale. Twice now that produced a footer
+       three to five pixels under the tab bar, and the second attempt at
+       measuring more cleverly made it worse.
+       So: size it, look at where the footer actually landed, and if it is below
+       the bar, cap the square and go round again. Bounded to a few passes, and
+       it settles because the cap only ever shrinks. */
+    var sudCellCap = 0, sudFitPass = 0;
 
     function sudRender(){
       var el = document.getElementById('sudBoard'); if (!el) return;
@@ -7033,18 +7055,33 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       var byW = Math.floor((Math.min(vw - 24, 380)) / n);
       var bar = document.querySelector('.tabBar');
       var floor = bar ? bar.getBoundingClientRect().top : window.innerHeight;
-      var below = 0;
-      ['sudLegend', 'sudPad'].forEach(function(id){
-        var e = document.getElementById(id); if (e) below += e.offsetHeight;
-      });
+      /* MEASURE the space under the board, do not add up its parts and guess a
+         margin. The summed version carried a hardcoded 26px for the gaps
+         between them, and when the hint below grew by a line the real gaps no
+         longer matched it — the footer slid three to five pixels under the tab
+         bar again. The distance from the bottom of the board to the bottom of
+         the last thing under it includes every margin by definition, and does
+         not change when the board is resized. */
+      var boardRect = el.getBoundingClientRect();
       var foot = document.querySelector('.sudFoot');
-      if (foot) below += foot.offsetHeight;
-      below += 26;                                   // the margins between them
-      var room = floor - el.getBoundingClientRect().top - below;
+      var below;
+      if (foot && boardRect.height > 0){
+        below = foot.getBoundingClientRect().bottom - boardRect.bottom;
+      } else {
+        // first paint, before the board has a height to measure from
+        below = 0;
+        ['sudLegend', 'sudPad'].forEach(function(id){
+          var e = document.getElementById(id); if (e) below += e.offsetHeight;
+        });
+        if (foot) below += foot.offsetHeight;
+        below += 30;
+      }
+      var room = floor - boardRect.top - below;
       var byH = Math.floor(room / n);
       // room <= 0 means the panel is not laid out yet; fall back to the width
       // fit rather than to a nonsense negative square
       var cell = room > 0 ? Math.min(byW, byH) : byW;
+      if (sudCellCap) cell = Math.min(cell, sudCellCap);
       cell = Math.max(22, Math.min(cell, 74));       // 22px is what 10x10 already ships
       el.style.gridTemplateColumns = 'repeat(' + n + ', ' + cell + 'px)';
       var peers = sudPick >= 0 ? sudPeers(sudPick) : {};
@@ -7054,8 +7091,22 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         var r = Math.floor(i / n), c = i % n, v = sudCells[i];
         var isDiag = L.diag && (r === c || r + c === n - 1);
         var given = !!sudGiven[i];
+        /* Wrong means "not the answer for this square", the way sudoku.com does
+           it — Raja: "do it like same, hence most our group members using that
+           only, that web is dedicated to sudoku." Familiarity to the people who
+           actually play it wins here.
+
+           It also answers the thing that confused him twice. A number can break
+           no rule and still be wrong, and staying silent about it let him play
+           three minutes on a board that was already impossible: two of his
+           entries were wrong, neither clashed with anything, and by the time
+           the board locked up there was no way to tell which.
+
+           This is a superset of the old rule, not a replacement — the stored
+           answer contains no clashes, so anything that clashes also differs
+           from it. Nothing that used to go red stops going red. */
         var bad = false;
-        if (v && !given) bad = !sudOk(sudCells, r, c, v, L);
+        if (v && !given) bad = (v !== sudSolution[i]);
         var cls = 'sudCell';
         if (isDiag) cls += ' diag';
         if (given) cls += ' given';
@@ -7083,6 +7134,20 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
          do further more eagerly" Raja is after. Fired only when the number of
          finished units GOES UP, so it marks the moment rather than chiming on
          every keystroke, and it stays quiet while a puzzle is being set up. */
+      /* Did the footer actually land above the tab bar? If not, shrink and go
+         again — this is the pass that makes the sizing right rather than
+         approximately right. */
+      if (foot && sudFitPass < 4 && cell > 22){
+        var over = foot.getBoundingClientRect().bottom - floor;
+        if (over > 0){
+          sudFitPass++;
+          sudCellCap = Math.max(22, cell - Math.max(1, Math.ceil(over / n)));
+          sudRender();
+          return;
+        }
+      }
+      sudFitPass = 0;
+
       if (sudFresh){ sudDoneSeen = done.count; sudFresh = false; }
       else if (done.count > sudDoneSeen && !sudDone){
         try { sfx('line'); } catch(err){}
@@ -7153,23 +7218,27 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
            RULE collision does this: a number can break no rule and still turn
            out wrong later, and flashing red at that would be telling the player
            the answer rather than teaching them to look. */
+        /* The alert now fires on any WRONG number, not only one that collides —
+           same test as the red itself, so the flash and the red can never
+           disagree. Where there IS something to point at, the squares already
+           holding that number still flash along with it, because "here is where
+           it clashes" teaches more than "that is wrong". Where the number
+           merely is not the answer, there is nothing honest to point at, so the
+           square flashes alone. */
         var clashed = false;
-        if (v){
-          var r0 = Math.floor(sudPick / sudLv.n), c0 = sudPick % sudLv.n;
-          if (!sudOk(sudCells, r0, c0, v, sudLv)){
-            clashed = true;
-            var seen = sudPeers(sudPick);
-            sudClash = {};
-            for (var q in seen) if (seen.hasOwnProperty(q)){
-              var qi = parseInt(q, 10);
-              if (qi !== sudPick && sudCells[qi] === v) sudClash[qi] = 1;
-            }
-            sudFlash = sudPick;
-            if (sudFlashTimer) clearTimeout(sudFlashTimer);
-            sudFlashTimer = setTimeout(function(){
-              sudFlash = -1; sudClash = {}; sudFlashTimer = null; sudRender();
-            }, 820);
+        if (v && v !== sudSolution[sudPick]){
+          clashed = true;
+          var seen = sudPeers(sudPick);
+          sudClash = {};
+          for (var q in seen) if (seen.hasOwnProperty(q)){
+            var qi = parseInt(q, 10);
+            if (qi !== sudPick && sudCells[qi] === v) sudClash[qi] = 1;
           }
+          sudFlash = sudPick;
+          if (sudFlashTimer) clearTimeout(sudFlashTimer);
+          sudFlashTimer = setTimeout(function(){
+            sudFlash = -1; sudClash = {}; sudFlashTimer = null; sudRender();
+          }, 820);
         }
         try { sfx(clashed ? 'no' : (v ? 'yes' : 'card')); } catch(err){}
         sudRender();
@@ -7231,7 +7300,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     });
     window.addEventListener('resize', function(){
       var p = document.getElementById('sudokuPanel');
-      if (p && p.style.display !== 'none') sudRender();
+      if (p && p.style.display !== 'none'){ sudCellCap = 0; sudRender(); }
     });
 
     var gateListBtn = document.getElementById('gateListBtn');
@@ -10017,7 +10086,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-161 (a finished box turns green)';
+  var BUILD_VER = 'beta-162 (red now means not the answer, the way sudoku.com does it)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that

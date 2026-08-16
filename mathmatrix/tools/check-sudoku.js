@@ -429,6 +429,59 @@ function countAnswers(grid, L, cap){
     BR.error ? false : BR.stillGreen === 0,
     BR.error || BR.stillGreen + ' still green');
 
+  /* THE CASE THAT CONFUSED RAJA TWICE, now the defining one.
+     sudoku.com marks a number red when it differs from the stored answer, even
+     when nothing on the board clashes with it — his 3 was legal by every rule
+     and still went red. He asked for the same behaviour, because his group
+     plays on that site. So find a number that breaks NO rule here and is still
+     not the answer, and check it goes red anyway. Without this the old
+     rule-only behaviour would pass every other check silently. */
+  await ev(`document.getElementById('tab-scHome').click()`); await sleep(250);
+  await ev(`document.querySelector('.toggleBtn[data-sud-level="medium"]').click()`); await sleep(1500);
+  const boardC = await ev(`Array.from(document.querySelectorAll('#sudBoard [data-sud]')).map(function(c){
+    return c.textContent.trim() ? parseInt(c.textContent, 10) : 0; })`);
+  const ansC = (function solveIt(grid, L){
+    const n = L.n, g = grid.slice();
+    (function go(){
+      let idx = -1;
+      for (let i = 0; i < n * n; i++) if (!g[i]){ idx = i; break; }
+      if (idx < 0) return true;
+      const r = Math.floor(idx / n), c = idx % n;
+      for (let v = 1; v <= n; v++) if (okAt(g, r, c, v, L)){ g[idx] = v; if (go()) return true; g[idx] = 0; }
+      return false;
+    })();
+    return g;
+  })(boardC, LEVELS.medium);
+  // a blank square with 2+ legal candidates: one is the answer, another is not
+  let sneaky = -1, sneakyVal = 0;
+  for (let i = 0; i < 81 && sneaky < 0; i++){
+    if (boardC[i]) continue;
+    const r = Math.floor(i / 9), c = i % 9;
+    for (let v = 1; v <= 9; v++){
+      if (v === ansC[i]) continue;
+      if (okAt(boardC, r, c, v, LEVELS.medium)){ sneaky = i; sneakyVal = v; break; }
+    }
+  }
+  ok('found a number that is legal here but is not the answer',
+    sneaky >= 0, sneaky >= 0 ? sneakyVal + ' at square ' + sneaky + ' (answer is ' + ansC[sneaky] + ')' : 'none found');
+  if (sneaky >= 0){
+    const sneakRes = await ev(`(function(){
+      var cells = document.querySelectorAll('#sudBoard [data-sud]');
+      cells[${sneaky}].click();
+      document.querySelector('#sudPad [data-sudkey="${sneakyVal}"]').click();
+      var after = document.querySelectorAll('#sudBoard [data-sud]')[${sneaky}];
+      return JSON.stringify({ red: after.classList.contains('bad'),
+        flashing: after.classList.contains('flash'),
+        clashMarks: document.querySelectorAll('#sudBoard .clash').length }); })()`);
+    const SN = JSON.parse(sneakRes);
+    ok('a legal-but-wrong number goes red, the way sudoku.com does it',
+      SN.red === true, 'red: ' + SN.red);
+    ok('and it flashes, so it is noticed', SN.flashing === true, 'flashing: ' + SN.flashing);
+    ok('nothing is falsely marked as clashing with it, because nothing does',
+      SN.clashMarks === 0, SN.clashMarks + ' squares marked as clashing');
+    await shot('sudoku-legal-but-wrong.png');
+  }
+
   ok('no JS errors', errs.length === 0, errs.join(' | '));
   ws.close(); ch.kill();
   console.log('\n' + (fail === 0 ? 'ALL GREEN' : fail + ' FAILURES'));
