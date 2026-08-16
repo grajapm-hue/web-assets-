@@ -6112,10 +6112,32 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       // Sized from the column count, so a board with fewer columns really does
       // get bigger blocks rather than just more air around them.
       var wide = slideLv.cols >= 5;
-      el.style.setProperty('--slideFont', wide ? '24px' : '30px');
       el.style.setProperty('--slideRadius', wide ? '12px' : '16px');
-      el.style.gap = wide ? '6px' : '8px';
-      el.style.maxWidth = wide ? '352px' : '330px';
+      var gap = wide ? 6 : 8;
+      el.style.gap = gap + 'px';
+      /* Sizing by COLUMNS alone is only right while a board is no taller than
+         it is wide. 1-15 is 4x4 so it always fitted; A-Z is 4 across and SEVEN
+         down, and column-sizing built a 583px board that pushed "Show me how"
+         and "Shuffle again" clean off the bottom of every phone size — the
+         demo button, unreachable on the board that most needs it.
+         The blocks are square, so capping the block by the height left between
+         the board and the tab bar caps the whole board. */
+      var vw = document.documentElement.clientWidth || window.innerWidth || 360;
+      var byW = Math.floor((Math.min(vw - 20, wide ? 352 : 330) - gap * (SLIDE_COLS - 1)) / SLIDE_COLS);
+      var bar = document.querySelector('.tabBar');
+      var floor = bar ? bar.getBoundingClientRect().top : window.innerHeight;
+      var lab = document.getElementById('slideSpareLabel');
+      var foot = document.querySelector('.slideFoot');
+      // what has to stay visible UNDER the board, plus its margins
+      var below = (lab ? lab.offsetHeight : 0) + (foot ? foot.offsetHeight : 0) + 26;
+      var room = floor - el.getBoundingClientRect().top - below;
+      var byH = Math.floor((room - gap * (SLIDE_ROWS - 1)) / SLIDE_ROWS);
+      // room <= 0 means the panel is not laid out yet (hidden, first paint) —
+      // fall back to the width fit rather than to a nonsense negative cell.
+      var cell = room > 0 ? Math.min(byW, byH) : byW;
+      cell = Math.max(34, cell);                 // never shrink past a tappable block
+      el.style.maxWidth = (cell * SLIDE_COLS + gap * (SLIDE_COLS - 1)) + 'px';
+      el.style.setProperty('--slideFont', Math.max(15, Math.round(cell * (wide ? 0.36 : 0.40))) + 'px');
       el.classList.toggle('slideAlpha', !!slideLv.alpha);
       var rowOk = [];
       for (var r = 0; r < SLIDE_ROWS; r++) rowOk.push(slideRowDone(r));
@@ -6365,6 +6387,12 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       board.addEventListener('pointerup', slideDragEnd);
       board.addEventListener('pointercancel', slideDragEnd);
     })();
+    // The board is now sized from the room left under it, and turning the phone
+    // changes that room — so it has to be measured again, not kept from before.
+    window.addEventListener('resize', function(){
+      var p = document.getElementById('slidePanel');
+      if (p && p.style.display !== 'none') renderSlide();
+    });
 
     function slideTap(i){
       if (Date.now() - slideDragEndedAt < 320) return;   // the drag already moved it
@@ -9220,7 +9248,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-147 (rows are red until every block in them is right, then green)';
+  var BUILD_VER = 'beta-148 (the A-Z board now leaves room for its own buttons)';
   window.BETA_VER = 'beta-147';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
