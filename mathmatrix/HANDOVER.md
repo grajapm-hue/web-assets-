@@ -263,7 +263,11 @@ boards; the paired home list; the version and auto-update fixes.
 **Test: beta-154.** Same as live plus nothing outstanding — they were promoted
 together.
 
-**Announced but not built:** Sudoku, shown as "Coming soon" on the home list.
+**In design, not built:** **Pallanguzhi** — the traditional Tamil 14-cup game, which Raja wants for family play.
+The open rule questions are in `mathmatrix/pallanguzhi-questions.txt` (Tamil and English) and are with his family.
+Nothing can be built until Q1 is answered — whether a cup reaching 4 (Pasu) goes to the row's OWNER or to whoever
+is sowing — because it changes the whole shape of the game. Two play modes were agreed: two players passing one
+phone first, then the app as an opponent for solo training.
 
 **Open question, never answered:** on the slide win screen the "Rows done: N of N"
 counter disappears at the moment the last row completes, because the code blanks
