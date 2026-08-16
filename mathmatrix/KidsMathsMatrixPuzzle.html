@@ -16,11 +16,12 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0d0d0d">
-<!-- The real app's own manifest: this is what an installed icon on a child's
-     home screen points at. While this build lived in beta it deliberately used
-     a SEPARATE manifest (own name, own start_url, own scope) so an installed
-     preview could never collide with or shadow this one; promoting it back to
-     production restores the shared manifest.json the installed app expects. -->
+<!-- Raja, after three rounds landing on the same wall: "install"/"download" can
+     only ever fall back to the same manual instructions without a real manifest
+     — so, deliberately, build the real thing now. manifest.json is its OWN
+     manifest (own name, own start_url, own scope), never the shared manifest.json
+     production uses, so an installed beta icon can never collide with or shadow
+     the real app's. -->
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <!-- without this the browser asks for /favicon.ico, 404s, and the tab sits blank -->
@@ -94,6 +95,11 @@
   }
   /* one wide column on very narrow phones so names never get cramped */
   @media (max-width:359px){ .toggleSwitch { grid-template-columns:1fr; } }
+  /* An odd card out would sit alone in the left column with a gap beside it,
+     which reads as a missing puzzle rather than a deliberate third rung. Let it
+     take the whole row instead — on the one-column phone layout the span is a
+     no-op, so this needs no media query of its own. */
+  .toggleSwitch .toggleBtn.lvWide { grid-column:1 / -1; }
   .toggleBtn {
     border:2px solid #555; border-radius:8px;
     padding:8px 16px;
@@ -854,6 +860,28 @@
     color:#f87171; padding:0; margin:0 0 2px;
   }
   .modeGroup{ width:100%; }
+  /* Raja, marking the empty band on the right of the puzzle list: "shift binary
+     magic and gate logic sidewards of multiply, triangle, Sir Ramanujan tabs."
+     Every group carries its own two-column card grid, so a group holding ONE
+     puzzle leaves its right seat empty — and four groups in a row did that,
+     which is the tall gap he drew a box around. Pairing those groups puts two
+     of them on a line and the gap disappears.
+     A flex row of two groups, NOT a change to .difficultyBar: that container is
+     the scroller, it is flex-centred and fitHome() measures it, so turning it
+     into a grid to get the same effect would put a tuned layout at risk for a
+     cosmetic gain. Binary Magic keeps a full row of its own — it holds two
+     cards, so both seats are already used and there is nothing to reclaim. */
+  .modePair{ display:flex; gap:10px; align-items:flex-start; }
+  .modePair > .modeGroup{ flex:1 1 0; min-width:0; }
+  /* A paired group is already half the width, so its card grid must drop to ONE
+     column. Left at two, the single card took half of a half — a quarter of the
+     screen — and "3³ Multiply" came out as "3³ Multip / ly". The card should be
+     the same width as one in Binary Magic's row, because that is exactly what
+     it is: one of two cards on a line. */
+  .modePair .toggleSwitch{ grid-template-columns:1fr; }
+  /* Below 360px the card grid is already one column; pairing there would give
+     each group half of a narrow screen. Same breakpoint, same reason. */
+  @media (max-width:359px){ .modePair{ display:block; } }
   .modeHead{ display:flex; align-items:center; gap:10px; margin:14px 0 9px; }
   .modeHead .mIco{
     width:36px; height:36px; flex:none; border-radius:12px; display:grid; place-items:center;
@@ -863,7 +891,29 @@
   .modeHead b{ display:block; font-size:14.5px; font-weight:900; color:#fff; letter-spacing:.2px; }
   .modeHead i{ display:block; font-style:normal; font-size:11.5px; font-weight:600;
                color:#a49bcb; line-height:1.45; margin-top:1px; }
-  .modeGroup.solo .toggleSwitch{ grid-template-columns:1fr; }
+  /* .modeGroup.solo used to collapse a one-card group to a single full-width
+     column. Raja: "why can't split the row tab ... for easy to get room For
+     further coming soon puzzles addup" — every group is the same two-column
+     grid now, so a lone puzzle sits in the left slot with its family's empty
+     seat visible beside it. The rule is gone rather than merely unused, so
+     nothing re-collapses a group by accident later. */
+
+  /* A puzzle that is announced but not built yet: readable, clearly not
+     ready, and not tappable. Deliberately NOT disabled-looking-but-clickable
+     — a child tapping a coming-soon card and getting nothing is worse than a
+     card that never invited the tap. */
+  .toggleBtn.lvCard.lvSoon{
+    background:linear-gradient(152deg, rgba(255,255,255,.14), rgba(255,255,255,.06)) !important;
+    color:#e6dcc6 !important; cursor:default; pointer-events:none;
+    outline:2px dashed rgba(255,255,255,.28); outline-offset:-6px; box-shadow:none !important;
+  }
+  .lvSoon .lvGlyph{ opacity:.65; }
+  /* #4A2E12, not the pale gold this started as: the card is translucent, so
+     what is actually painted behind it is the sandalwood (rgb 201,168,124),
+     and pale-on-pale measured 1.63:1 against it — the app holds itself to
+     4.5:1 for small text. This measures 5.55:1, still visibly quieter than
+     the puzzle name above it (7.81:1) so it reads as secondary, not equal. */
+  .lvSoon .lvDiff{ color:#4A2E12 !important; font-weight:800; }
 
   .toggleBtn.lvCard{
     display:flex; align-items:center; gap:11px; text-align:left;
@@ -1904,8 +1954,10 @@ body.onPlay .solvedCounter{ font-size:9px !important; padding:3px 9px !important
    just a slightly duller version of a real choice), and the "back to all
    gates" row sits visually apart from the numbered level rows below it so
    it doesn't read as a fourth level. */
-.rowBtn.gateLevelLocked{ opacity:.5; cursor:not-allowed; }
-.rowBtn.gateLevelLocked:active{ transform:none; box-shadow:var(--clay); }
+/* .gateLevelLocked's rules lived here until beta-131. Nothing applies the
+   class any more -- levels stopped being locked in beta-130 -- and a greyed
+   "not-allowed" style is exactly the thing a future edit might reach for by
+   accident, so it goes rather than sitting around looking available. */
 .rowBtn.gateLevelBack{ background:transparent; box-shadow:none; margin-bottom:6px;
   color:var(--bink2); font-weight:800; }
 .rowBtn.gateLevelBack i{ background:transparent; font-size:16px; }
@@ -1993,6 +2045,138 @@ body.gateMode .keysChip,
 body.gateMode .targetPill,
 body.gateMode .solvedCounter{ display:none !important; }
 body.binaryMode #binaryPanel{ display:flex !important; }
+
+/* Slide Magic hides the same grid furniture the other card games do — there
+   is no magic square to build, no target to preview, nothing to Watch. Same
+   body-class mechanism as binaryMode and gateMode rather than a third way. */
+body.slideMode #barWatch,
+body.slideMode #boardWrap,
+body.slideMode #playRow,
+body.slideMode #keypad,
+body.slideMode #rotateHint,
+body.slideMode #learnRow,
+body.slideMode #learnHint,
+body.slideMode .keysChip,
+body.slideMode .targetPill,
+body.slideMode .solvedCounter{ display:none !important; }
+/* Scrollable, exactly as #gatePanel is and for the same reason: .screens is
+   overflow:hidden, so anything taller than the screen is not merely awkward,
+   it is CLIPPED with no way to reach it. Measured before fixing: on a 360x740
+   and a 320x640 phone the Shuffle button and the move counter sat behind the
+   tab bar, so a child who wanted a fresh deal simply could not get one. */
+body.slideMode #slidePanel{ display:block !important;
+  flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; }
+
+.slideHead{ background:#F3E4C9; border:2px solid #C4A277; border-radius:14px;
+  padding:12px 14px; margin:0 0 14px; font-size:15px; font-weight:800; color:#33220F; }
+/* 3 wide, 4 tall: the top nine cells are the puzzle, the bottom three the
+   parking row. One grid, not two, so a tile slides between them by the same
+   rule it slides anywhere else — the seam is drawn, not structural. */
+.slideBoard{ display:grid; grid-template-columns:repeat(3, 1fr);
+  gap:8px; max-width:330px; margin:0 auto; --slideFont:30px; --slideRadius:16px; }
+.slideCell{ aspect-ratio:1; border-radius:var(--slideRadius); border:2px dashed #C4A277;
+  background:rgba(255,246,231,.35); padding:0; font:inherit; }
+/* TWO COLOURS, TWO MEANINGS. Raja: "use of two green shades" — and he was
+   being generous, there were three. Green outline said "this can move",
+   darker green outline said "you picked this", green fill said "it can go
+   here": three different ideas in one hue, so none of them read.
+   Now green means one thing only — THIS CAN MOVE, the steady state of the
+   board. Amber means the choice you are making right now: the amber block
+   goes to the amber space. The demo already spoke amber for the block it
+   points at, so it says the same thing the game does. */
+.slideCell.slideTarget{ border:3px solid #f59e0b; background:rgba(245,158,11,.28);
+  cursor:pointer; animation:starPop .35s var(--spring); }
+/* Scoped through .slideBoard on purpose. A picked block ALSO carries
+   .canMove, and that rule is declared further down at the same specificity —
+   so the green "can move" outline was quietly winning and the block you had
+   just chosen never turned amber. Weighting this one higher settles it
+   whatever order the rules end up in. */
+.slideBoard .slideTile.picked{ outline:4px solid #f59e0b; outline-offset:-4px;
+  box-shadow:0 0 0 4px rgba(245,158,11,.3), 0 3px 0 rgba(94,64,32,.35); }
+/* touch-action:none only on blocks that can actually move, so a finger
+   starting on a stuck block still scrolls the page normally. Without it the
+   browser claims the gesture as a scroll and the block never follows. */
+.slideTile.canMove{ touch-action:none; }
+.slideTile{ aspect-ratio:1; border-radius:var(--slideRadius); border:0; cursor:pointer;
+  transition:transform .15s ease;
+  font-family:inherit; font-size:var(--slideFont); font-weight:900; color:#3A2A14;
+  background:linear-gradient(152deg,#FFE9BF,#F3C97E);
+  box-shadow:0 3px 0 rgba(94,64,32,.35); touch-action:manipulation; }
+/* While a finger is on it the block must track that finger exactly, so no
+   transition and no :active nudge fighting the drag transform. */
+.slideTile.dragging{ transition:none; z-index:6; position:relative;
+  box-shadow:0 6px 10px rgba(94,64,32,.45); }
+.slideTile:active:not(.dragging){ transform:translateY(2px); box-shadow:0 1px 0 rgba(94,64,32,.35); }
+/* The movable ones say so. A child should not have to guess which tiles are
+   next to a space — that is the puzzle's difficulty, not the interface's. */
+/* Raja: "color of box should change when properly completed else ... should
+   retain such boxes is help notice to player know". He is right, and it is a
+   better answer than the counter alone: one glance and the two blocks that
+   are wrong are the two that are not green.
+   Green USED to mean "this can move", which cost more than it gave once the
+   board went down to a single gap — the blocks that can move are the ones
+   touching the hole, and the hole is right there. Correctness is the thing
+   that cannot be seen. So green moves to the more valuable job, and the
+   colours stay at two meanings rather than three:
+       green  = this block is HOME
+       amber  = the move you are making right now
+   A movable block keeps a lifted shadow instead of an outline, so the
+   affordance survives without spending a colour on it. */
+.slideTile.canMove{ box-shadow:0 5px 0 rgba(94,64,32,.4); }
+/* RED until the row is right, GREEN when every cell in it is home — and back
+   to red the moment a slide disturbs it. Border, not fill: the fill still
+   says which board you are on (honey numbers, blue letters), and the amber
+   outline still says which move you are making, so each channel keeps one
+   job. box-sizing so adding a border does not shrink the block. */
+.slideTile, .slideCell{ box-sizing:border-box; }
+/* Square is the default, but a board squeezed by height would rather be wide:
+   drop the square ratio and take the height the fit worked out, so the blocks
+   reach both edges instead of leaving dead margins. */
+.slideBoard.slideWideCells .slideTile,
+.slideBoard.slideWideCells .slideCell{ aspect-ratio:auto; height:var(--slideCellH); }
+.slideTile.rowBad{ border:3px solid #C0453C; }
+.slideTile.rowOk{ border:3px solid #2E9E5B; }
+.slideCell.rowBad{ border:3px dashed #C0453C; }
+.slideCell.rowOk{ border:3px dashed #2E9E5B; }
+/* Letters get their own tint. Raja: "keep differentiate to alpha and
+   numerical" — the two boards no longer mix the two kinds, and colouring
+   them apart means a child can tell at a glance which puzzle they are in
+   even before reading a block. Cool blue for letters, the warm honey for
+   numbers; both keep the same dark text, so contrast is unchanged. */
+.slideAlpha .slideTile{ background:linear-gradient(152deg,#D8ECFB,#A8CFF0); }
+.slideTile.locked{ opacity:.92; cursor:default; }
+/* The parking row reads as a shelf under the board, not as four equal rows. */
+/* .slideRowGap drew the dotted line under the parking row. Both went in
+   beta-143 — the gaps live in the grid itself now — and the rule goes with
+   them rather than sitting here inviting the row to be brought back. */
+.slideSpareLabel{ max-width:330px; margin:8px auto 0; font-size:11.5px;
+  font-weight:800; color:#7A5A32; text-align:center; }
+.slideFoot{ display:flex; align-items:center; justify-content:center;
+  flex-wrap:wrap; max-width:330px; margin:14px auto 0; gap:10px; }
+.slideShow{ background:#10b981; color:#FFF6E7; border-color:#0f9c6c; }
+/* The demo points at two things at once, because they are the two halves of
+   the idea: the block you touch, and the space it is going to. */
+.slideHand{ position:fixed; z-index:70; font-size:38px; pointer-events:none;
+  transform:translate(-46%, -22%); filter:drop-shadow(0 3px 4px rgba(0,0,0,.35));
+  animation:slideHandTap .8s ease-in-out infinite; }
+@keyframes slideHandTap{ 0%,100%{ transform:translate(-46%,-22%) scale(1); }
+  50%{ transform:translate(-46%,-30%) scale(1.12); } }
+.slideTile.demoFrom{ outline:4px solid #f59e0b; outline-offset:-4px;
+  box-shadow:0 0 0 5px rgba(245,158,11,.3), 0 3px 0 rgba(94,64,32,.35); }
+/* Slower than a real drag's snap, and lifted above its neighbours, so the
+   journey itself is what you watch rather than the destination. */
+.slideTile.demoSliding{ transition:transform .5s cubic-bezier(.34,1,.64,1);
+  z-index:7; position:relative; box-shadow:0 8px 14px rgba(94,64,32,.45); }
+/* Amber, matching the block the finger is on — the demo is showing the same
+   "this one goes there" pairing the player makes by hand, so it should not
+   invent a second colour language to say it. */
+.slideCell.demoTo{ border:3px solid #f59e0b; background:rgba(245,158,11,.28); }
+.slideBtn{ padding:9px 16px; border-radius:999px; border:2px solid #8A5E31;
+  background:#FFF6E7; color:#5E3D1C; font-family:inherit; font-size:13px;
+  font-weight:800; cursor:pointer; touch-action:manipulation; }
+.slideMoves{ font-size:13px; font-weight:900; color:#5E3D1C; }
+/* Quieter than the move count: it is a nudge when you are close, not a score. */
+.slideHome{ font-size:12.5px; font-weight:800; color:#7A5A32; }
 /* Scrollable, like .difficultyBar already is. .screens is overflow:hidden, so
    before this a gate room taller than the screen was not merely awkward —
    it was CLIPPED behind the tab bar with no way to reach it, which is what
@@ -2600,9 +2784,20 @@ body{ background:#C9A87C !important; }
    but scoped one card per gate (matches every other puzzle: pick any,
    any time, no forced order) and covering the WHOLE truth table per gate,
    not one lucky row. Sandalwood, not the reference's dark theme. */
-.gateBackBtn{ display:block; margin:0 0 14px; padding:9px 18px; border-radius:999px;
+/* Back and Skip share a row: leaving the gate entirely and moving on to the
+   next level are the two ways out, so they belong side by side rather than
+   stacked, and the row costs the same height the lone Back button did. */
+.gateTopRow{ display:flex; align-items:center; justify-content:space-between;
+  gap:10px; margin:0 0 14px; }
+.gateBackBtn{ display:block; margin:0; padding:9px 18px; border-radius:999px;
   border:2px solid #8A5E31; background:#FFF6E7; color:#5E3D1C; font-size:14px;
   font-weight:800; cursor:pointer; }
+/* Quieter than Back on purpose. Skipping is always available but it is not
+   the thing to reach for first — the questions are. */
+.gateSkipBtn{ padding:9px 16px; border-radius:999px; border:2px dashed #B08D5E;
+  background:transparent; color:#7A5A32; font-size:13px; font-weight:800;
+  cursor:pointer; touch-action:manipulation; white-space:nowrap; }
+.gateSkipBtn:active{ transform:translateY(1px); }
 /* The LOGIC sheet's truth table — a real A/B/Output grid, not a sentence
    per row. font-variant-numeric isn't relevant here (these are words, not
    digits) but tabular alignment is exactly the same idea: every column
@@ -2816,8 +3011,50 @@ body{ background:#C9A87C !important; }
 <div id="gatePanel" style="display:none;">
   <div id="gatePicker"></div>
   <div id="gateRoomWrap" style="display:none;">
-    <button class="gateBackBtn" id="gateBackBtn" type="button">← All Gates</button>
+    <!-- Raja: "skip to next puzzle in any time is too better one depends
+         player Will", and the app is deliberately for both the child who
+         wants every row of the truth table and the one just passing time.
+         So the choice sits here, OUTSIDE #gateRoom, which means it is
+         present in every room of every level without the per-room render
+         needing to know about it — including room 1, where tapping it is
+         exactly the "choose before the questions" he first described. -->
+    <div class="gateTopRow">
+      <button class="gateBackBtn" id="gateBackBtn" type="button">← All Gates</button>
+      <button class="gateSkipBtn" id="gateSkipBtn" type="button"
+              aria-label="Skip these questions and go to the next level">Skip ▶</button>
+    </div>
     <div id="gateRoom"></div>
+  </div>
+</div>
+
+<!-- 🔢 SLIDE MAGIC — Raja sent a classic number-slider short, then: "we make
+     two levels simple 3x3 for 1 to 9 in bottom add on row for space to shift
+     the number later can expand how level simple work".
+     The two things reconcile exactly: a 3x3 holding 1-9 has NO empty cell, so
+     a pure slider is impossible on it — the spare row underneath IS the empty
+     space. Tiles drop into it to open a gap, then slide back up. So the board
+     is really 3 wide x 4 tall, the top nine cells are the puzzle and the
+     bottom three are the parking he drew. -->
+<div id="slidePanel" style="display:none;">
+  <!-- Neutral: whichever board you pick replaces this immediately via
+       slideSetPrompt(), and naming one board here is how the letter board
+       ended up being told to put "1 to 9" in order. -->
+  <div class="slideHead" id="slideHead">Put the blocks back in order. Slide a block with your finger into a free space.</div>
+  <div class="slideBoard" id="slideBoard"></div>
+  <!-- Sits under the board, so it must not say "below" — it points UP at the
+       row beneath the dotted line, which is the parking shelf. -->
+  <div class="slideSpareLabel" id="slideSpareLabel">↑ a row turns green when every block in it is right — red rows are the ones still to fix</div>
+  <div class="slideFoot">
+    <!-- Raja: "need sana hints along show play for how to use slide such how
+         thump or finger to touch how where if one to shift to empty place".
+         The grids have "Watch Me Solve"; this is the same idea sized to this
+         game — not a full solve, just three real moves with a finger shown on
+         the block being tapped and the space it goes to, which is the entire
+         thing a child has to understand here. -->
+    <button class="slideBtn slideShow" id="slideShow" type="button">👆 Show me how</button>
+    <button class="slideBtn" id="slideShuffle" type="button">🔀 Shuffle again</button>
+    <span class="slideMoves" id="slideMoves">Moves: 0</span>
+    <span class="slideHome" id="slideHome"></span>
   </div>
 </div>
 
@@ -3000,8 +3237,10 @@ body{ background:#C9A87C !important; }
     </div>
   </div>
 
+  <!-- Two one-card groups on one line, so neither leaves an empty seat. -->
+  <div class="modePair">
   <!-- ✖️ MULTIPLY MODE -->
-  <div class="modeGroup solo">
+  <div class="modeGroup">
     <div class="modeHead" style="--m1:#fcd98a; --m2:#f59e0b;">
       <span class="mIco">✖️</span>
       <span><b>Multiply Magic</b><i>the lines multiply to the same answer instead of adding</i></span>
@@ -3015,7 +3254,7 @@ body{ background:#C9A87C !important; }
   </div>
 
   <!-- 🔺 TRIANGLE MODE -->
-  <div class="modeGroup solo">
+  <div class="modeGroup">
     <div class="modeHead" style="--m1:#fdba8c; --m2:#ea580c;">
       <span class="mIco">🔺</span>
       <span><b>Triangle Magic</b><i>3 sides, not rows and columns — only 5 targets ever work</i></span>
@@ -3027,9 +3266,13 @@ body{ background:#C9A87C !important; }
       </button>
     </div>
   </div>
+  </div><!-- /.modePair -->
 
+  <!-- Sir Ramanujan pairs with Gate Logic, which moved up from below Binary to
+       fill the seat beside him — the shift Raja drew an arrow for. -->
+  <div class="modePair">
   <!-- 🎂 BIRTHDAY MODE -->
-  <div class="modeGroup solo">
+  <div class="modeGroup">
     <div class="modeHead" style="--m1:#ffb3bf; --m2:#e11d48;">
       <span class="mIco">🎂</span>
       <span><b>Birthday Magic</b><i>type any date of birth and the square builds itself</i></span>
@@ -3043,6 +3286,36 @@ body{ background:#C9A87C !important; }
       </button>
     </div>
   </div>
+
+  <!-- 🔀 GATE LOGIC — ONE compact entry, not 7 full rows: the 7 individual
+       gate cards inflated .difficultyBar's natural content height enough
+       to push fitHome()'s --lvScale to its floor (measured: 0.92, the
+       hard-coded LV_MIN) and force the whole list to scroll. That's what
+       squeezed "Choose Difficulty" on Raja's real device — same fragile
+       spot the diffHead row has broken at before, now tripped by content
+       volume elsewhere in the list, not a diffHead change itself. Still
+       ONE card here, for that reason — Home's list height stays what it
+       was before Gate Logic existed.
+       Raja later: "when select level to go play rooms, but in logic
+       select shows only logic notes ... not play room like ChatGPT
+       presenting" — tapping this now goes to the real Play screen
+       (#gatePanel, wired like #binaryPanel) instead of opening a sheet.
+       No data-size: this deliberately stays outside the grid-puzzle
+       click handler (which assumes PUZZLES[newSize] and calls
+       initBoard()) — its own handler drives goScreen('scPlay') instead. -->
+  <div class="modeGroup">
+    <div class="modeHead" style="--m1:#c4b5fd; --m2:#8b5cf6;">
+      <span class="mIco">🔀</span>
+      <span><b>Gate Logic</b><i>flip the inputs, watch each gate decide ON or OFF</i></span>
+    </div>
+    <div class="toggleSwitch">
+      <button class="toggleBtn lvCard" id="gateListBtn" type="button" data-name="🔀 Gate Logic" style="color:#8b5cf6; border-color:#8b5cf6; --c1:#c4b5fd; --c2:#8b5cf6;">
+        <span class="lvGlyph" aria-hidden="true">🔀</span>
+        <span class="lvText"><b class="lvName">7 Logic Gates</b><span class="lvDiff">AND · OR · NOT · NAND · NOR · XOR · XNOR</span><span class="lvMeta">pick one, then walk its whole truth table</span></span>
+      </button>
+    </div>
+  </div>
+  </div><!-- /.modePair -->
 
   <!-- 🔢 BINARY MODE — Raja: split into the same 2-column grid as Add Magic
        (3x3/4x4 etc.), instead of stacking full-width, to leave more room
@@ -3065,31 +3338,53 @@ body{ background:#C9A87C !important; }
     </div>
   </div>
 
-  <!-- 🔀 GATE LOGIC — ONE compact entry, not 7 full rows: the 7 individual
-       gate cards inflated .difficultyBar's natural content height enough
-       to push fitHome()'s --lvScale to its floor (measured: 0.92, the
-       hard-coded LV_MIN) and force the whole list to scroll. That's what
-       squeezed "Choose Difficulty" on Raja's real device — same fragile
-       spot the diffHead row has broken at before, now tripped by content
-       volume elsewhere in the list, not a diffHead change itself. Still
-       ONE card here, for that reason — Home's list height stays what it
-       was before Gate Logic existed.
-       Raja later: "when select level to go play rooms, but in logic
-       select shows only logic notes ... not play room like ChatGPT
-       presenting" — tapping this now goes to the real Play screen
-       (#gatePanel, wired like #binaryPanel) instead of opening a sheet.
-       No data-size: this deliberately stays outside the grid-puzzle
-       click handler (which assumes PUZZLES[newSize] and calls
-       initBoard()) — its own handler drives goScreen('scPlay') instead. -->
-  <div class="modeGroup solo">
-    <div class="modeHead" style="--m1:#c4b5fd; --m2:#8b5cf6;">
-      <span class="mIco">🔀</span>
-      <span><b>Gate Logic</b><i>flip the inputs, watch each gate decide ON or OFF</i></span>
+  <!-- 🔜 COMING SOON — the two puzzles Raja named ("plan to add sudako and
+       physical A to Z, 0 to 9 contains in scattered and to arrange uniform
+       puzzle"). Their own group rather than filling the empty seats above,
+       because Sudoku is not a Multiply puzzle and the blocks one is not a
+       Triangle puzzle — those seats stay reserved for puzzles that genuinely
+       belong to those families. Two cards, so this group fills its own row
+       with no gap. Announced, not playable: pointer-events are off. -->
+  <!-- 🔢 SLIDE MAGIC — the first level of the sliding puzzle Raja asked for:
+       "we make two levels simple 3x3 for 1 to 9 in bottom add on row for
+       space to shift the number later can expand how level simple work".
+       Starts at 1-9; the A-Z sizes are the "later can expand", and the empty
+       seat beside it is exactly where they will go. -->
+  <div class="modeGroup">
+    <div class="modeHead" style="--m1:#a7f3d0; --m2:#10b981;">
+      <span class="mIco">🔢</span>
+      <span><b>Slide Magic</b><i>slide the numbers back into order — the spaces below are what let them move</i></span>
     </div>
     <div class="toggleSwitch">
-      <button class="toggleBtn lvCard" id="gateListBtn" type="button" data-name="🔀 Gate Logic" style="color:#8b5cf6; border-color:#8b5cf6; --c1:#c4b5fd; --c2:#8b5cf6;">
-        <span class="lvGlyph" aria-hidden="true">🔀</span>
-        <span class="lvText"><b class="lvName">7 Logic Gates</b><span class="lvDiff">AND · OR · NOT · NAND · NOR · XOR · XNOR</span><span class="lvMeta">pick one, then walk its whole truth table</span></span>
+      <!-- Raja's ladder: "level 1 number easy, level 2 alpha medium, 3 combo
+           hard". The grade is named on each card, so the order is not something
+           a player has to infer from the grid size. -->
+      <button class="toggleBtn lvCard" id="slideTab" type="button" data-slide-level="fifteen" data-name="🔢 Slide 1–15" style="color:#10b981; border-color:#10b981; --c1:#a7f3d0; --c2:#34d399;">
+        <span class="lvGlyph" aria-hidden="true">🔢</span>
+        <span class="lvText"><b class="lvName">Slide 1–15</b><span class="lvDiff">Easy · 4×4 · one space</span><span class="lvMeta">15 blocks — the classic fifteen puzzle</span></span>
+      </button>
+      <button class="toggleBtn lvCard" id="slideAzTab" type="button" data-slide-level="az" data-name="🔤 Slide A–Z" style="color:#0ea5e9; border-color:#0ea5e9; --c1:#bae6fd; --c2:#38bdf8;">
+        <span class="lvGlyph" aria-hidden="true">🔤</span>
+        <span class="lvText"><b class="lvName">Slide A–Z</b><span class="lvDiff">Medium · 3×9 · one space</span><span class="lvMeta">26 letters down a narrow board — one gap, no spare room</span></span>
+      </button>
+      <!-- The board Raja drew first, and the app he sent later ("Magic Slide
+           Puzzle - Letters and Numbers"): six across, A-Z then 1-9 and 0. -->
+      <button class="toggleBtn lvCard lvWide" id="slideAznTab" type="button" data-slide-level="azn" data-name="🔤 Slide A–Z + 1–9" style="color:#f59e0b; border-color:#f59e0b; --c1:#fde68a; --c2:#fbbf24;">
+        <span class="lvGlyph" aria-hidden="true">🔠</span>
+        <span class="lvText"><b class="lvName">Slide A–Z + 1–9</b><span class="lvDiff">Hard · 6×6 · one space</span><span class="lvMeta">35 blocks and a single gap — no spare room at all</span></span>
+      </button>
+    </div>
+  </div>
+
+  <div class="modeGroup">
+    <div class="modeHead" style="--m1:#cbd5e1; --m2:#94a3b8;">
+      <span class="mIco">🔜</span>
+      <span><b>Coming Soon</b><i>being built next — not ready to play yet</i></span>
+    </div>
+    <div class="toggleSwitch">
+      <button class="toggleBtn lvCard lvSoon" type="button" tabindex="-1" aria-disabled="true">
+        <span class="lvGlyph" aria-hidden="true">🔢</span>
+        <span class="lvText"><b class="lvName">Sudoku</b><span class="lvDiff">Coming soon</span><span class="lvMeta">some numbers given, you work out the rest</span></span>
       </button>
     </div>
   </div>
@@ -3120,8 +3415,7 @@ body{ background:#C9A87C !important; }
 <div class="credit">
   <!-- moved here from its own row on Home -- Raja: "remove beta feedback
        long tab here... hence placed this in About" -->
-  <span style="color:#9A3412; font-weight:800;">Found something odd?</span> Tell us
-  on the 💬 Feedback tab.<br>
+  <span style="color:#9A3412; font-weight:800;">Found something odd?</span> Tell us on the 💬 Feedback tab.<br>
   Created by G.RajaPathamuthu · Kids Puzzle Library<br>Guided by : JNT<br>Code Coordinated by : Claude AI<br>
   <i style="opacity:.85;">(What we get is all we ask for.)</i><br>
   Mail To : <a href="mailto:grajapm@gmail.com?subject=MathMatrix%20Feedback%20%26%20Suggestion" style="color:#8ab4f8; text-decoration:underline;">✉️ Feedback &amp; Suggestion</a><br>
@@ -3697,6 +3991,14 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     var gp = document.getElementById('gatePanel');
     if (gp) gp.style.display = on ? 'block' : 'none';
   }
+  function showSlideMode(on){
+    document.body.classList.toggle('slideMode', !!on);
+    var sp = document.getElementById('slidePanel');
+    if (sp) sp.style.display = on ? 'block' : 'none';
+    // The demo's finger is position:fixed on the body, so leaving mid-demo
+    // would strand it floating over whatever screen comes next.
+    if (!on && window.__slideDemoStop) window.__slideDemoStop();
+  }
 
   // Difficulty toggle — every level is open to free choice (grade labels are the guide).
   // Reward/applause on solving stays; there is no lock.
@@ -3723,6 +4025,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       goScreen('scPlay');                 // picking a level takes you straight to the board
       if (newSize === 'binary' || newSize === 'binary2'){   // card games, not grid puzzles
         if (currentSize === 'gatelogic') showGateMode(false);
+        if (currentSize === 'slide') showSlideMode(false);
         currentSize = newSize;
         showBinaryMode(true);
         highlightNowPlaying();
@@ -3730,6 +4033,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       }
       if (currentSize === 'binary' || currentSize === 'binary2') showBinaryMode(false);   // back to the grids
       if (currentSize === 'gatelogic') showGateMode(false);                               // back to the grids
+      if (currentSize === 'slide') showSlideMode(false);                                  // back to the grids
       if (newSize !== currentSize) {
         currentSize = newSize;
         initBoard();
@@ -5258,12 +5562,26 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     function saveGateProgress(p){
       try { localStorage.setItem(GATE_PROGRESS_KEY, JSON.stringify(p)); } catch(e){}
     }
-    // Number of levels completed so far for this gate (0 if none). Level
-    // idx is playable once idx <= this value (idx 0 is always playable).
-    function gateProgressFor(key){ return loadGateProgress()[key] || 0; }
+    /* WHICH levels are done, not HOW MANY. A count only ever described the
+       truth while levels had to be played in order; now that any level is
+       playable at any time, finishing 5-input first would have set the count
+       to 3 and quietly claimed the 2- and 3-input levels were done too.
+       Stored as a sorted array of level indexes under the same key, with a
+       one-time read of the old shape so nobody loses the ticks they earned:
+       under the old rules a count of N genuinely did mean levels 0..N-1. */
+    function gateDoneFor(key){
+      var v = loadGateProgress()[key];
+      if (typeof v === 'number'){                 // old shape: N levels, in order
+        var out = []; for (var i = 0; i < v; i++) out.push(i); return out;
+      }
+      return Array.isArray(v) ? v : [];
+    }
+    function gateLevelDone(key, levelIdx){ return gateDoneFor(key).indexOf(levelIdx) > -1; }
     function gateMarkLevelDone(key, levelIdx){
-      var p = loadGateProgress(), next = levelIdx + 1;
-      if ((p[key] || 0) < next){ p[key] = next; saveGateProgress(p); }
+      if (gateLevelDone(key, levelIdx)) return;
+      var p = loadGateProgress();
+      p[key] = gateDoneFor(key).concat([levelIdx]).sort(function(a, b){ return a - b; });
+      saveGateProgress(p);
     }
 
     function gateShortName(g){ return g.name.replace(' Gate', ''); }
@@ -5594,18 +5912,24 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       if (wrap) wrap.style.display = 'none';
       var title = document.getElementById('appBarTitle');
       if (title) title.innerHTML = boxedTitle(g.name);
-      var completed = gateProgressFor(g.key);
+      /* No locks. Raja: "give option to any time select any level of logic
+         gate puzzle like earlier history that password to skip the puzzle
+         after got feed back from groups" — the app already made this exact
+         call once, in v64, when the unlock ladder AND the supervisor PIN
+         were both removed because the parent group pointed out the audience
+         runs from small children to adults. Gate Logic had quietly
+         reintroduced the same gating (my own earlier spec, "one by one by
+         sub level of previous one completed"); this reverses it deliberately.
+         The ✅ stays, but as a record of what you played, never a gate. */
       if (picker){
         picker.innerHTML = '<div class="learnRows sheetLearn">' +
           '<button class="rowBtn gateLevelBack" type="button"><i>◀</i>' +
             '<span><b>All Gates</b><small>back to the list</small></span></button>' +
           g.levels.map(function(lv, idx){
-            var locked = idx > completed, isDone = idx < completed;
-            var status = locked ? ('🔒 Finish the ' + g.levels[idx - 1].inputs + '-input level first')
-                       : isDone ? '✅ Completed — tap to play again'
-                       : 'Tap to play';
-            return '<button class="rowBtn' + (locked ? ' gateLevelLocked' : '') + '" type="button"' +
-              (locked ? ' disabled' : '') + ' data-gate="' + g.key + '" data-level="' + idx + '">' +
+            var isDone = gateLevelDone(g.key, idx);
+            var status = isDone ? '✅ Completed — tap to play again' : 'Tap to play';
+            return '<button class="rowBtn" type="button"' +
+              ' data-gate="' + g.key + '" data-level="' + idx + '">' +
               '<i>' + (idx + 1) + '</i><span><b>' + lv.inputs + '-input ' + g.name + '</b>' +
               '<small>' + status + '</small></span></button>';
           }).join('') +
@@ -5631,10 +5955,29 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       else startGateLevel(key, 0);
     }
 
+    /* Where "move on" goes, from any level of any gate. One function so the
+       Skip button and the win screen's own next buttons can never drift
+       apart: the whole promise of Skip is that it lands you where finishing
+       would have. Next level in this gate; else the next gate, on its first
+       level not yet completed; else — the very last level of the last gate —
+       back to the gate list, since there is nothing after it. */
+    function gateGoNext(g, levelIdx){
+      if (levelIdx + 1 < g.levels.length){ startGateLevel(g.key, levelIdx + 1); return; }
+      var gi = GATES.indexOf(g);
+      var next = (gi > -1 && gi + 1 < GATES.length) ? GATES[gi + 1] : null;
+      if (!next){ openGatePicker(); return; }
+      var land = 0;
+      for (var i = 0; i < next.levels.length; i++){
+        if (!gateLevelDone(next.key, i)){ land = i; break; }
+      }
+      startGateLevel(next.key, land);
+    }
+
     function startGateLevel(key, levelIdx){
       var g = findGate(key); if (!g) return;
       if (levelIdx < 0 || levelIdx >= g.levels.length) return;
-      if (levelIdx > gateProgressFor(g.key)) return;   // defensive: UI already disables locked levels
+      // No progress check any more — every level is playable at any time.
+      // The only bound left is the array itself, above.
       gateState = { gate: g, levelIdx: levelIdx, roomIdx: 0 };
       sfx('card');
       var picker = document.getElementById('gatePicker'), wrap = document.getElementById('gateRoomWrap');
@@ -5654,6 +5997,593 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // applyAccent, goScreen('scPlay')) but its own currentSize sentinel
     // ('gatelogic') rather than a PUZZLES key, same precedent as 'binary'/
     // 'binary2' — neither of those is in PUZZLES either.
+    /* ══ SLIDE MAGIC ══════════════════════════════════════════════════
+       3 columns x 4 rows. Cells 0-8 are the puzzle, cells 9-11 the parking
+       row Raja drew. Nine tiles, three spaces — so unlike a 15-puzzle there
+       is always more than one place to move, which is what makes this
+       gentle enough for the youngest child he described.
+
+       SOLVABILITY is the trap here and it is silent: scatter a slider's
+       tiles at random and, in the classic single-blank case, half of all
+       arrangements cannot be solved at all — the child plays a game that was
+       never winnable. Shuffling by making random LEGAL moves backwards from
+       the finished board makes every deal reachable by construction, so the
+       question never arises. (Three blanks would likely make parity moot
+       anyway; building it this way means not having to be right about that.) */
+    /* Raja, sending "Magic Slide Puzzle - Letters and Numbers": "can give
+       through this too". That is the "later can expand" from his first note,
+       and the board he originally drew — A to Z then 1 to 9 and 0, six across.
+       So the engine takes a SIZE rather than hard-coding 3x3: same rules, same
+       parking row, more tiles. The spare row is always one full row wide, so
+       the bigger board gets six spaces to work with rather than three — which
+       is what keeps 36 tiles humane instead of a 15-puzzle nightmare. */
+    var SLIDE_LEVELS = {
+      /* Raja: "can replace 1 to 15, hence 1 to 9 look too short to finish even
+         kids doing is easy after watch show implement" — nine blocks with
+         three spare spaces was over almost as soon as it started, and once a
+         child has watched Show me how there is nothing left to work out.
+         Fifteen in a 4x4 is the classic sliding puzzle everyone recognises,
+         and the blocks come out BIGGER than the old 3x3 board's neighbours on
+         the letter board (76px) because four columns divide the width kindly.
+         Like A-Z, the blocks no longer fill the grid: 15 in 16, so the last
+         puzzle cell is a space — one more place to manoeuvre. */
+      fifteen: {
+        cols: 4, rows: 4, title: '🔢 Slide 1–15',   // 16 places, 15 blocks -> ONE gap
+        tiles: ['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15'], name: '1 to 15',
+        goal: 'Finish with <b>1 2 3 4</b> on the top row, then <b>5</b> to <b>8</b>, <b>9</b> to <b>12</b>, and <b>13 14 15</b> — the classic sliding puzzle.'
+      },
+      /* Raja: "can add stand alone A to Z before combo — level 1 number easy,
+         level 2 alpha medium, 3 combo hard." So letters on their own are the
+         middle rung, between fifteen blocks and thirty-five.
+
+         Raja, on the two-space version, having asked once before: "why A to Z
+         have 2 blank slot, hence two slots make puzzle so easy ... make unified
+         in both three." Asked twice, so it is settled — ONE space everywhere.
+
+         26 blocks plus one space is 27 squares, and 27 is only 3x9. There is no
+         other rectangle, so three columns is not a preference, it is the shape
+         the alphabet forces. It also makes a tighter puzzle than the 4-wide
+         version was: a narrow board gives a block far fewer ways around its
+         neighbours, which is the "time to observe" he asked for.
+
+         I argued against this shape once, because the blocks come out under the
+         44px a finger is usually given. That was the wrong standard to hold it
+         to. This app already ships 22px cells on the 10x10 magic square and
+         children play it, and a slide block is DRAGGED as well as tapped —
+         dragging needs far less precision than hitting a target. */
+      az: {
+        cols: 3, rows: 9, title: '🔤 Slide A–Z', alpha: true,   // 27 places, 26 blocks -> ONE gap
+        tiles: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''), name: 'A to Z',
+        goal: 'Finish with <b>A B C</b> on the top row, then <b>D E F</b>, all the way down to <b>Y Z</b> and the space — one space to work with, like a real sliding board.'
+      },
+      /* The hard one, and the board Raja DREW FIRST (see above) — A to Z then
+         the digits, six across — with the single space that makes it playable.
+         The digits are what buy that space: 26 + 9 = 35 blocks in a 6x6 of 36,
+         one short of the grid exactly. (His "1 to 10" would be 36 blocks needing
+         37 squares, and 37 is not a rectangle; 1 to 9 is the count that fits.)
+
+         Six columns means smaller blocks, ~51px on a 360px phone, still above
+         the 44px a finger needs. One gap also removes the pick-then-choose step
+         entirely: a block can only ever have one place to go. */
+      azn: {
+        cols: 6, rows: 6, title: '🔤 Slide A–Z + 1–9', alpha: true,  // 36 places, 35 blocks -> ONE gap
+        tiles: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').concat(['1','2','3','4','5','6','7','8','9']),
+        name: 'A to Z and 1 to 9',
+        goal: 'Finish with <b>A</b> to <b>Z</b> reading across, then <b>1</b> to <b>9</b> — one space to work with, like a real sliding board.'
+      }
+    };
+    var slideLv = SLIDE_LEVELS.fifteen;
+    var SLIDE_COLS = 3, SLIDE_ROWS = 4, SLIDE_N = 12, SLIDE_TILES = 9;
+    var slideCells = [], slideMoves = 0, slideSolved = false;
+
+    function slideUseLevel(key){
+      slideLv = SLIDE_LEVELS[key] || SLIDE_LEVELS.fifteen;
+      SLIDE_COLS = slideLv.cols;
+      SLIDE_ROWS = slideLv.rows;               // rows is the whole grid now — no parking row
+      SLIDE_N = SLIDE_COLS * SLIDE_ROWS;
+      SLIDE_TILES = slideLv.tiles.length;
+    }
+    function slideNeighbours(i){
+      var r = Math.floor(i / SLIDE_COLS), c = i % SLIDE_COLS, out = [];
+      if (r > 0) out.push(i - SLIDE_COLS);
+      if (r < SLIDE_ROWS - 1) out.push(i + SLIDE_COLS);
+      if (c > 0) out.push(i - 1);
+      if (c < SLIDE_COLS - 1) out.push(i + 1);
+      return out;
+    }
+    function slideFinished(){
+      for (var i = 0; i < SLIDE_TILES; i++) if (slideCells[i] !== slideLv.tiles[i]) return false;
+      return true;
+    }
+    function slideReset(){
+      slideCells = [];
+      for (var i = 0; i < SLIDE_N; i++) slideCells.push(i < SLIDE_TILES ? slideLv.tiles[i] : null);
+      slideMoves = 0; slideSolved = false;
+      /* Clearing the selection matters as much as clearing the board. It is
+         a CELL INDEX, so a shuffle that leaves it set points it at whatever
+         now happens to sit there: if that is a block it renders as picked on
+         a fresh deal, and if it is a space its neighbours light up as
+         destinations with nothing selected at all — which is the pair of
+         stray green squares Raja photographed. */
+      slideSel = null;
+    }
+    function slideShuffle(){
+      slideReset();
+      // Legal moves from the solved board — scaled to the size, since 160
+      // barely disturbs 36 tiles though it thoroughly scrambles 9. Every one
+      // is reversible, so the board stays solvable however long this runs.
+      var last = -1, rounds = SLIDE_TILES * 20;
+      for (var n = 0; n < rounds; n++){
+        var holes = [];
+        for (var i = 0; i < SLIDE_N; i++) if (slideCells[i] === null) holes.push(i);
+        var hole = holes[Math.floor(Math.random() * holes.length)];
+        var cand = slideNeighbours(hole).filter(function(j){ return slideCells[j] !== null && j !== last; });
+        if (!cand.length) continue;
+        var from = cand[Math.floor(Math.random() * cand.length)];
+        slideCells[hole] = slideCells[from]; slideCells[from] = null;
+        last = hole;                      // don't immediately undo the move just made
+      }
+      // A shuffle that happens to land on the finished board would hand the
+      // child a win they did not play. Vanishingly rare, not impossible.
+      if (slideFinished()) return slideShuffle();
+      slideMoves = 0; slideSolved = false;
+      renderSlide();
+    }
+    /* A classic slider has ONE space, so tapping a tile is unambiguous — it
+       can only go one way. This board has THREE, and the first version just
+       picked the first free space in a fixed order (up, then down, then left,
+       then right). That is worse than untidy: with a space above it, a tile
+       could never be moved DOWN at all, so whole arrangements became
+       unreachable — a solver run against a real deal could not finish it.
+       So: one tap when there is only one place to go (it still feels like a
+       slider, which is the common case), and a choice when there is more than
+       one — tap the number, its options light up, tap the one you want. */
+    var slideSel = null;
+    /* One place the prompt is written, because there are three moments that
+       set it — entering a level, shuffling, and winning — and the shuffle one
+       hardcoded "1 to 9". On the A–Z board that meant every shuffle silently
+       relabelled a board of letters as a board of numbers. */
+    function slidePromptText(){
+      return 'Put <b>' + slideLv.name + '</b> back in order. <b>Slide a block with your finger</b> into a free space — or just tap it.';
+    }
+    function slideSetPrompt(){
+      var head = document.getElementById('slideHead');
+      if (head) head.innerHTML = slidePromptText();
+    }
+    /* Raja, correcting me: "in initial keep all box border be red color and
+       the border colour turn to green if all completed in right manner rows
+       in one by one if did wrong by slide again that rows box color should be
+       red it will help which rows is still need to correct."
+       ROWS, not blocks, and the BORDER, not the fill. His design is the better
+       one: row by row is how these puzzles are actually solved, so lighting up
+       a finished row rewards the real technique and tells a player exactly
+       which row still needs work — and takes it back the moment they disturb
+       it. A row counts only when every cell in it is right, including any cell
+       that is supposed to be EMPTY (the last row of a board whose blocks do
+       not fill the grid). */
+    function slideRowDone(r){
+      for (var c = 0; c < SLIDE_COLS; c++){
+        var i = r * SLIDE_COLS + c;
+        var want = i < SLIDE_TILES ? slideLv.tiles[i] : null;
+        if (slideCells[i] !== want) return false;
+      }
+      return true;
+    }
+    function slideBlanksBy(i){
+      return slideNeighbours(i).filter(function(j){ return slideCells[j] === null; });
+    }
+    function renderSlide(){
+      var el = document.getElementById('slideBoard'); if (!el) return;
+      var targets = slideSel === null ? [] : slideBlanksBy(slideSel);
+      // The grid and the type size come from the level, not the stylesheet:
+      // six columns of letters need smaller tiles than three of digits, and
+      // the dotted seam has to fall wherever this board's parking row starts.
+      el.style.gridTemplateColumns = 'repeat(' + SLIDE_COLS + ', 1fr)';
+      // Sized from the column count, so a board with fewer columns really does
+      // get bigger blocks rather than just more air around them.
+      var wide = slideLv.cols >= 5;
+      el.style.setProperty('--slideRadius', wide ? '12px' : '16px');
+      /* A tall board is limited by HEIGHT, so every pixel of gap is a pixel off
+         every block: the nine-row letter board spends 64px on gaps alone, which
+         is ~7px per block — the difference between a 37px block and a 44px one.
+         Narrow the gap where the rows are what is squeezing, and leave the short
+         boards alone, where the gap costs nothing and reads better. */
+      var gap = slideLv.rows >= 8 ? 5 : (wide ? 6 : 8);
+      el.style.gap = gap + 'px';
+      /* Sizing by COLUMNS alone is only right while a board is no taller than
+         it is wide. 1-15 is 4x4 so it always fitted; A-Z is 4 across and SEVEN
+         down, and column-sizing built a 583px board that pushed "Show me how"
+         and "Shuffle again" clean off the bottom of every phone size — the
+         demo button, unreachable on the board that most needs it.
+         The blocks are square, so capping the block by the height left between
+         the board and the tab bar caps the whole board. */
+      var vw = document.documentElement.clientWidth || window.innerWidth || 360;
+      var byW = Math.floor((Math.min(vw - 20, wide ? 352 : 330) - gap * (SLIDE_COLS - 1)) / SLIDE_COLS);
+      var bar = document.querySelector('.tabBar');
+      var floor = bar ? bar.getBoundingClientRect().top : window.innerHeight;
+      var lab = document.getElementById('slideSpareLabel');
+      var foot = document.querySelector('.slideFoot');
+      // what has to stay visible UNDER the board, plus its margins
+      var below = (lab ? lab.offsetHeight : 0) + (foot ? foot.offsetHeight : 0) + 26;
+      var room = floor - el.getBoundingClientRect().top - below;
+      var byH = Math.floor((room - gap * (SLIDE_ROWS - 1)) / SLIDE_ROWS);
+      // room <= 0 means the panel is not laid out yet (hidden, first paint) —
+      // fall back to the width fit rather than to a nonsense negative cell.
+      var cell = room > 0 ? Math.min(byW, byH) : byW;
+      /* The floor used to be 34px, and on a 360x740 phone the nine-row letter
+         board hit it and overflowed by a single pixel — putting "Show me how"
+         back under the tab bar, which is the exact bug beta-148 fixed. A floor
+         that can push the controls off the screen is worse than a small block,
+         so it is set below where any board lands (the 10x10 magic square already
+         ships 22px cells) and the height fit is left to win. */
+      cell = Math.max(26, cell);
+      /* Raja, on the 3x9 letter board: "make 3 boxes ... to rectangle box by fit
+         horizontally, vertical view not good to see, so many blank portions
+         shows left and right."
+         A board only three columns wide is squeezed by HEIGHT, so keeping the
+         blocks square left the width unused — a thin ribbon down the middle
+         with dead margins either side. Blocks do not have to be square. Let the
+         height decide how TALL a block is and the width decide how WIDE, and
+         the board fills the screen.
+         Derived from the measurements rather than flagged per level, so any
+         future board that wastes width gets the same treatment: stretch only
+         when the width genuinely allows more than the height does. */
+      var cellH = cell;
+      var cellW = Math.max(cellH, byW);
+      var stretched = cellW > cellH + 1;
+      el.classList.toggle('slideWideCells', stretched);
+      /* A 16px radius on a 40px-tall block rounds away most of its height and
+         the result reads as a lozenge, not the "rectangle box" asked for. Cap
+         the corner against the SHORT side so a stretched block still looks like
+         a block. */
+      if (stretched) el.style.setProperty('--slideRadius', Math.min(16, Math.round(cellH * 0.28)) + 'px');
+      el.style.setProperty('--slideCellH', cellH + 'px');
+      el.style.maxWidth = (cellW * SLIDE_COLS + gap * (SLIDE_COLS - 1)) + 'px';
+      // the glyph is bounded by the SHORT side, so it scales with the height
+      el.style.setProperty('--slideFont', Math.max(15, Math.round(cellH * (wide ? 0.36 : 0.40))) + 'px');
+      el.classList.toggle('slideAlpha', !!slideLv.alpha);
+      var rowOk = [];
+      for (var r = 0; r < SLIDE_ROWS; r++) rowOk.push(slideRowDone(r));
+      var html = '';
+      for (var k = 0; k < SLIDE_N; k++){
+        var rowCls = rowOk[Math.floor(k / SLIDE_COLS)] ? ' rowOk' : ' rowBad';
+        var v = slideCells[k];
+        if (v === null){
+          var isTarget = targets.indexOf(k) > -1;
+          html += '<button class="slideCell' + rowCls + (isTarget ? ' slideTarget' : '') + '" type="button"' +
+            ' data-slide="' + k + '"' + (isTarget ? '' : ' tabindex="-1" aria-hidden="true"') +
+            (isTarget ? ' aria-label="move it here"' : '') + '></button>';
+          continue;
+        }
+        var can = slideBlanksBy(k).length > 0;
+        html += '<button class="slideTile' + rowCls + (can ? ' canMove' : ' locked') + (slideSel === k ? ' picked' : '') +
+          '" type="button" data-slide="' + k + '" aria-label="' + v +
+          (can ? ', can move' : ', blocked') + '">' + v + '</button>';
+      }
+      el.innerHTML = html;
+      var mv = document.getElementById('slideMoves');
+      if (mv) mv.textContent = 'Moves: ' + slideMoves;
+      /* Raja finished the letter board to within a single swap — M and N
+         transposed in the fourth row — and could not see why no celebration
+         came. On 26 blocks that is genuinely invisible; the app was right and
+         the player had no way to know it. So say how many are home. It costs
+         one line of text and turns "nothing happened" into "24 of 26", which
+         is a hint about where to look rather than a verdict. Deliberately a
+         number and not another colour: green already means "can move" and
+         amber "the move you are making", and a third colour was the exact
+         confusion that got flagged before. */
+      var doneRows = 0;
+      for (var rr = 0; rr < SLIDE_ROWS; rr++) if (rowOk[rr]) doneRows++;
+      var hp = document.getElementById('slideHome');
+      if (hp) hp.textContent = doneRows === SLIDE_ROWS ? '' : ('Rows done: ' + doneRows + ' of ' + SLIDE_ROWS);
+    }
+    function slideMoveTo(from, to){
+      slideCells[to] = slideCells[from]; slideCells[from] = null;
+      slideSel = null; slideMoves++;
+      sfx('yes');
+      renderSlide();
+      if (slideFinished()){
+        slideSolved = true;
+        var head = document.getElementById('slideHead');
+        if (head) head.innerHTML = '🎉 <b>All in order!</b> ' + slideLv.name + ' — solved in ' + slideMoves + ' moves.';
+        try { celebrate(); } catch(e){}
+        try { sfx('unlock'); } catch(e){}
+        try { sana('<b>' + slideLv.name + ' — all in order!</b> That is the whole idea.', 'party', true); } catch(e){}
+      }
+    }
+    /* "Show me how" — three real moves on the child's own board, each one
+       pointed at: the block to touch (orange, with a finger on it) and the
+       space it will go to (green). Real moves rather than a canned animation,
+       so what they watch is exactly what their own tap will do.
+       It counts as moves because they ARE moves; Shuffle again is right there
+       if they would rather start clean. */
+    var slideDemo = false, slideDemoTimers = [];
+    function slideHandOn(idx){
+      slideHandOff();
+      var el = document.querySelector('#slideBoard [data-slide="' + idx + '"]');
+      if (!el) return;
+      var r = el.getBoundingClientRect();
+      var h = document.createElement('div');
+      h.className = 'slideHand'; h.id = 'slideHand'; h.textContent = '👆';
+      h.style.left = (r.left + r.width / 2) + 'px';
+      h.style.top = (r.top + r.height * 0.62) + 'px';
+      document.body.appendChild(h);
+    }
+    function slideHandOff(){
+      var h = document.getElementById('slideHand'); if (h) h.remove();
+    }
+    /* The finger and the block travel together, from the block's cell to the
+       empty one — the same journey a child's own finger makes. The block is
+       moved with a transform rather than by re-rendering, so it glides over
+       its neighbours instead of jumping between grid slots. */
+    function slideDemoGlide(from, to){
+      var a = document.querySelector('#slideBoard [data-slide="' + from + '"]');
+      var b = document.querySelector('#slideBoard [data-slide="' + to + '"]');
+      if (!a || !b) return;
+      var ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
+      a.classList.add('demoSliding');
+      a.style.transform = 'translate(' + (rb.left - ra.left) + 'px,' + (rb.top - ra.top) + 'px)';
+      var h = document.getElementById('slideHand');
+      if (h){
+        h.style.transition = 'left .5s cubic-bezier(.34,1,.64,1), top .5s cubic-bezier(.34,1,.64,1)';
+        h.style.left = (rb.left + rb.width / 2) + 'px';
+        h.style.top = (rb.top + rb.height * 0.62) + 'px';
+      }
+    }
+    function slideDemoStop(){
+      slideDemo = false;
+      slideDemoTimers.forEach(clearTimeout); slideDemoTimers = [];
+      slideHandOff();
+      document.querySelectorAll('.demoFrom, .demoTo').forEach(function(n){
+        n.classList.remove('demoFrom', 'demoTo');
+      });
+      var b = document.getElementById('slideShow');
+      if (b) b.textContent = '👆 Show me how';
+    }
+    // showSlideMode lives outside this IIFE and has to be able to stop a demo
+    // when the player leaves the puzzle mid-way.
+    window.__slideDemoStop = slideDemoStop;
+    function slideDemoRun(){
+      if (slideDemo){ slideDemoStop(); return; }
+      /* Raja: "show me how not active". On a finished board this used to
+         return silently — a button that looks alive and does nothing, which
+         is worse than one that is greyed out. There is nothing to demonstrate
+         on a solved board, so deal a fresh one first and then show it: that
+         is what someone asking to be shown how actually wants next. */
+      if (slideSolved){
+        slideSetPrompt();
+        slideShuffle();
+        try { sana('Here is a fresh one — watch how a block slides.', 'think', true); } catch(e){}
+      }
+      slideDemo = true;
+      var b = document.getElementById('slideShow');
+      if (b) b.textContent = '✋ Stop showing';
+      var step = 0;
+      function next(){
+        if (!slideDemo) return;
+        if (step >= 3 || slideSolved){
+          slideDemoStop();
+          try { sana('Now you try — turn every row <b>green</b>, one row at a time.', 'cheer', true); } catch(e){}
+          return;
+        }
+        // Prefer a block with exactly one space beside it: one tap, one
+        // outcome, nothing to explain twice.
+        var pick = null;
+        for (var i = 0; i < SLIDE_N && !pick; i++){
+          if (slideCells[i] === null) continue;
+          if (slideBlanksBy(i).length === 1) pick = { from: i, to: slideBlanksBy(i)[0] };
+        }
+        if (!pick){
+          for (var j = 0; j < SLIDE_N && !pick; j++){
+            if (slideCells[j] === null) continue;
+            var bl = slideBlanksBy(j);
+            if (bl.length) pick = { from: j, to: bl[0] };
+          }
+        }
+        if (!pick){ slideDemoStop(); return; }
+
+        var fromEl = document.querySelector('#slideBoard [data-slide="' + pick.from + '"]');
+        var toEl = document.querySelector('#slideBoard [data-slide="' + pick.to + '"]');
+        if (fromEl) fromEl.classList.add('demoFrom');
+        if (toEl) toEl.classList.add('demoTo');
+        slideHandOn(pick.from);
+        try {
+          sana(step === 0
+            ? 'Put your finger on <b>' + slideCells[pick.from] + '</b> and slide it into the orange space.'
+            : 'Slide <b>' + slideCells[pick.from] + '</b> across into the empty place.', 'think', true);
+        } catch(e){}
+
+        /* Raja: "instead keep finger emoji to drag to empty cell and the
+           number is placed then the emoji should laps". The first version
+           pointed and the block TELEPORTED, which shows the outcome but not
+           the gesture — and the gesture is the whole thing being taught now
+           that sliding is how you play. So the finger travels to the empty
+           cell and the block travels under it, arriving together; only then
+           is the move committed and the finger let go. */
+        slideDemoTimers.push(setTimeout(function(){
+          if (!slideDemo) return;
+          slideDemoGlide(pick.from, pick.to);
+          slideDemoTimers.push(setTimeout(function(){
+            if (!slideDemo) return;
+            slideHandOff();
+            slideMoveTo(pick.from, pick.to);      // the real move, exactly as a drag would
+            step++;
+            slideDemoTimers.push(setTimeout(next, 800));
+          }, 560));                                // matches the glide's own timing
+        }, 1400));
+      }
+      next();
+    }
+
+    /* DRAG. Raja, after playing: "why can't do Direct slide option that keep
+       hand thump or point fingers to number and drag the finger slide to
+       empty block which give mechanical slide feel and easy to understand".
+       He is right, and it does more than feel better: the DIRECTION you drag
+       already says which space you mean, so the whole tap-then-choose step
+       disappears for anyone who drags. Tapping still works — it is the
+       fallback for a block with one space, and for anyone who cannot drag.
+
+       The block follows the finger only toward a space that really is next to
+       it, and only as far as that space; drag anywhere else and it does not
+       budge, which teaches the rule by feel rather than by a message. */
+    var slideDrag = null, slideDragEndedAt = 0;
+    /* Two steps, not one. Blocks are no longer always square: the letter board
+       stretches them into wide rectangles to use the full width, so how far a
+       block travels sideways is no longer how far it travels up. One shared
+       step would let a vertical drag run a whole extra row past the finger, and
+       would set the commit threshold at a third of the WIDTH — most of a row's
+       height — so an honest upward drag would rarely register at all. */
+    function slideCellStep(){
+      var el = document.querySelector('#slideBoard .slideTile, #slideBoard .slideCell');
+      if (!el) return { x: 60, y: 60 };
+      var r = el.getBoundingClientRect();
+      var gap = parseFloat(getComputedStyle(document.getElementById('slideBoard')).gap) || 8;
+      return { x: r.width + gap, y: r.height + gap };
+    }
+    function slideDragStart(e){
+      if (slideSolved || slideDemo) return;
+      var tile = e.target.closest('#slideBoard .slideTile');
+      if (!tile || !tile.classList.contains('canMove')) return;
+      var from = parseInt(tile.dataset.slide, 10);
+      slideDrag = { from: from, el: tile, x: e.clientX, y: e.clientY,
+                    step: slideCellStep(), moved: 0, to: null };
+      tile.classList.add('dragging');
+      try { tile.setPointerCapture(e.pointerId); } catch(err){}
+    }
+    function slideDragMove(e){
+      if (!slideDrag) return;
+      var dx = e.clientX - slideDrag.x, dy = e.clientY - slideDrag.y;
+      slideDrag.moved = Math.max(slideDrag.moved, Math.abs(dx), Math.abs(dy));
+      var horiz = Math.abs(dx) > Math.abs(dy);
+      var dir = horiz ? (dx > 0 ? 1 : -1) : (dy > 0 ? SLIDE_COLS : -SLIDE_COLS);
+      var from = slideDrag.from, r = Math.floor(from / SLIDE_COLS), c = from % SLIDE_COLS;
+      // Reject a step that would wrap round the edge of the board.
+      var ok = horiz ? (dir === 1 ? c < SLIDE_COLS - 1 : c > 0)
+                     : (dir > 0 ? r < SLIDE_ROWS - 1 : r > 0);
+      var to = ok ? from + dir : -1;
+      if (to < 0 || to >= SLIDE_N || slideCells[to] !== null){
+        slideDrag.to = null;
+        slideDrag.el.style.transform = '';
+        return;
+      }
+      slideDrag.to = to;
+      var span = horiz ? slideDrag.step.x : slideDrag.step.y;
+      var amount = Math.min(Math.abs(horiz ? dx : dy), span);
+      slideDrag.el.style.transform = horiz
+        ? 'translateX(' + (dir === 1 ? amount : -amount) + 'px)'
+        : 'translateY(' + (dir > 0 ? amount : -amount) + 'px)';
+      slideDrag.span = span;      // whichever axis this drag settled on
+    }
+    function slideDragEnd(){
+      if (!slideDrag) return;
+      var d = slideDrag; slideDrag = null;
+      d.el.classList.remove('dragging');
+      d.el.style.transform = '';
+      // A third of a cell is enough to mean it: less is a wobble, and a real
+      // tap (barely any movement) falls through to the tap handler instead.
+      // a third of the cell ALONG THE AXIS actually dragged, not a third of its
+      // width regardless of direction
+      if (d.to !== null && d.moved > (d.span || Math.min(d.step.x, d.step.y)) * 0.33){
+        /* A TIMESTAMP, not a flag. The flag version waited to be consumed by
+           the click that follows a drag -- but a long drag often produces no
+           click at all, so it sat set and swallowed the next honest tap
+           instead. This expires on its own. */
+        slideDragEndedAt = Date.now();
+        slideMoveTo(d.from, d.to);
+      }
+    }
+    (function wireSlideDrag(){
+      var board = document.getElementById('slideBoard');
+      if (!board) return;
+      board.addEventListener('pointerdown', slideDragStart);
+      board.addEventListener('pointermove', slideDragMove);
+      board.addEventListener('pointerup', slideDragEnd);
+      board.addEventListener('pointercancel', slideDragEnd);
+    })();
+    // The board is now sized from the room left under it, and turning the phone
+    // changes that room — so it has to be measured again, not kept from before.
+    window.addEventListener('resize', function(){
+      var p = document.getElementById('slidePanel');
+      if (p && p.style.display !== 'none') renderSlide();
+    });
+
+    function slideTap(i){
+      if (Date.now() - slideDragEndedAt < 320) return;   // the drag already moved it
+      if (slideDemo) { slideDemoStop(); return; }   // a real tap takes over from the demo
+      if (slideSolved) return;
+      if (slideCells[i] === null){
+        // Tapped a space: only means anything if a number is waiting to move.
+        if (slideSel !== null && slideBlanksBy(slideSel).indexOf(i) > -1) slideMoveTo(slideSel, i);
+        return;
+      }
+      if (slideSel === i){ slideSel = null; renderSlide(); return; }   // tap again to change your mind
+      var blanks = slideBlanksBy(i);
+      if (!blanks.length){ sfx('no'); return; }                        // hemmed in on every side
+      if (blanks.length === 1){ slideMoveTo(i, blanks[0]); return; }   // only one way — just go
+      slideSel = i; sfx('card'); renderSlide();                        // more than one — let them pick
+    }
+    document.addEventListener('click', function(e){
+      var t = e.target.closest('[data-slide]');
+      if (t){ slideTap(parseInt(t.dataset.slide, 10)); return; }
+      var sw = e.target.closest('#slideShow');
+      if (sw){ sfx('card'); slideDemoRun(); return; }
+      var sh = e.target.closest('#slideShuffle');
+      if (sh){
+        sfx('card');
+        slideDemoStop();
+        slideSetPrompt();
+        slideShuffle();
+        try { sana('Fresh scatter. Finish the top row first — a row turns <b>green</b> when every block in it is right.', 'think', true); } catch(e){}
+      }
+    });
+
+    // Both sizes share one entry path — the level is read off the card, so
+    // adding another board later means adding a card and a SLIDE_LEVELS entry,
+    // nothing else.
+    document.querySelectorAll('.toggleBtn[data-slide-level]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        if (_congratsAutoTimer){ clearInterval(_congratsAutoTimer); _congratsAutoTimer = null; }
+        var cm = document.getElementById('congratsModal');
+        if (cm && cm.style.display === 'flex') cm.style.display = 'none';
+        sfx('card');
+        document.querySelectorAll('.toggleBtn').forEach(function(b){ b.classList.remove('active'); });
+        btn.classList.add('active');
+        applyAccent();
+        if (currentSize === 'binary' || currentSize === 'binary2') showBinaryMode(false);
+        if (currentSize === 'gatelogic') showGateMode(false);
+        currentSize = 'slide';
+        goScreen('scPlay');
+        showSlideMode(true);
+        slideUseLevel(btn.dataset.slideLevel);
+        slideSetPrompt();
+        var title = document.getElementById('appBarTitle');
+        if (title) title.innerHTML = boxedTitle(slideLv.title);
+        var lb = document.getElementById('logicBox');
+        if (lb) lb.innerHTML = '<h3>📐 ' + slideLv.title + '</h3>' +
+          // Both boards are down to a single gap now, so "only 1 of them are
+          // empty" no longer reads as English. Say the number in words and keep
+          // the plural branch for whatever board comes next.
+          '<p>' + SLIDE_TILES + ' blocks, ' + SLIDE_N + ' places — so ' +
+          ((SLIDE_N - SLIDE_TILES) === 1 ? 'exactly <b>one</b> place is empty'
+                                         : (SLIDE_N - SLIDE_TILES) + ' places are empty') +
+          '. That gap is the whole puzzle: a block can only move into it, and moving one ' +
+          'leaves the gap somewhere else.</p>' +
+          '<p>' + slideLv.goal + '</p><p>Rows start <b>red</b> and turn <b>green</b> when every block in them is right, so the red rows are the ones still to fix — and a row goes back to red if you disturb it. Finish the top row, then the next: that is how these puzzles are solved.</p>' +
+          '<p>Every deal is built by shuffling a finished board with real moves, so <b>every game can always be solved</b>. ' +
+          'A puzzle scattered at random would not be: half of those cannot be finished at all.</p>';
+        slideShuffle();
+        // Raja: "need sana hints along show play". The first thing a child
+        // needs is not the goal — it is which blocks can even be touched.
+        try {
+          // Three lines is the bubble's hard ceiling (see .sanaBub) — the row
+          // rule had to be said in fewer words, not given a taller bubble.
+          sana('Slide a block into the empty space — a tap works too. ' +
+               'A row turns <b>green</b> once every block in it is right; ' +
+               'red rows still need fixing.', 'think', true);
+        } catch(e){}
+      });
+    });
+
     var gateListBtn = document.getElementById('gateListBtn');
     if (gateListBtn){
       gateListBtn.addEventListener('click', function(){
@@ -5665,6 +6595,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         gateListBtn.classList.add('active');
         applyAccent();
         if (currentSize === 'binary' || currentSize === 'binary2') showBinaryMode(false);
+        if (currentSize === 'slide') showSlideMode(false);
         currentSize = 'gatelogic';
         goScreen('scPlay');
         showGateMode(true);
@@ -5687,6 +6618,11 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // delegation sidesteps that (same reasoning as the app's own keypad
     // delegation).
     document.addEventListener('click', function(e){
+      // Skip: leaves this level for the next one WITHOUT marking it done —
+      // the ✅ has to keep meaning "played", or it tells the curious child
+      // nothing about what is left.
+      var skipBtn = e.target.closest('#gateSkipBtn');
+      if (skipBtn && gateState){ sfx('tab'); gateGoNext(gateState.gate, gateState.levelIdx); return; }
       var backRow = e.target.closest('.gateLevelBack');
       if (backRow){ sfx('back'); openGatePicker(); return; }
       var levelRow = e.target.closest('.rowBtn[data-level]');
@@ -5698,11 +6634,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       var nextGateBtn = e.target.closest('#gateNextGateBtn');
       if (nextGateBtn){
         sfx('tab');
-        var nk = nextGateBtn.dataset.gate, ng = findGate(nk);
-        // Straight into the next gate's first not-yet-completed level (or
-        // its last one if it's already fully done) — never past what
-        // startGateLevel's own lock check allows.
-        if (ng) startGateLevel(nk, Math.min(gateProgressFor(nk), ng.levels.length - 1));
+        // Same landing rule as Skip — see gateGoNext. This button only ever
+        // appears on the LAST level of a gate, so "next" is the next gate.
+        if (gateState) gateGoNext(gateState.gate, gateState.levelIdx);
         return;
       }
       var cb = e.target.closest('.gateChoiceBtn');
@@ -7013,7 +7947,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     /* scLearn is no longer reachable — Learn is the 💡 sheet beside settings.
        The section stays in the DOM only because #logicBox lives there and is
        parked into the sheet system from it. */
-    if (id === 'scFeed')  sana('Found something odd? <b>Tell us</b> — it helps the next child.', 'think');
+    if (id === 'scFeed')  sana('Found something odd? <b>Tell us</b> — that\'s what a beta is for.', 'think');
     if (id === 'scApp')   sana('Install it once and it works with <b>no internet</b>.', null);
   };
   ['scHome','scPlay','scLearn','scApp','scFeed'].forEach(function(s){
@@ -8396,13 +9330,11 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
 // PWA: register a service worker so "Get App"/install can be a real, distinct
 // action instead of always falling back to the same manual instructions.
-/* sw.js at its natural scope — this is the real app, so it is entitled to
-   the whole directory. While this build lived in beta it registered a
-   separate worker pinned to an explicit narrow scope, precisely so it could
-   never claim these pages or fight this worker's cache namespace. That
-   pinning is what promotion removes: a scope of './beta.html' would match
-   nothing here, leaving the page with no service worker and no offline
-   play at all. */
+/* Registered with its DEFAULT scope, which is this folder — correct here,
+   because this file IS the app at the root of its own origin. The beta
+   preview does the opposite on purpose: it registers beta-sw.js scoped to
+   exactly './beta.html' so it can never claim these pages or collide with
+   this worker's cache namespace ('mathmatrix-v*' vs 'mathmatrix-beta-v*'). */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function () {
     navigator.serviceWorker.register('sw.js').catch(function(){});
@@ -8429,8 +9361,14 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'v134';
-  window.BETA_VER = 'v134';   // global: the feedback panel lives in the other IIFE
+  var BUILD_VER = 'v135';
+  /* DERIVED, not a second literal. This was its own hardcoded string and it sat
+     at beta-147 through two releases, so the footer and the BETA flag told
+     anyone who looked that the update had not arrived. Two version numbers that
+     must agree will eventually disagree; one of them has to come from the other.
+     (The test that "checked" it asserted the literal, so it pinned the stale
+     value instead of catching it — it now asserts the two AGREE.) */
+  window.BETA_VER = BUILD_VER.split(' ')[0];   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
   // the short form on the BETA flag, where it is seen without looking for it
@@ -8464,9 +9402,18 @@ if (navigator.storage && navigator.storage.persist) {
       .then(function(r){ return r.ok ? r.text() : null; })
       .then(function(txt){
         if (!txt) return;
-        var m = txt.match(/window\.BETA_VER\s*=\s*'([^']+)'/);
-        if (!m || !m[1] || m[1] === window.BETA_VER) return;
-        location.replace(location.pathname + '?v=' + encodeURIComponent(m[1]));
+        /* Read BUILD_VER, not BETA_VER. This regex wants a QUOTED STRING, and
+           BETA_VER stopped being one in beta-150 — it is derived from BUILD_VER
+           now, which is exactly what stopped the two drifting apart. The match
+           then found nothing, returned early every time, and the silent
+           self-update quietly stopped working: the app would sit on an old
+           version until someone tapped Update. BUILD_VER is the literal, so
+           read that and take its first word, the same way BETA_VER does. */
+        var m = txt.match(/BUILD_VER\s*=\s*'([^']+)'/);
+        if (!m || !m[1]) return;
+        var fresh = m[1].split(' ')[0];
+        if (fresh === window.BETA_VER) return;
+        location.replace(location.pathname + '?v=' + encodeURIComponent(fresh));
       })
       .catch(function(){});        // offline mid-flight, or blocked: keep playing
   })();
@@ -8514,10 +9461,10 @@ if (navigator.storage && navigator.storage.persist) {
       try {
         // getRegistration() (singular, no scope arg) -- the registration that
         // actually controls THIS document. Deliberately not getRegistrations()
-        // (plural): that returns every SW registered for the whole origin, so
-        // it would also unregister any OTHER build installed on the same
-        // device (a beta preview alongside this one) -- this button should
-        // only ever touch the state of the page it is on.
+        // (plural): that returns every SW registered for the whole origin,
+        // which on a device that also has the beta preview installed would
+        // unregister beta's worker too. This button should only ever touch
+        // this app's own state.
         if ('serviceWorker' in navigator && navigator.serviceWorker.getRegistration){
           jobs.push(navigator.serviceWorker.getRegistration().then(function(r){
             return r ? r.unregister() : null;
