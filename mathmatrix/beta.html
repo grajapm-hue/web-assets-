@@ -2137,6 +2137,17 @@ body.sudokuMode .solvedCounter{ display:none !important; }
 /* the spent style lives further down, beside the flash rules it was added with */
 .sudFoot{ display:flex; align-items:center; justify-content:center; gap:9px;
   flex-wrap:wrap; margin-top:6px; }
+/* Raja: "timer present, make box and border like our previous matrix."
+   The magic squares put their clock in a bordered box (#timerBox) rather than
+   leaving it as loose text, so this matches that treatment in this panel's own
+   palette — the same cream fill and brown border the buttons beside it use.
+   tabular-nums is the part that matters on a CLOCK: without it the digits are
+   different widths and the whole box twitches every second. */
+.sudStat{ display:inline-flex; align-items:center; justify-content:center;
+  min-height:38px; padding:7px 14px; border-radius:14px;
+  background:#FFF6E7; border:2px solid #8A5E31; color:#5E3D1C;
+  font-size:13px; font-weight:900; box-shadow:0 2px 0 rgba(94,64,32,.28); }
+#sudTime{ font-variant-numeric:tabular-nums; letter-spacing:.3px; }
 
 /* Slide Magic hides the same grid furniture the other card games do — there
    is no magic square to build, no target to preview, nothing to Watch. Same
@@ -3165,11 +3176,13 @@ body{ background:#C9A87C !important; }
   <div class="sudFoot">
     <button class="slideBtn" id="sudNew" type="button">🔀 New puzzle</button>
     <button class="slideBtn" id="sudCheck" type="button">👀 Check my work</button>
-    <span class="slideMoves" id="sudFilled">0 of 0 filled</span>
+    <!-- Both counters get the box, not just the clock: a bordered timer sitting
+         beside loose text would look like one of them was unfinished. -->
+    <span class="sudStat" id="sudFilled">0 of 0 filled</span>
     <!-- Raja: "implement timer for to know one how long take spend time to play,
          NOT for competitive." So it counts up quietly and is never compared to
          anything — no best time, no par, no pressure to beat it. -->
-    <span class="slideHome" id="sudTime">Time 0:00</span>
+    <span class="sudStat" id="sudTime">Time 0:00</span>
   </div>
 </div>
 
@@ -6986,6 +6999,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         if (L.diag) parts.push('diagonal');
         var lastPart = parts.pop();
         sudTimerStop();
+        /* Drop the selection so the finished grid is seen plainly. Leaving it
+           set left a grey stripe of shading across the completed board, over
+           the one screen a player actually wants to look at. */
+        if (sudPick >= 0){ sudPick = -1; setTimeout(sudRender, 0); }
         if (head2()) head2().innerHTML = '🎉 <b>Solved!</b> ' + sudLv.name + ' — every ' +
           parts.join(', ') + ' and ' + lastPart + ' is right. That took you <b>' +
           sudTimeSpent() + '</b>.';
@@ -9887,7 +9904,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-157 (a wrong number flashes, and shows what it collided with)';
+  var BUILD_VER = 'beta-158 (the Sudoku clock gets a box, like the magic squares have)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that

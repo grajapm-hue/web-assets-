@@ -314,6 +314,59 @@ function countAnswers(grid, L, cap){
     S2.flash === 0 && S2.clash === 0 && S2.red > 0,
     'flash ' + S2.flash + ', clash ' + S2.clash + ', still red ' + S2.red);
 
+  /* Finish a FULL 9x9 with diagonals. The win had only ever been exercised on
+     the 3x3, and a fault in it would cost a player twenty minutes of real work
+     before showing itself — the most expensive place in this puzzle to be
+     wrong. Filling all 36 blanks also drives every digit to nine copies, which
+     is the only way the "spent" ticks are all reached. */
+  await ev(`document.getElementById('tab-scHome').click()`); await sleep(250);
+  await ev(`document.querySelector('.toggleBtn[data-sud-level="medium"]').click()`); await sleep(1500);
+  const big = await ev(`Array.from(document.querySelectorAll('#sudBoard [data-sud]')).map(function(c){
+    return c.textContent.trim() ? parseInt(c.textContent, 10) : 0; })`);
+  const bigAnswer = (function solveIt(grid, L){
+    const n = L.n, g = grid.slice();
+    (function go(){
+      let idx = -1;
+      for (let i = 0; i < n * n; i++) if (!g[i]){ idx = i; break; }
+      if (idx < 0) return true;
+      const r = Math.floor(idx / n), c = idx % n;
+      for (let v = 1; v <= n; v++) if (okAt(g, r, c, v, L)){
+        g[idx] = v; if (go()) return true; g[idx] = 0;
+      }
+      return false;
+    })();
+    return g;
+  })(big, LEVELS.medium);
+  ok('the 9×9 on screen is solvable at all', bigAnswer.every(v => v > 0));
+  const bigWin = await ev(`(function(){
+    var answer = ${JSON.stringify(bigAnswer)};
+    var cells = Array.from(document.querySelectorAll('#sudBoard [data-sud]'));
+    for (var i = 0; i < cells.length; i++){
+      if (cells[i].classList.contains('given')) continue;
+      document.querySelectorAll('#sudBoard [data-sud]')[i].click();
+      var k = document.querySelector('#sudPad [data-sudkey="' + answer[i] + '"]');
+      if (k) k.click();
+    }
+    var board = Array.from(document.querySelectorAll('#sudBoard [data-sud]'));
+    return JSON.stringify({
+      head: document.getElementById('sudHead').textContent,
+      red: board.filter(function(c){ return c.classList.contains('bad'); }).length,
+      blank: board.filter(function(c){ return !c.textContent.trim(); }).length,
+      ticks: Array.from(document.querySelectorAll('#sudPad [data-sudkey]'))
+               .filter(function(b){ return b.textContent.trim() === '✓'; }).length,
+      counter: document.getElementById('sudFilled').textContent
+    }); })()`);
+  const B = JSON.parse(bigWin);
+  ok('finishing a 9×9 announces the win', /Solved/.test(B.head), B.head.slice(0, 78));
+  ok('the win names box and diagonal, which the 3×3 cannot',
+    /box/.test(B.head) && /diagonal/.test(B.head), B.head.slice(0, 78));
+  ok('the win reports the time spent', /took you/.test(B.head));
+  ok('a finished 9×9 has no blanks and nothing red',
+    B.blank === 0 && B.red === 0, B.blank + ' blank, ' + B.red + ' red');
+  ok('every digit shows its tick once all nine are placed', B.ticks === 9, B.ticks + ' ticks');
+  ok('the counter reads all 36 filled', /36 of 36/.test(B.counter), B.counter);
+  await shot('sudoku-win-9x9.png');
+
   ok('no JS errors', errs.length === 0, errs.join(' | '));
   ws.close(); ch.kill();
   console.log('\n' + (fail === 0 ? 'ALL GREEN' : fail + ' FAILURES'));
