@@ -3360,7 +3360,7 @@ body{ background:#C9A87C !important; }
       </button>
       <button class="toggleBtn lvCard" id="slideAzTab" type="button" data-slide-level="az" data-name="🔤 Slide A–Z" style="color:#0ea5e9; border-color:#0ea5e9; --c1:#bae6fd; --c2:#38bdf8;">
         <span class="lvGlyph" aria-hidden="true">🔤</span>
-        <span class="lvText"><b class="lvName">Slide A–Z</b><span class="lvDiff">Medium · 4×7 · two spaces</span><span class="lvMeta">26 letters, and a spare space to park one in</span></span>
+        <span class="lvText"><b class="lvName">Slide A–Z</b><span class="lvDiff">Medium · 3×9 · one space</span><span class="lvMeta">26 letters down a narrow board — one gap, no spare room</span></span>
       </button>
       <!-- The board Raja drew first, and the app he sent later ("Magic Slide
            Puzzle - Letters and Numbers"): six across, A-Z then 1-9 and 0. -->
@@ -6032,20 +6032,25 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
          level 2 alpha medium, 3 combo hard." So letters on their own are the
          middle rung, between fifteen blocks and thirty-five.
 
-         This board keeps TWO spaces, and that is forced rather than chosen.
-         One space needs the block count to be one short of the grid, and 26
-         letters cannot do that on any rectangle a phone can show: 4x7 would
-         need an invented 27th block whose home square a child has no way of
-         knowing, and 3x9 fits 26 in 27 but drives the blocks to 37px, under the
-         44px a finger needs. Two spaces is what 26 letters allow.
+         Raja, on the two-space version, having asked once before: "why A to Z
+         have 2 blank slot, hence two slots make puzzle so easy ... make unified
+         in both three." Asked twice, so it is settled — ONE space everywhere.
 
-         Which suits the middle rung anyway. The second space is the training
-         wheel — somewhere to park a block while you rearrange, which is exactly
-         the help that disappears on the hard board. */
+         26 blocks plus one space is 27 squares, and 27 is only 3x9. There is no
+         other rectangle, so three columns is not a preference, it is the shape
+         the alphabet forces. It also makes a tighter puzzle than the 4-wide
+         version was: a narrow board gives a block far fewer ways around its
+         neighbours, which is the "time to observe" he asked for.
+
+         I argued against this shape once, because the blocks come out under the
+         44px a finger is usually given. That was the wrong standard to hold it
+         to. This app already ships 22px cells on the 10x10 magic square and
+         children play it, and a slide block is DRAGGED as well as tapped —
+         dragging needs far less precision than hitting a target. */
       az: {
-        cols: 4, rows: 7, title: '🔤 Slide A–Z', alpha: true,   // 28 places, 26 blocks -> TWO gaps
+        cols: 3, rows: 9, title: '🔤 Slide A–Z', alpha: true,   // 27 places, 26 blocks -> ONE gap
         tiles: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''), name: 'A to Z',
-        goal: 'Finish with <b>A</b> to <b>Z</b> reading across — exactly like a box of alphabet blocks. Two spaces to work with, so there is always somewhere to park a block.'
+        goal: 'Finish with <b>A B C</b> on the top row, then <b>D E F</b>, all the way down to <b>Y Z</b> and the space — one space to work with, like a real sliding board.'
       },
       /* The hard one, and the board Raja DREW FIRST (see above) — A to Z then
          the digits, six across — with the single space that makes it playable.
@@ -6174,7 +6179,12 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       // get bigger blocks rather than just more air around them.
       var wide = slideLv.cols >= 5;
       el.style.setProperty('--slideRadius', wide ? '12px' : '16px');
-      var gap = wide ? 6 : 8;
+      /* A tall board is limited by HEIGHT, so every pixel of gap is a pixel off
+         every block: the nine-row letter board spends 64px on gaps alone, which
+         is ~7px per block — the difference between a 37px block and a 44px one.
+         Narrow the gap where the rows are what is squeezing, and leave the short
+         boards alone, where the gap costs nothing and reads better. */
+      var gap = slideLv.rows >= 8 ? 5 : (wide ? 6 : 8);
       el.style.gap = gap + 'px';
       /* Sizing by COLUMNS alone is only right while a board is no taller than
          it is wide. 1-15 is 4x4 so it always fitted; A-Z is 4 across and SEVEN
@@ -6196,7 +6206,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       // room <= 0 means the panel is not laid out yet (hidden, first paint) —
       // fall back to the width fit rather than to a nonsense negative cell.
       var cell = room > 0 ? Math.min(byW, byH) : byW;
-      cell = Math.max(34, cell);                 // never shrink past a tappable block
+      /* The floor used to be 34px, and on a 360x740 phone the nine-row letter
+         board hit it and overflowed by a single pixel — putting "Show me how"
+         back under the tab bar, which is the exact bug beta-148 fixed. A floor
+         that can push the controls off the screen is worse than a small block,
+         so it is set below where any board lands (the 10x10 magic square already
+         ships 22px cells) and the height fit is left to win. */
+      cell = Math.max(26, cell);
       el.style.maxWidth = (cell * SLIDE_COLS + gap * (SLIDE_COLS - 1)) + 'px';
       el.style.setProperty('--slideFont', Math.max(15, Math.round(cell * (wide ? 0.36 : 0.40))) + 'px');
       el.classList.toggle('slideAlpha', !!slideLv.alpha);
@@ -9314,7 +9330,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-151 (the puzzle list pairs its one-card groups, so the empty column is gone)';
+  var BUILD_VER = 'beta-152 (one empty space on every slide board, A-Z included)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
