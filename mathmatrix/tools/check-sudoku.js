@@ -136,17 +136,27 @@ function countAnswers(grid, L, cap){
   await ev(`document.querySelector('.toggleBtn[data-sud-level="mini"]').click()`); await sleep(900);
   const play = await ev(`(function(){
     var cells = Array.from(document.querySelectorAll('#sudBoard [data-sud]'));
-    var blank = cells.findIndex(function(c){ return !c.classList.contains('given'); });
-    if (blank < 0) return JSON.stringify({ error: 'no blank cell' });
+    /* Pick a blank cell that HAS a number to collide with. The first version
+       took the first blank and looked only along its row — on a 3x3 with four
+       givens that row is sometimes empty, so the check quietly could not run
+       and reported a failure that said nothing about the app. Search rows AND
+       columns, and take the first blank that has something to clash with. */
+    var n = 3, blank = -1, clashDigit = 0;
+    for (var b = 0; b < cells.length && blank < 0; b++){
+      if (cells[b].classList.contains('given')) continue;
+      var r0 = Math.floor(b / n), c0 = b % n;
+      for (var k = 0; k < n; k++){
+        var inRow = cells[r0 * n + k].textContent.trim();
+        var inCol = cells[k * n + c0].textContent.trim();
+        if (inRow && r0 * n + k !== b){ blank = b; clashDigit = parseInt(inRow, 10); break; }
+        if (inCol && k * n + c0 !== b){ blank = b; clashDigit = parseInt(inCol, 10); break; }
+      }
+    }
+    if (blank < 0) return JSON.stringify({ error: 'no blank cell had anything to clash with' });
     cells[blank].click();
     var picked = document.querySelectorAll('#sudBoard .pick').length;
     var peers  = document.querySelectorAll('#sudBoard .peer').length;
-    // find a digit that is definitely WRONG here: one already in this row
-    var n = 3, r = Math.floor(blank / n);
-    var inRow = [];
-    for (var i = 0; i < n; i++){ var t = cells[r * n + i].textContent.trim(); if (t) inRow.push(t); }
-    if (!inRow.length) return JSON.stringify({ error: 'row was empty' });
-    var badKey = document.querySelector('#sudPad [data-sudkey="' + inRow[0] + '"]');
+    var badKey = document.querySelector('#sudPad [data-sudkey="' + clashDigit + '"]');
     badKey.click();
     var after = document.querySelectorAll('#sudBoard [data-sud]')[blank];
     return JSON.stringify({ picked: picked, peers: peers,
@@ -247,6 +257,62 @@ function countAnswers(grid, L, cap){
   await sleep(2400);
   const tLater = await ev(`document.getElementById('sudTime').textContent`);
   ok('and the clock does not keep running after the win', tSolved === tLater, tSolved + ' -> ' + tLater);
+
+  /* Raja: "ensure it wrong Number enter cell should flash red alert."
+     Red on its own was already there and was STATIC. What has to be true now is
+     that entering a colliding number ANIMATES, and that the squares already
+     holding that number animate with it, so the alert says WHERE the clash is. */
+  await ev(`document.getElementById('tab-scHome').click()`); await sleep(250);
+  await ev(`document.querySelector('.toggleBtn[data-sud-level="medium"]').click()`); await sleep(1400);
+  const flash = await ev(`(function(){
+    var cells = Array.from(document.querySelectorAll('#sudBoard [data-sud]'));
+    // find a blank cell whose row already holds a number, and enter that number
+    var n = 9, target = -1, digit = 0;
+    for (var i = 0; i < cells.length && target < 0; i++){
+      if (cells[i].classList.contains('given')) continue;
+      var r = Math.floor(i / n);
+      for (var c = 0; c < n; c++){
+        var t = cells[r * n + c].textContent.trim();
+        if (t && r * n + c !== i){ target = i; digit = parseInt(t, 10); break; }
+      }
+    }
+    if (target < 0) return JSON.stringify({ error: 'no suitable cell' });
+    document.querySelectorAll('#sudBoard [data-sud]')[target].click();
+    document.querySelector('#sudPad [data-sudkey="' + digit + '"]').click();
+    var after = Array.from(document.querySelectorAll('#sudBoard [data-sud]'));
+    var cell = after[target];
+    var anim = getComputedStyle(cell).animationName;
+    return JSON.stringify({
+      digit: digit,
+      flashing: cell.classList.contains('flash'),
+      animation: anim,
+      red: cell.classList.contains('bad'),
+      clashing: after.filter(function(c){ return c.classList.contains('clash'); }).length
+    }); })()`);
+  const F = JSON.parse(flash);
+  ok('a colliding number flashes, not just turns red',
+    F.flashing === true && F.animation === 'sudFlash',
+    F.error || 'entered ' + F.digit + ', animation "' + F.animation + '"');
+  ok('the squares already holding that number flash too, showing where the clash is',
+    F.clashing > 0, F.error || F.clashing + ' squares marked');
+  ok('and it stays red after the flash, as a record', F.red === true, F.error || 'red: ' + F.red);
+  /* The animation peaks between 20% and 60% of its 780ms, so a screenshot taken
+     the instant the number is entered catches it between pulses and looks like
+     nothing happened. Wait for the peak before capturing, or the picture is
+     evidence of the wrong thing. */
+  await sleep(260);
+  await shot('sudoku-flash.png');
+
+  // the flash must not stick: a re-render for any other reason should not replay it
+  await sleep(1100);
+  const settled = await ev(`JSON.stringify({
+    flash: document.querySelectorAll('#sudBoard .flash').length,
+    clash: document.querySelectorAll('#sudBoard .clash').length,
+    red:   document.querySelectorAll('#sudBoard .bad').length })`);
+  const S2 = JSON.parse(settled);
+  ok('the alert clears itself but the red stays',
+    S2.flash === 0 && S2.clash === 0 && S2.red > 0,
+    'flash ' + S2.flash + ', clash ' + S2.clash + ', still red ' + S2.red);
 
   ok('no JS errors', errs.length === 0, errs.join(' | '));
   ws.close(); ch.kill();

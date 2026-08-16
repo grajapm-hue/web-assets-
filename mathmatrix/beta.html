@@ -2092,6 +2092,30 @@ body.sudokuMode .solvedCounter{ display:none !important; }
    The first version shaded only the EMPTY peers, which hid exactly the cells
    worth looking at: the ones already holding a number. */
 .sudCell.peer{ box-shadow:inset 0 0 0 999px rgba(84,72,54,.20); }
+/* Raja: "ensure it wrong Number enter cell should flash red alert."
+   Red on its own was already there but it was STATIC — a number turned red and
+   simply sat there, which is easy to put in and not notice. The flash is the
+   alert; the red that stays behind it is the record. */
+@keyframes sudFlash{
+  0%,100%{ background:#FDE2E0; }
+  20%,60%{ background:#F2564A; color:#FFF6E7; }
+}
+.sudCell.flash{ animation:sudFlash .78s ease-in-out 1; }
+/* The squares it collides with flash too, more gently. A child told only "that
+   is wrong" learns nothing; shown WHICH square already holds that number, they
+   learn where to look next time — which is the whole skill of the game. */
+@keyframes sudClash{
+  0%,100%{ box-shadow:inset 0 0 0 999px rgba(84,72,54,.20); }
+  30%,70%{ box-shadow:inset 0 0 0 999px rgba(242,86,74,.42); }
+}
+.sudCell.clash{ animation:sudClash .78s ease-in-out 1; }
+@media(prefers-reduced-motion:reduce){
+  .sudCell.flash, .sudCell.clash{ animation:none; }
+  .sudCell.clash{ box-shadow:inset 0 0 0 999px rgba(242,86,74,.42); }
+}
+/* A digit that is completely placed is done, not merely dimmed — sudoku.com
+   shows a tick and it reads instantly, which is worth borrowing. */
+.sudKey.spent{ opacity:.55; color:#2E9E5B; }
 .sudBoard .bt{ border-top:3px solid #8A6A3C; }
 .sudBoard .bl{ border-left:3px solid #8A6A3C; }
 .sudLegend{ text-align:center; font-size:11.5px; font-weight:800; color:#6B4E2A;
@@ -2110,7 +2134,7 @@ body.sudokuMode .solvedCounter{ display:none !important; }
 .sudKey.wide{ font-size:15px; }
 /* A number that is already used up everywhere is not a mistake to discover the
    hard way — it is simply spent, so it stops offering itself. */
-.sudKey.spent{ opacity:.4; }
+/* the spent style lives further down, beside the flash rules it was added with */
 .sudFoot{ display:flex; align-items:center; justify-content:center; gap:9px;
   flex-wrap:wrap; margin-top:6px; }
 
@@ -6748,6 +6772,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
        the puzzle is solved, so the number you are left looking at is how long
        you played, not how long the phone sat on the table afterwards. */
     var sudSeconds = 0, sudTick = null;
+    // the cell to flash, and the squares it collided with — cleared once the
+    // animation has played, so a re-render for any other reason does not replay it
+    var sudFlash = -1, sudClash = {}, sudFlashTimer = null;
     function sudClock(){
       var m = Math.floor(sudSeconds / 60), s = sudSeconds % 60;
       var el = document.getElementById('sudTime');
@@ -6908,6 +6935,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         // every cell this one can see, GIVENS INCLUDED — they are the ones
         // holding the numbers already spoken for, which is the whole point
         if (peers[i] && i !== sudPick) cls += ' peer';
+        if (i === sudFlash) cls += ' flash';
+        if (sudClash[i]) cls += ' clash';
         if (i === sudPick) cls += ' pick';
         if (L.bh && r % L.bh === 0 && r > 0) cls += ' bt';
         if (L.bw && c % L.bw === 0 && c > 0) cls += ' bl';
@@ -6923,8 +6952,16 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         var used = {}, k;
         for (k = 0; k < n * n; k++) if (sudCells[k]) used[sudCells[k]] = (used[sudCells[k]] || 0) + 1;
         var ph = '<div class="sudPadRow">';
+        /* A digit placed all n times is finished. sudoku.com swaps it for a
+           tick, which reads at a glance where a dimmed number does not, and it
+           answers the same question the shading answers: which numbers are
+           already placed. Losing the digit costs nothing, because a spent key
+           has no use — pressing it could only ever make an n+1th copy, which
+           always breaks a rule. It stays pressable rather than disabled, so it
+           simply flashes red like any other collision. */
         for (var d = 1; d <= n; d++)
-          ph += '<button class="sudKey' + (used[d] === n ? ' spent' : '') + '" type="button" data-sudkey="' + d + '">' + d + '</button>';
+          ph += '<button class="sudKey' + (used[d] === n ? ' spent' : '') + '" type="button" data-sudkey="' + d + '">' +
+                (used[d] === n ? '✓' : d) + '</button>';
         ph += '</div><div class="sudPadRow"><button class="sudKey wide" type="button" data-sudkey="0">⌫ Erase</button></div>';
         pad.innerHTML = ph;
       }
@@ -6981,7 +7018,30 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         if (sudPick < 0 || sudGiven[sudPick]) { try { sfx('no'); } catch(err){} return; }
         var v = parseInt(key.dataset.sudkey, 10);
         sudCells[sudPick] = v || 0;
-        try { sfx(v ? 'yes' : 'card'); } catch(err){}
+        /* A number that collides with one already placed gets the alert Raja
+           asked for, and the squares holding that number flash with it. Only a
+           RULE collision does this: a number can break no rule and still turn
+           out wrong later, and flashing red at that would be telling the player
+           the answer rather than teaching them to look. */
+        var clashed = false;
+        if (v){
+          var r0 = Math.floor(sudPick / sudLv.n), c0 = sudPick % sudLv.n;
+          if (!sudOk(sudCells, r0, c0, v, sudLv)){
+            clashed = true;
+            var seen = sudPeers(sudPick);
+            sudClash = {};
+            for (var q in seen) if (seen.hasOwnProperty(q)){
+              var qi = parseInt(q, 10);
+              if (qi !== sudPick && sudCells[qi] === v) sudClash[qi] = 1;
+            }
+            sudFlash = sudPick;
+            if (sudFlashTimer) clearTimeout(sudFlashTimer);
+            sudFlashTimer = setTimeout(function(){
+              sudFlash = -1; sudClash = {}; sudFlashTimer = null; sudRender();
+            }, 820);
+          }
+        }
+        try { sfx(clashed ? 'no' : (v ? 'yes' : 'card')); } catch(err){}
         sudRender();
         return;
       }
@@ -9827,7 +9887,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-156 (a quiet timer, and picking a square shades everything it can see)';
+  var BUILD_VER = 'beta-157 (a wrong number flashes, and shows what it collided with)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
