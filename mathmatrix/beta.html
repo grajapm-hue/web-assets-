@@ -9367,7 +9367,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-153 (the letter board stretches to the full width, no dead margins)';
+  var BUILD_VER = 'beta-154 (the silent self-update works again, it was reading a version that stopped being a literal)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
@@ -9408,9 +9408,18 @@ if (navigator.storage && navigator.storage.persist) {
       .then(function(r){ return r.ok ? r.text() : null; })
       .then(function(txt){
         if (!txt) return;
-        var m = txt.match(/window\.BETA_VER\s*=\s*'([^']+)'/);
-        if (!m || !m[1] || m[1] === window.BETA_VER) return;
-        location.replace(location.pathname + '?v=' + encodeURIComponent(m[1]));
+        /* Read BUILD_VER, not BETA_VER. This regex wants a QUOTED STRING, and
+           BETA_VER stopped being one in beta-150 — it is derived from BUILD_VER
+           now, which is exactly what stopped the two drifting apart. The match
+           then found nothing, returned early every time, and the silent
+           self-update quietly stopped working: the app would sit on an old
+           version until someone tapped Update. BUILD_VER is the literal, so
+           read that and take its first word, the same way BETA_VER does. */
+        var m = txt.match(/BUILD_VER\s*=\s*'([^']+)'/);
+        if (!m || !m[1]) return;
+        var fresh = m[1].split(' ')[0];
+        if (fresh === window.BETA_VER) return;
+        location.replace(location.pathname + '?v=' + encodeURIComponent(fresh));
       })
       .catch(function(){});        // offline mid-flight, or blocked: keep playing
   })();
