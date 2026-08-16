@@ -1399,7 +1399,18 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
 
 /* 52px bar with 3px padding gives 46px tabs — over the touch minimum, and it
    costs no extra height because the bar itself is unchanged. */
-.tabBar{ position:static !important; flex:none; height:52px; padding:3px 7px !important;
+/* The base rule this replaces padded the bar by env(safe-area-inset-bottom),
+   and that allowance was lost here — a fixed 52px with a flat 3px of padding.
+   The page is served with viewport-fit=cover and .appShell fills 100dvh, so on
+   a phone whose home indicator OVERLAYS the page rather than shrinking the
+   viewport (every recent iPhone), the bottom of this bar sits underneath it and
+   the tab labels are partly covered. Android reduces the viewport instead, so
+   nothing looked wrong on the device this was built against.
+   min-height rather than height, so the bar can actually grow by the inset;
+   where there is no inset env() resolves to 0 and this is the same 52px bar it
+   was. Every board that sizes itself from this bar's top edge adapts for free. */
+.tabBar{ position:static !important; flex:none; min-height:52px; height:auto;
+  padding:3px 7px calc(3px + env(safe-area-inset-bottom)) !important;
   background:rgba(0,0,0,.32) !important; border-top:1px solid rgba(255,255,255,.1) !important; }
 /* Every tab is a filled pill now, not a bare label. The active one is a shade
    lighter with the gold text it already had, so which screen you are on still
@@ -9933,7 +9944,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-159 (the Sudoku board no longer pushes its own clock off short phones)';
+  var BUILD_VER = 'beta-160 (the tab bar gets its safe-area allowance back, for iPhone)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
