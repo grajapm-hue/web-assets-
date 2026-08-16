@@ -3323,9 +3323,9 @@ body{ background:#C9A87C !important; }
       </button>
       <!-- The board Raja drew first, and the app he sent later ("Magic Slide
            Puzzle - Letters and Numbers"): six across, A-Z then 1-9 and 0. -->
-      <button class="toggleBtn lvCard" id="slideAzTab" type="button" data-slide-level="az" data-name="🔤 Slide A–Z" style="color:#0ea5e9; border-color:#0ea5e9; --c1:#bae6fd; --c2:#38bdf8;">
+      <button class="toggleBtn lvCard" id="slideAzTab" type="button" data-slide-level="az" data-name="🔤 Slide A–Z + 1–9" style="color:#0ea5e9; border-color:#0ea5e9; --c1:#bae6fd; --c2:#38bdf8;">
         <span class="lvGlyph" aria-hidden="true">🔤</span>
-        <span class="lvText"><b class="lvName">Slide A–Z</b><span class="lvDiff">4×7 · two empty spaces</span><span class="lvMeta">all 26 letters — numbers have their own board</span></span>
+        <span class="lvText"><b class="lvName">Slide A–Z + 1–9</b><span class="lvDiff">6×6 · one empty space</span><span class="lvMeta">35 blocks, a single gap — the hard one</span></span>
       </button>
     </div>
   </div>
@@ -5987,19 +5987,30 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         tiles: ['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15'], name: '1 to 15',
         goal: 'Finish with <b>1 2 3 4</b> on the top row, then <b>5</b> to <b>8</b>, <b>9</b> to <b>12</b>, and <b>13 14 15</b> — the classic sliding puzzle.'
       },
-      /* Raja: "can remove number block in alphabetical table to increase room
-         box sizes also keep differentiate to alpha and numerical". Letters
-         only here, numbers only on the other board — each puzzle is one kind
-         of thing, which is the differentiating he asked for.
-         Dropping the ten digits is what buys the bigger blocks: 26 letters fit
-         five across instead of six, and a block's width is the board divided
-         by its columns, so they grow by about a fifth. 26 does not fill a
-         rectangle, so the last puzzle row is Z followed by four spaces —
-         harmless, and extra room to manoeuvre. */
+      /* Raja, on the 4x7 letters-only board: "feel easy to finish, hence
+         provide a two blank slot ... The blank slot should be ONE like original
+         physical play board." He is right, and for the reason he gives: a
+         second space lets you park a block while you rearrange, which removes
+         most of the forced sequences. One space is the real puzzle.
+
+         Getting to one space needs the tile count to be one short of the grid,
+         and 26 letters cannot do that on any sensible rectangle — 27 would mean
+         inventing a 27th block, whose home square a child has no way of
+         knowing, in a puzzle whose whole point is order they already know.
+         Adding the digits solves it exactly: 26 + 9 = 35 in a 6x6 of 36. Which
+         lands back on the board Raja DREW FIRST (see above) — A to Z then the
+         digits, six across — now with the one space that makes it playable.
+         (His "1 to 10" would be 36 blocks needing 37 squares, and 37 is not a
+         rectangle; 1 to 9 is the count that fits.)
+
+         Six columns means smaller blocks, ~51px on a 360px phone, still above
+         the 44px a finger needs. One gap also removes the pick-then-choose
+         step entirely: a block can only ever have one place to go. */
       az: {
-        cols: 4, rows: 7, title: '🔤 Slide A–Z', alpha: true,   // 28 places, 26 blocks -> TWO gaps
-        tiles: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''), name: 'A to Z',
-        goal: 'Finish with <b>A</b> to <b>Z</b> reading across — exactly like a box of alphabet blocks.'
+        cols: 6, rows: 6, title: '🔤 Slide A–Z + 1–9', alpha: true,  // 36 places, 35 blocks -> ONE gap
+        tiles: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').concat(['1','2','3','4','5','6','7','8','9']),
+        name: 'A to Z and 1 to 9',
+        goal: 'Finish with <b>A</b> to <b>Z</b> reading across, then <b>1</b> to <b>9</b> — one space to work with, like a real sliding board.'
       }
     };
     var slideLv = SLIDE_LEVELS.fifteen;
@@ -6447,9 +6458,14 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         if (title) title.innerHTML = boxedTitle(slideLv.title);
         var lb = document.getElementById('logicBox');
         if (lb) lb.innerHTML = '<h3>📐 ' + slideLv.title + '</h3>' +
-          '<p>' + SLIDE_TILES + ' blocks, ' + SLIDE_N + ' places — so only ' + (SLIDE_N - SLIDE_TILES) +
-          ' of them are empty. That gap is the whole puzzle: a block can only move into it, and moving one ' +
-          'leaves a new gap somewhere else.</p>' +
+          // Both boards are down to a single gap now, so "only 1 of them are
+          // empty" no longer reads as English. Say the number in words and keep
+          // the plural branch for whatever board comes next.
+          '<p>' + SLIDE_TILES + ' blocks, ' + SLIDE_N + ' places — so ' +
+          ((SLIDE_N - SLIDE_TILES) === 1 ? 'exactly <b>one</b> place is empty'
+                                         : (SLIDE_N - SLIDE_TILES) + ' places are empty') +
+          '. That gap is the whole puzzle: a block can only move into it, and moving one ' +
+          'leaves the gap somewhere else.</p>' +
           '<p>' + slideLv.goal + '</p><p>Rows start <b>red</b> and turn <b>green</b> when every block in them is right, so the red rows are the ones still to fix — and a row goes back to red if you disturb it. Finish the top row, then the next: that is how these puzzles are solved.</p>' +
           '<p>Every deal is built by shuffling a finished board with real moves, so <b>every game can always be solved</b>. ' +
           'A puzzle scattered at random would not be: half of those cannot be finished at all.</p>';
@@ -9248,7 +9264,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-148 (the A-Z board now leaves room for its own buttons)';
+  var BUILD_VER = 'beta-149 (the letter board is A-Z plus 1-9 with a single space, like a real sliding board)';
   window.BETA_VER = 'beta-147';   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
   if (verEl) verEl.textContent = BUILD_VER;
