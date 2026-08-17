@@ -1171,6 +1171,12 @@ body{ background:var(--gr) !important; color:var(--bink) !important; }
 /* ── SANA: the brand, reacting ── */
 .sana{ display:flex; align-items:center; gap:10px; width:100%; max-width:560px;
   margin:10px auto 2px; padding:0 10px; box-sizing:border-box; }
+/* The face and its name, as one column. flex:none so the pair never squeezes
+   the speech bubble, and the width is the FACE's width so a long name could
+   never widen the column and push the bubble narrower. */
+.sanaWho{ flex:none; display:flex; flex-direction:column; align-items:center; gap:1px; }
+.sanaName{ font-size:10px; font-weight:900; letter-spacing:.5px; line-height:1;
+  color:#FFD675; }
 .sanaFace{ width:50px; height:50px; flex:none; border-radius:50%; display:grid; place-items:center;
   font-size:28px; background:linear-gradient(160deg,#FFD675,var(--gold)); box-shadow:var(--clay);
   position:relative; animation:sanaBob 3s var(--spring) infinite; }
@@ -1475,6 +1481,13 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
 /* SaNa — fixed height, two lines maximum, never pushes the board */
 .sana{ flex:none; margin:0 0 6px !important; padding:0 !important; max-width:none !important; gap:8px !important; }
 .sanaFace{ width:36px !important; height:36px !important; font-size:20px !important; }
+/* Brown on the wooden background; the base rule's colour is chosen for the dark
+   theme and would be all but invisible here.
+   NOT the version badge's brown, which measures 9:1 — but only because that one
+   sits on a cream badge. Against the bare tan the same colour came out at
+   4.3:1, under the readable line, so this goes darker. Borrowing a colour that
+   worked somewhere else is not the same as it working here. */
+.sanaName{ color:#33220F !important; font-size:9.5px !important; }
 /* three lines, not two: the hints now name every offset, and clipping a hint
    mid-sentence is worse than giving up ~14px of board height */
 /* 64ch caps the reading line. A phone held sideways is 844px wide and ran
@@ -9324,7 +9337,19 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     if (!bar) return;
     sanaEl = document.createElement('div');
     sanaEl.className = 'sana';
-    sanaEl.innerHTML = '<span class="sanaFace">🐒<span class="sanaSpark"></span></span>' +
+    /* Raja: "place the name SaNa below wherever monkey persist." The monkey is
+       introduced by name once, in the opening line, and after that every other
+       thing it says is just a sentence beside a face — a child who arrives on a
+       puzzle screen has never been told who is talking to them. The name sits
+       under the face now, so it travels with the monkey to every screen.
+       The face keeps its own element: the cheer, oops, think and party
+       animations are all hung on .sanaFace, so the name goes in a wrapper
+       AROUND it rather than inside it, and none of them start bouncing the
+       caption. */
+    sanaEl.innerHTML = '<span class="sanaWho">' +
+                         '<span class="sanaFace">🐒<span class="sanaSpark"></span></span>' +
+                         '<span class="sanaName">SaNa</span>' +
+                       '</span>' +
                        '<span class="sanaBub">Hello! I\'m <b>SaNa</b>. Pick a puzzle and I\'ll help you.</span>';
     bar.insertAdjacentElement('afterend', sanaEl);
     /* The BETA/feedback banner used to sit here as its own row under SaNa.
@@ -10823,7 +10848,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-168 (Pallanguzhi: round cups, a turn tab, and a clean slate)';
+  var BUILD_VER = 'beta-169 (the monkey wears its name)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
