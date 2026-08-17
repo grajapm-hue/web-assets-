@@ -59,4 +59,9 @@ fs.writeFileSync(tmp('_ref.json'), JSON.stringify({ sha: commit.sha }), 'utf8');
 const moved = gh(`repos/${REPO}/git/refs/heads/main -X PATCH`, tmp('_ref.json'));
 fs.unlinkSync(tmp('_ref.json'));
 console.log('main now   :', moved.object.sha.slice(0, 8));
-console.log('\npublished v135 to ' + REPO);
+/* Read the version out of the file that was actually published. This line was
+   hardcoded to v135 and cheerfully announced "published v135" while publishing
+   v136 — a version number typed by hand is a version number that goes stale. */
+const shipped = (fs.readFileSync(tmp('_index-built.html'), 'utf8')
+  .match(/BUILD_VER = '([^']+)'/) || [])[1] || '(unknown)';
+console.log('\npublished ' + shipped + ' to ' + REPO);

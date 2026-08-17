@@ -101,3 +101,32 @@ leftovers.forEach(([label, re]) => {
 });
 
 console.log('\nsize: beta ' + src.length + ' -> live ' + out.length);
+
+/* The service worker is built HERE too, rather than left as a step to remember.
+   Publishing index.html with an unchanged CACHE_VERSION means every device keeps
+   serving the old page out of cache and nobody sees the release — the failure is
+   silent, and the release looks fine from a desktop browser. The worker is taken
+   from what is LIVE right now (not from beta-sw.js, which caches a different set
+   of files under a different name) and only its version is changed. */
+const swLive = require('child_process')
+  .execSync('curl -s "https://kidsmathsmatrixpuzzle.github.io/sw.js?cb=' + NEW_VER + '"',
+            { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
+const wasVer = (swLive.match(/CACHE_VERSION\s*=\s*'([^']+)'/) || [])[1];
+if (!wasVer){
+  console.log('\n CHECK  could not read CACHE_VERSION from the live sw.js — not written');
+} else {
+  const swOut = swLive.replace(/CACHE_VERSION\s*=\s*'[^']+'/, "CACHE_VERSION = 'mathmatrix-" + NEW_VER + "'");
+  fs.writeFileSync(path.join(__dirname, '_sw-built.js'), swOut, 'utf8');
+  console.log('  ok   sw.js CACHE_VERSION ' + wasVer + ' -> mathmatrix-' + NEW_VER);
+  /* Every file the worker caches must exist, because cache.addAll() rejects
+     WHOLESALE on a single 404 — one missing asset and the worker caches nothing
+     at all, killing offline play with no error anyone would notice. */
+  const listed = [...new Set((swOut.match(/'\.\/[^']*'/g) || [])
+    .map(s => s.replace(/'/g, '').replace('./', '')))].filter(Boolean);
+  const repo = JSON.parse(require('child_process')
+    .execSync('gh api repos/KidsMathsMatrixPuzzle/kidsmathsmatrixpuzzle.github.io/contents --jq "[.[].name]"',
+              { encoding: 'utf8' }));
+  const missing = listed.filter(a => repo.indexOf(a) < 0);
+  console.log((missing.length ? ' CHECK  ' : '  ok   ') + 'every cached asset exists  (' +
+    listed.length + ' listed' + (missing.length ? ', MISSING: ' + missing.join(', ') : '') + ')');
+}

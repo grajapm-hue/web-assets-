@@ -143,6 +143,71 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   ok('the Gate Logic skip option is there and visible', /visible:/.test(skip), skip);
   await shot('135-gate-skip.png');
 
+  /* Sudoku is the reason for this release, and the gate did not look at it at
+     all — it was written when Gate Logic and Slide Magic were the new things.
+     A promotion check that passes without exercising the headline feature is
+     the same hollow green this project has been bitten by before. */
+  await ev(`document.getElementById('tab-scHome').click()`); await sleep(300);
+  const sudCards = await ev(`Array.from(document.querySelectorAll('.toggleBtn[data-sud-level]')).map(function(b){
+    return b.dataset.sudLevel; })`);
+  ok('Sudoku arrived with all four levels', sudCards.length === 4, sudCards.join(', '));
+
+  await ev(`document.querySelector('.toggleBtn[data-sud-level="medium"]').click()`); await sleep(1500);
+  const sud = await ev(`(function(){
+    var cells = Array.from(document.querySelectorAll('#sudBoard [data-sud]'));
+    return JSON.stringify({
+      count: cells.length,
+      gaps: cells.filter(function(c){ return !c.textContent.trim(); }).length,
+      diag: cells.filter(function(c){ return c.classList.contains('diag'); }).length,
+      vals: cells.map(function(c){ return c.textContent.trim() ? parseInt(c.textContent, 10) : 0; })
+    }); })()`);
+  const S = JSON.parse(sud);
+  ok('a 9×9 board is dealt with both diagonals marked',
+    S.count === 81 && S.diag === 17, S.count + ' cells, ' + S.diag + ' diagonal');
+
+  /* Solve it here, independently, and count the answers. A puzzle with two
+     answers marks a child wrong for a filling that is genuinely correct. */
+  const L = { n: 9, bh: 3, bw: 3, diag: true };
+  function okAt(g, r, c, v){
+    for (let i = 0; i < 9; i++){
+      if (i !== c && g[r * 9 + i] === v) return false;
+      if (i !== r && g[i * 9 + c] === v) return false;
+    }
+    const br = Math.floor(r / 3) * 3, bc = Math.floor(c / 3) * 3;
+    for (let a = 0; a < 3; a++) for (let b = 0; b < 3; b++){
+      const k = (br + a) * 9 + bc + b;
+      if (k !== r * 9 + c && g[k] === v) return false;
+    }
+    if (r === c) for (let i = 0; i < 9; i++) if (i !== r && g[i * 9 + i] === v) return false;
+    if (r + c === 8) for (let i = 0; i < 9; i++) if (i !== r && g[i * 9 + (8 - i)] === v) return false;
+    return true;
+  }
+  let answers = 0;
+  (function count(g){
+    if (answers >= 2) return;
+    let idx = -1;
+    for (let i = 0; i < 81; i++) if (!g[i]){ idx = i; break; }
+    if (idx < 0){ answers++; return; }
+    const r = Math.floor(idx / 9), c = idx % 9;
+    for (let v = 1; v <= 9; v++) if (okAt(g, r, c, v)){ g[idx] = v; count(g); g[idx] = 0; if (answers >= 2) return; }
+  })(S.vals.slice());
+  ok('the puzzle it dealt has exactly ONE answer', answers === 1,
+    answers === 0 ? 'NO answer — unsolvable' : answers === 1 ? 'one answer' : 'two or more answers');
+
+  const sudRed = await ev(`(function(){
+    var cells = Array.from(document.querySelectorAll('#sudBoard [data-sud]'));
+    var blank = cells.findIndex(function(c){ return !c.classList.contains('given'); });
+    if (blank < 0) return 'no blank cell';
+    var r = Math.floor(blank / 9);
+    var used = [];
+    for (var i = 0; i < 9; i++){ var t = cells[r * 9 + i].textContent.trim(); if (t) used.push(t); }
+    if (!used.length) return 'row was empty';
+    cells[blank].click();
+    document.querySelector('#sudPad [data-sudkey="' + used[0] + '"]').click();
+    return document.querySelectorAll('#sudBoard [data-sud]')[blank].classList.contains('bad') ? 'red' : 'not red';
+  })()`);
+  ok('a wrong number turns red', sudRed === 'red', sudRed);
+
   ok('no JS errors', errs.length === 0, errs.join(' | '));
   ws.close(); ch.kill();
   console.log('\n' + (fail === 0 ? 'ALL GREEN — safe to publish' : fail + ' FAILURES — do not publish'));
