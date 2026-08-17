@@ -27,6 +27,35 @@
 <!-- without this the browser asks for /favicon.ico, 404s, and the tab sits blank -->
 <link rel="icon" href="icon-192.png" type="image/png">
 <title>🐒🎲 MathMatrix Pro++ — Magic Square Puzzles (3×3 · 4×4 · 5×5 · 3³ …)</title>
+
+<!-- Raja: the copy icon in Android's share sheet copies something that will
+     not open in a fresh browser, while every other channel works.
+
+     It copies exactly what we hand Android. Share used to pass a description
+     AND a link, and Chrome joins those into ONE run of plain text — which is
+     why the sheet is headed "Sharing text" in his screenshot and why the copy
+     button yields a paragraph. A paragraph pasted into an address bar is a
+     search, not a page. Share now passes the LINK ALONE, so that button copies
+     a bare URL, the same thing "Copy Link" on the Get App screen gives.
+
+     The description is not lost, it moves HERE. WhatsApp, Telegram and the rest
+     read these tags off the page and build their own preview card, so a shared
+     link still arrives with its name, its explanation and its icon — and a card
+     assembled by the app looks better than the sentence it replaces. These are
+     read by crawlers that never run JavaScript, so unlike the share link (which
+     is derived from location at runtime) they have to be written out. og:url is
+     deliberately absent: crawlers fall back to the address they actually
+     fetched, which keeps beta previews pointing at beta and live at live. -->
+<meta name="description" content="MathMatrix Pro++ — magic square puzzles for kids (5th grade & up). 3×3 to 10×10 plus 3³ Multiply Magic, Sudoku, Logic Gates and more. Free, works offline, no ads.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Kids Maths Matrix Puzzle">
+<meta property="og:title" content="🐒🎲 MathMatrix Pro++ — Magic Square Puzzles for Kids">
+<meta property="og:description" content="Magic squares 3×3 to 10×10, 3³ Multiply Magic, Sudoku, Logic Gates, Slide puzzles and more. Free, works offline, no ads.">
+<meta property="og:image" content="https://kidsmathsmatrixpuzzle.github.io/icon-512.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="🐒🎲 MathMatrix Pro++ — Magic Square Puzzles for Kids">
+<meta name="twitter:description" content="Magic squares 3×3 to 10×10, 3³ Multiply Magic, Sudoku, Logic Gates, Slide puzzles and more. Free, works offline, no ads.">
+<meta name="twitter:image" content="https://kidsmathsmatrixpuzzle.github.io/icon-512.png">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html, body { height:100%; width:100%; touch-action:manipulation; }  /* manipulation = normal taps/scroll but no double-tap zoom */
@@ -8544,8 +8573,6 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // screen, on beta now and just as correctly once this becomes the real
     // production file later -- nothing to remember to change at promotion time.
     var LINK = location.origin + location.pathname;
-    var TEXT = '🐒🎲 MathMatrix Pro++ — magic square puzzles for kids (5th grade & up). '
-             + '3×3 to 10×10 plus 3³ Multiply Magic. Free, works offline, no ads.';
     function wire(btn){
       if (!btn) return;
       var idle = btn.textContent;
@@ -8564,7 +8591,17 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           // (below, near installBtn) for anyone who wants a clean, directly
           // pastable URL — its own action, never routed through the share
           // sheet, so there's nothing else that can overwrite it.
-          navigator.share({ title: 'Kids Maths Matrix Puzzle', text: TEXT, url: LINK })
+          /* NO `text` field. Chrome on Android concatenates text and url into a
+             single plain-text payload, and Android's own copy icon copies that
+             payload verbatim — a whole sentence with the address buried at the
+             end, which is a search term rather than a link once pasted into an
+             address bar. Raja found it the hard way: every other channel worked
+             because every other channel sends the link as a link.
+             With url alone Android recognises a link, and its copy icon copies
+             just the URL. The description that used to ride along now lives in
+             the og: tags in the head, where the receiving app reads it and
+             renders a proper preview card. */
+          navigator.share({ title: 'Kids Maths Matrix Puzzle', url: LINK })
             .catch(function(){});           // user cancelling is not an error
           return;
         }
@@ -8574,8 +8611,12 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           btn.textContent = ok ? '✅ Link copied!' : '⚠️ Copy failed';
           setTimeout(function(){ btn.textContent = idle; }, 3000);
         };
+        /* The button says "Link copied", so copy a LINK. This used to put the
+           description and the address on the clipboard together, which has the
+           same fault Raja hit on the phone: what comes back out of a paste is
+           not something an address bar can open. One URL, nothing else. */
         if (navigator.clipboard && navigator.clipboard.writeText){
-          navigator.clipboard.writeText(TEXT + '\n' + LINK).then(function(){ done(true); }, function(){ done(false); });
+          navigator.clipboard.writeText(LINK).then(function(){ done(true); }, function(){ done(false); });
         } else { done(false); }
       });
     }
@@ -10146,7 +10187,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-165 (the bottom bar cannot be pushed off the screen)';
+  var BUILD_VER = 'beta-166 (Share sends a link, so the copy button copies a link)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
