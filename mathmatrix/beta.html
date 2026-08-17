@@ -2274,8 +2274,23 @@ body.palMode #palPanel{ display:flex !important; flex-direction:column;
 /* A player's strip: the name they type, and their store. Raja asked for the
    name box to be BLANK and typed in by the player, and to persist for the
    whole game — so it is a real input, not a label pretending to be one. */
-.palSide{ display:flex; align-items:center; gap:8px; margin:6px 0; }
+.palSide{ display:flex; align-items:center; gap:8px; margin:6px 0; flex-wrap:wrap; }
 .palSide.p2{ flex-direction:row-reverse; }
+/* Raja: "need pop alert who next to start play to touch pocket — add one tab to
+   pop start pick for play near player tab."
+   Two children share one phone and sit at opposite ends of it, so a single line
+   of text in the middle does not tell either of them that it is THEIR go. This
+   is a tab at the player's own end that appears only on their turn, and pops
+   when it does. It takes a whole line of its own rather than squeezing in
+   beside the name and the store, which on a 360px phone would leave all three
+   too narrow to read. */
+.palTurn{ display:none; width:100%; text-align:center; box-sizing:border-box;
+  padding:7px 10px; border-radius:12px;
+  background:linear-gradient(180deg, #FFD166 0%, #F0A828 100%);
+  border:2px solid #8A5E31; color:#3A2611;
+  font-size:13px; font-weight:900; letter-spacing:.2px; }
+.palSide.turn .palTurn{ display:block; animation:palPop .42s cubic-bezier(.34,1.56,.64,1) 1; }
+@keyframes palPop{ 0%{ transform:scale(.82); opacity:0 } 60%{ transform:scale(1.05) } 100%{ transform:scale(1); opacity:1 } }
 .palName{ flex:1 1 auto; min-width:0; height:38px; border-radius:12px;
   border:2px solid #8A5E31; background:#FFF6E7; color:#33220F;
   font-family:inherit; font-size:14px; font-weight:800; padding:0 10px;
@@ -2303,16 +2318,15 @@ body.palMode #palPanel{ display:flex !important; flex-direction:column;
   padding:9px; border-radius:20px; border:3px solid #6B4A25;
   background:linear-gradient(180deg, #8A6A3C 0%, #74562F 100%);
   box-shadow:inset 0 2px 10px rgba(0,0,0,.3); }
-/* A cup is TALLER THAN IT IS WIDE, and that is forced rather than decorative.
-   Seven cups across a 360px phone leaves each about forty pixels — wide enough
-   for neither a countable pile of seeds nor a numeral, if the two have to share
-   one square. Stacking them needs height, and height is the one thing a two-row
-   board has going spare: laid out square, this game filled the top half of the
-   screen and left the bottom half blank, which is the same complaint Raja made
-   about the level cards. So the cups grow downwards into that space, the seeds
-   sit above the count instead of underneath it, and a scooped oval hollow is
-   closer to a real wooden board than a circle was. --palCupH is measured and
-   set by palFit(). */
+/* ROUND. They were ovals for a while — seven cups across a 360px phone leaves
+   about forty pixels each, and stretching them downwards was a way to fit both
+   a countable pile of seeds and a numeral into that width while also filling a
+   screen that was otherwise half empty. Raja looked at it and said to make them
+   circles, which is what a pallanguzhi board actually has. So the height is
+   pinned to the width again and the SEEDS give way instead: dots are drawn only
+   up to four, which is the range where counting them matters and the range the
+   bonus lives in, and above that the numeral carries it alone. --palCupH is
+   measured and set by palFit(). */
 .palCup{ position:relative; height:var(--palCupH, 44px); border:0; padding:0;
   border-radius:50%; cursor:default; font-family:inherit;
   background:radial-gradient(ellipse at 50% 30%, #5C3F20 0%, #3A2611 100%);
@@ -3410,6 +3424,7 @@ body{ background:#C9A87C !important; }
     <input class="palName" id="palName2" type="text" maxlength="14"
            placeholder="Player 2" autocomplete="off" spellcheck="false">
     <div class="palStore"><span class="palStoreCap">Store</span><span class="palStoreNum" id="palStore2">35</span></div>
+    <div class="palTurn" id="palTurn2">👇 Your turn — tap one of your cups</div>
   </div>
 
   <div class="palBoard" id="palBoard"></div>
@@ -3418,6 +3433,7 @@ body{ background:#C9A87C !important; }
     <input class="palName" id="palName1" type="text" maxlength="14"
            placeholder="Player 1" autocomplete="off" spellcheck="false">
     <div class="palStore"><span class="palStoreCap">Store</span><span class="palStoreNum" id="palStore1">35</span></div>
+    <div class="palTurn" id="palTurn1">👇 Your turn — tap one of your cups</div>
   </div>
 
   <div class="palFoot">
@@ -7672,8 +7688,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         // than guessed, so it stays right when a message wraps to two lines
         var below = foot ? (foot.getBoundingClientRect().bottom - boardEl.getBoundingClientRect().bottom) : 90;
         var room = floor - top - below - 18;                 // 18 = the board's own padding
+        /* Round, on Raja's instruction — height follows width, and the spare
+           height goes to the panel's own centring rather than to stretching a
+           hollow into an egg. byH still matters as a CEILING: on a short screen
+           two rows of full-width circles would push the board's own controls
+           under the tab bar. */
         var byH = Math.floor((room - 6) / 2);                // two rows, one 6px gap
-        var h = Math.max(cupW, Math.min(Math.round(cupW * 2), byH));
+        var h = Math.min(Math.round(cupW), byH);
         if (!isFinite(h) || h < 24) h = Math.round(cupW);
         boardEl.style.setProperty('--palCupH', h + 'px');
         boardEl.style.setProperty('--palNum', Math.max(13, Math.round(cupW * 0.42)) + 'px');
@@ -7691,7 +7712,11 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
              being possible at a glance; past that the numeral does the work
              on its own. */
           var dots = '';
-          if (n > 0 && n <= 8) for (var d = 0; d < n; d++) dots += '<span class="palSeed"></span>';
+          /* Up to FOUR only. A round cup on a phone is about forty pixels
+             and cannot hold eight countable dots above a numeral. Four is
+             also exactly the range that matters: it is what a player is
+             watching for, and seeing four dots IS the bonus. */
+          if (n > 0 && n <= 4) for (var d = 0; d < n; d++) dots += '<span class="palSeed"></span>';
           el.querySelector('.palSeeds').innerHTML = dots;
           el.classList.toggle('empty', n === 0);
           el.classList.toggle('mine1', owner(i) === 0);
@@ -7705,7 +7730,12 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         document.getElementById('palStore2').textContent = store[1];
         document.getElementById('palSide1').classList.toggle('turn', playing && turn === 0);
         document.getElementById('palSide2').classList.toggle('turn', playing && turn === 1);
-        if (onBoardEl) onBoardEl.textContent = seedsOnBoard() + ' seeds on the board';
+        for (var t = 0; t < 2; t++){
+          var tb = document.getElementById('palTurn' + (t + 1));
+          if (tb) tb.textContent = busy ? '⏳ sowing…' : '👇 ' + nameOf(t) + ' — tap one of your cups';
+        }
+        var ob = seedsOnBoard();
+        if (onBoardEl) onBoardEl.textContent = ob + (ob === 1 ? ' seed' : ' seeds') + ' on the board';
       }
 
       function markSowed(i){
@@ -7738,6 +7768,16 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
             step = null;
             palFit();
             say('<b>' + nameOf(0) + '</b> starts. Tap one of your own cups to lift its seeds.');
+            /* Raja: "monkey SaNa kept finished game results in new game." The
+               mascot's line is set on events and then just STAYS — so a fresh
+               board sat underneath "Player 1 won 1 seeds!" from the game before
+               it, the one message on screen still describing a game that no
+               longer existed. The last result is cleared here, where the new
+               board is dealt, rather than left to be overwritten by whatever
+               happens first in the new game. */
+            if (typeof sana === 'function') try {
+              sana('A new board — <b>' + nameOf(0) + '</b> starts.', 'cheer');
+            } catch(e){}
             draw();
             return;
           }
@@ -10783,7 +10823,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-167 (Pallanguzhi — the 2x7 sowing game)';
+  var BUILD_VER = 'beta-168 (Pallanguzhi: round cups, a turn tab, and a clean slate)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that

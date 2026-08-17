@@ -201,6 +201,62 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
     !/solved it|row, column and diagonal/i.test(sana),
     JSON.stringify(sana.trim().slice(0, 70)));
 
+  /* ROUND CUPS. Raja asked for circles rather than the ovals they had become.
+     Measured, not eyeballed: a circle is as tall as it is wide. */
+  const shape = await ev(`(function(){
+    var r = document.querySelector('.palCup').getBoundingClientRect();
+    return JSON.stringify({ w: Math.round(r.width), h: Math.round(r.height) }); })()`).then(JSON.parse);
+  ok('the cups are round, not oval', Math.abs(shape.w - shape.h) <= 2,
+    shape.w + ' x ' + shape.h);
+
+  /* THE TURN TAB. Two children share one phone from opposite ends, so each
+     needs the prompt at THEIR end, not only in the middle. Exactly one tab is
+     showing at a time, and it is the one belonging to the player to move. */
+  const tabs = await ev(`(function(){
+    function vis(el){ return !!(el && el.offsetParent !== null); }
+    return JSON.stringify({
+      p1: vis(document.getElementById('palTurn1')),
+      p2: vis(document.getElementById('palTurn2')),
+      t1: (document.getElementById('palTurn1') || {}).textContent || ''
+    }); })()`).then(JSON.parse);
+  const st3 = await state();
+  ok('exactly one player is shown as being on turn', tabs.p1 !== tabs.p2,
+    'p1 tab ' + tabs.p1 + ', p2 tab ' + tabs.p2);
+  ok('and it is the player whose turn it actually is',
+    (st3.turn === 0) === tabs.p1, 'turn is player ' + (st3.turn + 1));
+
+  /* A NEW BOARD MUST NOT WEAR THE LAST GAME'S RESULT. Raja: "monkey SaNa kept
+     finished game results in new game." The mascot's line persists until
+     something replaces it, so a fresh board sat under "Player 1 won 1 seeds!"
+     from a game that no longer existed. */
+  /* PUT a result on the mascot first. Relying on whatever the last game happened
+     to end with made this assertion pass with the fix REMOVED — that run's final
+     event was a pasu claim, not a capture, so there was no result to leave
+     behind and nothing to catch. Stating the starting condition is the whole
+     difference between a check and a coincidence. */
+  const sanaNow = () => ev(`(document.querySelector('.sana') || {}).textContent || ''`);
+  let before = await sanaNow();
+  for (let k = 0; k < 200 && !/won \d+ seed/i.test(before); k++){
+    const st = await state();
+    if (!st.playing){ await ev(`window.__palNew()`); await sleep(2500); }
+    else if (!st.busy){
+      const mine = [];
+      for (let i = st.turn * 7; i < st.turn * 7 + 7; i++) if (st.cups[i] > 0) mine.push(i);
+      if (mine.length) await ev(`document.querySelector('#palBoard [data-pal="${mine[0]}"]').click()`);
+    }
+    await sleep(90);
+    before = await sanaNow();
+  }
+  ok('a capture leaves its result on the mascot', /won \d+ seed/i.test(before),
+    JSON.stringify(before.trim().slice(0, 50)));
+  await ev(`window.__palNew()`); await sleep(2600);
+  const fresh = await state();
+  const line = await ev(`(document.querySelector('.sana') || {}).textContent || ''`);
+  ok('a new game deals a genuinely fresh board', fresh.cups.every(c => c === 5) && seeds(fresh) === TOTAL,
+    fresh.cups.join(',') + ' | ' + seeds(fresh) + ' seeds');
+  ok('and the mascot is not still reporting the last game', !/won \d+ seed|wins the game|dead heat/i.test(line),
+    JSON.stringify(line.trim().slice(0, 60)));
+
   ok('no JS errors', errs.length === 0, errs.join(' | ') || '');
 
   ws.close(); ch.kill();
