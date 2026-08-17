@@ -1176,7 +1176,7 @@ body{ background:var(--gr) !important; color:var(--bink) !important; }
    never widen the column and push the bubble narrower. */
 .sanaWho{ flex:none; display:flex; flex-direction:column; align-items:center; gap:1px; }
 .sanaName{ font-size:10px; font-weight:900; letter-spacing:.5px; line-height:1;
-  color:#FFD675; }
+  color:#FCA5A5; }
 .sanaFace{ width:50px; height:50px; flex:none; border-radius:50%; display:grid; place-items:center;
   font-size:28px; background:linear-gradient(160deg,#FFD675,var(--gold)); box-shadow:var(--clay);
   position:relative; animation:sanaBob 3s var(--spring) infinite; }
@@ -1481,13 +1481,16 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
 /* SaNa — fixed height, two lines maximum, never pushes the board */
 .sana{ flex:none; margin:0 0 6px !important; padding:0 !important; max-width:none !important; gap:8px !important; }
 .sanaFace{ width:36px !important; height:36px !important; font-size:20px !important; }
-/* Brown on the wooden background; the base rule's colour is chosen for the dark
-   theme and would be all but invisible here.
-   NOT the version badge's brown, which measures 9:1 — but only because that one
-   sits on a cream badge. Against the bare tan the same colour came out at
-   4.3:1, under the readable line, so this goes darker. Borrowing a colour that
-   worked somewhere else is not the same as it working here. */
-.sanaName{ color:#33220F !important; font-size:9.5px !important; }
+/* RED, on Raja's instruction — but a DEEP red, and not the one the speech
+   bubble already uses for the same word. The bubble's #9A3412 is legible there
+   because it sits on a cream bubble; against the bare tan of the app background
+   the very same red measures about 3.3:1, well under readable. Red on tan has
+   little room: the two are close in brightness, so the only way for red to
+   stay red AND be read is to go dark. This measures 5:1.
+   (The rule above it, for the dark theme, goes the other way and uses a LIGHT
+   red — the same instruction, opposite direction, because the ground is
+   opposite.) */
+.sanaName{ color:#7A1512 !important; font-size:9.5px !important; }
 /* three lines, not two: the hints now name every offset, and clipping a hint
    mid-sentence is worse than giving up ~14px of board height */
 /* 64ch caps the reading line. A phone held sideways is 844px wide and ran
@@ -10848,7 +10851,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-169 (the monkey wears its name)';
+  var BUILD_VER = 'beta-170 (SaNa signs its name in red)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that

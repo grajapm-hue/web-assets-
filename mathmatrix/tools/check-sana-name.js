@@ -84,6 +84,16 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   ok('at a size a child can read', home.size >= 9 && +home.weight >= 700 && +home.opacity === 1,
     home.size + 'px, weight ' + home.weight + ', opacity ' + home.opacity);
 
+  /* RED, because Raja asked for red rather than the near-black it started as.
+     Contrast alone would not notice a slide back to brown — a dark brown reads
+     BETTER on tan than a dark red does, so a future tidy-up "improving" the
+     contrast would quietly undo the instruction and every other assertion here
+     would still pass. Red means the red channel clearly leads. */
+  const c = home.fg.match(/\d+/g).map(Number);
+  ok('the name is red, not brown or black',
+    c[0] >= 90 && c[0] - Math.max(c[1], c[2]) >= 55,
+    home.fg + '  (red leads green/blue by ' + (c[0] - Math.max(c[1], c[2])) + ')');
+
   /* "Wherever monkey persist" — the mascot follows the player onto every
      screen, so the name has to survive the trip, including onto a puzzle
      where the whole row is squeezed to give the board its height. */
