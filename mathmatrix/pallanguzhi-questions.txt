@@ -61,6 +61,15 @@ WHAT I THINK THIS SAYS:
 
   F. The game ends when a player has lost their whole row.
 
+  G. A PART-FILLED CUP BELONGS TO WHOEVER FILLED IT. Raja, 17 Aug: "the semi
+     empty filled pocket is end of game own to who filled in play." So the seeds
+     sitting in a cup that was laid out with 4, 3, 2 or 1 are not neutral and do
+     not go to whoever happens to be nearest — at the end of the game they count
+     for the player who put them there. Which also means a cup keeps its owner
+     even when it is holding less than a full five.
+     [This answers a question I had not thought to ask: what becomes of seeds
+      still on the board when the game ends. They are not left out of the count.]
+
 ==========================================================================
 PART 3 — THE FOUR THINGS I CANNOT TELL, AND WILL NOT GUESS
 ==========================================================================
@@ -85,13 +94,17 @@ Q2. WHEN EXACTLY DOES A ROUND END?
       (b) When the whole board is empty of seeds.
       (c) Something else.
 
-Q3. THE REMAINDER OF FEWER THAN FIVE.
+Q3. THE REMAINDER OF FEWER THAN FIVE — NARROWED, NOT CLOSED.
     Say a player has 23 seeds: four cups of five, and 3 left over.
-      (a) The 3 go into the fifth cup, and that cup is now a 3-cup forever —
-          filled with 3 every round after.
-      (b) The 3 go into the fifth cup for this round only, and it returns to
-          five whenever they can afford it again.
-      (c) The 3 are held back and not laid out at all.
+    Point G above settles who those 3 seeds BELONG to at the end — the player
+    who laid them out. What it does not settle is what happens to that cup in
+    the rounds BETWEEN:
+      (a) It is a 3-cup from now on, filled with 3 every round after.
+      (b) It holds 3 this round only, and goes back to five as soon as that
+          player can afford five again.
+    → (a) makes a bad round permanent and the game shorter and sharper.
+      (b) lets a player recover, and the game runs longer.
+      Which is it in your family?
 
 Q4. CAN A DEAD CUP EVER COME BACK?
       (a) No — once lost, lost for the whole game.
