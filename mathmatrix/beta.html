@@ -2242,6 +2242,120 @@ body.sudokuMode #sudokuPanel{ display:block !important;
   font-size:13px; font-weight:900; box-shadow:0 2px 0 rgba(94,64,32,.28); }
 #sudTime{ font-variant-numeric:tabular-nums; letter-spacing:.3px; }
 
+/* ══ PALLANGUZHI — the 2×7 board ═══════════════════════════════════════
+   Raja's own game, played in his family, and the first thing here that is not
+   a puzzle to be solved but a GAME between two people sharing one phone. It
+   hides the same grid furniture as the other card games, by the same body
+   class, rather than inventing a fifth mechanism. */
+body.palMode #barWatch,
+body.palMode #boardWrap,
+body.palMode #playRow,
+body.palMode #keypad,
+body.palMode #rotateHint,
+body.palMode #learnRow,
+body.palMode #learnHint,
+body.palMode .keysChip,
+body.palMode .targetPill,
+body.palMode .solvedCounter{ display:none !important; }
+#palPanel{ width:100%; max-width:560px; margin:0 auto; }
+body.palMode #palPanel{ display:flex !important; flex-direction:column;
+  flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden;
+  -webkit-overflow-scrolling:touch; }
+/* auto margins rather than justify-content:center — centred flex content that
+   grows taller than its scroll container has its TOP clipped and cannot be
+   scrolled back to, which is the standard trap here. Auto margins centre while
+   there is slack and collapse to nothing once there is not. */
+.palWrap{ width:100%; margin:auto 0; }
+
+.palSay{ background:rgba(255,246,231,.72); border-radius:18px; padding:10px 12px;
+  margin:0 0 9px; font-size:14px; font-weight:800; color:#33220F; line-height:1.4;
+  text-align:center; }
+
+/* A player's strip: the name they type, and their store. Raja asked for the
+   name box to be BLANK and typed in by the player, and to persist for the
+   whole game — so it is a real input, not a label pretending to be one. */
+.palSide{ display:flex; align-items:center; gap:8px; margin:6px 0; }
+.palSide.p2{ flex-direction:row-reverse; }
+.palName{ flex:1 1 auto; min-width:0; height:38px; border-radius:12px;
+  border:2px solid #8A5E31; background:#FFF6E7; color:#33220F;
+  font-family:inherit; font-size:14px; font-weight:800; padding:0 10px;
+  text-align:center; }
+.palName::placeholder{ color:#A98C63; font-weight:700; }
+.palName:focus{ outline:3px solid #F7B32B; outline-offset:-1px; }
+.palSide.turn .palName{ border-color:#F7B32B; background:#FFF9EC; }
+
+/* Raja: "reserve box should be 35 for each, so place square box inside oval and
+   the number should show 35 each other". An oval with a square counter in it. */
+.palStore{ flex:none; display:flex; align-items:center; justify-content:center;
+  gap:7px; min-width:104px; height:46px; padding:0 12px;
+  border-radius:999px; border:3px solid #8A5E31;
+  background:radial-gradient(ellipse at 50% 35%, #6B4A25 0%, #4A3117 100%);
+  box-shadow:inset 0 3px 9px rgba(0,0,0,.45); }
+.palStoreNum{ min-width:34px; height:30px; display:grid; place-items:center;
+  border-radius:7px; background:#FFF6E7; border:2px solid #8A5E31;
+  color:#33220F; font-size:15px; font-weight:900;
+  font-variant-numeric:tabular-nums; }
+.palStoreCap{ font-size:10px; font-weight:900; letter-spacing:.4px;
+  color:#F3D9A9; text-transform:uppercase; }
+
+/* The board proper: two rows of seven, in one wooden slab. */
+.palBoard{ display:grid; grid-template-columns:repeat(7, 1fr); gap:6px;
+  padding:9px; border-radius:20px; border:3px solid #6B4A25;
+  background:linear-gradient(180deg, #8A6A3C 0%, #74562F 100%);
+  box-shadow:inset 0 2px 10px rgba(0,0,0,.3); }
+/* A cup is TALLER THAN IT IS WIDE, and that is forced rather than decorative.
+   Seven cups across a 360px phone leaves each about forty pixels — wide enough
+   for neither a countable pile of seeds nor a numeral, if the two have to share
+   one square. Stacking them needs height, and height is the one thing a two-row
+   board has going spare: laid out square, this game filled the top half of the
+   screen and left the bottom half blank, which is the same complaint Raja made
+   about the level cards. So the cups grow downwards into that space, the seeds
+   sit above the count instead of underneath it, and a scooped oval hollow is
+   closer to a real wooden board than a circle was. --palCupH is measured and
+   set by palFit(). */
+.palCup{ position:relative; height:var(--palCupH, 44px); border:0; padding:0;
+  border-radius:50%; cursor:default; font-family:inherit;
+  background:radial-gradient(ellipse at 50% 30%, #5C3F20 0%, #3A2611 100%);
+  box-shadow:inset 0 4px 10px rgba(0,0,0,.55);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:3px; overflow:hidden; }
+.palCount{ font-size:var(--palNum, 15px); font-weight:900; line-height:1;
+  color:#FFE9C4; font-variant-numeric:tabular-nums;
+  text-shadow:0 1px 3px rgba(0,0,0,.8); }
+.palCup.empty .palCount{ color:#8A6A3C; }
+/* The seeds themselves, so a young player can COUNT rather than read a
+   numeral. Past eight they stop being countable at a glance and the number
+   carries it alone. */
+.palSeeds{ display:flex; flex-wrap:wrap; align-items:center; justify-content:center;
+  gap:2px; max-width:78%; }
+.palSeeds:empty{ display:none; }
+.palSeed{ width:var(--palDot, 5px); height:var(--palDot, 5px); border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, #FFF3D4, #C89A54); }
+/* Whose row it is. Raja's rule hangs on ownership — only the owner may take a
+   cup of four — so the board has to SAY which row is whose at a glance. */
+.palCup.mine1{ box-shadow:inset 0 4px 10px rgba(0,0,0,.55), 0 0 0 2px #4ade80; }
+.palCup.mine2{ box-shadow:inset 0 4px 10px rgba(0,0,0,.55), 0 0 0 2px #60a5fa; }
+.palCup.pickable{ cursor:pointer; }
+.palCup.pickable:active{ transform:translateY(2px); }
+.palCup.sowing{ box-shadow:inset 0 4px 10px rgba(0,0,0,.55), 0 0 0 3px #F7B32B; }
+/* A cup that has just reached four: the whole bonus. It has to be noticeable
+   without being claimed FOR the player — noticing it is the game. */
+.palCup.pasu{ animation:palPasu 1s ease-in-out infinite;
+  cursor:pointer; }
+@keyframes palPasu{
+  0%,100%{ box-shadow:inset 0 4px 10px rgba(0,0,0,.55), 0 0 0 3px #FFD166, 0 0 10px 2px rgba(255,209,102,.55); }
+  50%    { box-shadow:inset 0 4px 10px rgba(0,0,0,.55), 0 0 0 5px #FFE9A8, 0 0 18px 6px rgba(255,209,102,.85); }
+}
+.palCup.won{ animation:palWon .6s ease-in-out 1; }
+@keyframes palWon{ 50%{ transform:scale(1.18); } }
+
+.palFoot{ display:flex; align-items:center; justify-content:center; gap:9px;
+  flex-wrap:wrap; margin:10px 0 4px; }
+.palStat{ display:inline-flex; align-items:center; justify-content:center;
+  min-height:34px; padding:0 11px; border-radius:11px;
+  background:#FFF6E7; border:2px solid #8A5E31; color:#5E3D1C;
+  font-size:12px; font-weight:900; font-variant-numeric:tabular-nums; }
+
 /* Slide Magic hides the same grid furniture the other card games do — there
    is no magic square to build, no target to preview, nothing to Watch. Same
    body-class mechanism as binaryMode and gateMode rather than a third way. */
@@ -3279,6 +3393,41 @@ body{ background:#C9A87C !important; }
   </div>
 </div>
 
+<!-- 🫘 PALLANGUZHI — Raja's own game, played in his family. Its own panel for
+     the same reason as Sudoku's: there is no magic square, no target, and the
+     grid-puzzle click handler would not know what to do with it.
+     It is also the first thing here that is a GAME BETWEEN TWO PEOPLE rather
+     than a puzzle with an answer, so the screen has to say whose turn it is at
+     every moment — two children sharing one phone cannot be asked to remember.
+     Raja: "Player name will change to Player 1, Player 2", and "add one empty
+     box near player, but should be blank, can enter manually by player and same
+     persist until game is cleared" — hence real inputs with placeholders. -->
+<div id="palPanel" style="display:none;">
+ <div class="palWrap">
+  <div class="palSay" id="palSay">Tap Start to fill the board.</div>
+
+  <div class="palSide p2" id="palSide2">
+    <input class="palName" id="palName2" type="text" maxlength="14"
+           placeholder="Player 2" autocomplete="off" spellcheck="false">
+    <div class="palStore"><span class="palStoreCap">Store</span><span class="palStoreNum" id="palStore2">35</span></div>
+  </div>
+
+  <div class="palBoard" id="palBoard"></div>
+
+  <div class="palSide p1" id="palSide1">
+    <input class="palName" id="palName1" type="text" maxlength="14"
+           placeholder="Player 1" autocomplete="off" spellcheck="false">
+    <div class="palStore"><span class="palStoreCap">Store</span><span class="palStoreNum" id="palStore1">35</span></div>
+  </div>
+
+  <div class="palFoot">
+    <button class="slideBtn" id="palNew" type="button">🔄 New game</button>
+    <button class="slideBtn" id="palRules" type="button">📖 How to play</button>
+    <span class="palStat" id="palOnBoard">70 seeds on the board</span>
+  </div>
+ </div>
+</div>
+
 <div id="rotateHint">📱 Turn your phone sideways for a much bigger board (scroll down to see it all)</div>
 
 <!-- Built-in puzzle keypad: numbers + navigation, so the OS keyboard never covers the board -->
@@ -3629,6 +3778,23 @@ body{ background:#C9A87C !important; }
       <button class="toggleBtn lvCard" id="sudMasterTab" type="button" data-sud-level="master" data-name="🧩 Sudoku 9×9 Master" style="color:#f472b6; border-color:#ec4899; --c1:#fbcfe8; --c2:#f472b6;">
         <span class="lvGlyph" aria-hidden="true">🧩</span>
         <span class="lvText"><b class="lvName">Sudoku 9×9</b><span class="lvDiff">Master · fewest given</span><span class="lvMeta">the long one — take your time</span></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 🫘 PALLANGUZHI — the traditional Tamil sowing game, two rows of seven.
+       ONE card, not a difficulty ladder: every other entry here is a puzzle
+       that can be made harder by giving less away, and this is a game between
+       two people, where the difficulty is the person across from you. -->
+  <div class="modeGroup">
+    <div class="modeHead" style="--m1:#fcd34d; --m2:#b45309;">
+      <span class="mIco">🫘</span>
+      <span><b>Pallanguzhi</b><i>the old Tamil sowing game — two rows of seven, played with a friend</i></span>
+    </div>
+    <div class="toggleSwitch">
+      <button class="toggleBtn lvCard" id="palTab" type="button" data-pal-level="classic" data-name="🫘 Pallanguzhi" style="color:#d97706; border-color:#b45309; --c1:#fde68a; --c2:#f59e0b;">
+        <span class="lvGlyph" aria-hidden="true">🫘</span>
+        <span class="lvText"><b class="lvName">Pallanguzhi 2×7</b><span class="lvDiff">Two players · one phone</span><span class="lvMeta">sow the seeds, win a cup of four — the game your family plays</span></span>
       </button>
     </div>
   </div>
@@ -4244,6 +4410,15 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // come back counts a walk to the kitchen as time spent playing
     if (!on && window.__sudTimerStop) window.__sudTimerStop();
   }
+  function showPalMode(on){
+    document.body.classList.toggle('palMode', !!on);
+    var pp = document.getElementById('palPanel');
+    if (pp) pp.style.display = on ? 'block' : 'none';
+    /* Leaving mid-move must stop the sowing timer, or seeds keep dropping into
+       a board nobody is looking at and the game is in a different state when
+       the player comes back to it. */
+    if (!on && window.__palStop) window.__palStop();
+  }
   function showSlideMode(on){
     document.body.classList.toggle('slideMode', !!on);
     var sp = document.getElementById('slidePanel');
@@ -4280,6 +4455,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         if (currentSize === 'gatelogic') showGateMode(false);
         if (currentSize === 'slide') showSlideMode(false);
       if (currentSize === 'sudoku') showSudokuMode(false);
+      if (currentSize === 'pallanguzhi') showPalMode(false);
         currentSize = newSize;
         showBinaryMode(true);
         highlightNowPlaying();
@@ -4288,7 +4464,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       if (currentSize === 'binary' || currentSize === 'binary2') showBinaryMode(false);   // back to the grids
       if (currentSize === 'gatelogic') showGateMode(false);                               // back to the grids
       if (currentSize === 'slide') showSlideMode(false);
-      if (currentSize === 'sudoku') showSudokuMode(false);                                  // back to the grids
+      if (currentSize === 'sudoku') showSudokuMode(false);
+      if (currentSize === 'pallanguzhi') showPalMode(false);                                  // back to the grids
       if (newSize !== currentSize) {
         currentSize = newSize;
         initBoard();
@@ -7369,6 +7546,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         if (currentSize === 'gatelogic') showGateMode(false);
         showSlideMode(false);
         showSudokuMode(false);
+        showPalMode(false);
         currentSize = 'sudoku';
         goScreen('scPlay');
         showSudokuMode(true);
@@ -7392,6 +7570,423 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       if (p && p.style.display !== 'none'){ sudCellCap = 0; sudRender(); }
     });
 
+    /* ══ PALLANGUZHI ═══════════════════════════════════════════════════════
+       Raja's own game. Two rows of seven cups, two players, one phone.
+
+       THE RING. cups[0..6] is Player 1's row along the bottom, left to right.
+       cups[7..13] is Player 2's row along the top, drawn RIGHT TO LEFT — that
+       reversal is what makes the array a real ring: leaving cup 6 at the
+       bottom right you arrive at cup 7 directly above it, travel back along
+       the top to cup 13 at the top left, and drop to cup 0 below it. Sowing is
+       then just index + 1, and no part of the code has to know about rows.
+
+       Rules taken directly from Raja:
+         "initial layer should be blank in pockets when reserve is 35 for each,
+          then both fill by one to own side pocket each 5 and reserve will lapse
+          to zero"                                  -> the opening fill, below
+         "whenever pocket is filled over 4 seeds, where that row is, that side
+          own only may allow to take that pocket, the name called bonus reward
+          PASU. If forget to take and same filled next round fill with 5, after
+          no right to take further"                 -> claimPasu, below
+         "how pick the end of next pocket if another is empty after one, how
+          much have, that belong to owner of who played; if both continues
+          pocket is empty the player loses the play" -> the end of sowStep
+
+       WHAT IS STILL OPEN. Eleven of the twelve rule questions are still with
+       his family, so where a rule was not settled this takes the plainest
+       reading and says so out loud rather than inventing depth nobody asked
+       for: stores are not sown into, Player 1 opens, a player with an empty row
+       loses their turn, and a cup of four may be claimed by its owner AT ANY
+       TIME while it still shows four — including while the opponent is sowing,
+       which is the whole point of a bonus you can forget. The multi-round game
+       (refilling, kappal) is deliberately absent: it depends on answers that do
+       not exist yet, and guessing at it would be inventing his family's game
+       for them. */
+    (function(){
+      var CUPS = 14, PER_CUP = 5, PASU = 4;
+      var ORDER = [13,12,11,10,9,8,7, 0,1,2,3,4,5,6];   // top row, then bottom
+      var owner = function(i){ return i < 7 ? 0 : 1; };
+
+      var cups = [], store = [0,0], pasuDead = [];
+      var turn = 0, playing = false, busy = false, step = null, inHand = 0, sowPos = 0;
+      var boardEl, sayEl, onBoardEl, built = false;
+
+      function nameOf(p){
+        var el = document.getElementById('palName' + (p + 1));
+        var v = el && el.value ? el.value.trim() : '';
+        return v || ('Player ' + (p + 1));
+      }
+      function say(html){ if (sayEl) sayEl.innerHTML = html; }
+      /* sfx() is WRAPPED further down the file so that every 'win' also makes the
+         mascot announce "You solved it! Every row, column and diagonal
+         matches." That is the magic square's victory line, and it appeared
+         over this board the first time a capture was made — a sentence about
+         rows and diagonals in a game that has neither. So this plays a sound
+         that carries no message, and says its own. */
+      function palCheer(line, mood, sticky){
+        if (typeof sfx === 'function') try { sfx('card'); } catch(e){}
+        if (typeof sana === 'function') try { sana(line, mood || 'cheer', !!sticky); } catch(e){}
+      }
+      function seedsOnBoard(){
+        var t = 0; for (var i = 0; i < CUPS; i++) t += cups[i]; return t;
+      }
+      function rowEmpty(p){
+        for (var i = p * 7; i < p * 7 + 7; i++) if (cups[i] > 0) return false;
+        return true;
+      }
+
+      function build(){
+        boardEl = document.getElementById('palBoard');
+        sayEl = document.getElementById('palSay');
+        onBoardEl = document.getElementById('palOnBoard');
+        if (!boardEl || built) return;
+        var html = '';
+        for (var k = 0; k < ORDER.length; k++){
+          var i = ORDER[k];
+          html += '<button class="palCup" type="button" data-pal="' + i + '">' +
+                  '<span class="palSeeds"></span><span class="palCount">0</span></button>';
+        }
+        boardEl.innerHTML = html;
+        built = true;
+        palFit();
+      }
+
+      /* Size the cups to the room that is actually there.
+
+         Width sets the floor: seven cups across a phone is about forty pixels
+         each and no arithmetic changes that. Height is what is going spare, so
+         the cups take it — up to twice their width, past which a hollow stops
+         reading as a hollow and starts reading as a slot. Measured against the
+         TOP OF THE TAB BAR, not the viewport, which is the lesson beta-148 and
+         the Sudoku board each had to learn separately: a board sized to the
+         window puts its own controls underneath the navigation. */
+      function palFit(){
+        if (!boardEl) return;
+        var cupW = boardEl.children[0] ? boardEl.children[0].getBoundingClientRect().width : 40;
+        if (!cupW) return;
+        var bar = document.querySelector('.tabBar');
+        var floor = bar ? bar.getBoundingClientRect().top : window.innerHeight;
+        var foot = document.querySelector('.palFoot');
+        var top = boardEl.getBoundingClientRect().top;
+        // everything that must stay visible UNDER the board, measured rather
+        // than guessed, so it stays right when a message wraps to two lines
+        var below = foot ? (foot.getBoundingClientRect().bottom - boardEl.getBoundingClientRect().bottom) : 90;
+        var room = floor - top - below - 18;                 // 18 = the board's own padding
+        var byH = Math.floor((room - 6) / 2);                // two rows, one 6px gap
+        var h = Math.max(cupW, Math.min(Math.round(cupW * 2), byH));
+        if (!isFinite(h) || h < 24) h = Math.round(cupW);
+        boardEl.style.setProperty('--palCupH', h + 'px');
+        boardEl.style.setProperty('--palNum', Math.max(13, Math.round(cupW * 0.42)) + 'px');
+        boardEl.style.setProperty('--palDot', Math.max(4, Math.round(cupW * 0.13)) + 'px');
+      }
+
+      function draw(){
+        if (!built) return;
+        for (var k = 0; k < ORDER.length; k++){
+          var i = ORDER[k];
+          var el = boardEl.children[k];
+          var n = cups[i];
+          el.querySelector('.palCount').textContent = n;
+          /* Seeds a child can COUNT, up to the point where counting stops
+             being possible at a glance; past that the numeral does the work
+             on its own. */
+          var dots = '';
+          if (n > 0 && n <= 8) for (var d = 0; d < n; d++) dots += '<span class="palSeed"></span>';
+          el.querySelector('.palSeeds').innerHTML = dots;
+          el.classList.toggle('empty', n === 0);
+          el.classList.toggle('mine1', owner(i) === 0);
+          el.classList.toggle('mine2', owner(i) === 1);
+          var claimable = playing && n === PASU && !pasuDead[i];
+          el.classList.toggle('pasu', claimable);
+          var canLift = playing && !busy && owner(i) === turn && n > 0;
+          el.classList.toggle('pickable', canLift || claimable);
+        }
+        document.getElementById('palStore1').textContent = store[0];
+        document.getElementById('palStore2').textContent = store[1];
+        document.getElementById('palSide1').classList.toggle('turn', playing && turn === 0);
+        document.getElementById('palSide2').classList.toggle('turn', playing && turn === 1);
+        if (onBoardEl) onBoardEl.textContent = seedsOnBoard() + ' seeds on the board';
+      }
+
+      function markSowed(i){
+        /* Four is the bonus. Five is the bonus gone — Raja: "if forget to take
+           and same filled next round fill with 5, after no right to take
+           further, who any side owns." Dead until the cup empties again, at
+           which point it is a fresh cup and can earn a four of its own. */
+        if (cups[i] === PASU + 1) pasuDead[i] = true;
+        if (cups[i] === 0) pasuDead[i] = false;
+      }
+
+      function newGame(){
+        if (step){ clearTimeout(step); step = null; }
+        cups = []; pasuDead = [];
+        for (var i = 0; i < CUPS; i++){ cups.push(0); pasuDead.push(false); }
+        store = [PER_CUP * 7, PER_CUP * 7];       // the 35 each Raja asked for
+        turn = 0; playing = false; busy = true; inHand = 0;
+        draw();
+        say('Filling the board — <b>five seeds</b> in every cup, straight from each store.');
+        /* The opening fill is shown rather than assumed. Raja described it as a
+           step of the game ("reserve will lapse to zero before to play start"),
+           and watching 35 drain to 0 is what tells a child where the seeds in
+           front of them came from. */
+        var q = [];
+        for (var p = 0; p < 2; p++) for (var c = 0; c < 7; c++) q.push(p * 7 + c);
+        var at = 0;
+        (function fill(){
+          if (at >= q.length){
+            busy = false; playing = true;
+            step = null;
+            palFit();
+            say('<b>' + nameOf(0) + '</b> starts. Tap one of your own cups to lift its seeds.');
+            draw();
+            return;
+          }
+          var i = q[at++];
+          var p = owner(i);
+          cups[i] = PER_CUP; store[p] -= PER_CUP;
+          draw();
+          if (typeof sfx === 'function') try { sfx('card'); } catch(e){}
+          step = setTimeout(fill, 105);
+        })();
+      }
+
+      function endTurn(msg){
+        busy = false; inHand = 0;
+        if (store[0] >= 70 || store[1] >= 70 || seedsOnBoard() === 0){ finish(msg); return; }
+        turn = 1 - turn;
+        /* Raja's rules do not settle what happens to a player whose whole row
+           is empty when their turn arrives, so this takes the plainest reading:
+           they cannot move, so the turn goes back. Guarded against both rows
+           being empty, which finish() has already caught above. */
+        if (rowEmpty(turn)) {
+          var skipped = nameOf(turn);
+          turn = 1 - turn;
+          say(msg + ' <b>' + skipped + '</b> has no seeds to lift, so it is <b>' +
+              nameOf(turn) + '</b> again.');
+        } else {
+          say(msg + ' Now <b>' + nameOf(turn) + '</b> — tap one of your own cups.');
+        }
+        draw();
+      }
+
+      function finish(msg){
+        playing = false; busy = false;
+        var a = store[0], b = store[1];
+        var who = a === b ? null : (a > b ? 0 : 1);
+        say(msg + '<br>' + (who === null
+          ? 'A dead heat — <b>' + a + ' seeds each</b>.'
+          : '<b>' + nameOf(who) + '</b> wins with <b>' + Math.max(a, b) + ' seeds</b> to ' + Math.min(a, b) + '.'));
+        draw();
+        palCheer(who === null ? 'A dead heat!' : '<b>' + nameOf(who) + '</b> wins the game!', 'party', true);
+      }
+
+      /* One sowing move, a seed at a time so it can be followed by eye.
+
+         A move does not stop at the end of the hand — an empty next cup is the
+         only thing that ends it — so a single move can travel the whole board
+         several times over. At a flat pace that is a child staring at the
+         screen for a quarter of a minute, so the drops SPEED UP: the first
+         few are slow enough to follow and teach the rule, and after that it
+         settles into a rhythm that gets to the end of a long move. */
+      function dropDelay(n){ return n < 8 ? 150 : (n < 24 ? 85 : 55); }
+
+      /* ONE STEP of a move, with no timing in it at all: drop a seed, or lift
+         the next cup and carry on, or finish. Separating the step from the
+         clock is what lets the same rules run at a pace a child can follow AND
+         run to completion instantly when the game has to be put down — with no
+         second copy of the rules to keep in agreement.
+
+         Returns false when the move is over. sowWon then holds what was
+         captured, so the caller can say so. */
+      var sowDropped = 0, sowWon = 0, sowLanded = -1;
+      function sowStep(){
+        if (inHand > 0){
+          sowPos = (sowPos + 1) % CUPS;
+          cups[sowPos]++; inHand--; sowDropped++; markSowed(sowPos);
+          sowLanded = sowPos;
+          return true;
+        }
+        /* The hand is empty. Seeds in the next cup mean lift them and carry on,
+           and that is what lets a single move travel the board several times. */
+        var next = (sowPos + 1) % CUPS;
+        if (cups[next] > 0){
+          inHand = cups[next]; cups[next] = 0; sowPos = next; markSowed(next);
+          sowLanded = -1;
+          return true;
+        }
+        // Empty. The cup BEYOND it is the prize.
+        var take = (next + 1) % CUPS;
+        if (cups[take] > 0){
+          sowWon = cups[take];
+          store[turn] += sowWon; cups[take] = 0; pasuDead[take] = false;
+          var el2 = boardEl && boardEl.children[ORDER.indexOf(take)];
+          if (el2){ el2.classList.add('won'); setTimeout(function(){ el2.classList.remove('won'); }, 600); }
+        } else sowWon = 0;
+        return false;
+      }
+
+      function sowFinish(){
+        if (sowWon > 0){
+          palCheer('<b>' + nameOf(turn) + '</b> won <b>' + sowWon + '</b> seeds!', 'cheer');
+          endTurn('<b>' + nameOf(turn) + '</b> won <b>' + sowWon + '</b> seeds.');
+        } else {
+          endTurn('Two empty cups in a row — nothing won.');
+        }
+      }
+
+      function sow(from){
+        busy = true;
+        /* The hand is a REAL PLACE a seed can be. Mid-sow the lifted seeds are
+           neither in a cup nor in a store, so a count of the board alone comes
+           up short by however many are still being carried — which is exactly
+           what it should do. Keeping the hand at module scope is what lets the
+           whole game be checked at any instant rather than only between moves. */
+        inHand = cups[from]; sowPos = from; sowDropped = 0; sowWon = 0;
+        cups[from] = 0; markSowed(from);
+        draw();
+        (function tick(){
+          if (!sowStep()){ draw(); sowFinish(); return; }
+          if (sowLanded >= 0){
+            var el = boardEl.children[ORDER.indexOf(sowLanded)];
+            if (el){ el.classList.add('sowing'); setTimeout(function(){ el.classList.remove('sowing'); }, 130); }
+          }
+          draw();
+          step = setTimeout(tick, dropDelay(sowDropped));
+        })();
+      }
+
+      function claimPasu(i){
+        var p = owner(i);
+        store[p] += cups[i]; cups[i] = 0; pasuDead[i] = false;
+        var el = boardEl.children[ORDER.indexOf(i)];
+        if (el){ el.classList.add('won'); setTimeout(function(){ el.classList.remove('won'); }, 600); }
+        palCheer('🫘 A cup of <b>four</b> — well spotted, <b>' + nameOf(p) + '</b>!', 'cheer');
+        draw();
+        var line = '🫘 <b>' + nameOf(p) + '</b> took a <b>pasu</b> — four seeds.';
+        if (busy) say(line + ' Sowing carries on.');
+        else say(line + ' <b>' + nameOf(turn) + '</b>, your turn — tap one of your own cups.');
+      }
+
+      document.addEventListener('click', function(e){
+        var b = e.target.closest && e.target.closest('#palBoard [data-pal]');
+        if (!b) return;
+        var i = +b.dataset.pal;
+        if (!playing) return;
+        /* A cup of four can be claimed by its owner AT ANY MOMENT, including
+           while the other player is still sowing. That is deliberate: Raja's
+           rule is that you LOSE the bonus if you do not notice it in time, and
+           a bonus that waits politely for your turn cannot be missed. */
+        if (cups[i] === PASU && !pasuDead[i]){ claimPasu(i); return; }
+        if (busy) return;
+        if (owner(i) !== turn){
+          say('That row belongs to <b>' + nameOf(owner(i)) + '</b>. Tap one of your own cups.');
+          return;
+        }
+        if (cups[i] === 0){ say('That cup is empty — pick one with seeds in it.'); return; }
+        sow(i);
+      });
+
+      ['palName1', 'palName2'].forEach(function(id){
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('input', function(){
+          draw();
+          /* The prompt was written when the game began, so it still said
+             "Player 1 starts" while the box underneath it said Raja. A name
+             typed after the board is dealt has to reach the line that uses it,
+             or the two disagree on screen. Only while it is safe to say: mid-
+             sow the line is reporting the move, and overwriting that would lose
+             what just happened. */
+          if (playing && !busy) say('<b>' + nameOf(turn) + '</b> — tap one of your own cups.');
+        });
+      });
+
+      window.__palNew = function(){ build(); newGame(); };
+      /* The board is sized from measurements, so it has to be re-measured when
+         the measurements change — a phone turned sideways is a different
+         board. */
+      window.addEventListener('resize', function(){
+        var p = document.getElementById('palPanel');
+        if (p && p.style.display !== 'none') palFit();
+      });
+      /* Stopping mid-move RUNS THE MOVE OUT rather than abandoning it. The
+         seeds being carried are in no cup, so simply cancelling the timer
+         deleted them: leave the game while seeds are in the air, come back, and
+         the board is short — seeds a player had counted a moment earlier, gone.
+         Tipping the hand into the cup it had reached fixed the arithmetic but
+         put four or five seeds in one hollow, a position the rules cannot
+         produce. Playing the move to its end leaves a board that is not only
+         correct but LEGAL, and costs nothing, because the step and the clock
+         are separate. */
+      window.__palStop = function(){
+        if (step){ clearTimeout(step); step = null; }
+        if (busy){
+          var guard = 0;
+          while (sowStep() && guard++ < 4000){}       // 4000: a stuck loop stops, a real move never gets near
+          sowFinish();
+        }
+        busy = false;
+        draw();
+      };
+      /* Read-only view of the game, for the checks. Every seed in this game is
+         either in a cup or in a store, and that total can never change — which
+         is the one assertion that catches a sowing loop dropping a seed, a
+         capture paying out twice, or a pasu claimed from a cup that had
+         already been emptied. Reading it off the DOM would only ever see what
+         was painted, so the state itself is exposed instead. */
+      window.__palState = function(){
+        return { cups: cups.slice(), store: store.slice(), turn: turn, hand: inHand,
+                 busy: busy, playing: playing, dead: pasuDead.slice() };
+      };
+    })();
+
+    var palNewBtn = document.getElementById('palNew');
+    if (palNewBtn) palNewBtn.addEventListener('click', function(){ window.__palNew(); });
+    var palRulesBtn = document.getElementById('palRules');
+    if (palRulesBtn) palRulesBtn.addEventListener('click', function(){
+      if (typeof openLearn === 'function') openLearn('logic', false);
+    });
+
+    document.querySelectorAll('.toggleBtn[data-pal-level]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        if (_congratsAutoTimer){ clearInterval(_congratsAutoTimer); _congratsAutoTimer = null; }
+        var cm = document.getElementById('congratsModal');
+        if (cm && cm.style.display === 'flex') cm.style.display = 'none';
+        sfx('card');
+        document.querySelectorAll('.toggleBtn').forEach(function(b){ b.classList.remove('active'); });
+        btn.classList.add('active');
+        applyAccent();
+        if (currentSize === 'binary' || currentSize === 'binary2') showBinaryMode(false);
+        if (currentSize === 'gatelogic') showGateMode(false);
+        showSlideMode(false);
+        showSudokuMode(false);
+        showPalMode(false);
+        currentSize = 'pallanguzhi';
+        goScreen('scPlay');
+        showPalMode(true);
+        window.__palNew();
+        var title = document.getElementById('appBarTitle');
+        if (title) title.innerHTML = boxedTitle('🫘 Pallanguzhi');
+        var lb = document.getElementById('logicBox');
+        if (lb) lb.innerHTML = '<h3>🫘 Pallanguzhi — how to play</h3>' +
+          '<p>Two rows of seven cups. The <b>bottom row belongs to Player 1</b>, the ' +
+          '<b>top row to Player 2</b>. Every cup starts with <b>five seeds</b>, taken from ' +
+          'each player\'s store of 35 — which is why both stores read 0 once the board is full.</p>' +
+          '<ol>' +
+          '<li>On your turn, tap <b>one of your own cups</b>. All its seeds are lifted.</li>' +
+          '<li>They are dropped <b>one at a time</b> into the cups that follow, right around the board.</li>' +
+          '<li>When the last seed falls, look at the <b>next cup</b>. Seeds in it? Lift those too and keep going.</li>' +
+          '<li><b>Empty?</b> Then the seeds in the cup <b>after</b> it are yours — into your store, and your turn ends.</li>' +
+          '<li>If that one is empty too, nothing is won and the turn passes.</li>' +
+          '</ol>' +
+          '<p><b>🫘 Pasu — the bonus.</b> The moment any cup holds <b>exactly four</b> seeds it starts ' +
+          'to glow. Only the player whose <b>row it sits in</b> may take it, and they must <b>tap it ' +
+          'themselves</b> — at any time, even while the other player is still sowing. ' +
+          'Let a fifth seed fall in and <b>the chance is gone for good</b>. Watching for it is the game.</p>' +
+          '<p>The player with the most seeds when the board runs empty wins.</p>';
+      });
+    });
+
     var gateListBtn = document.getElementById('gateListBtn');
     if (gateListBtn){
       gateListBtn.addEventListener('click', function(){
@@ -7405,6 +8000,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         if (currentSize === 'binary' || currentSize === 'binary2') showBinaryMode(false);
         if (currentSize === 'slide') showSlideMode(false);
       if (currentSize === 'sudoku') showSudokuMode(false);
+      if (currentSize === 'pallanguzhi') showPalMode(false);
         currentSize = 'gatelogic';
         goScreen('scPlay');
         showGateMode(true);
@@ -10187,7 +10783,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-166 (Share sends a link, so the copy button copies a link)';
+  var BUILD_VER = 'beta-167 (Pallanguzhi — the 2x7 sowing game)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that

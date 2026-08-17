@@ -67,7 +67,17 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
     console.log('   ' + D.groups.map(g => g.name + '(' + g.cards + ') y' + g.t + ' x' + g.l + '..' + g.r).join('\n   '));
 
     // nothing lost, nothing duplicated
-    ok(S.w + ': all eight groups still present', D.groups.length === 8, D.groups.length + ' groups');
+    /* Named, not counted. A bare count says "8" and goes stale the moment a
+       puzzle is added — it failed on the day Pallanguzhi arrived, reporting a
+       fault where there was only a ninth game. Naming them keeps the real
+       guarantee, that nothing SILENTLY DISAPPEARS from the list, while letting
+       the list grow. */
+    const WANT = ['Add Magic', 'Multiply Magic', 'Triangle Magic', 'Birthday Magic',
+                  'Gate Logic', 'Binary Magic', 'Slide Magic', 'Sudoku', 'Pallanguzhi'];
+    const have = D.groups.map(g => g.name);
+    const missing = WANT.filter(w => !have.some(h => h.indexOf(w) > -1));
+    ok(S.w + ': every puzzle group is still on the list', missing.length === 0,
+      missing.length ? 'MISSING: ' + missing.join(', ') : have.length + ' groups, none lost');
     ok(S.w + ': no duplicated card id', D.dupIds.length === 0, D.dupIds.join(',') || 'none');
     const byName = {}; D.groups.forEach(g => byName[g.name] = g);
     ok(S.w + ': Gate Logic still has exactly one card',
