@@ -87,6 +87,42 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   ok('70 seeds are in play', seeds(s) === TOTAL, seeds(s) + ' seeds');
   ok('Player 1 opens', s.turn === 0 && s.playing);
 
+  /* CHOOSING WHO OPENS. Raja: "always opening is force to player one — of course
+     who start the pick initial have get some favour to them." The first move is
+     an advantage, so who takes it should be a decision. */
+  ok('the choose-player control is on the board',
+    await ev(`!!document.getElementById('palChoose') && !!document.getElementById('palChoose').offsetParent`));
+  await ev(`document.getElementById('palChoose').click()`); await ready();
+  let s2 = await state();
+  ok('choosing the other player really does hand them the first move', s2.turn === 1 && s2.playing,
+    'turn is now player ' + (s2.turn + 1));
+  ok('and it deals a fresh board rather than half-changing one',
+    s2.cups.every(c => c === 5) && seeds(s2) === TOTAL, s2.cups.join(','));
+  ok('the button says who opens', /Player 2/.test(await ev(`document.getElementById('palChoose').textContent`)),
+    await ev(`document.getElementById('palChoose').textContent`));
+
+  /* AND IT MUST NOT COST A GAME IN PROGRESS. It is a large gold button at the
+     top of the screen; a mistap during play that silently wiped the board would
+     be the worst thing on this screen. Mid-game the choice is held for the next
+     board instead. */
+  await ev(`document.querySelector('#palBoard [data-pal="7"]').click()`);
+  for (let i = 0; i < 300; i++){ const st = await state(); if (!st.busy) break; await sleep(80); }
+  const mid = await state();
+  await ev(`document.getElementById('palChoose').click()`); await sleep(400);
+  const afterTap = await state();
+  ok('tapping it mid-game does not wipe the board',
+    afterTap.cups.join(',') === mid.cups.join(',') && afterTap.store.join(',') === mid.store.join(','),
+    afterTap.cups.join(',') === mid.cups.join(',') ? 'board untouched, choice held for the next game'
+      : 'BOARD RESET — a game in progress was thrown away');
+  await ev(`window.__palNew()`); await ready();
+  const nextUp = await state();
+  ok('but the next board does open with the newly chosen player', nextUp.turn === 0,
+    'turn is player ' + (nextUp.turn + 1));
+  /* Put the opener back to Player 1 for the rest of the run — CHECKING first,
+     because tapping blindly is what left Player 2 opening and made the pace
+     test click a cup that was not its to move. */
+  if ((await state()).turn !== 0){ await ev(`document.getElementById('palChoose').click()`); await ready(); }
+
   /* Play a real game with real clicks. Whoever's turn it is picks their
      left-most non-empty cup — a fixed rule, so a failure can be reproduced. */
   let moves = 0, broke = null, pasuSeen = 0;
@@ -284,7 +320,14 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   await ev(`window.__palNew()`); await ready();
   const stamps = [];
   let lastDropped = -1;
-  await ev(`document.querySelector('#palBoard [data-pal="0"]').click()`);
+  /* Lift from whoever is ACTUALLY on turn. This clicked cup 0 outright, and once
+     choosing the opening player became possible that cup stopped being clickable
+     half the time — the move was simply refused and the check reported a pace of
+     zero across zero drops, which reads like a broken animation rather than a
+     test asking the wrong player to move. */
+  const paceState = await state();
+  const paceCup = paceState.turn * 7;
+  await ev(`document.querySelector('#palBoard [data-pal="${paceCup}"]').click()`);
   for (let k = 0; k < 500 && stamps.length < 20; k++){
     const st = await state();
     if (st.dropped !== lastDropped){

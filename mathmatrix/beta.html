@@ -2286,6 +2286,15 @@ body.palMode #palPanel{ display:flex !important; flex-direction:column;
 .palSay{ background:rgba(255,246,231,.72); border-radius:18px; padding:10px 12px;
   margin:0 0 9px; font-size:14px; font-weight:800; color:#33220F; line-height:1.4;
   text-align:center; }
+/* Above everything, where Raja drew it — this is a decision taken BEFORE a
+   board is played, not one of the controls you reach for during it. Gold, so it
+   reads as the thing to settle first. */
+.palChoose{ display:block; width:100%; box-sizing:border-box; margin:0 0 9px;
+  padding:11px 12px; border-radius:14px; cursor:pointer; font-family:inherit;
+  background:linear-gradient(180deg, #FFD166 0%, #F0A828 100%);
+  border:2px solid #8A5E31; color:#3A2611;
+  font-size:14px; font-weight:900; letter-spacing:.2px; }
+.palChoose:active{ transform:translateY(2px); }
 
 /* A player's strip: the name they type, and their store. Raja asked for the
    name box to be BLANK and typed in by the player, and to persist for the
@@ -3481,6 +3490,16 @@ body{ background:#C9A87C !important; }
      persist until game is cleared" — hence real inputs with placeholders. -->
 <div id="palPanel" style="display:none;">
  <div class="palWrap">
+  <!-- Raja: "add choose player tab, hence always opening is force to player one.
+       Of course who start the pick initial have get some favour to them, by
+       choosing which pocket to pick initial — example if picked 2nd pocket it
+       will fill his seeds in his own pocket and pull opponent seeds."
+       He is describing the first-move advantage, and he is right that it is
+       real: the opener picks the cup whose reach ends where they want it. So
+       who opens stops being a rule the app imposes and becomes a decision the
+       two players make, which is also his own answer to the sixth of the rule
+       questions still sitting with his family. -->
+  <button class="palChoose" id="palChoose" type="button">👤 Choose player</button>
   <div class="palSay" id="palSay">Tap Start to fill the board.</div>
 
   <div class="palSide p2" id="palSide2">
@@ -7739,7 +7758,11 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         turnTab:   { en:'👇 {a} — tap one of your cups',
                      ta:'👇 {a} — உங்கள் குழியைத் தட்டுங்கள்' },
         onBoard1:  { en:'{n} seed on the board',          ta:'பலகையில் {n} விதை' },
-        onBoardN:  { en:'{n} seeds on the board',         ta:'பலகையில் {n} விதைகள்' }
+        onBoardN:  { en:'{n} seeds on the board',         ta:'பலகையில் {n} விதைகள்' },
+        chooseP:   { en:'👤 Choose player — {a} starts',
+                     ta:'👤 வீரரைத் தேர்ந்தெடு — {a} தொடங்குகிறார்' },
+        nextGame:  { en:'<b>{a}</b> will start the next game.',
+                     ta:'அடுத்த ஆட்டத்தை <b>{a}</b> தொடங்குவார்.' }
       };
       function P(key, v){
         var row = PAL_TXT[key] || {};
@@ -7752,6 +7775,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
       var cups = [], store = [0,0], pasuDead = [];
       var turn = 0, playing = false, busy = false, step = null, inHand = 0, sowPos = 0;
+      var starter = 0;      // which player opens; Raja's "choose player"
       var boardEl, sayEl, onBoardEl, built = false;
 
       function nameOf(p){
@@ -7863,6 +7887,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         }
         var ob = seedsOnBoard();
         if (onBoardEl) onBoardEl.textContent = P(ob === 1 ? 'onBoard1' : 'onBoardN', { n: ob });
+        var ch = document.getElementById('palChoose');
+        if (ch) ch.textContent = P('chooseP', { a: nameOf(starter) });
       }
 
       function markSowed(i){
@@ -7879,7 +7905,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         cups = []; pasuDead = [];
         for (var i = 0; i < CUPS; i++){ cups.push(0); pasuDead.push(false); }
         store = [PER_CUP * 7, PER_CUP * 7];       // the 35 each Raja asked for
-        turn = 0; playing = false; busy = true; inHand = 0;
+        turn = starter; playing = false; busy = true; inHand = 0;
         draw();
         say(P('filling'));
         /* The opening fill is shown rather than assumed. Raja described it as a
@@ -7894,7 +7920,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
             busy = false; playing = true;
             step = null;
             palFit();
-            say(P('starts', { a: nameOf(0) }));
+            say(P('starts', { a: nameOf(starter) }));
             /* Raja: "monkey SaNa kept finished game results in new game." The
                mascot's line is set on events and then just STAYS — so a fresh
                board sat underneath "Player 1 won 1 seeds!" from the game before
@@ -7903,7 +7929,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
                board is dealt, rather than left to be overwritten by whatever
                happens first in the new game. */
             if (typeof sana === 'function') try {
-              sana(P('newBoard', { a: nameOf(0) }), 'cheer');
+              sana(P('newBoard', { a: nameOf(starter) }), 'cheer');
             } catch(e){}
             draw();
             return;
@@ -8073,6 +8099,27 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         }
         if (cups[i] === 0){ say(P('cupEmpty')); return; }
         sow(i);
+      });
+
+      /* CHOOSING WHO OPENS. Two behaviours, because there are two situations and
+         one answer would be wrong in the other:
+
+         On a board nobody has touched, the choice takes effect NOW — the board
+         is dealt again so the change is visible rather than a promise.
+
+         Once a game is underway, it does NOT throw that game away. A mistap on
+         a prominent gold button should never cost a game in progress, so the
+         choice is simply held for the next board and said out loud. "New game"
+         is right there for anyone who wants it immediately. */
+      var chooseBtn = document.getElementById('palChoose');
+      if (chooseBtn) chooseBtn.addEventListener('click', function(){
+        starter = 1 - starter;
+        if (typeof sfx === 'function') try { sfx('card'); } catch(e){}
+        var untouched = playing && !busy && store[0] === 0 && store[1] === 0 &&
+                        cups.every(function(c){ return c === PER_CUP; });
+        if (untouched || !playing){ newGame(); return; }
+        draw();
+        say(P('nextGame', { a: nameOf(starter) }));
       });
 
       ['palName1', 'palName2'].forEach(function(id){
@@ -11108,7 +11155,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-175 (one steady beat, every drop)';
+  var BUILD_VER = 'beta-176 (choose who opens — the first move is an advantage)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
