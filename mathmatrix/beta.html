@@ -7913,11 +7913,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           cups[i] = PER_CUP; store[p] -= PER_CUP;
           draw();
           if (typeof sfx === 'function') try { sfx('card'); } catch(e){}
-          /* The opening fill slows with the rest of it. This is where a child
-             sees where the seeds in front of them came from — 35 draining out of
-             a store, five landing in each cup — and at 105ms a cup it was over
-             before that registered. */
-          step = setTimeout(fill, 190);
+          /* The opening fill slows with the rest of it — "two rows sequence
+             filling" is the part he named. This is where a child sees where the
+             seeds in front of them came from: 35 draining out of a store, five
+             landing in each cup, one cup at a time along one row and then the
+             other. At 105ms it was over before that registered; 260ms makes
+             dealing the board a deliberate three and a half seconds. */
+          step = setTimeout(fill, 260);
         })();
       }
 
@@ -7958,22 +7960,24 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
          screen for a quarter of a minute, so the drops SPEED UP: the first
          few are slow enough to follow and teach the rule, and after that it
          settles into a rhythm that gets to the end of a long move. */
-      /* Raja, having played it: "drop the seed pearls feels fast, should be slow
-         to observe the game."
+      /* Raja, twice: "drop the seed pearls feels fast, should be slow to observe
+         the game", then "can do little more slower, to two rows sequence
+         filling, in every drops."
 
-         The old pace was 150ms, then 85, then 55. Those numbers were mine, set
-         against a worry rather than a game: a move does not stop at the end of
-         the hand, so it can cross the board several times, and I did not want a
-         child staring at the screen for a quarter of a minute. I optimised the
-         WORST move and made the ordinary one too quick to follow — and the
-         ordinary move is where the rule is learned. Watching a seed land in each
-         cup in turn IS the lesson; a blur is just an outcome.
+         SO THERE IS NO RAMP ANY MORE. Every drop takes the same time, all the
+         way round both rows, which is what he asked for and what I had been
+         quietly refusing: I kept a ramp because a move does not stop when the
+         hand empties, so it can cross the board several times, and I did not
+         want a child watching for half a minute.
 
-         Slower, and the ramp is gentler with a much higher floor. The first ten
-         drops — the whole of most moves — are at a pace you can count aloud. A
-         rare board-crossing move still eases up rather than crawling, but it
-         never gets faster than a beat you can follow. */
-      function dropDelay(n){ return n < 10 ? 320 : (n < 26 ? 210 : 150); }
+         That worry turned out to be worth measuring rather than guarding
+         against. Across 66 real moves: the MEDIAN move is 5 drops, the mean 10,
+         and the longest in three full games was 47. So a flat pace costs two
+         seconds on the move you make half the time, and only the rare cascade
+         runs to twenty — and that cascade, seeds pouring round the whole board
+         from one cup, is the best thing in the game to watch. The ramp was
+         protecting the moment least in need of protection. */
+      function dropDelay(){ return 400; }
 
       /* ONE STEP of a move, with no timing in it at all: drop a seed, or lift
          the next cup and carry on, or finish. Separating the step from the
@@ -11104,7 +11108,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-174 (the seeds drop slowly enough to watch)';
+  var BUILD_VER = 'beta-175 (one steady beat, every drop)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that

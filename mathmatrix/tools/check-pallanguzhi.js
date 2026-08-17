@@ -147,9 +147,12 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
      tapping until one lands, and reports how many it took. */
   let claimed = null, taps = 0, samples = 0;
   outer:
-  for (let g = 0; g < 6 && !claimed; g++){
+  /* Budget raised with the pace. At 400ms a drop, the old 300 samples a game
+     bought only three or four moves — not enough play for a cup to reach four,
+     so this failed for want of TIME rather than for want of a bonus. */
+  for (let g = 0; g < 4 && !claimed; g++){
     if (g){ await ev(`window.__palNew()`); await ready(); }
-    for (let k = 0; k < 300; k++){
+    for (let k = 0; k < 1100; k++){
       const st = await state();
       if (!st.playing) break;
       const four = st.cups.findIndex((c, i) => c === 4 && !st.dead[i]);
@@ -282,7 +285,7 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   const stamps = [];
   let lastDropped = -1;
   await ev(`document.querySelector('#palBoard [data-pal="0"]').click()`);
-  for (let k = 0; k < 90 && stamps.length < 7; k++){
+  for (let k = 0; k < 500 && stamps.length < 20; k++){
     const st = await state();
     if (st.dropped !== lastDropped){
       if (lastDropped >= 0) stamps.push(Date.now());
@@ -293,11 +296,18 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   }
   const gaps = [];
   for (let i = 1; i < stamps.length; i++) gaps.push(stamps[i] - stamps[i - 1]);
-  gaps.sort((a, b) => a - b);
-  const median = gaps.length ? gaps[Math.floor(gaps.length / 2)] : 0;
-  ok('the early seeds drop slowly enough to follow', median >= 250,
-    'median gap ' + median + 'ms across ' + gaps.length + ' drops' +
-    (median < 250 ? ' — too quick to watch' : ''));
+  const sorted = gaps.slice().sort((a, b) => a - b);
+  const median = sorted.length ? sorted[Math.floor(sorted.length / 2)] : 0;
+  const fastest = sorted.length ? sorted[0] : 0;
+  ok('the seeds drop slowly enough to follow', median >= 340,
+    'median gap ' + median + 'ms across ' + gaps.length + ' drops');
+  /* THE SLOWEST DROP AND THE FASTEST MUST BE THE SAME DROP. Raja asked for it
+     slow "in every drops", and a median alone cannot tell a flat pace from one
+     that starts slow and quietly speeds up — which is exactly what this code did
+     for two builds. The fastest gap in the whole move is the honest question. */
+  ok('and every drop is as slow as the first, right round both rows', fastest >= 340,
+    'fastest of ' + gaps.length + ' gaps was ' + fastest + 'ms' +
+    (fastest < 340 ? ' — the pace still ramps' : ''));
 
   /* THE FOLDING BOARD. Raja asked for the left and right edges to be cut at the
      middle and a dashed line laid between the rows, so the thing reads as a real
