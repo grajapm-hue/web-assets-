@@ -2328,6 +2328,20 @@ body.palMode #palPanel{ display:flex !important; flex-direction:column;
   font-variant-numeric:tabular-nums; }
 .palStoreCap{ font-size:10px; font-weight:900; letter-spacing:.4px;
   color:#F3D9A9; text-transform:uppercase; }
+/* In Tamil "சேமிப்பு" is half again as wide as "STORE", and that was enough to
+   push the store chip and the name box past the width of the row — so they
+   WRAPPED, the store dropping onto a line of its own and the whole player strip
+   growing by 40px. Nothing was truncated and the board still fitted above the
+   tab bar, which is why the checks were happy and only the screenshot showed
+   it. Raja predicted exactly this when he narrowed the feature: Tamil is bigger,
+   and every layout here is measured to the pixel.
+   The chip gives back the room instead of the words: it sizes to its content
+   rather than holding a 104px floor, with a smaller caption and tighter
+   padding. English is untouched — its label was never near that floor. */
+body.langTa .palStore{ min-width:0; padding:0 9px; gap:5px; }
+body.langTa .palStoreCap{ font-size:9px; letter-spacing:0; text-transform:none; }
+body.langTa .palName{ font-size:13px; }
+body.langTa .palTurn{ font-size:12.5px; }
 
 /* The board proper: two rows of seven, in one wooden slab. */
 /* Raja: "red V marked left and right should be cut, and place dotted dash line
@@ -7671,6 +7685,70 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       var CUPS = 14, PER_CUP = 5, PASU = 4;
       var ORDER = [13,12,11,10,9,8,7, 0,1,2,3,4,5,6];   // top row, then bottom
       var owner = function(i){ return i < 7 ? 0 : 1; };
+      /* EVERY SENTENCE THE BOARD SAYS, in both languages, in one place.
+
+         Most of what this game tells you is assembled at the moment it is said —
+         whose turn it is, what was just won, who forgot a cup of four — so a
+         table of finished strings keyed on English could never reach it. These
+         are templates instead: {a} is a player, {n} a count. English and Tamil
+         sit on the same line, which is the only arrangement where adding a
+         sentence in one language and forgetting the other is obvious on sight.
+
+         Pallanguzhi is the one puzzle translated completely, and it is the right
+         one: the game is Tamil, and so is its vocabulary — பசு, the cups, the
+         sowing. The rest of the app stays in English on Raja's instruction,
+         after the whole-app version was seen to collapse the layouts. */
+      var PAL_TXT = {
+        playerN:   { en:'Player {n}',                     ta:'வீரர் {n}' },
+        filling:   { en:'Filling the board — <b>five seeds</b> in every cup, straight from each store.',
+                     ta:'பலகையை நிரப்புகிறோம் — ஒவ்வொரு குழியிலும் <b>ஐந்து விதைகள்</b>, சேமிப்பிலிருந்தே.' },
+        starts:    { en:'<b>{a}</b> starts. Tap one of your own cups to lift its seeds.',
+                     ta:'<b>{a}</b> தொடங்குகிறார். உங்கள் குழி ஒன்றைத் தட்டி விதைகளை எடுங்கள்.' },
+        newBoard:  { en:'A new board — <b>{a}</b> starts.',
+                     ta:'புதிய பலகை — <b>{a}</b> தொடங்குகிறார்.' },
+        wonSay:    { en:'<b>{a}</b> won <b>{n}</b> seeds.',
+                     ta:'<b>{a}</b> <b>{n}</b> விதைகளை வென்றார்.' },
+        wonCheer:  { en:'<b>{a}</b> won <b>{n}</b> seeds!',
+                     ta:'<b>{a}</b> <b>{n}</b> விதைகளை வென்றார்!' },
+        nothing:   { en:'Two empty cups in a row — nothing won.',
+                     ta:'தொடர்ந்து இரு காலிக் குழிகள் — ஒன்றும் கிடைக்கவில்லை.' },
+        skipped:   { en:'{msg} <b>{a}</b> has no seeds to lift, so it is <b>{b}</b> again.',
+                     ta:'{msg} <b>{a}</b> இடம் விதைகள் இல்லை, எனவே மீண்டும் <b>{b}</b>.' },
+        nowTurn:   { en:'{msg} Now <b>{a}</b> — tap one of your own cups.',
+                     ta:'{msg} இப்போது <b>{a}</b> — உங்கள் குழி ஒன்றைத் தட்டுங்கள்.' },
+        deadHeat:  { en:'A dead heat — <b>{n} seeds each</b>.',
+                     ta:'சமநிலை — <b>தலா {n} விதைகள்</b>.' },
+        winsWith:  { en:'<b>{a}</b> wins with <b>{n} seeds</b> to {m}.',
+                     ta:'<b>{a}</b> <b>{n} விதைகளுடன்</b> வென்றார், எதிராளிக்கு {m}.' },
+        heatCheer: { en:'A dead heat!',                   ta:'சமநிலை!' },
+        winsGame:  { en:'<b>{a}</b> wins the game!',      ta:'<b>{a}</b> ஆட்டத்தை வென்றார்!' },
+        pasuCheer: { en:'🫘 A cup of <b>four</b> — well spotted, <b>{a}</b>!',
+                     ta:'🫘 நான்கு விதைக் குழி — நல்ல கவனம், <b>{a}</b>!' },
+        pasuTook:  { en:'🫘 <b>{a}</b> took a <b>pasu</b> — four seeds.',
+                     ta:'🫘 <b>{a}</b> <b>பசு</b> எடுத்தார் — நான்கு விதைகள்.' },
+        sowingOn:  { en:' Sowing carries on.',            ta:' விதைப்பு தொடர்கிறது.' },
+        yourTurn:  { en:' <b>{a}</b>, your turn — tap one of your own cups.',
+                     ta:' <b>{a}</b>, உங்கள் முறை — உங்கள் குழி ஒன்றைத் தட்டுங்கள்.' },
+        notYours:  { en:'That row belongs to <b>{a}</b>. Tap one of your own cups.',
+                     ta:'அந்த வரிசை <b>{a}</b> இற்கு உரியது. உங்கள் குழி ஒன்றைத் தட்டுங்கள்.' },
+        cupEmpty:  { en:'That cup is empty — pick one with seeds in it.',
+                     ta:'அந்தக் குழி காலி — விதைகள் உள்ள குழியைத் தேர்ந்தெடுங்கள்.' },
+        tapYours:  { en:'<b>{a}</b> — tap one of your own cups.',
+                     ta:'<b>{a}</b> — உங்கள் குழி ஒன்றைத் தட்டுங்கள்.' },
+        sowingTab: { en:'⏳ sowing…',                      ta:'⏳ விதைக்கிறது…' },
+        turnTab:   { en:'👇 {a} — tap one of your cups',
+                     ta:'👇 {a} — உங்கள் குழியைத் தட்டுங்கள்' },
+        onBoard1:  { en:'{n} seed on the board',          ta:'பலகையில் {n} விதை' },
+        onBoardN:  { en:'{n} seeds on the board',         ta:'பலகையில் {n} விதைகள்' }
+      };
+      function P(key, v){
+        var row = PAL_TXT[key] || {};
+        var ta = !!(window.__palTa && window.__palTa());
+        var t = (ta && row.ta) ? row.ta : (row.en || '');
+        return t.replace(/\{(\w+)\}/g, function(_, k){
+          return (v && v[k] !== undefined) ? v[k] : '';
+        });
+      }
 
       var cups = [], store = [0,0], pasuDead = [];
       var turn = 0, playing = false, busy = false, step = null, inHand = 0, sowPos = 0;
@@ -7679,7 +7757,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       function nameOf(p){
         var el = document.getElementById('palName' + (p + 1));
         var v = el && el.value ? el.value.trim() : '';
-        return v || ('Player ' + (p + 1));
+        return v || P('playerN', { n: p + 1 });
       }
       function say(html){ if (sayEl) sayEl.innerHTML = html; }
       /* sfx() is WRAPPED further down the file so that every 'win' also makes the
@@ -7781,10 +7859,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         document.getElementById('palSide2').classList.toggle('turn', playing && turn === 1);
         for (var t = 0; t < 2; t++){
           var tb = document.getElementById('palTurn' + (t + 1));
-          if (tb) tb.textContent = busy ? '⏳ sowing…' : '👇 ' + nameOf(t) + ' — tap one of your cups';
+          if (tb) tb.textContent = busy ? P('sowingTab') : P('turnTab', { a: nameOf(t) });
         }
         var ob = seedsOnBoard();
-        if (onBoardEl) onBoardEl.textContent = ob + (ob === 1 ? ' seed' : ' seeds') + ' on the board';
+        if (onBoardEl) onBoardEl.textContent = P(ob === 1 ? 'onBoard1' : 'onBoardN', { n: ob });
       }
 
       function markSowed(i){
@@ -7803,7 +7881,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         store = [PER_CUP * 7, PER_CUP * 7];       // the 35 each Raja asked for
         turn = 0; playing = false; busy = true; inHand = 0;
         draw();
-        say('Filling the board — <b>five seeds</b> in every cup, straight from each store.');
+        say(P('filling'));
         /* The opening fill is shown rather than assumed. Raja described it as a
            step of the game ("reserve will lapse to zero before to play start"),
            and watching 35 drain to 0 is what tells a child where the seeds in
@@ -7816,7 +7894,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
             busy = false; playing = true;
             step = null;
             palFit();
-            say('<b>' + nameOf(0) + '</b> starts. Tap one of your own cups to lift its seeds.');
+            say(P('starts', { a: nameOf(0) }));
             /* Raja: "monkey SaNa kept finished game results in new game." The
                mascot's line is set on events and then just STAYS — so a fresh
                board sat underneath "Player 1 won 1 seeds!" from the game before
@@ -7825,7 +7903,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
                board is dealt, rather than left to be overwritten by whatever
                happens first in the new game. */
             if (typeof sana === 'function') try {
-              sana('A new board — <b>' + nameOf(0) + '</b> starts.', 'cheer');
+              sana(P('newBoard', { a: nameOf(0) }), 'cheer');
             } catch(e){}
             draw();
             return;
@@ -7850,10 +7928,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         if (rowEmpty(turn)) {
           var skipped = nameOf(turn);
           turn = 1 - turn;
-          say(msg + ' <b>' + skipped + '</b> has no seeds to lift, so it is <b>' +
-              nameOf(turn) + '</b> again.');
+          say(P('skipped', { msg: msg, a: skipped, b: nameOf(turn) }));
         } else {
-          say(msg + ' Now <b>' + nameOf(turn) + '</b> — tap one of your own cups.');
+          say(P('nowTurn', { msg: msg, a: nameOf(turn) }));
         }
         draw();
       }
@@ -7863,10 +7940,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         var a = store[0], b = store[1];
         var who = a === b ? null : (a > b ? 0 : 1);
         say(msg + '<br>' + (who === null
-          ? 'A dead heat — <b>' + a + ' seeds each</b>.'
-          : '<b>' + nameOf(who) + '</b> wins with <b>' + Math.max(a, b) + ' seeds</b> to ' + Math.min(a, b) + '.'));
+          ? P('deadHeat', { n: a })
+          : P('winsWith', { a: nameOf(who), n: Math.max(a, b), m: Math.min(a, b) })));
         draw();
-        palCheer(who === null ? 'A dead heat!' : '<b>' + nameOf(who) + '</b> wins the game!', 'party', true);
+        palCheer(who === null ? P('heatCheer') : P('winsGame', { a: nameOf(who) }), 'party', true);
       }
 
       /* One sowing move, a seed at a time so it can be followed by eye.
@@ -7916,10 +7993,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
       function sowFinish(){
         if (sowWon > 0){
-          palCheer('<b>' + nameOf(turn) + '</b> won <b>' + sowWon + '</b> seeds!', 'cheer');
-          endTurn('<b>' + nameOf(turn) + '</b> won <b>' + sowWon + '</b> seeds.');
+          palCheer(P('wonCheer', { a: nameOf(turn), n: sowWon }), 'cheer');
+          endTurn(P('wonSay', { a: nameOf(turn), n: sowWon }));
         } else {
-          endTurn('Two empty cups in a row — nothing won.');
+          endTurn(P('nothing'));
         }
       }
 
@@ -7949,11 +8026,11 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         store[p] += cups[i]; cups[i] = 0; pasuDead[i] = false;
         var el = boardEl.children[ORDER.indexOf(i)];
         if (el){ el.classList.add('won'); setTimeout(function(){ el.classList.remove('won'); }, 600); }
-        palCheer('🫘 A cup of <b>four</b> — well spotted, <b>' + nameOf(p) + '</b>!', 'cheer');
+        palCheer(P('pasuCheer', { a: nameOf(p) }), 'cheer');
         draw();
-        var line = '🫘 <b>' + nameOf(p) + '</b> took a <b>pasu</b> — four seeds.';
-        if (busy) say(line + ' Sowing carries on.');
-        else say(line + ' <b>' + nameOf(turn) + '</b>, your turn — tap one of your own cups.');
+        var line = P('pasuTook', { a: nameOf(p) });
+        if (busy) say(line + P('sowingOn'));
+        else say(line + P('yourTurn', { a: nameOf(turn) }));
       }
 
       document.addEventListener('click', function(e){
@@ -7968,10 +8045,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         if (cups[i] === PASU && !pasuDead[i]){ claimPasu(i); return; }
         if (busy) return;
         if (owner(i) !== turn){
-          say('That row belongs to <b>' + nameOf(owner(i)) + '</b>. Tap one of your own cups.');
+          say(P('notYours', { a: nameOf(owner(i)) }));
           return;
         }
-        if (cups[i] === 0){ say('That cup is empty — pick one with seeds in it.'); return; }
+        if (cups[i] === 0){ say(P('cupEmpty')); return; }
         sow(i);
       });
 
@@ -7986,7 +8063,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
              or the two disagree on screen. Only while it is safe to say: mid-
              sow the line is reporting the move, and overwriting that would lose
              what just happened. */
-          if (playing && !busy) say('<b>' + nameOf(turn) + '</b> — tap one of your own cups.');
+          if (playing && !busy) say(P('tapYours', { a: nameOf(turn) }));
         });
       });
 
@@ -8023,6 +8100,23 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
          capture paying out twice, or a pasu claimed from a cup that had
          already been emptied. Reading it off the DOM would only ever see what
          was painted, so the state itself is exposed instead. */
+      /* Switching language mid-game has to re-say the CURRENT line, not wait
+         for the next move: the sentence on screen was built when it was said
+         and is not sitting in the markup to be swapped. */
+      window.__palRedraw = function(){
+        if (!built) return;
+        draw();
+        if (playing && !busy){
+          say(P('tapYours', { a: nameOf(turn) }));
+          /* The mascot too. Its line is the game's commentary, so leaving it in
+             the old language put an English sentence above a board that had gone
+             entirely Tamil — the one thing on screen still speaking the language
+             the player just switched away from. */
+          if (typeof sana === 'function') try {
+            sana(P('tapYours', { a: nameOf(turn) }), 'cheer');
+          } catch(e){}
+        }
+      };
       window.__palState = function(){
         return { cups: cups.slice(), store: store.slice(), turn: turn, hand: inHand,
                  busy: busy, playing: playing, dead: pasuDead.slice() };
@@ -9233,108 +9327,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
      what the coverage check is for. */
   var LANG = localStorage.getItem('mmLang') === 'ta' ? 'ta' : 'en';
   var TA = {
-    // ── the shell
-    'Puzzles':'புதிர்கள்', 'Play':'விளையாடு', 'Get App':'செயலி பெறு', 'Feedback':'கருத்து',
-    /* "இணையம் இல்லாமல் விளையாடலாம்" is the natural sentence and it was cut to
-       an ellipsis in this chip — 11px too wide. The chip is a fixed shape, so
-       the words give way: "இணையம் தேவையில்லை" says the same thing in half the
-       room. Translating faithfully and translating INTO A BOX are two different
-       jobs. */
-    '📴 Plays with no internet':'📴 இணையம் தேவையில்லை',
-    '📲 How to Install':'📲 நிறுவும் முறை', '📤 Share':'📤 பங்கிடு',
-    '✅ Installed':'✅ நிறுவப்பட்டது',
-    'Choose Difficulty':'நிலையைத் தேர்ந்தெடு', 'PLAYING':'நடப்பு',
-    // ── level words, shared by several puzzles
-    'Easy':'எளிது', 'Hard':'கடினம்', 'Master':'தேர்ச்சி', 'Expert':'நிபுணர்',
-    'Champion':'வெற்றியாளர்', 'Grandmaster':'மாமேதை',
-    // ── Add Magic
-    'Add Magic':'கூட்டல் மந்திரம்',
-    'every row, column and diagonal adds up to the same total':
-      'ஒவ்வொரு வரிசை, நிரல், மூலைவிட்டமும் ஒரே கூட்டுத்தொகை',
-    'uses 1–9 · count-down':'1–9 · பின்னோக்கி எண்ணல்',
-    'uses 1–16 · fill & swap':'1–16 · நிரப்பி மாற்று',
-    'uses 1–25 · count-down':'1–25 · பின்னோக்கி எண்ணல்',
-    'uses 1–36 · four blocks':'1–36 · நான்கு கட்டங்கள்',
-    'uses 1–64 · fill & flip':'1–64 · நிரப்பி புரட்டு',
-    'uses 1–100 · four blocks':'1–100 · நான்கு கட்டங்கள்',
-    // ── Multiply
-    'Multiply Magic':'பெருக்கல் மந்திரம்',
-    'the lines multiply to the same answer instead of adding':
-      'கூட்டலுக்குப் பதிலாக, வரிசைகள் ஒரே பெருக்குத்தொகையைத் தரும்',
-    '3³ Multiply':'3³ பெருக்கல்', 'Powers of two':'இரண்டின் அடுக்குகள்',
-    'uses 1, 2, 4 … 256 · every line makes the same product':
-      '1, 2, 4 … 256 · ஒவ்வொரு வரிசையும் ஒரே பெருக்குத்தொகை',
-    // ── Triangle
-    'Triangle Magic':'முக்கோண மந்திரம்',
-    '3 sides, not rows and columns — only 5 targets ever work':
-      'வரிசை நிரல் அல்ல, 3 பக்கங்கள் — 5 இலக்குகளே சாத்தியம்',
-    '9 boxes, 3 sides':'9 பெட்டிகள், 3 பக்கங்கள்',
-    'uses 1-9 · each side adds to the same total':
-      '1–9 · ஒவ்வொரு பக்கமும் ஒரே கூட்டுத்தொகை',
-    // ── Birthday
-    'Birthday Magic':'பிறந்தநாள் மந்திரம்',
-    'type any date of birth and the square builds itself':
-      'பிறந்த தேதியைத் தட்டச்சு செய்யுங்கள், சதுரம் தானே உருவாகும்',
-    'Sir Ramanujan MathMagic':'ராமானுஜன் கணித மந்திரம்',
-    'Your own birthday':'உங்கள் பிறந்தநாள்',
-    '4×4 · 18 magic groups · works with any date':
-      '4×4 · 18 மந்திரக் குழுக்கள் · எந்த தேதியிலும் வேலை செய்யும்',
-    // ── Gate Logic
-    'Gate Logic':'வாயில் தருக்கம்',
-    'flip the inputs, watch each gate decide ON or OFF':
-      'உள்ளீடுகளை மாற்றுங்கள், ஒவ்வொரு வாயிலும் ஆன் அல்லது ஆஃப் என முடிவெடுப்பதைப் பாருங்கள்',
-    '7 Logic Gates':'7 தருக்க வாயில்கள்',
-    'pick one, then walk its whole truth table':
-      'ஒன்றைத் தேர்ந்தெடுத்து, அதன் முழு உண்மை அட்டவணையையும் பாருங்கள்',
-    // ── Binary
-    'Binary Magic':'இரும மந்திரம்',
-    'no grid at all — eight cards read your mind':
-      'கட்டமே இல்லை — எட்டு அட்டைகள் உங்கள் மனதைப் படிக்கும்',
-    'Guess My Number · Junior':'எண்ணைக் கண்டுபிடி · சிறியோர்',
-    '1 to 99':'1 முதல் 99', '1 to 255':'1 முதல் 255',
-    '8 cards · tens and units, four bits each':
-      '8 அட்டைகள் · பத்துகள் & ஒன்றுகள், தலா நான்கு பிட்கள்',
-    'Guess My Number · Advance':'எண்ணைக் கண்டுபிடி · மேம்பட்ட',
-    'the same 8 cards · real binary, nothing wasted':
-      'அதே 8 அட்டைகள் · உண்மையான இரும எண், வீண் ஒன்றுமில்லை',
-    // ── Slide
-    'Slide Magic':'நகர்த்தல் மந்திரம்',
-    'slide the numbers back into order — the spaces below are what let them move':
-      'எண்களை வரிசையாக நகர்த்துங்கள் — காலி இடமே அவற்றை நகர்த்த உதவும்',
-    'Slide 1–15':'நகர்த்து 1–15', 'Slide A–Z':'நகர்த்து A–Z', 'Slide A–Z + 1–9':'நகர்த்து A–Z + 1–9',
-    /* "ஒரு காலி இடம்" is the full phrase; "ஒரு இடம்" is what fits one line on a
-       360px card. Three of these wrapping to two lines each is most of why the
-       Tamil ladder no longer fits one screen. */
-    'Easy · 4×4 · one space':'எளிது · 4×4 · ஒரு இடம்',
-    'Medium · 3×9 · one space':'நடுத்தரம் · 3×9 · ஒரு இடம்',
-    'Hard · 6×6 · one space':'கடினம் · 6×6 · ஒரு இடம்',
-    '15 blocks — the classic fifteen puzzle':'15 கட்டங்கள் — பாரம்பரிய பதினைந்து புதிர்',
-    '26 letters down a narrow board — one gap, no spare room':
-      'குறுகிய பலகையில் 26 எழுத்துகள் — ஒரே காலி இடம், தாராளம் இல்லை',
-    '35 blocks and a single gap — no spare room at all':
-      '35 கட்டங்கள், ஒரே காலி இடம் — சுத்தமாக இடமில்லை',
-    // ── Sudoku
-    'Sudoku':'சுடோகு', 'Sudoku 3×3':'சுடோகு 3×3', 'Sudoku 9×9':'சுடோகு 9×9',
-    'every row, column and box holds each number once — work out the rest':
-      'ஒவ்வொரு வரிசை, நிரல், பெட்டியிலும் ஒவ்வொரு எண்ணும் ஒருமுறை — மீதியை யோசித்துக் கண்டுபிடி',
-    'Easy · 1–3 · rows & columns':'எளிது · 1–3 · வரிசை & நிரல்',
-    'the beginner\'s way in — no boxes, no diagonals':
-      'தொடக்க நிலை — பெட்டிகள் இல்லை, மூலைவிட்டம் இல்லை',
-    'Medium · most filled in':'நடுத்தரம் · அதிகம் நிரப்பியது',
-    'boxes and both diagonals count too':'பெட்டிகளும் இரு மூலைவிட்டங்களும் சேரும்',
-    'Hard · fewer given':'கடினம் · குறைவு தந்தது',
-    'same rules, more of it left to you':'அதே விதிகள், அதிகம் உங்களுக்கே',
-    'Master · fewest given':'தேர்ச்சி · மிகக் குறைவு',
-    'the long one — take your time':'நீளமானது — நிதானமாகச் செய்யுங்கள்',
-    // ── Pallanguzhi
-    'Pallanguzhi':'பல்லாங்குழி', 'Pallanguzhi 2×7':'பல்லாங்குழி 2×7',
-    'the old Tamil sowing game — two rows of seven, played with a friend':
-      'பழமையான தமிழ் விளையாட்டு — ஏழு குழிகள் இரு வரிசை, நண்பருடன் விளையாடு',
-    'Two players · one phone':'இரு வீரர்கள் · ஒரே தொலைபேசி',
-    'sow the seeds, win a cup of four — the game your family plays':
-      'விதைகளைப் போடு, நான்கு விதைக் குழியை வெல் — உங்கள் குடும்ப விளையாட்டு',
+    // the board's own furniture — everything else in the app stays English
     'Store':'சேமிப்பு', '🔄 New game':'🔄 புதிய ஆட்டம்', '📖 How to play':'📖 எப்படி விளையாடுவது',
-    'Player 1':'வீரர் 1', 'Player 2':'வீரர் 2'
+    'Player 1':'வீரர் 1', 'Player 2':'வீரர் 2',
+    'Tap Start to fill the board.':'பலகையை நிரப்ப தொடங்கு என்பதைத் தட்டுங்கள்.'
   };
 
   /* Swap the text in place, remembering the English so the switch works both
@@ -9342,7 +9338,17 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
      ("70 seeds on the board") cannot be matched from a table and belongs to the
      next slice, where the sentence is assembled through a lookup instead. */
   function applyLang(){
-    var root = document.querySelector('.appShell');
+    /* THE BOARD ONLY. This walked the whole app shell for one build, and the
+       screenshots settled it: Raja — "change entire app to Tamil is possible to
+       collapse the UI decoration." He is right, and it was measurable. Tamil
+       runs longer than English, every layout here is sized by measuring itself,
+       and in Tamil the nine-puzzle ladder stopped fitting one screen and a chip
+       was cut 11px short. Nine puzzles half-translated is worse than nine in
+       English.
+       Pallanguzhi is the opposite case: a Tamil game, whose whole vocabulary is
+       Tamil already — pasu, the cups, the sowing. It is translated COMPLETELY,
+       sentences included, and nothing else is touched. */
+    var root = document.getElementById('palPanel');
     if (!root) return;
     var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), n;
     while ((n = w.nextNode())){
@@ -9367,37 +9373,42 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
   function refreshLangBtn(){
     var b = document.getElementById('langBtn');
-    if (b) b.textContent = LANG === 'ta' ? '🌐 மொழி: தமிழ்' : '🌐 Language: English';
+    if (b) b.textContent = LANG === 'ta' ? '🌐 தமிழ்' : '🌐 English';
   }
   (function buildLangBtn(){
-    var row = document.getElementById('soundBtn');
-    row = row && row.parentElement;
+    /* ON THE BOARD, not in the app's settings. It began beside Sound and Music
+       because that is where Raja first asked for it, and that was right while it
+       was an app-wide switch. Now that it changes one game and one game only, a
+       control buried in global settings would be a promise the app does not
+       keep — so it sits with New Game and How To Play, on the screen it
+       actually affects. */
+    var row = document.querySelector('.palFoot');
     if (!row) return;
     var b = document.createElement('button');
-    b.id = 'langBtn'; b.type = 'button';
-    b.setAttribute('style', 'background:transparent; border:2px solid #a78bfa; color:#c4b5fd;' +
-      'border-radius:8px; padding:6px 16px; font-size:15px; font-weight:800; cursor:pointer;');
-    row.appendChild(b);
+    b.id = 'langBtn'; b.type = 'button'; b.className = 'slideBtn';
+    row.insertBefore(b, row.firstChild);
     b.addEventListener('click', function(){
       LANG = LANG === 'ta' ? 'en' : 'ta';
       localStorage.setItem('mmLang', LANG);
       applyLang();
       refreshLangBtn();
-      /* Tamil words are longer and taller than their English counterparts, and
-         the puzzle list is sized by MEASURING itself. Without this the list
-         keeps the scale it worked out for English and either overflows or
-         wastes the space it no longer needs. */
-      if (typeof fitHome === 'function') fitHome();
+      /* Redraw the board, because most of what it says is a SENTENCE built at
+         the moment it is said — whose turn it is, what was just won — and those
+         are not sitting in the page waiting to be swapped. Without this the
+         labels turn Tamil while the running commentary stays English until the
+         next move. */
+      if (window.__palRedraw) window.__palRedraw();
       if (typeof sfx === 'function') try { sfx('card'); } catch(e){}
     });
     refreshLangBtn();
-    if (LANG === 'ta'){ applyLang(); if (typeof fitHome === 'function') fitHome(); }
+    if (LANG === 'ta') applyLang();
   })();
   window.__mmLang = function(l){                 // for the checks
     if (l){ LANG = l; localStorage.setItem('mmLang', l); applyLang(); refreshLangBtn();
-            if (typeof fitHome === 'function') fitHome(); }
+            if (window.__palRedraw) window.__palRedraw(); }
     return LANG;
   };
+  window.__palTa = function(){ return LANG === 'ta'; };
 
   // Sound on/off toggle (remembered across visits; the tap itself unlocks WebAudio)
   refreshSoundBtn();
@@ -11073,7 +11084,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-172 (English / Tamil toggle, first slice)';
+  var BUILD_VER = 'beta-173 (Pallanguzhi speaks Tamil, and only Pallanguzhi)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
