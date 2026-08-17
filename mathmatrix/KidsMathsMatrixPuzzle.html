@@ -1827,9 +1827,20 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
 .comingChip{ font-size:calc(10px * var(--lvScale, 1)) !important;
   padding:calc(5px * var(--lvScale, 1)) calc(9px * var(--lvScale, 1)) !important; }
 .journeyNote,.credit{ display:none !important; }   /* moved into the About sheet */
-.verFooter{ width:100%; text-align:center; margin-top:8px;
-  font-size:calc(9px * var(--lvScale, 1)); font-weight:700; letter-spacing:.3px;
-  color:#8A6A3F; opacity:.75; }
+/* Raja: "v136 is seem dull, keep bright."
+   It was a muted brown at 75% opacity and 9px, sitting on a tan background —
+   about as close to invisible as text gets while still being drawn. This is
+   the label you read to check which build you are on, so it should be legible
+   at a glance. A cream badge with a brown rim, like the chips further up the
+   page, rather than faint text pretending not to be there. */
+.verFooter{ width:100%; text-align:center; margin-top:9px; }
+.verFooter span{ display:inline-block; padding:3px 13px; border-radius:999px;
+  background:#FFF6E7; border:2px solid #8A5E31; color:#5E3D1C;
+  /* --lvScale shrinks the whole list to fit, and at its 0.92 floor it was
+     pulling this back down to 9.7px — undoing the fix. A floor of its own, so
+     the label a player reads to check their build cannot be scaled away. */
+  font-size:max(11px, calc(11.5px * var(--lvScale, 1))); font-weight:900; letter-spacing:.4px;
+  box-shadow:0 2px 0 rgba(94,64,32,.28); }
 
 /* ── PLAY: the board is the flexible region ── */
 .solvedCounter{ flex:none; font-size:9.5px !important; padding:4px 10px !important; margin:0 0 5px !important; }
@@ -10108,7 +10119,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'v136';
+  var BUILD_VER = 'v137';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
