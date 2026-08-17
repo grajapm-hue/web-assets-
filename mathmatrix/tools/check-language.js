@@ -61,7 +61,7 @@ const TAMIL = /[\u0B80-\u0BFF]/;
     }); })()`).then(JSON.parse);
   const beforeSwitch = await outside();
 
-  await ev(`document.getElementById('palTab').click()`); await sleep(2700);
+  await ev(`document.getElementById('palTab').click()`); await palReady(ev, sleep);
 
   /* 1. The toggle lives ON THE BOARD. It began beside Sound and Music, which was
         right for an app-wide switch and wrong for one that changes a single
@@ -134,7 +134,7 @@ const TAMIL = /[\u0B80-\u0BFF]/;
 
   /* 4. Nothing on the Tamil board is cut off — Tamil runs longer than English
         and this board is full of fixed shapes. */
-  await ev(`document.getElementById('palTab').click()`); await sleep(2700);
+  await ev(`document.getElementById('palTab').click()`); await palReady(ev, sleep);
   const cut = JSON.parse(await ev(`(function(){
     var bad = [];
     document.querySelectorAll('#palPanel *').forEach(function(el){
@@ -193,3 +193,14 @@ const TAMIL = /[\u0B80-\u0BFF]/;
   console.log('\n' + (fail === 0 ? 'ALL GREEN' : fail + ' FAILURES'));
   process.exit(fail === 0 ? 0 : 1);
 })();
+
+/* Same reason as in check-pallanguzhi.js: wait for the board to be dealt rather
+   than for a number of milliseconds that was only ever a guess. */
+async function palReady(ev, sleep){
+  for (let i = 0; i < 120; i++){
+    const st = await ev('window.__palState ? JSON.stringify(window.__palState()) : ""');
+    if (st){ const s = JSON.parse(st); if (s.playing && !s.busy) return true; }
+    await sleep(60);
+  }
+  return false;
+}

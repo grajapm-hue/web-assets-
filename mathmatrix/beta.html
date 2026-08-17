@@ -7913,7 +7913,11 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           cups[i] = PER_CUP; store[p] -= PER_CUP;
           draw();
           if (typeof sfx === 'function') try { sfx('card'); } catch(e){}
-          step = setTimeout(fill, 105);
+          /* The opening fill slows with the rest of it. This is where a child
+             sees where the seeds in front of them came from — 35 draining out of
+             a store, five landing in each cup — and at 105ms a cup it was over
+             before that registered. */
+          step = setTimeout(fill, 190);
         })();
       }
 
@@ -7954,7 +7958,22 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
          screen for a quarter of a minute, so the drops SPEED UP: the first
          few are slow enough to follow and teach the rule, and after that it
          settles into a rhythm that gets to the end of a long move. */
-      function dropDelay(n){ return n < 8 ? 150 : (n < 24 ? 85 : 55); }
+      /* Raja, having played it: "drop the seed pearls feels fast, should be slow
+         to observe the game."
+
+         The old pace was 150ms, then 85, then 55. Those numbers were mine, set
+         against a worry rather than a game: a move does not stop at the end of
+         the hand, so it can cross the board several times, and I did not want a
+         child staring at the screen for a quarter of a minute. I optimised the
+         WORST move and made the ordinary one too quick to follow — and the
+         ordinary move is where the rule is learned. Watching a seed land in each
+         cup in turn IS the lesson; a blur is just an outcome.
+
+         Slower, and the ramp is gentler with a much higher floor. The first ten
+         drops — the whole of most moves — are at a pace you can count aloud. A
+         rare board-crossing move still eases up rather than crawling, but it
+         never gets faster than a beat you can follow. */
+      function dropDelay(n){ return n < 10 ? 320 : (n < 26 ? 210 : 150); }
 
       /* ONE STEP of a move, with no timing in it at all: drop a seed, or lift
          the next cup and carry on, or finish. Separating the step from the
@@ -8119,7 +8138,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       };
       window.__palState = function(){
         return { cups: cups.slice(), store: store.slice(), turn: turn, hand: inHand,
-                 busy: busy, playing: playing, dead: pasuDead.slice() };
+                 busy: busy, playing: playing, dead: pasuDead.slice(),
+                 dropped: sowDropped };   // lets a check TIME the drops, not just count them
       };
     })();
 
@@ -11084,7 +11104,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-173 (Pallanguzhi speaks Tamil, and only Pallanguzhi)';
+  var BUILD_VER = 'beta-174 (the seeds drop slowly enough to watch)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that

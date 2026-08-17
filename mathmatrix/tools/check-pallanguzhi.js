@@ -42,6 +42,18 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   const send = (mm, p) => new Promise(res => { const i = ++id; pend.set(i, res); ws.send(JSON.stringify({ id: i, method: mm, params: p })); });
   const ev = async x => (await send('Runtime.evaluate', { expression: x, returnByValue: true, awaitPromise: true })).result?.result?.value;
   const state = () => ev(`JSON.stringify(window.__palState())`).then(JSON.parse);
+  /* Wait for the BOARD, not for the clock. These were fixed sleeps sized to the
+     opening fill, and slowing that fill down broke eight assertions at once —
+     none of which were about timing. */
+  const ready = async (ms) => {
+    for (let i = 0; i < (ms || 120); i++){
+      const st = await ev(`window.__palState ? JSON.stringify(window.__palState()) : ""`);
+      if (st){ const s2 = JSON.parse(st); if (s2.playing && !s2.busy) return true; }
+      await sleep(60);
+    }
+    return false;
+  };
+
   /* Every seed is in a cup, in a store, or IN THE HAND being carried. Leave the
      hand out and the count comes up short mid-sow and the check reports a bug
      that is not there — the first run did exactly that. */
@@ -53,7 +65,7 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
 
   ok('the game is on the puzzle list', await ev(`!!document.getElementById('palTab')`));
   await ev(`document.getElementById('palTab').click()`);
-  await sleep(2600);                              // let the opening fill finish
+  await ready();
 
   /* THE RING. The top row is drawn right to left so that the array is a real
      ring on screen: leaving cup 6 at the bottom right you must arrive at cup 7
@@ -105,7 +117,7 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   /* LEAVING MID-MOVE. Seeds being carried are in neither a cup nor a store, so
      cancelling the sowing timer used to delete them outright: walk out of the
      game while seeds are in the air, come back, and the board is short. */
-  await ev(`window.__palNew()`); await sleep(2500);
+  await ev(`window.__palNew()`); await ready();
   await ev(`document.querySelector('#palBoard [data-pal="3"]').click()`);
   await sleep(400);                                    // catch it mid-flight
   const flying = await state();
@@ -119,7 +131,7 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   /* PASU. A cup of exactly four may be taken only by the player whose ROW it
      sits in — that ownership is the whole rule, and awarding it to whoever
      happens to be sowing would be a different game. Set one up and claim it. */
-  await ev(`window.__palNew()`); await sleep(2600);
+  await ev(`window.__palNew()`); await ready();
   /* A cup of four appears DURING sowing, not between moves — which is the
      whole point of the rule, since a player has to spot it while the other is
      still dropping seeds. Looking only between moves found none in thirty
@@ -136,7 +148,7 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   let claimed = null, taps = 0, samples = 0;
   outer:
   for (let g = 0; g < 6 && !claimed; g++){
-    if (g){ await ev(`window.__palNew()`); await sleep(2500); }
+    if (g){ await ev(`window.__palNew()`); await ready(); }
     for (let k = 0; k < 300; k++){
       const st = await state();
       if (!st.playing) break;
@@ -238,7 +250,7 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   let before = await sanaNow();
   for (let k = 0; k < 200 && !/won \d+ seed/i.test(before); k++){
     const st = await state();
-    if (!st.playing){ await ev(`window.__palNew()`); await sleep(2500); }
+    if (!st.playing){ await ev(`window.__palNew()`); await ready(); }
     else if (!st.busy){
       const mine = [];
       for (let i = st.turn * 7; i < st.turn * 7 + 7; i++) if (st.cups[i] > 0) mine.push(i);
@@ -249,13 +261,43 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   }
   ok('a capture leaves its result on the mascot', /won \d+ seed/i.test(before),
     JSON.stringify(before.trim().slice(0, 50)));
-  await ev(`window.__palNew()`); await sleep(2600);
+  await ev(`window.__palNew()`); await ready();
   const fresh = await state();
   const line = await ev(`(document.querySelector('.sana') || {}).textContent || ''`);
   ok('a new game deals a genuinely fresh board', fresh.cups.every(c => c === 5) && seeds(fresh) === TOTAL,
     fresh.cups.join(',') + ' | ' + seeds(fresh) + ' seeds');
   ok('and the mascot is not still reporting the last game', !/won \d+ seed|wins the game|dead heat/i.test(line),
     JSON.stringify(line.trim().slice(0, 60)));
+
+  /* THE PACE OF THE DROPS. Raja, having played it: "drop the seed pearls feels
+     fast, should be slow to observe the game." Watching a seed land in each cup
+     in turn is the whole lesson, and a blur is just an outcome.
+
+     TIMED, not read back. Asserting the constant in dropDelay() would prove a
+     number exists in the source and nothing about what a player sees — the delay
+     could be right and the loop could still fire twice per tick. So this drives
+     a real move and records the wall-clock gaps between drops using the counter
+     the game itself keeps. */
+  await ev(`window.__palNew()`); await ready();
+  const stamps = [];
+  let lastDropped = -1;
+  await ev(`document.querySelector('#palBoard [data-pal="0"]').click()`);
+  for (let k = 0; k < 90 && stamps.length < 7; k++){
+    const st = await state();
+    if (st.dropped !== lastDropped){
+      if (lastDropped >= 0) stamps.push(Date.now());
+      lastDropped = st.dropped;
+    }
+    if (!st.busy) break;
+    await sleep(25);
+  }
+  const gaps = [];
+  for (let i = 1; i < stamps.length; i++) gaps.push(stamps[i] - stamps[i - 1]);
+  gaps.sort((a, b) => a - b);
+  const median = gaps.length ? gaps[Math.floor(gaps.length / 2)] : 0;
+  ok('the early seeds drop slowly enough to follow', median >= 250,
+    'median gap ' + median + 'ms across ' + gaps.length + ' drops' +
+    (median < 250 ? ' — too quick to watch' : ''));
 
   /* THE FOLDING BOARD. Raja asked for the left and right edges to be cut at the
      middle and a dashed line laid between the rows, so the thing reads as a real
