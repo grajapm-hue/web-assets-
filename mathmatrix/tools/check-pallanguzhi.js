@@ -45,10 +45,21 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   /* Wait for the BOARD, not for the clock. These were fixed sleeps sized to the
      opening fill, and slowing that fill down broke eight assertions at once —
      none of which were about timing. */
+  /* The board no longer deals itself: each player taps their own store to lay
+     out their own row. So getting to a playable board is now an ACTION, and
+     every test that just wanted a board to play with does the same two taps a
+     pair of children would. */
   const ready = async (ms) => {
-    for (let i = 0; i < (ms || 120); i++){
+    for (let i = 0; i < (ms || 240); i++){
       const st = await ev(`window.__palState ? JSON.stringify(window.__palState()) : ""`);
-      if (st){ const s2 = JSON.parse(st); if (s2.playing && !s2.busy) return true; }
+      if (st){
+        const s2 = JSON.parse(st);
+        if (s2.playing && !s2.busy) return true;
+        if (!s2.busy && s2.dealt){
+          const p = !s2.dealt[0] ? 1 : (!s2.dealt[1] ? 2 : 0);
+          if (p) await ev(`document.querySelector('#palSide${p} .palStore').click()`);
+        }
+      }
       await sleep(60);
     }
     return false;
@@ -65,6 +76,38 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
 
   ok('the game is on the puzzle list', await ev(`!!document.getElementById('palTab')`));
   await ev(`document.getElementById('palTab').click()`);
+  await sleep(900);
+
+  /* EACH PLAYER LAYS OUT THEIR OWN ROW. Raja: "observed initial filling start to
+     put in to pocket is from always player 1 table even choose player is
+     different — of course the fill should be do by both side from their own
+     reserve, such two way row filling, not a circular sequence."
+
+     Two faults in one observation. The old fill ran player 0's row and then
+     player 1's, ALWAYS in that order, so choosing Player 2 to open changed who
+     moved first but not whose seeds went down first. And it dealt itself, which
+     is not how the game starts. */
+  const opening = await state();
+  ok('a new board starts empty, with both stores holding 35',
+    opening.cups.every(c => c === 0) && opening.store[0] === 35 && opening.store[1] === 35,
+    'cups ' + opening.cups.join(',') + ' | stores ' + opening.store.join('/'));
+  ok('and 70 seeds are already accounted for, sitting in the stores',
+    seeds(opening) === TOTAL, seeds(opening) + ' seeds');
+  ok('the game has not begun yet', !opening.playing);
+
+  /* Deal PLAYER 2 first — the order the old code could never produce. */
+  await ev(`document.querySelector('#palSide2 .palStore').click()`);
+  for (let i = 0; i < 200; i++){ const st = await state(); if (!st.busy) break; await sleep(60); }
+  const oneDown = await state();
+  ok('tapping Player 2’s store lays out Player 2’s row and nobody else’s',
+    oneDown.cups.slice(7).every(c => c === 5) && oneDown.cups.slice(0, 7).every(c => c === 0),
+    'top row ' + oneDown.cups.slice(7).join(',') + ' | bottom row ' + oneDown.cups.slice(0, 7).join(','));
+  ok('and it is Player 2’s own 35 that was spent', oneDown.store[1] === 0 && oneDown.store[0] === 35,
+    'stores ' + oneDown.store.join('/'));
+  ok('play still cannot start with one row down', !oneDown.playing);
+  ok('the seeds are all still accounted for', seeds(oneDown) === TOTAL, seeds(oneDown) + ' seeds');
+
+  await ev(`document.querySelector('#palSide1 .palStore').click()`);
   await ready();
 
   /* THE RING. The top row is drawn right to left so that the array is a real

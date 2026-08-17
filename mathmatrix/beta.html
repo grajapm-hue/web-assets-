@@ -2331,6 +2331,11 @@ body.palMode #palPanel{ display:flex !important; flex-direction:column;
   border-radius:999px; border:3px solid #8A5E31;
   background:radial-gradient(ellipse at 50% 35%, #6B4A25 0%, #4A3117 100%);
   box-shadow:inset 0 3px 9px rgba(0,0,0,.45); }
+/* A store still holding its 35 is the thing to tap, so it says so: the same
+   pulse the cup of four uses, because it is the same kind of instruction —
+   here is something waiting for you, and nothing happens until you take it. */
+.palStore.toDeal{ cursor:pointer; animation:palPasu 1.15s ease-in-out infinite; }
+.palStore.toDeal:active{ transform:translateY(2px); }
 .palStoreNum{ min-width:34px; height:30px; display:grid; place-items:center;
   border-radius:7px; background:#FFF6E7; border:2px solid #8A5E31;
   color:#33220F; font-size:15px; font-weight:900;
@@ -7759,6 +7764,16 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
                      ta:'👇 {a} — உங்கள் குழியைத் தட்டுங்கள்' },
         onBoard1:  { en:'{n} seed on the board',          ta:'பலகையில் {n} விதை' },
         onBoardN:  { en:'{n} seeds on the board',         ta:'பலகையில் {n} விதைகள்' },
+        dealPrompt:{ en:'Each player taps their own store to lay out their row.',
+                     ta:'ஒவ்வொரு வீரரும் தன் சேமிப்பைத் தட்டி தன் வரிசையை நிரப்பவும்.' },
+        fillingRow:{ en:'Laying out <b>{a}</b>’s row — five seeds in every cup.',
+                     ta:'<b>{a}</b> வரிசை நிரம்புகிறது — ஒவ்வொரு குழியிலும் ஐந்து விதைகள்.' },
+        dealOne:   { en:'<b>{a}</b>’s row is down. <b>{b}</b> — tap your store.',
+                     ta:'<b>{a}</b> வரிசை தயார். <b>{b}</b> — உங்கள் சேமிப்பைத் தட்டுங்கள்.' },
+        alreadyDealt:{ en:'<b>{a}</b>’s row is already down.',
+                     ta:'<b>{a}</b> வரிசை ஏற்கனவே தயார்.' },
+        fillFirst: { en:'Lay out both rows first — each player taps their own store.',
+                     ta:'முதலில் இரு வரிசைகளையும் நிரப்புங்கள் — அவரவர் சேமிப்பைத் தட்டவும்.' },
         chooseP:   { en:'👤 Choose player — {a} starts',
                      ta:'👤 வீரரைத் தேர்ந்தெடு — {a} தொடங்குகிறார்' },
         nextGame:  { en:'<b>{a}</b> will start the next game.',
@@ -7776,6 +7791,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       var cups = [], store = [0,0], pasuDead = [];
       var turn = 0, playing = false, busy = false, step = null, inHand = 0, sowPos = 0;
       var starter = 0;      // which player opens; Raja's "choose player"
+      var dealt = [false, false];   // each player lays out their OWN row
       var boardEl, sayEl, onBoardEl, built = false;
 
       function nameOf(p){
@@ -7879,6 +7895,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         }
         document.getElementById('palStore1').textContent = store[0];
         document.getElementById('palStore2').textContent = store[1];
+        for (var d = 0; d < 2; d++){
+          var sb = document.querySelector('#palSide' + (d + 1) + ' .palStore');
+          if (sb) sb.classList.toggle('toDeal', !dealt[d] && !busy);
+        }
         document.getElementById('palSide1').classList.toggle('turn', playing && turn === 0);
         document.getElementById('palSide2').classList.toggle('turn', playing && turn === 1);
         for (var t = 0; t < 2; t++){
@@ -7905,47 +7925,72 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         cups = []; pasuDead = [];
         for (var i = 0; i < CUPS; i++){ cups.push(0); pasuDead.push(false); }
         store = [PER_CUP * 7, PER_CUP * 7];       // the 35 each Raja asked for
-        turn = starter; playing = false; busy = true; inHand = 0;
+        dealt = [false, false];
+        turn = starter; playing = false; busy = false; inHand = 0;
+        palFit();
+        say(P('dealPrompt'));
+        /* Raja: "monkey SaNa kept finished game results in new game." The
+           mascot's line is set on events and then just STAYS — so a fresh board
+           sat underneath "Player 1 won 1 seeds!" from the game before it, the
+           one message on screen still describing a game that no longer existed.
+           Cleared here, where the new board is dealt. */
+        if (typeof sana === 'function') try {
+          sana(P('dealPrompt'), 'cheer');
+        } catch(e){}
         draw();
-        say(P('filling'));
-        /* The opening fill is shown rather than assumed. Raja described it as a
-           step of the game ("reserve will lapse to zero before to play start"),
-           and watching 35 drain to 0 is what tells a child where the seeds in
-           front of them came from. */
-        var q = [];
-        for (var p = 0; p < 2; p++) for (var c = 0; c < 7; c++) q.push(p * 7 + c);
-        var at = 0;
-        (function fill(){
-          if (at >= q.length){
-            busy = false; playing = true;
-            step = null;
-            palFit();
-            say(P('starts', { a: nameOf(starter) }));
-            /* Raja: "monkey SaNa kept finished game results in new game." The
-               mascot's line is set on events and then just STAYS — so a fresh
-               board sat underneath "Player 1 won 1 seeds!" from the game before
-               it, the one message on screen still describing a game that no
-               longer existed. The last result is cleared here, where the new
-               board is dealt, rather than left to be overwritten by whatever
-               happens first in the new game. */
-            if (typeof sana === 'function') try {
-              sana(P('newBoard', { a: nameOf(starter) }), 'cheer');
-            } catch(e){}
+      }
+
+      /* DEALING IS A MOVE NOW, and each player makes their own.
+
+         Raja: "observed initial filling start to put in to pocket is from always
+         player 1 table even choose player is different. Of course the fill
+         should be do by both side from their own reserve — such two way row
+         filling, not a circular sequence. Player one to fill their row from
+         their reserve, and reserve shows 35 in initial, and when he touch the
+         reserve box the fill start and fill in their rows and reserve will be
+         lapse to zero. Vice versa."
+
+         Two faults in one observation, and the second answers the first. The
+         old fill ran player 0's row and then player 1's, always in that order,
+         so choosing Player 2 to open changed who moved first but not whose seeds
+         went down first — the app still opened the game from one side of the
+         board. And it did it BY ITSELF, which is not how the game starts: each
+         player takes their own thirty-five and lays out their own row.
+
+         So there is no automatic opening any more. Both stores sit at 35, both
+         glow, and each player taps their own to lay out their own seven cups.
+         No order is imposed because none exists to impose. */
+      function dealRow(p){
+        if (dealt[p] || busy) return;
+        busy = true;
+        var c = 0;
+        say(P('fillingRow', { a: nameOf(p) }));
+        (function one(){
+          if (c >= 7){
+            dealt[p] = true;
+            busy = false; step = null;
+            if (dealt[0] && dealt[1]){
+              playing = true;
+              palFit();
+              say(P('starts', { a: nameOf(starter) }));
+              if (typeof sana === 'function') try {
+                sana(P('newBoard', { a: nameOf(starter) }), 'cheer');
+              } catch(e){}
+            } else {
+              say(P('dealOne', { a: nameOf(p), b: nameOf(1 - p) }));
+            }
             draw();
             return;
           }
-          var i = q[at++];
-          var p = owner(i);
+          var i = p * 7 + c;
+          c++;
           cups[i] = PER_CUP; store[p] -= PER_CUP;
           draw();
           if (typeof sfx === 'function') try { sfx('card'); } catch(e){}
-          /* The opening fill slows with the rest of it — "two rows sequence
-             filling" is the part he named. This is where a child sees where the
-             seeds in front of them came from: 35 draining out of a store, five
-             landing in each cup, one cup at a time along one row and then the
-             other. At 105ms it was over before that registered; 260ms makes
-             dealing the board a deliberate three and a half seconds. */
-          step = setTimeout(fill, 260);
+          /* Same beat as the sowing. This is where a child sees where the seeds
+             in front of them came from: their own 35 draining away, five landing
+             in each of their own cups, one at a time along their own row. */
+          step = setTimeout(one, 260);
         })();
       }
 
@@ -8086,7 +8131,12 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         var b = e.target.closest && e.target.closest('#palBoard [data-pal]');
         if (!b) return;
         var i = +b.dataset.pal;
-        if (!playing) return;
+        if (!playing){
+          /* Before both rows are down there is no game to play, and saying so
+             is better than a dead tap on a board that looks ready. */
+          if (!dealt[0] || !dealt[1]) say(P('fillFirst'));
+          return;
+        }
         /* A cup of four can be claimed by its owner AT ANY MOMENT, including
            while the other player is still sowing. That is deliberate: Raja's
            rule is that you LOSE the bonus if you do not notice it in time, and
@@ -8111,12 +8161,26 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
          a prominent gold button should never cost a game in progress, so the
          choice is simply held for the next board and said out loud. "New game"
          is right there for anyone who wants it immediately. */
+      /* The stores are the deal. Only your own: tapping the other player's
+         store is refused by name rather than silently ignored, because a
+         glowing box that does nothing when tapped reads as broken. */
+      document.addEventListener('click', function(e){
+        var box = e.target.closest && e.target.closest('#palPanel .palStore');
+        if (!box) return;
+        var side = box.closest('.palSide');
+        var p = side && side.id === 'palSide2' ? 1 : 0;
+        if (dealt[0] && dealt[1]) return;              // nothing to deal
+        if (dealt[p]){ say(P('alreadyDealt', { a: nameOf(p) })); return; }
+        dealRow(p);
+      });
+
       var chooseBtn = document.getElementById('palChoose');
       if (chooseBtn) chooseBtn.addEventListener('click', function(){
         starter = 1 - starter;
         if (typeof sfx === 'function') try { sfx('card'); } catch(e){}
-        var untouched = playing && !busy && store[0] === 0 && store[1] === 0 &&
-                        cups.every(function(c){ return c === PER_CUP; });
+        var untouched = (!dealt[0] && !dealt[1]) ||
+                        (playing && !busy && store[0] === 0 && store[1] === 0 &&
+                         cups.every(function(c){ return c === PER_CUP; }));
         if (untouched || !playing){ newGame(); return; }
         draw();
         say(P('nextGame', { a: nameOf(starter) }));
@@ -8190,7 +8254,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       window.__palState = function(){
         return { cups: cups.slice(), store: store.slice(), turn: turn, hand: inHand,
                  busy: busy, playing: playing, dead: pasuDead.slice(),
-                 dropped: sowDropped };   // lets a check TIME the drops, not just count them
+                 dropped: sowDropped, dealt: dealt.slice() };
       };
     })();
 
@@ -11155,7 +11219,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-176 (choose who opens — the first move is an advantage)';
+  var BUILD_VER = 'beta-177 (each player lays out their own row)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that

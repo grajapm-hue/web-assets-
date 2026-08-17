@@ -197,9 +197,17 @@ const TAMIL = /[\u0B80-\u0BFF]/;
 /* Same reason as in check-pallanguzhi.js: wait for the board to be dealt rather
    than for a number of milliseconds that was only ever a guess. */
 async function palReady(ev, sleep){
-  for (let i = 0; i < 120; i++){
+  // the board is dealt by the players now — tap each store, as they would
+  for (let i = 0; i < 240; i++){
     const st = await ev('window.__palState ? JSON.stringify(window.__palState()) : ""');
-    if (st){ const s = JSON.parse(st); if (s.playing && !s.busy) return true; }
+    if (st){
+      const s = JSON.parse(st);
+      if (s.playing && !s.busy) return true;
+      if (!s.busy && s.dealt){
+        const p = !s.dealt[0] ? 1 : (!s.dealt[1] ? 2 : 0);
+        if (p) await ev("document.querySelector('#palSide" + p + " .palStore').click()");
+      }
+    }
     await sleep(60);
   }
   return false;
