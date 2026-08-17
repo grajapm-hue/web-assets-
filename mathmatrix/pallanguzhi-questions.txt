@@ -1,157 +1,129 @@
-பல்லாங்குழி — குடும்பத்துடன் முடிவு செய்ய வேண்டிய கேள்விகள்
-PALLANGUZHI — QUESTIONS TO SETTLE WITH THE FAMILY
-
-MathMatrix Pro++ இல் பல்லாங்குழி சேர்ப்பதற்கு முன், கீழ்க்கண்ட விதிகளில்
-தெளிவு தேவை. நீங்கள் அனுப்பிய விதிகள் ஆவணத்தில் இவை சொல்லப்படவில்லை,
-அல்லது வெவ்வேறு குடும்பங்களில் வெவ்வேறு விதமாக விளையாடப்படுகின்றன.
-ஒவ்வொரு கேள்விக்கும் ஒரு விருப்பத்தைத் தேர்ந்தெடுத்துச் சொன்னால் போதும்.
-
-Before Pallanguzhi can be built into MathMatrix Pro++, the rules below need to
-be settled. Your rules file does not state them, or they are genuinely played
-differently in different families. Just pick one option for each.
+பல்லாங்குழி — விதிகள் (2026-08-17 நிலவரம்)
+PALLANGUZHI — RULES AS THEY STAND (17 Aug 2026)
 
 ==========================================================================
-## தமிழ் பதிப்பு (TAMIL VERSION)
+PART 1 — ALREADY SETTLED, BY RAJA PLAYING IT
 ==========================================================================
+These were open questions. He answered them by playing the beta and telling me
+what was wrong, which is a better way to settle a rule than a questionnaire.
 
-### 1. பசு (4 காய்கள்) — யாருக்குச் சொந்தம்?
-ஆட்டத்தின் போது ஒரு குழியில் சரியாக 4 காய்கள் சேர்ந்தால்:
-   (அ) அந்தக் குழி எந்த வரிசையில் உள்ளதோ, அந்த ஆட்டக்காரருக்கு —
-       அதாவது எதிராளி காய் போடும்போதும் உங்களுக்குக் காய் கிடைக்கும்.
-       (நீங்கள் அனுப்பிய ஆவணம் இதைச் சொல்கிறது)
-   (ஆ) அப்போது காய் போட்டுக்கொண்டிருப்பவருக்கு — குழி யாருடையது
-       என்பது பொருட்டல்ல.
+1. PASU — a cup of exactly FOUR may be taken only by the player whose ROW it
+   sits in. They must tap it themselves. If a fifth seed falls in, the chance is
+   gone for good. Claimable AT ANY TIME, including while the opponent is still
+   sowing — this is the assumption I made and it has stood; say if it is wrong.
+   [built]
 
-### 2. பசு எப்போது எடுக்கப்படும்?
-   (அ) 4 ஆனவுடன் உடனடியாக, அதே நொடியில்.
-   (ஆ) அந்த முறை (turn) முடிந்த பிறகு.
+2. SOWING — lift a cup, drop one seed at a time round the board. When the hand
+   empties, seeds in the next cup are lifted and the move carries on. An empty
+   next cup ends the move: the cup BEYOND it is won. Two empty in a row wins
+   nothing. [built]
 
-### 3. காய் போடும் திசை
-   (அ) வலப்புறமாக (கடிகார திசையில்) — உங்கள் ஆவணம் இதைச் சொல்கிறது.
-   (ஆ) இடப்புறமாக (எதிர் கடிகார திசையில்).
-   * இரு ஆட்டக்காரர்களும் ஒரே திசையில் போடுவார்களா, அல்லது
-     அவரவர் வரிசையிலிருந்து வெவ்வேறு திசையிலா?
+3. WHO OPENS — a choice, not a rule. Either player may be set to open, because
+   the opener picks the cup whose reach ends where they want it. [built]
 
-### 4. துடைப்பு — வெல்ல வேண்டிய குழியும் காலியாக இருந்தால்?
-கையில் காய் தீர்ந்து, அடுத்த குழி காலியாக இருந்தால், அதற்கும் அடுத்த
-குழியில் உள்ள காய்களை வெல்கிறீர்கள். ஆனால் அந்தக் குழியும் காலியாக
-இருந்தால்?
-   (அ) உங்கள் முறை முடிந்து எதிராளிக்குச் செல்லும் (உங்கள் ஆவணப்படி).
-   (ஆ) காய் உள்ள குழி வரும் வரை தொடர்ந்து தவிர்த்துச் சென்று வெல்லலாம்.
+4. LAYING OUT — each player taps their OWN store of 35 and lays out their OWN
+   seven cups, five at a time. No automatic fill, no fixed order. [built]
 
-### 5. சேமிப்புக் குழிகளில் காய் போடுவதுண்டா?
-பலகையின் மேலும் கீழும் உள்ள இரு பெரிய குழிகள் — வென்ற காய்களை
-வைப்பதற்கானவை.
-   (அ) இல்லை. காய் போடும்போது அவை தவிர்க்கப்படும்; வென்ற காய்கள்
-       மட்டுமே அங்கே செல்லும்.
-   (ஆ) ஆம். உங்கள் சேமிப்புக் குழி வழியாகச் செல்லும்போது ஒரு காய்
-       அதில் விழும்.
+5. DIRECTION — one continuous ring, leaving cup 7 of one row for cup 1 of the
+   other. [built]
 
-### 6. முதலில் யார் ஆடுவது?
-   (அ) ஒவ்வொரு சுற்றிலும் மாறி மாறி.
-   (ஆ) முந்தைய சுற்றில் தோற்றவர்.
-   (இ) எப்போதும் ஒரே ஆட்டக்காரர்.
-
-### 7. உங்கள் வரிசை முழுவதும் காலியாக இருந்தால்?
-உங்கள் முறை வரும்போது உங்கள் 7 குழிகளிலும் காய் இல்லை என்றால்:
-   (அ) உங்கள் முறை தவிர்க்கப்படும், எதிராளி தொடர்ந்து ஆடுவார்.
-   (ஆ) அந்தச் சுற்று அத்துடன் முடிவடையும்.
-
-### 8. கப்பல் (மூடிய குழி) — காய் போடும்போது என்ன ஆகும்?
-   (அ) முற்றிலும் தவிர்க்கப்படும் — காய் அதில் விழாது.
-   (ஆ) காய் விழும், ஆனால் அதை யாரும் எடுக்க முடியாது.
-
-### 9. சுற்று முடிவில் மீதமுள்ள காய்கள்
-அடுத்த சுற்றுக்குக் குழிகளை நிரப்பும்போது, 5 ஆல் வகுபடாத மீதிக்
-காய்கள் (எடுத்துக்காட்டாக 23 காய்கள் = 4 குழி + 3 மீதி):
-   (அ) அந்த 3 காய்களும் சேமிப்பில் இருந்து அடுத்த சுற்றில்
-       சேர்க்கப்படும்.
-   (ஆ) அடுத்த குழியில் 3 காய்களுடன் வைக்கப்படும்.
-   (இ) வேறு முறை — சொல்லுங்கள்.
-
-### 10. ஆட்டம் எப்போது முடியும்?
-   (அ) ஒருவரால் ஒரு குழியைக் கூட நிரப்ப முடியாதபோது.
-   (ஆ) எதிராளியின் அனைத்துக் குழிகளும் கப்பல் ஆனபோது.
-   (இ) முன்பே ஒப்புக்கொண்ட எண்ணிக்கை சுற்றுகள் முடிந்ததும்,
-       அதிக காய் உள்ளவர் வெற்றி.
-
-### 11. சீதா பாண்டி (Seetha Pandi) முறை
-உங்கள் ஆவணத்தின் இறுதியில் இது குறிப்பிடப்பட்டுள்ளது.
-   (அ) உங்கள் குடும்பம் இந்த முறையில் விளையாடுகிறதா?
-   (ஆ) ஆம் எனில், விதி வேறுபாடு என்ன?
-
-### 12. ஒற்றை ஆட்டக்காரர் பயிற்சி முறை
-நீங்கள் கேட்டபடி, செஸ் பயிற்சி போல செயலி எதிராளியாக ஆடும் முறை.
-   (அ) செயலி எவ்வளவு கடினமாக ஆட வேண்டும் — எளிது / நடுத்தரம் / கடினம்?
-   (ஆ) செயலி ஏன் அந்த நகர்வைத் தேர்ந்தெடுத்தது என்று
-       விளக்க வேண்டுமா? (கற்றுக்கொள்ள உதவும்)
+6. SPEED — one steady beat, every drop, slow enough to spot a cup of four and
+   claim it. [built]
 
 ==========================================================================
-## ENGLISH VERSION
+PART 2 — பிள்ளை பாண்டி / PILLAI PAANDI — WHAT I UNDERSTOOD
 ==========================================================================
+Raja's words, 17 Aug: "if any one pocket is empty, any seeds in opposite pocket
+same will own by opposite of empty area and game restart by fill box each 5 in
+by with in who holds reserve. If who shortage one, leave there pocket should
+empty and no one fill the seeds those pockets. If less than 5 in hand and same
+kept it in empty pocket. And who owns the 4 or 3 or 2 or 1, those only fill
+every time what they kept in initial seeds, not need fill to opponent along
+empty pocket any. Vice versa until end of game, by any one may loose there
+entire pocket. This is called pillai paandi."
 
-### 1. Pasu (a cup reaching exactly 4) — who takes the seeds?
-   (a) The player who OWNS that row — so seeds can come to you even while
-       your opponent is sowing. (This is what your rules file says.)
-   (b) Whoever is sowing at that moment, no matter whose cup it is.
+WHAT I THINK THIS SAYS:
 
-### 2. When is a Pasu taken?
-   (a) Immediately, the instant the cup reaches 4.
-   (b) At the end of that turn.
+  A. A round ends, and then each player REFILLS THEIR OWN ROW from the seeds
+     they won — five to a cup, exactly as the opening lay-out already works.
 
-### 3. Direction of sowing
-   (a) Clockwise / to the right — your file says this.
-   (b) Anticlockwise.
-   * Do both players sow in the same direction, or does each sow
-     outward from their own row?
+  B. A player who runs SHORT cannot fill a cup with five. That cup is left
+     EMPTY and it is DEAD: nobody ever fills it again. This is the pillai
+     paandi — a hole lost out of your own row.
 
-### 4. Thudaippu — what if the capture cup is empty too?
-When your hand empties and the next cup is empty, you take the seeds from
-the cup after it. But what if that cup is also empty?
-   (a) Your turn ends and passes to your opponent (as your file says).
-   (b) You keep skipping until you reach a cup that has seeds, and take those.
+  C. Any remainder of fewer than five goes into that empty cup.
 
-### 5. Are seeds sown into the two store bowls?
-The two big hollows at the top and bottom hold captured seeds.
-   (a) No — sowing skips them entirely; only captured seeds go there.
-   (b) Yes — passing your own store drops one seed into it.
+  D. A cup left holding 4, 3, 2 or 1 keeps THAT number as its filling from then
+     on, not five.
 
-### 6. Who plays first?
-   (a) Alternates each round.
-   (b) The loser of the previous round.
-   (c) Always the same player.
+  E. You only ever fill your OWN cups. Never the opponent's, and never a dead
+     one.
 
-### 7. What if your whole row is empty on your turn?
-   (a) Your turn is skipped and your opponent continues.
-   (b) The round ends there.
-
-### 8. Kappal (a closed cup) — what happens when sowing past it?
-   (a) Skipped completely — no seed falls into it.
-   (b) Seeds fall in but nobody can take them.
-
-### 9. Leftover seeds when refilling
-Refilling at 5 per cup rarely divides evenly — 23 seeds is 4 cups and 3 left.
-   (a) The 3 stay in your store and count in the next round.
-   (b) They part-fill the next cup.
-   (c) Some other way — please say.
-
-### 10. When does the whole game end?
-   (a) When a player cannot fill even one cup.
-   (b) When every one of the opponent's cups has become Kappal.
-   (c) After an agreed number of rounds, most seeds wins.
-
-### 11. Seetha Pandi variant
-Your file mentions it at the end.
-   (a) Does your family play this version?
-   (b) If so, what changes?
-
-### 12. Single-player training mode
-As you asked — the app playing the opponent, like chess training.
-   (a) How strong should it be: easy / medium / hard?
-   (b) Should it explain WHY it chose a move? (that would teach the game)
+  F. The game ends when a player has lost their whole row.
 
 ==========================================================================
-இந்தக் கேள்விகளுக்குப் பதில் கிடைத்ததும் ஆட்டத்தை உருவாக்கத் தொடங்கலாம்.
-Once these are answered, building can begin.
+PART 3 — THE FOUR THINGS I CANNOT TELL, AND WILL NOT GUESS
+==========================================================================
+Each of these gives a DIFFERENT GAME depending on the answer, so I would rather
+ask than invent your family's rules.
 
-MathMatrix Pro++ · 2026-08-16
+Q1. "IF ANY ONE POCKET IS EMPTY, ANY SEEDS IN OPPOSITE POCKET WILL BE OWNED BY
+    THE OPPOSITE OF THE EMPTY AREA."
+    I cannot tell which of these you mean:
+      (a) DURING PLAY: when my last seed lands in an empty cup of mine, I win
+          the seeds in the cup FACING it across the board. (A capture rule —
+          and different from the one already built, which takes the cup beyond
+          an empty one.)
+      (b) AT THE END OF A ROUND: any cup left empty means the seeds facing it
+          are collected before the refill.
+      (c) Something else.
+    → Which one, and does it REPLACE the capture rule already built or sit
+      alongside it?
+
+Q2. WHEN EXACTLY DOES A ROUND END?
+      (a) When the player to move has no seeds anywhere in their own row.
+      (b) When the whole board is empty of seeds.
+      (c) Something else.
+
+Q3. THE REMAINDER OF FEWER THAN FIVE.
+    Say a player has 23 seeds: four cups of five, and 3 left over.
+      (a) The 3 go into the fifth cup, and that cup is now a 3-cup forever —
+          filled with 3 every round after.
+      (b) The 3 go into the fifth cup for this round only, and it returns to
+          five whenever they can afford it again.
+      (c) The 3 are held back and not laid out at all.
+
+Q4. CAN A DEAD CUP EVER COME BACK?
+      (a) No — once lost, lost for the whole game.
+      (b) Yes, if that player later has enough seeds to fill it again.
+    And: do seeds still get SOWN THROUGH a dead cup as they pass, or is it
+    skipped entirely?
+
+==========================================================================
+பகுதி 3 — தமிழில் அதே நான்கு கேள்விகள்
+==========================================================================
+கே1. "ஒரு குழி காலியாக இருந்தால், எதிர்க் குழியில் உள்ள காய்கள் காலிக்
+     குழிக்கு எதிரானவருக்குச் சொந்தம்."
+     இது ஆட்டத்தின் நடுவில் நடக்கும் ஒரு வெற்றியா (என் கடைசி காய் என்
+     காலிக் குழியில் விழுந்தால், நேர் எதிர்க் குழியின் காய்கள் எனக்கு),
+     அல்லது ஒரு சுற்று முடிந்த பிறகு செய்யப்படும் கணக்கீடா?
+     ஏற்கனவே உள்ள வெற்றி விதிக்குப் பதிலாக வருமா, அல்லது அதனுடன் சேர்ந்து
+     இருக்குமா?
+
+கே2. ஒரு சுற்று எப்போது முடிகிறது? ஆடுபவரின் வரிசை முழுவதும் காலியானபோதா,
+     அல்லது பலகை முழுவதும் காலியானபோதா?
+
+கே3. ஐந்துக்குக் குறைவான மீதி — எடுத்துக்காட்டாக 23 காய்கள் இருந்தால்,
+     நான்கு குழிகளுக்கு ஐந்து, மீதி 3. அந்த 3 என்ன ஆகும்?
+     (அ) அந்தக் குழி இனி எப்போதும் 3 குழியாகவே இருக்கும்.
+     (ஆ) இந்தச் சுற்றுக்கு மட்டும் 3; பிறகு முடிந்தால் மீண்டும் 5.
+     (இ) அந்த 3 வைக்கப்படாமல் தனியே இருக்கும்.
+
+கே4. இறந்த குழி (பிள்ளை பாண்டி) மீண்டும் உயிர்பெறுமா? காய் போடும்போது அந்தக்
+     குழி வழியாகக் காய் விழுமா, அல்லது முற்றிலும் தவிர்க்கப்படுமா?
+
+==========================================================================
+NOTHING OF PART 2 IS BUILT YET. The four answers above decide its shape, and a
+wrong rule is worse than a missing one — a wrong layout is visible in a
+screenshot, a wrong rule just quietly makes it someone else's game.
+==========================================================================
