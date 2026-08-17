@@ -2330,10 +2330,43 @@ body.palMode #palPanel{ display:flex !important; flex-direction:column;
   color:#F3D9A9; text-transform:uppercase; }
 
 /* The board proper: two rows of seven, in one wooden slab. */
-.palBoard{ display:grid; grid-template-columns:repeat(7, 1fr); gap:6px;
+/* Raja: "red V marked left and right should be cut, and place dotted dash line
+   between two pocket rows, to feel original wooden pallanguzhi is in flip to
+   open."
+
+   A real pallanguzhi board is a hinged wooden box: two halves of seven, joined
+   along the middle, folded shut to carry and opened out to play. Two things say
+   that at a glance — the SEAM the halves meet along, and the NOTCH at each end
+   of it where they come apart.
+
+   The notches are a real CLIP, not two triangles painted over the edge in the
+   page's colour. The tan behind this board is a decorative gradient layer
+   rather than a flat fill, so anything trying to imitate it would be a near
+   miss that drifts as the layer changes. clip-path removes the board there
+   instead, so whatever is behind shows through exactly, the 3px border is cut
+   through with it, and the cut is real enough that a finger landing in the
+   notch misses the board entirely.
+
+   The rounded corners survive the clip because the polygon does not reach into
+   them — those corners are already transparent, so there is nothing there for
+   the polygon to square off. */
+.palBoard{ position:relative;
+  display:grid; grid-template-columns:repeat(7, 1fr); gap:6px;
   padding:9px; border-radius:20px; border:3px solid #6B4A25;
   background:linear-gradient(180deg, #8A6A3C 0%, #74562F 100%);
-  box-shadow:inset 0 2px 10px rgba(0,0,0,.3); }
+  box-shadow:inset 0 2px 10px rgba(0,0,0,.3);
+  clip-path:polygon(
+    0 0, 100% 0,
+    100% calc(50% - 10px), calc(100% - 12px) 50%, 100% calc(50% + 10px),
+    100% 100%, 0 100%,
+    0 calc(50% + 10px), 12px 50%, 0 calc(50% - 10px)); }
+/* The hinge line itself, running the length of the board through the 6px gap
+   between the two rows. It sits UNDER the cups — they are opaque, so the dashes
+   show in the gaps between them exactly as the seam of a real board does, and
+   never cross a hollow. */
+.palBoard::before{ content:''; position:absolute; left:6px; right:6px; top:50%;
+  transform:translateY(-1px); z-index:0; pointer-events:none;
+  border-top:2px dashed rgba(46,29,12,.62); }
 /* ROUND. They were ovals for a while — seven cups across a 360px phone leaves
    about forty pixels each, and stretching them downwards was a way to fit both
    a countable pile of seeds and a numeral into that width while also filling a
@@ -10851,7 +10884,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-170 (SaNa signs its name in red)';
+  var BUILD_VER = 'beta-171 (the board folds like a real one)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that

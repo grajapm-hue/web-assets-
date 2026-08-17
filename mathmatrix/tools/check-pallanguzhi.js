@@ -257,6 +257,41 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   ok('and the mascot is not still reporting the last game', !/won \d+ seed|wins the game|dead heat/i.test(line),
     JSON.stringify(line.trim().slice(0, 60)));
 
+  /* THE FOLDING BOARD. Raja asked for the left and right edges to be cut at the
+     middle and a dashed line laid between the rows, so the thing reads as a real
+     wooden pallanguzhi — two hinged halves that fold shut.
+
+     The notches are asserted by HIT TESTING rather than by reading the CSS back.
+     A clip-path removes the element at that point for pointer purposes too, so
+     a point inside the notch must land on whatever is BEHIND the board while a
+     point at the same distance from the edge, higher up, still lands on the
+     board. Reading clipPath out of the computed style would only prove a string
+     was set — including a string that clips nothing. */
+  const cut = await ev(`(function(){
+    var b = document.getElementById('palBoard');
+    var r = b.getBoundingClientRect();
+    function at(x, y){
+      var el = document.elementFromPoint(x, y);
+      return el ? (el === b || b.contains(el) ? 'board' : 'behind') : 'nothing';
+    }
+    return JSON.stringify({
+      leftNotch:  at(r.left + 3, r.top + r.height / 2),
+      rightNotch: at(r.right - 3, r.top + r.height / 2),
+      leftSolid:  at(r.left + 3, r.top + 12),
+      rightSolid: at(r.right - 3, r.bottom - 12),
+      seam: getComputedStyle(b, '::before').borderTopStyle,
+      seamWidth: getComputedStyle(b, '::before').borderTopWidth
+    }); })()`).then(JSON.parse);
+  ok('the board is genuinely cut at the left edge, not painted over',
+    cut.leftNotch === 'behind', 'a tap in the left notch hits: ' + cut.leftNotch);
+  ok('and at the right edge', cut.rightNotch === 'behind',
+    'a tap in the right notch hits: ' + cut.rightNotch);
+  ok('but the edges above and below the notch are still solid board',
+    cut.leftSolid === 'board' && cut.rightSolid === 'board',
+    'top-left ' + cut.leftSolid + ', bottom-right ' + cut.rightSolid);
+  ok('a dashed hinge line runs between the two rows', cut.seam === 'dashed',
+    cut.seam + ' ' + cut.seamWidth);
+
   ok('no JS errors', errs.length === 0, errs.join(' | ') || '');
 
   ws.close(); ch.kill();
