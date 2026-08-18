@@ -2284,7 +2284,7 @@ body.palMode #palPanel{ display:flex !important; flex-direction:column;
 .palWrap{ width:100%; margin:auto 0; }
 
 .palSay{ background:rgba(255,246,231,.72); border-radius:18px; padding:10px 12px;
-  margin:0 0 9px; font-size:14px; font-weight:800; color:#33220F; line-height:1.4;
+  margin:6px 0 0; font-size:14px; font-weight:800; color:#33220F; line-height:1.4;
   text-align:center; }
 /* Above everything, where Raja drew it — this is a decision taken BEFORE a
    board is played, not one of the controls you reach for during it. Gold, so it
@@ -3538,6 +3538,16 @@ body{ background:#C9A87C !important; }
      box near player, but should be blank, can enter manually by player and same
      persist until game is cleared" — hence real inputs with placeholders. -->
 <div id="palPanel" style="display:none;">
+  <!-- The tips are OUTSIDE .palWrap on purpose. .palWrap is centred in the
+       leftover height (auto margins, so the board sits in the middle of the
+       screen rather than jammed under the app bar) — and while that is right
+       for the board, it meant the tips centred WITH it, floating in the
+       middle of a blank gap instead of sitting under SaNa where a player's eye
+       already is. Raja: "the tips shows top of choose player should shift to
+       below SaNa monkey suggestion field." As a sibling before the wrap, it is
+       pinned at the very top of the panel — directly under SaNa's bubble —
+       and .palWrap still centres itself in whatever height is left below it. -->
+  <div class="palSay" id="palSay">Tap Start to fill the board.</div>
  <div class="palWrap">
   <!-- Raja: "add choose player tab, hence always opening is force to player one.
        Of course who start the pick initial have get some favour to them, by
@@ -3548,11 +3558,6 @@ body{ background:#C9A87C !important; }
        who opens stops being a rule the app imposes and becomes a decision the
        two players make, which is also his own answer to the sixth of the rule
        questions still sitting with his family. -->
-  <!-- The tips sit at the very top of the panel, directly under SaNa, and are
-       the ONLY place the game explains itself. They used to be echoed by a
-       tab inside each player strip, which said much the same thing twice and
-       — for Player 1, whose row is above their strip — pointed the wrong way. -->
-  <div class="palSay" id="palSay">Tap Start to fill the board.</div>
   <button class="palChoose" id="palChoose" type="button">👤 Choose player</button>
 
   <div class="palSide p2" id="palSide2">
@@ -7853,6 +7858,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       var turn = 0, playing = false, busy = false, step = null, inHand = 0, sowPos = 0;
       var starter = 0;      // which player opens; Raja's "choose player"
       var dealt = [false, false];   // each player lays out their OWN row
+      /* True from the moment the first round is actually dealt, and only reset
+         by an explicit New Game. dealt==[false,false] alone cannot tell "the
+         very first deal" from "between rounds, mid-game" — both look
+         identical — and Choose Player used to treat the two the same way,
+         calling newGame() and silently wiping a real game's reserves back to
+         35/35 the moment it was tapped between rounds. */
+      var everDealt = false;
       var round = 1;                // pillai paandi: the game runs over rounds
       var boardEl, sayEl, onBoardEl, built = false;
 
@@ -8013,7 +8025,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         cups = []; pasuDead = []; pillai = [];
         for (var i = 0; i < CUPS; i++){ cups.push(0); pasuDead.push(false); pillai.push(0); }
         store = [PER_CUP * 7, PER_CUP * 7];       // the 35 each Raja asked for
-        dealt = [false, false]; round = 1;
+        dealt = [false, false]; round = 1; everDealt = false;
         turn = starter; playing = false; busy = false; inHand = 0;
         palFit();
         say(P('dealPrompt'));
@@ -8058,7 +8070,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
             dealt[p] = true;
             busy = false; step = null;
             if (dealt[0] && dealt[1]){
-              playing = true;
+              playing = true; everDealt = true;
               turn = starter;
               palFit();
               say(P('starts', { a: nameOf(starter) }));
@@ -8141,6 +8153,16 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         playing = false; busy = false;
         dealt = [false, false];
         round++;
+        /* Raja: "after end of that session, next fill to start by opponent
+           only — accordingly mode should swap and colour background choose
+           player and name player bg change according."
+           starter used to be fixed at whatever was chosen once, for the whole
+           game. It alternates now, automatically, every round — and because
+           the choose-player bar, its colour, and the coloured name box are all
+           driven off this one variable already, flipping it here is the whole
+           fix; nothing downstream needs to know a round even happened. Choose
+           Player still works as an override on top of this, same as before. */
+        starter = 1 - starter;
         /* A player who cannot fill even ONE cup has nothing left to lay out and
            the game is over. Everything else is another round. */
         if (store[0] === 0 || store[1] === 0){
@@ -8353,10 +8375,17 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       if (chooseBtn) chooseBtn.addEventListener('click', function(){
         starter = 1 - starter;
         if (typeof sfx === 'function') try { sfx('card'); } catch(e){}
-        var untouched = (!dealt[0] && !dealt[1]) ||
-                        (playing && !busy && store[0] === 0 && store[1] === 0 &&
-                         cups.every(function(c){ return c === PER_CUP; }));
-        if (untouched || !playing){ newGame(); return; }
+        /* everDealt, not a guess reconstructed from cups and stores. The old
+           heuristic could not tell "the very first deal" from "between rounds
+           of a real game" — both show dealt==[false,false] and !playing — so
+           tapping Choose Player between rounds called newGame() and silently
+           reset a real game's reserves to 35/35. Only the state that has
+           genuinely never been played gets the full reset; everything else
+           just re-draws with the flipped starter. */
+        if (!everDealt || (playing && !busy && store[0] === 0 && store[1] === 0 &&
+                            cups.every(function(c){ return c === PER_CUP; }))){
+          newGame(); return;
+        }
         draw();
         say(P('nextGame', { a: nameOf(starter) }));
       });
@@ -8430,7 +8459,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         return { cups: cups.slice(), store: store.slice(), turn: turn, hand: inHand,
                  busy: busy, playing: playing, dead: pasuDead.slice(),
                  dropped: sowDropped, dealt: dealt.slice(), round: round,
-                 pillai: pillai.slice() };
+                 pillai: pillai.slice(), starter: starter, everDealt: everDealt };
       };
     })();
 
@@ -11395,7 +11424,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-182 (colour follows who is ready to play, not the row)';
+  var BUILD_VER = 'beta-183 (the opponent opens next round, and the tips sit under SaNa)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that

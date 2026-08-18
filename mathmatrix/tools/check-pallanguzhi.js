@@ -455,6 +455,7 @@ const nameFor = st => 'Player ' + ((st.store[0] === 0 ? 0 : 1) + 1);
      part is the arithmetic of the refill and that only means anything against
      a reserve the game actually produced. */
   await ev(`window.__palNew()`); await ready();
+  const starterBeforeRound = (await state()).starter;
   /* A whole round is a couple of minutes of real play at 400ms a drop, so the
      budget has to be generous: the first attempt gave up after eleven seconds
      and reported that no round had ended, which was true and told us nothing. */
@@ -493,6 +494,36 @@ const nameFor = st => 'Player ' + ((st.store[0] === 0 ? 0 : 1) + 1);
       roundEnded.cups.join(',') + ' on the board, ' + seeds(roundEnded) + ' seeds in total');
     ok('and both players must lay out again before play resumes',
       !roundEnded.playing && !roundEnded.dealt[0] && !roundEnded.dealt[1]);
+
+    /* THE OPPONENT OPENS THE NEXT ROUND, automatically. Raja: "if one any start
+       the game by choosing, after end of that session next fill to start by
+       opponent only — accordingly mode should swap." No one touched Choose
+       Player between rounds; the game has to flip it on its own. */
+    ok('the round automatically hands the opening to the opponent',
+      roundEnded.starter === 1 - starterBeforeRound,
+      'was player ' + (starterBeforeRound + 1) + ', now player ' + (roundEnded.starter + 1));
+    const barName = await ev(`document.getElementById('palChoose').textContent`);
+    ok('and the Choose-Player bar already names the new opener, with no tap needed',
+      barName.includes('Player ' + (roundEnded.starter + 1)), barName.trim());
+
+    /* AND TAPPING CHOOSE PLAYER BETWEEN ROUNDS MUST NOT WIPE THE GAME. The old
+       check for "is this the very first, untouched deal" could not tell that
+       state apart from "between rounds of a real game" — both show
+       dealt==[false,false] and playing==false — so tapping Choose Player here
+       used to call newGame() and silently reset a real game's reserves back to
+       35/35. This is the one place in the whole feature where a wrong guess
+       would have cost a player their game rather than just looking wrong. */
+    const preTap = await state();
+    await ev(`document.getElementById('palChoose').click()`); await sleep(300);
+    const postTap = await state();
+    ok('tapping Choose Player between rounds keeps both reserves exactly as they were',
+      postTap.store.join(',') === preTap.store.join(','),
+      postTap.store.join(',') === preTap.store.join(',')
+        ? 'stores held at ' + postTap.store.join('/')
+        : 'RESET: was ' + preTap.store.join('/') + ', now ' + postTap.store.join('/'));
+    ok('it only flips who opens next, exactly as the button always has',
+      postTap.starter === 1 - preTap.starter,
+      'was player ' + (preTap.starter + 1) + ', now player ' + (postTap.starter + 1));
 
     /* THE REFILL, checked as arithmetic. Given a reserve of S, a row should be
        fives while fives can be afforded, then ONE cup holding the remainder,
@@ -653,6 +684,25 @@ const nameFor = st => 'Player ' + ((st.store[0] === 0 ? 0 : 1) + 1);
     ok('after a move changes the turn, the coloured box follows it',
       (after3.turn === 0) === c3.p1.on, 'turn is now player ' + (after3.turn + 1) + ', p1 coloured: ' + c3.p1.on);
   }
+
+  /* THE TIPS SIT AT THE TOP OF THE PANEL, not centred with the board. Raja:
+     "the tips shows top of choose player should shift to below SaNa monkey
+     suggestion field." .palWrap is centred with auto margins so the board
+     sits mid-screen rather than jammed under the app bar — right for the
+     board, wrong for the one line of help, which used to centre WITH it and
+     float in the middle of a blank gap instead of sitting under SaNa where a
+     player's eye already is. Measured against the mascot's own bubble, not
+     against the choose-player bar, since "below SaNa" is the actual target. */
+  await ev(`window.__palNew()`); await ready();
+  const layout = await ev(`(function(){
+    var sana = document.querySelector('.sanaBub').getBoundingClientRect();
+    var say = document.getElementById('palSay').getBoundingClientRect();
+    var choose = document.getElementById('palChoose').getBoundingClientRect();
+    return JSON.stringify({ gap: Math.round(say.top - sana.bottom), sayTop: Math.round(say.top), chooseTop: Math.round(choose.top) }); })()`).then(JSON.parse);
+  ok('the tips sit close under SaNa, not centred with the board below', layout.gap < 40,
+    layout.gap + 'px between SaNa\'s bubble and the tips (was floating mid-screen before)');
+  ok('and still above the Choose-Player bar', layout.sayTop < layout.chooseTop,
+    'tips at ' + layout.sayTop + ', bar at ' + layout.chooseTop);
 
   ok('no JS errors', errs.length === 0, errs.join(' | ') || '');
 
