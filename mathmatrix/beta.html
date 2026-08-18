@@ -1925,9 +1925,24 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
   box-shadow:0 2px 0 rgba(94,64,32,.28); }
 
 /* ── PLAY: the board is the flexible region ── */
-.solvedCounter{ flex:none; font-size:9.5px !important; padding:4px 10px !important; margin:0 0 5px !important; }
+/* Target and the progress line share one row now, left and right, roughly
+   2:3 — the target text is short ("Target : 24"), the progress sentence is
+   the long one and needs the extra room. Both grow: the progress line was the
+   actual complaint, 9px stacked under a 12.5px target, and both now read at a
+   real size without costing the board any extra height, since this is still
+   ONE row rather than two. */
+.targetRow{ display:flex; align-items:stretch; gap:6px; margin:0 0 6px; }
+/* NOT display:flex. Its own text is "🏆 <b>0/2</b> different targets…" — an
+   inline <b> mixed with plain text — and turning the element itself into a
+   flex container splits that into separate anonymous flex items instead of
+   one wrapping run of text, so "0/2" jumped to its own line ahead of the
+   words that are meant to precede it. Sizing as a flex ITEM inside .targetRow
+   (below) is all this needs; its own content stays ordinary text-align:center
+   block layout, which wraps a sentence the way a sentence is supposed to. */
+.solvedCounter{ flex:3 1 0; min-width:0; font-size:11.5px !important; padding:5px 9px !important;
+  margin:0 !important; display:block !important; }
 .instCard{ display:none !important; }               /* SaNa speaks it instead */
-.targetPill{ font-size:12.5px !important; padding:6px 13px !important; margin:0 !important; }
+.targetPill{ flex:2 1 0; min-width:0; font-size:13.5px !important; padding:6px 10px !important; margin:0 !important; }
 #learnRow,#learnHint,#rotateHint,#msg{ display:none !important; }
 .playTop{ flex:none; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:5px; }
 .boardContainer{ flex:1 !important; min-height:0 !important; display:grid !important;
@@ -2032,7 +2047,11 @@ body.hideKeys #keypad{ display:none !important; }
 body.hideKeys .keysChip{ display:block; }
 /* the beta banner belongs on Home, not stealing height from the board */
 body.onPlay .betaFlag{ display:none !important; }
-body.onPlay .solvedCounter{ font-size:9px !important; padding:3px 9px !important; margin-bottom:4px !important; }
+/* This is the rule that was actually rendering live: a later !important on the
+   same specificity wins on source order, and this one used to shrink the
+   progress sentence to 9px regardless of the 11.5px set above it. Matched to
+   that rule now instead of fighting it. */
+body.onPlay .solvedCounter{ font-size:11.5px !important; padding:5px 9px !important; margin-bottom:0 !important; }
 #binaryPanel{ flex:1; min-height:0; display:flex; flex-direction:column; overflow:hidden; }
 
 /* ── LEARN: rows that open sheets, so the screen itself never scrolls ── */
@@ -3439,10 +3458,26 @@ body{ background:#C9A87C !important; }
 
 <!-- ══ PLAY ══ -->
 <section class="screen" data-screen="scPlay">
+<!-- Raja: "observed below the target text in tab for the games up to Sir
+     Ramanujan matrix is seen too tiny — so can merge the target box and below
+     box for increasing the height, and split into a left box for the target
+     and a right box for level appreciation notes." He is right about the
+     cause: these were two stacked FULL-WIDTH strips, and the bottom one — the
+     progress sentence — was squeezed down to 9px by an onPlay-specific rule
+     several layers deep. Side by side in one taller row, each keeps its own
+     coloured chip (nothing about ownership or per-size colouring changes) but
+     neither has to share the row's height with a second line stacked below
+     it, so both can afford to be read at a real size.
+     Both elements keep their original ids unchanged — every script that reads
+     or hides them (refreshCounter(), the per-mode display:none rules for
+     Sudoku/Slide/Gate/Binary/Pallanguzhi) keeps working without a line of JS
+     touched; only their shared parent and their own sizing move. -->
+<div class="targetRow">
 <div class="targetPill" id="targetPill">🎯 Target : <span id="targetVal">?</span></div>
 
 <!-- Merged progress + rule, per-size, set by refreshCounter() -->
 <div class="solvedCounter" id="solvedCounter">🏆 0/2 different targets · solve 2 to open the next →</div>
+</div>
 
 <div class="instCard" id="instCard"></div>
 
@@ -11464,7 +11499,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-185 (the bigger SaNa no longer eats into other screens)';
+  var BUILD_VER = 'beta-186 (target and level notes, merged into one row)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
