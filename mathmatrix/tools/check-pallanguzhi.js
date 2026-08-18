@@ -21,6 +21,7 @@ const TOTAL = 70;                       // 14 cups x 5 seeds
 let fail = 0;
 const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !== undefined ? '  -> ' + x : '')); if (!c) fail++; };
 const nameFor = st => 'Player ' + ((st.store[0] === 0 ? 0 : 1) + 1);
+const TAMIL = /[஀-௿]/;
 
 (async () => {
   const tmp = path.join(__dirname, '_cppal');
@@ -703,6 +704,56 @@ const nameFor = st => 'Player ' + ((st.store[0] === 0 ? 0 : 1) + 1);
     layout.gap + 'px between SaNa\'s bubble and the tips (was floating mid-screen before)');
   ok('and still above the Choose-Player bar', layout.sayTop < layout.chooseTop,
     'tips at ' + layout.sayTop + ', bar at ' + layout.chooseTop);
+
+  /* THE MASCOT'S LINE, IN EVERY IDLE STATE — not only the one that happened to
+     get tested first. Raja's screenshot showed it exactly: every OTHER label
+     had gone Tamil, but the "please deal" sentence on top — both on #palSay
+     and on SaNa's own bubble — was still sitting in English, because
+     __palRedraw() only ever handled "mid-game, waiting on your move" and did
+     nothing for "before the first deal" or "one row down, waiting on the
+     other". Reproduced here in the exact state his screenshot shows: a fresh
+     board, nobody dealt, switched to Tamil. */
+  await ev(`window.__palNew()`); await sleep(600);
+  await ev(`window.__mmLang('ta')`); await sleep(500);
+  const idleTa = await ev(`(function(){
+    return JSON.stringify({
+      say: document.getElementById('palSay').textContent.trim(),
+      sana: (document.querySelector('.sanaBub') || {}).textContent || ''
+    }); })()`).then(JSON.parse);
+  ok('the pre-deal tips are Tamil after switching, on the tips box', TAMIL.test(idleTa.say) && !/[A-Za-z]{3}/.test(idleTa.say),
+    JSON.stringify(idleTa.say.slice(0, 60)));
+  ok('and on SaNa\'s own bubble too — this is exactly what his screenshot caught',
+    TAMIL.test(idleTa.sana) && !/[A-Za-z]{3}/.test(idleTa.sana),
+    JSON.stringify(idleTa.sana.slice(0, 60)));
+
+  /* And the OTHER idle state — one row dealt, waiting on the other player —
+     which is just as reachable and was just as broken. */
+  await ev(`document.querySelector('#palSide1 .palStore').click()`);
+  for (let i = 0; i < 200; i++){ const st = await state(); if (!st.busy) break; await sleep(60); }
+  await ev(`window.__mmLang('en')`); await sleep(300);
+  await ev(`window.__mmLang('ta')`); await sleep(500);
+  const halfDealtTa = await ev(`document.getElementById('palSay').textContent.trim()`);
+  ok('and the "one row down, waiting on the other player" line is Tamil too',
+    TAMIL.test(halfDealtTa) && !/[A-Za-z]{3}/.test(halfDealtTa), JSON.stringify(halfDealtTa.slice(0, 70)));
+  await ev(`window.__mmLang('en')`);
+
+  /* THE BUBBLE ITSELF, MEASURED — not eyeballed. Raja: "SaNa tips box and font
+     to increase, look too tiny." This rule has no theme gate, so it was
+     shrinking the mascot on EVERY screen, not only this one. */
+  await ev(`window.__palNew()`); await ready();
+  const bubble = await ev(`(function(){
+    var b = document.querySelector('.sanaBub');
+    var cs = getComputedStyle(b);
+    return JSON.stringify({ size: parseFloat(cs.fontSize), padTop: parseFloat(cs.paddingTop) }); })()`).then(JSON.parse);
+  ok('the tips bubble text is meaningfully bigger than it was', bubble.size >= 13,
+    bubble.size + 'px (was 11px)');
+  ok('and the box grew to give that size room, not just the font', bubble.padTop >= 8,
+    bubble.padTop + 'px top padding (was 6px)');
+  const stillFits = await ev(`(function(){
+    var f = document.querySelector('.palFoot').getBoundingClientRect().bottom;
+    var b = document.querySelector('.tabBar').getBoundingClientRect().top;
+    return Math.round(f) + ' vs ' + Math.round(b) + (f <= b + 1 ? ' fits' : ' OVERFLOWS'); })()`);
+  ok('the bigger bubble did not push the board under the tab bar', / fits$/.test(stillFits), stillFits);
 
   ok('no JS errors', errs.length === 0, errs.join(' | ') || '');
 

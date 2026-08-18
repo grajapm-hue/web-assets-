@@ -1497,7 +1497,12 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
    SaNa's greeting to 145 characters on one line — twice a readable measure.
    Capping the bubble rather than the whole shell keeps the big landscape
    board, which is the reason to turn the phone in the first place. */
-.sanaBub{ padding:6px 10px !important; font-size:11px !important; line-height:1.35 !important;
+/* Raja, on the puzzle list AND on Pallanguzhi: "SaNa tips box and font to
+   increase, look too tiny." Right on both counts — this rule applies to every
+   screen unconditionally, so the whole app was reading the mascot at 11px.
+   Up to 13.5px, with the box given the extra room that size actually needs
+   rather than cramming a bigger font into the old padding. */
+.sanaBub{ padding:8px 12px !important; font-size:13.5px !important; line-height:1.42 !important;
   border-radius:13px !important; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;
   overflow:hidden; max-width:64ch; }
 .sanaBub::before{ top:14px !important; }
@@ -8444,15 +8449,39 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       window.__palRedraw = function(){
         if (!built) return;
         draw();
-        if (playing && !busy){
-          say(P('tapYours', { a: nameOf(turn) }));
+        /* Raja: "need tamil translation in hints, SaNa tips box." His
+           screenshot shows it exactly — every OTHER label on the board had
+           gone Tamil, but the sentence on top still read "Each player taps
+           their own store to lay out their row," in English.
+
+           This only ever handled ONE of the idle states — mid-game, waiting
+           on your move — because that was the state I tested it in. Before the
+           first deal, and again between rounds while both stores sit waiting
+           to be tapped, the game is idle in a DIFFERENT way, and this simply
+           did nothing for either of them: no branch matched, so the sentence
+           already on screen — set in whichever language was active when the
+           game last spoke — just sat there. It needs the line for whichever
+           idle state the game is actually in, not only the one that happened
+           to be exercised first. A move in progress (busy) is left alone: its
+           sentence describes something that just happened, and that cannot be
+           re-said in the other language after the fact without inventing a
+           result that has not occurred. */
+        var line = null;
+        if (playing && !busy) line = P('tapYours', { a: nameOf(turn) });
+        else if (!playing && !busy){
+          if (!dealt[0] && !dealt[1]) line = P('dealPrompt');
+          else if (dealt[0] !== dealt[1]){
+            var waitingOn = dealt[0] ? 1 : 0;
+            line = P('dealOne', { a: nameOf(1 - waitingOn), b: nameOf(waitingOn) });
+          }
+        }
+        if (line !== null){
+          say(line);
           /* The mascot too. Its line is the game's commentary, so leaving it in
-             the old language put an English sentence above a board that had gone
-             entirely Tamil — the one thing on screen still speaking the language
-             the player just switched away from. */
-          if (typeof sana === 'function') try {
-            sana(P('tapYours', { a: nameOf(turn) }), 'cheer');
-          } catch(e){}
+             the old language put an English sentence above a board that had
+             gone entirely Tamil — the one thing on screen still speaking the
+             language the player just switched away from. */
+          if (typeof sana === 'function') try { sana(line, 'cheer'); } catch(e){}
         }
       };
       window.__palState = function(){
@@ -11424,7 +11453,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-183 (the opponent opens next round, and the tips sit under SaNa)';
+  var BUILD_VER = 'beta-184 (SaNa speaks Tamil in every state, and reads bigger)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
