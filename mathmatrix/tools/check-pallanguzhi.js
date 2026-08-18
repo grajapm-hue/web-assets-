@@ -507,6 +507,57 @@ const nameFor = st => 'Player ' + ((st.store[0] === 0 ? 0 : 1) + 1);
     const resumed = await state();
     ok('the next round is playable and still holds 70 seeds',
       resumed.playing && seeds(resumed) === TOTAL, 'round ' + resumed.round + ', ' + seeds(resumed) + ' seeds');
+
+    /* ══ THE SAVINGS POCKET ═══════════════════════════════════════════════
+       Raja: "that pocket is not allowable to take during play by any one...
+       it's like savings in bank... has to fill in during sequence that how many
+       seeds they have in hand less than 5 — same quantity of seeds only place in
+       while pass the pillai pocket. If don't have such seeds his sequence will
+       stopped." */
+    const pockets = [];
+    resumed.pillai.forEach((k, i) => { if (k) pockets.push({ i: i, k: k }); });
+    ok('a short lay-out leaves a savings pocket, sized to what was left',
+      pockets.length > 0 && pockets.every(q => resumed.cups[q.i] === q.k),
+      pockets.length ? pockets.map(q => 'cup ' + q.i + ' holds ' + resumed.cups[q.i] + ' at size ' + q.k).join(', ')
+                     : 'no player came up short this round');
+
+    if (pockets.length){
+      const q = pockets[0];
+      /* NOBODY LIFTS FROM IT. Tapping it must leave the board exactly as it was
+         — not merely fail to score, but not start a move at all. */
+      const beforeTap = await state();
+      await ev(`document.querySelector('#palBoard [data-pal="${q.i}"]').click()`);
+      await sleep(500);
+      const afterTap = await state();
+      ok('tapping a savings pocket does not lift it',
+        afterTap.cups.join(',') === beforeTap.cups.join(',') && !afterTap.busy,
+        afterTap.cups[q.i] === beforeTap.cups[q.i] ? 'cup ' + q.i + ' untouched' : 'IT WAS LIFTED');
+
+      /* IT ONLY EVER GROWS BY ITS OWN SIZE. A sower passing it pays that much or
+         stops, so its count stays a multiple of it — and never falls, because it
+         cannot be captured either. Sampled across real play rather than reasoned
+         about. */
+      let multipleOk = true, everFell = false, seen = afterTap.cups[q.i];
+      for (let m = 0; m < 200; m++){
+        const st = await state();
+        if (!st.playing || !st.pillai[q.i]) break;
+        const v = st.cups[q.i];
+        if (v % q.k !== 0) multipleOk = false;
+        if (v < seen) everFell = true;
+        seen = v;
+        if (!st.busy){
+          const mine = [];
+          for (let i = st.turn * 7; i < st.turn * 7 + 7; i++) if (st.cups[i] > 0 && !st.pillai[i]) mine.push(i);
+          if (!mine.length) break;
+          await ev(`document.querySelector('#palBoard [data-pal="${mine[0]}"]').click()`);
+        }
+        await sleep(90);
+      }
+      ok('it only ever grows by its own size', multipleOk,
+        'size ' + q.k + ', last seen holding ' + seen);
+      ok('and it is never captured away from its owner', !everFell,
+        everFell ? 'its count FELL during play' : 'it only ever went up');
+    }
   }
 
   ok('no JS errors', errs.length === 0, errs.join(' | ') || '');
