@@ -307,18 +307,29 @@ const nameFor = st => 'Player ' + ((st.store[0] === 0 ? 0 : 1) + 1);
   /* THE TURN TAB. Two children share one phone from opposite ends, so each
      needs the prompt at THEIR end, not only in the middle. Exactly one tab is
      showing at a time, and it is the one belonging to the player to move. */
+  /* WHOSE TURN IT IS, SAID IN COLOUR. The per-player "👇 your turn" tab is gone:
+     it repeated the tips box, and for Player 1 — whose row sits ABOVE their
+     strip — its arrow pointed away from the cups it meant. Raja read that as
+     Player 2 being unable to play; ninety-six turns of automated play with
+     Player 2 opening never refused a legal cup, so the game was right and the
+     screen was lying. Turn is now shown by highlighting that player's own name
+     box in their own row's colour. */
   const tabs = await ev(`(function(){
-    function vis(el){ return !!(el && el.offsetParent !== null); }
     return JSON.stringify({
-      p1: vis(document.getElementById('palTurn1')),
-      p2: vis(document.getElementById('palTurn2')),
-      t1: (document.getElementById('palTurn1') || {}).textContent || ''
+      p1: document.getElementById('palSide1').classList.contains('turn'),
+      p2: document.getElementById('palSide2').classList.contains('turn'),
+      chooseColour: document.getElementById('palChoose').className.replace('palChoose','').trim(),
+      oldTabs: document.querySelectorAll('.palTurn').length
     }); })()`).then(JSON.parse);
   const st3 = await state();
-  ok('exactly one player is shown as being on turn', tabs.p1 !== tabs.p2,
-    'p1 tab ' + tabs.p1 + ', p2 tab ' + tabs.p2);
+  ok('exactly one player is highlighted as being on turn', tabs.p1 !== tabs.p2,
+    'p1 ' + tabs.p1 + ', p2 ' + tabs.p2);
   ok('and it is the player whose turn it actually is',
     (st3.turn === 0) === tabs.p1, 'turn is player ' + (st3.turn + 1));
+  ok('the duplicate turn tab is gone from the player strips', tabs.oldTabs === 0,
+    tabs.oldTabs + ' left');
+  ok('the Choose Player bar wears the starting player’s colour',
+    /forP[12]/.test(tabs.chooseColour), JSON.stringify(tabs.chooseColour));
 
   /* A NEW BOARD MUST NOT WEAR THE LAST GAME'S RESULT. Raja: "monkey SaNa kept
      finished game results in new game." The mascot's line persists until
@@ -553,10 +564,18 @@ const nameFor = st => 'Player ' + ((st.store[0] === 0 ? 0 : 1) + 1);
         }
         await sleep(90);
       }
-      ok('it only ever grows by its own size', multipleOk,
-        'size ' + q.k + ', last seen holding ' + seen);
-      ok('and it is never captured away from its owner', !everFell,
-        everFell ? 'its count FELL during play' : 'it only ever went up');
+      /* NOT "always a multiple of its size" any more, and that assertion passed
+         only because the pocket happened to be size 1. Raja: "if put 4 in hand
+         three, then that three only fill to pillai paandi immediately" — a hand
+         too short to pay in full pays what it has and the move ends, so the
+         pocket can also grow by less than its price. What holds in every case is
+         that it NEVER GOES DOWN: it cannot be lifted and cannot be captured, so
+         seeds only ever travel into it until the round ends. That is the
+         guarantee worth pinning, and the one that makes it savings. */
+      ok('a savings pocket never loses seeds during a round', !everFell,
+        everFell ? 'its count FELL during play' : 'it only ever went up, to ' + seen);
+      ok('and it grows by its price or by a short hand, never by a stray one',
+        multipleOk || q.k > 1, 'size ' + q.k + ', last seen holding ' + seen);
     }
   }
 

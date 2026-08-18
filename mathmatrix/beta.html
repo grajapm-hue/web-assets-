@@ -2316,13 +2316,32 @@ body.palMode #palPanel{ display:flex !important; flex-direction:column;
   font-size:13px; font-weight:900; letter-spacing:.2px; }
 .palSide.turn .palTurn{ display:block; animation:palPop .42s cubic-bezier(.34,1.56,.64,1) 1; }
 @keyframes palPop{ 0%{ transform:scale(.82); opacity:0 } 60%{ transform:scale(1.05) } 100%{ transform:scale(1); opacity:1 } }
+/* EACH PLAYER HAS A COLOUR, and it is the colour of their own row of cups —
+   green along the bottom, blue along the top. Raja asked for the name boxes to
+   differ and for the Choose Player bar to wear the starter's colour, because
+   "sometime unable remember who finished, who should start" after the game has
+   been put down for a while. A colour is read at a glance; a sentence has to be
+   found and re-read, and it is the wrong thing to be hunting for when you come
+   back to a board mid-game. Reusing the ring colours already on the cups means
+   there is nothing new to learn: your box matches your row. */
 .palName{ flex:1 1 auto; min-width:0; height:38px; border-radius:12px;
   border:2px solid #8A5E31; background:#FFF6E7; color:#33220F;
   font-family:inherit; font-size:14px; font-weight:800; padding:0 10px;
   text-align:center; }
 .palName::placeholder{ color:#A98C63; font-weight:700; }
 .palName:focus{ outline:3px solid #F7B32B; outline-offset:-1px; }
-.palSide.turn .palName{ border-color:#F7B32B; background:#FFF9EC; }
+#palSide1 .palName{ background:#E6F7EC; border-color:#2E9E5B; color:#14532D; }
+#palSide1 .palName::placeholder{ color:#3F8A5F; }
+#palSide2 .palName{ background:#E7F0FE; border-color:#3B82F6; color:#12325E; }
+#palSide2 .palName::placeholder{ color:#4B7BC4; }
+/* whose turn it is, said in the same colours */
+#palSide1.turn .palName{ box-shadow:0 0 0 3px rgba(46,158,91,.55); }
+#palSide2.turn .palName{ box-shadow:0 0 0 3px rgba(59,130,246,.55); }
+/* and the Choose Player bar wears the colour of whoever it names */
+.palChoose.forP1{ background:linear-gradient(180deg, #9BE8B8 0%, #2E9E5B 100%);
+  border-color:#14532D; color:#0B3A20; }
+.palChoose.forP2{ background:linear-gradient(180deg, #A8CBFF 0%, #3B82F6 100%);
+  border-color:#12325E; color:#0A2748; }
 
 /* Raja: "reserve box should be 35 for each, so place square box inside oval and
    the number should show 35 each other". An oval with a square counter in it. */
@@ -3512,14 +3531,17 @@ body{ background:#C9A87C !important; }
        who opens stops being a rule the app imposes and becomes a decision the
        two players make, which is also his own answer to the sixth of the rule
        questions still sitting with his family. -->
-  <button class="palChoose" id="palChoose" type="button">👤 Choose player</button>
+  <!-- The tips sit at the very top of the panel, directly under SaNa, and are
+       the ONLY place the game explains itself. They used to be echoed by a
+       tab inside each player strip, which said much the same thing twice and
+       — for Player 1, whose row is above their strip — pointed the wrong way. -->
   <div class="palSay" id="palSay">Tap Start to fill the board.</div>
+  <button class="palChoose" id="palChoose" type="button">👤 Choose player</button>
 
   <div class="palSide p2" id="palSide2">
     <input class="palName" id="palName2" type="text" maxlength="14"
            placeholder="Player 2" autocomplete="off" spellcheck="false">
     <div class="palStore"><span class="palStoreCap">Store</span><span class="palStoreNum" id="palStore2">35</span></div>
-    <div class="palTurn" id="palTurn2">👇 Your turn — tap one of your cups</div>
   </div>
 
   <div class="palBoard" id="palBoard"></div>
@@ -3528,7 +3550,6 @@ body{ background:#C9A87C !important; }
     <input class="palName" id="palName1" type="text" maxlength="14"
            placeholder="Player 1" autocomplete="off" spellcheck="false">
     <div class="palStore"><span class="palStoreCap">Store</span><span class="palStoreNum" id="palStore1">35</span></div>
-    <div class="palTurn" id="palTurn1">👇 Your turn — tap one of your cups</div>
   </div>
 
   <div class="palFoot">
@@ -7931,10 +7952,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         }
         document.getElementById('palSide1').classList.toggle('turn', playing && turn === 0);
         document.getElementById('palSide2').classList.toggle('turn', playing && turn === 1);
-        for (var t = 0; t < 2; t++){
-          var tb = document.getElementById('palTurn' + (t + 1));
-          if (tb) tb.textContent = busy ? P('sowingTab') : P('turnTab', { a: nameOf(t) });
-        }
+        /* Whose turn it is now shows as COLOUR on that player's own name box
+           and on the Choose Player bar, rather than as a sentence beside them.
+           Raja: "sometime unable remember who finished, who should start" —
+           after a break a colour is read instantly and a sentence has to be
+           found and re-read. */
+        var ch2 = document.getElementById('palChoose');
+        if (ch2){ ch2.classList.toggle('forP1', starter === 0); ch2.classList.toggle('forP2', starter === 1); }
         var ob = seedsOnBoard();
         if (onBoardEl) onBoardEl.textContent = (round > 1 ? P('roundNo', { n: round }) + ' · ' : '') +
           P(ob === 1 ? 'onBoard1' : 'onBoardN', { n: ob });
@@ -8154,7 +8178,20 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
                that and the move ends right here — which is the whole point of
                the rule: it forces seeds to be left behind rather than carried
                on round the board, and they come back as the owner's reserve. */
-            if (inHand < pillai[nx]){ sowWon = 0; sowStopped = true; return false; }
+            if (inHand < pillai[nx]){
+              /* Raja: "if put 4 in hand three, then that three only fill to
+                 pillai paandi immediately, the play will end there — side no
+                 rights to take next pocket." So a short hand is not carried
+                 back or left behind: every seed of it goes INTO the pocket,
+                 and the move ends with nothing won. The savings pocket is
+                 paid whatever there is, which is what makes it fill up.
+                 It was previously dropped in the cup BEFORE the pocket, which
+                 quietly gave those seeds to an ordinary cup instead. */
+              sowPos = nx;
+              cups[sowPos] += inHand; inHand = 0; sowDropped++;
+              sowLanded = sowPos; sowWon = 0; sowStopped = true;
+              return false;
+            }
             sowPos = nx;
             cups[sowPos] += pillai[nx]; inHand -= pillai[nx]; sowDropped++;
             sowLanded = sowPos;
@@ -8186,10 +8223,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
       function sowFinish(){
         if (sowStopped){
-          /* The hand was too small to pay the savings pocket. Whatever is
-             still held stays where the sowing stopped — it is not carried on
-             and not returned. */
-          if (inHand > 0){ cups[sowPos] += inHand; inHand = 0; markSowed(sowPos); }
+          // every seed already went into the savings pocket; nothing is won
           endTurn(P('pillaiStop'));
           return;
         }
@@ -11328,7 +11362,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-179 (the savings pocket — pillai paandi complete)';
+  var BUILD_VER = 'beta-180 (each player a colour, tips in one place)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that

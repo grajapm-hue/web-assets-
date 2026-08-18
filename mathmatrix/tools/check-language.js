@@ -95,7 +95,7 @@ const TAMIL = /[\u0B80-\u0BFF]/;
       out.untranslated.push(s.slice(0, 40));
     }
     out.say = document.getElementById('palSay').textContent.trim();
-    out.turn = (document.querySelector('.palSide.turn .palTurn') || {}).textContent || '';
+    out.turn = (document.getElementById('palChoose') || {}).textContent || '';
     out.count = document.getElementById('palOnBoard').textContent.trim();
     out.store = document.querySelector('.palStoreCap').textContent.trim();
     out.name = document.getElementById('palName1').getAttribute('placeholder');
@@ -105,7 +105,7 @@ const TAMIL = /[\u0B80-\u0BFF]/;
   ok('the button switches to Tamil', TAMIL.test(board.btn), board.btn);
   ok('the live sentence is Tamil, not just the labels', TAMIL.test(board.say) && !/[A-Za-z]{3}/.test(board.say),
     JSON.stringify(board.say.slice(0, 60)));
-  ok('the turn tab is Tamil', TAMIL.test(board.turn), JSON.stringify(board.turn.slice(0, 50)));
+  ok('the choose-player bar is Tamil', TAMIL.test(board.turn), JSON.stringify(board.turn.slice(0, 50)));
   ok('the seed count is Tamil', TAMIL.test(board.count), JSON.stringify(board.count));
   ok('the store label is Tamil', TAMIL.test(board.store), JSON.stringify(board.store));
   ok('the empty name box prompts in Tamil', TAMIL.test(board.name), JSON.stringify(board.name));
