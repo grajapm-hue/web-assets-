@@ -7766,6 +7766,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         onBoardN:  { en:'{n} seeds on the board',         ta:'பலகையில் {n} விதைகள்' },
         dealPrompt:{ en:'Each player taps their own store to lay out their row.',
                      ta:'ஒவ்வொரு வீரரும் தன் சேமிப்பைத் தட்டி தன் வரிசையை நிரப்பவும்.' },
+        roundOver: { en:'{msg}<br>Round over — <b>{a}</b> keeps the <b>{n}</b> seeds left on their side. Tap your stores for the next round.',
+                     ta:'{msg}<br>சுற்று முடிந்தது — தன் பக்கம் மீதமுள்ள <b>{n}</b> விதைகளை <b>{a}</b> எடுத்துக்கொள்கிறார். அடுத்த சுற்றுக்கு உங்கள் சேமிப்பைத் தட்டுங்கள்.' },
+        roundCheer:{ en:'Round over — <b>{a}</b> gathers <b>{n}</b> seeds.',
+                     ta:'சுற்று முடிந்தது — <b>{a}</b> <b>{n}</b> விதைகளைச் சேர்க்கிறார்.' },
+        roundNo:   { en:'Round {n}',                      ta:'சுற்று {n}' },
+        lostAll:   { en:'<b>{a}</b> cannot lay out a single cup — <b>{b}</b> wins the game!',
+                     ta:'<b>{a}</b> ஒரு குழியைக் கூட நிரப்ப முடியவில்லை — <b>{b}</b> ஆட்டத்தை வென்றார்!' },
         fillingRow:{ en:'Laying out <b>{a}</b>’s row — five seeds in every cup.',
                      ta:'<b>{a}</b> வரிசை நிரம்புகிறது — ஒவ்வொரு குழியிலும் ஐந்து விதைகள்.' },
         dealOne:   { en:'<b>{a}</b>’s row is down. <b>{b}</b> — tap your store.',
@@ -7792,6 +7799,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       var turn = 0, playing = false, busy = false, step = null, inHand = 0, sowPos = 0;
       var starter = 0;      // which player opens; Raja's "choose player"
       var dealt = [false, false];   // each player lays out their OWN row
+      var round = 1;                // pillai paandi: the game runs over rounds
       var boardEl, sayEl, onBoardEl, built = false;
 
       function nameOf(p){
@@ -7906,7 +7914,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           if (tb) tb.textContent = busy ? P('sowingTab') : P('turnTab', { a: nameOf(t) });
         }
         var ob = seedsOnBoard();
-        if (onBoardEl) onBoardEl.textContent = P(ob === 1 ? 'onBoard1' : 'onBoardN', { n: ob });
+        if (onBoardEl) onBoardEl.textContent = (round > 1 ? P('roundNo', { n: round }) + ' · ' : '') +
+          P(ob === 1 ? 'onBoard1' : 'onBoardN', { n: ob });
         var ch = document.getElementById('palChoose');
         if (ch) ch.textContent = P('chooseP', { a: nameOf(starter) });
       }
@@ -7925,7 +7934,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         cups = []; pasuDead = [];
         for (var i = 0; i < CUPS; i++){ cups.push(0); pasuDead.push(false); }
         store = [PER_CUP * 7, PER_CUP * 7];       // the 35 each Raja asked for
-        dealt = [false, false];
+        dealt = [false, false]; round = 1;
         turn = starter; playing = false; busy = false; inHand = 0;
         palFit();
         say(P('dealPrompt'));
@@ -7971,6 +7980,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
             busy = false; step = null;
             if (dealt[0] && dealt[1]){
               playing = true;
+              turn = starter;
               palFit();
               say(P('starts', { a: nameOf(starter) }));
               if (typeof sana === 'function') try {
@@ -7984,7 +7994,19 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           }
           var i = p * 7 + c;
           c++;
-          cups[i] = PER_CUP; store[p] -= PER_CUP;
+          /* Five while five can be afforded; then whatever is left, in one
+             cup; then nothing. Raja: "if any one have shortage to fill
+             pockets they leave it as empty, and if seeds in hand is less
+             than 5 those are to kept in one pocket."
+             An empty cup here is empty FOR THIS ROUND ONLY. There is no
+             permanently dead hole — I had assumed one, and asking what I
+             meant by it was how that came out. Win seeds back and you lay
+             the cup out again next round. Anything above 35 simply stays in
+             the reserve: "who filled all pockets by them, and remain earned
+             seed kept in to reserve box." */
+          if (store[p] >= PER_CUP){ cups[i] = PER_CUP; store[p] -= PER_CUP; }
+          else if (store[p] > 0){ cups[i] = store[p]; store[p] = 0; }
+          else { cups[i] = 0; }
           draw();
           if (typeof sfx === 'function') try { sfx('card'); } catch(e){}
           /* Same beat as the sowing. This is where a child sees where the seeds
@@ -7994,21 +8016,48 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         })();
       }
 
+      /* A ROUND ENDS THE MOMENT THE PLAYER TO MOVE HAS AN EMPTY ROW.
+
+         Raja: "if end of finish the shuffle, the seeds in any side pocket is
+         empty, who don't have a chance to continue the shuffle — the opponent
+         player pockets hold any seeds in different pockets are got reserve of
+         them, and ready to play next shuffle within the reserve of both."
+
+         This replaces a guess I had made and flagged as one. I had the empty
+         player simply LOSE THEIR TURN, with play carrying on around them; in
+         fact that is the end of the round. And it settles the question I could
+         not read from his first description: "seeds in the opposite pocket are
+         owned by the opposite of the empty area" is not a capture during play
+         at all — it is this. Whoever still has seeds when the other side runs
+         dry keeps their own, into their own reserve. Nothing changes hands. */
       function endTurn(msg){
         busy = false; inHand = 0;
-        if (store[0] >= 70 || store[1] >= 70 || seedsOnBoard() === 0){ finish(msg); return; }
         turn = 1 - turn;
-        /* Raja's rules do not settle what happens to a player whose whole row
-           is empty when their turn arrives, so this takes the plainest reading:
-           they cannot move, so the turn goes back. Guarded against both rows
-           being empty, which finish() has already caught above. */
-        if (rowEmpty(turn)) {
-          var skipped = nameOf(turn);
-          turn = 1 - turn;
-          say(P('skipped', { msg: msg, a: skipped, b: nameOf(turn) }));
-        } else {
-          say(P('nowTurn', { msg: msg, a: nameOf(turn) }));
+        if (rowEmpty(turn)){ endRound(msg); return; }
+        say(P('nowTurn', { msg: msg, a: nameOf(turn) }));
+        draw();
+      }
+
+      function endRound(msg){
+        var keeper = 1 - turn;              // the side that still has seeds
+        var swept = 0;
+        for (var i = keeper * 7; i < keeper * 7 + 7; i++){ swept += cups[i]; cups[i] = 0; pasuDead[i] = false; }
+        store[keeper] += swept;
+        playing = false; busy = false;
+        dealt = [false, false];
+        round++;
+        /* A player who cannot fill even ONE cup has nothing left to lay out and
+           the game is over. Everything else is another round. */
+        if (store[0] === 0 || store[1] === 0){
+          var lost = store[0] === 0 ? 0 : 1;
+          playing = false;
+          say(P('lostAll', { a: nameOf(lost), b: nameOf(1 - lost) }));
+          palCheer(P('winsGame', { a: nameOf(1 - lost) }), 'party', true);
+          draw();
+          return;
         }
+        say(P('roundOver', { msg: msg, a: nameOf(keeper), n: swept }));
+        if (typeof sana === 'function') try { sana(P('roundCheer', { a: nameOf(keeper), n: swept }), 'cheer'); } catch(e){}
         draw();
       }
 
@@ -8254,7 +8303,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       window.__palState = function(){
         return { cups: cups.slice(), store: store.slice(), turn: turn, hand: inHand,
                  busy: busy, playing: playing, dead: pasuDead.slice(),
-                 dropped: sowDropped, dealt: dealt.slice() };
+                 dropped: sowDropped, dealt: dealt.slice(), round: round };
       };
     })();
 
@@ -11219,7 +11268,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-177 (each player lays out their own row)';
+  var BUILD_VER = 'beta-178 (pillai paandi — the game runs over rounds)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that

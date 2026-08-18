@@ -20,6 +20,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const TOTAL = 70;                       // 14 cups x 5 seeds
 let fail = 0;
 const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !== undefined ? '  -> ' + x : '')); if (!c) fail++; };
+const nameFor = st => 'Player ' + ((st.store[0] === 0 ? 0 : 1) + 1);
 
 (async () => {
   const tmp = path.join(__dirname, '_cppal');
@@ -429,6 +430,84 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
     'top-left ' + cut.leftSolid + ', bottom-right ' + cut.rightSolid);
   ok('a dashed hinge line runs between the two rows', cut.seam === 'dashed',
     cut.seam + ' ' + cut.seamWidth);
+
+  /* ══ PILLAI PAANDI — the game over rounds ═══════════════════════════════
+     Raja: "if end of finish the shuffle, the seeds in any side pocket is empty,
+     who don't have a chance to continue the shuffle — the opponent player
+     pockets hold any seeds in different pockets are got reserve of them, and
+     ready to play next shuffle within the reserve of both. If any one have
+     shortage to fill pockets they leave it as empty, and if seeds in hand is
+     less than 5 those are to kept in one pocket... who filled all pockets by
+     them and remain earned seed kept in to reserve box."
+
+     Played to a real round end rather than forced, because the interesting
+     part is the arithmetic of the refill and that only means anything against
+     a reserve the game actually produced. */
+  await ev(`window.__palNew()`); await ready();
+  /* A whole round is a couple of minutes of real play at 400ms a drop, so the
+     budget has to be generous: the first attempt gave up after eleven seconds
+     and reported that no round had ended, which was true and told us nothing. */
+  let roundEnded = null, gameOver = false, guard2 = 0;
+  while (!roundEnded && guard2++ < 1500){
+    const st = await state();
+    if (!st.playing){
+      /* A round end and the END OF THE GAME look identical from the outside —
+         both stop play with neither row laid out. The reserves tell them
+         apart: nobody can lay out a cup with nothing in the bank. */
+      if (st.store[0] === 0 || st.store[1] === 0) gameOver = true;
+      else if (st.dealt && !st.dealt[0] && !st.dealt[1]) roundEnded = st;
+      break;
+    }
+    if (!st.busy){
+      const mine = [];
+      for (let i = st.turn * 7; i < st.turn * 7 + 7; i++) if (st.cups[i] > 0) mine.push(i);
+      if (!mine.length) break;
+      await ev(`document.querySelector('#palBoard [data-pal="${mine[0]}"]').click()`);
+    }
+    await sleep(90);
+  }
+  if (gameOver){
+    const over = await state();
+    ok('a player with an empty reserve loses the game outright',
+      over.store[0] === 0 || over.store[1] === 0,
+      'stores ' + over.store.join('/') + ' — ' + nameFor(over) + ' cannot lay out a cup');
+    ok('and the seeds are still all accounted for', seeds(over) === TOTAL, seeds(over) + ' seeds');
+  } else if (!roundEnded){
+    ok('a round plays through to its end', false, 'no round ended in ' + guard2 + ' samples');
+  } else {
+    ok('a round ends when the player to move has an empty row', true,
+      'round ' + roundEnded.round + ', stores ' + roundEnded.store.join('/'));
+    ok('the board is cleared into the stores, nothing left behind',
+      roundEnded.cups.every(c => c === 0) && seeds(roundEnded) === TOTAL,
+      roundEnded.cups.join(',') + ' on the board, ' + seeds(roundEnded) + ' seeds in total');
+    ok('and both players must lay out again before play resumes',
+      !roundEnded.playing && !roundEnded.dealt[0] && !roundEnded.dealt[1]);
+
+    /* THE REFILL, checked as arithmetic. Given a reserve of S, a row should be
+       fives while fives can be afforded, then ONE cup holding the remainder,
+       then empties — and anything above 35 stays in the reserve. Computed from
+       the reserve the game produced, not from a number typed in here. */
+    for (const p of [0, 1]){
+      const before = (await state()).store[p];
+      await ev(`document.querySelector('#palSide${p + 1} .palStore').click()`);
+      for (let i = 0; i < 300; i++){ const st = await state(); if (!st.busy) break; await sleep(60); }
+      const now = await state();
+      const row = now.cups.slice(p * 7, p * 7 + 7);
+      const fives = Math.min(7, Math.floor(before / 5));
+      const rem = fives < 7 ? before - fives * 5 : 0;
+      const want = [];
+      for (let i = 0; i < 7; i++) want.push(i < fives ? 5 : (i === fives ? rem : 0));
+      ok('Player ' + (p + 1) + ' lays out exactly what their reserve affords',
+        row.join(',') === want.join(','),
+        'reserve ' + before + ' -> ' + row.join(',') + (row.join(',') === want.join(',') ? '' : '  (expected ' + want.join(',') + ')'));
+      ok('and any surplus above 35 stays in their reserve',
+        now.store[p] === Math.max(0, before - 35),
+        'reserve now ' + now.store[p] + ', was ' + before);
+    }
+    const resumed = await state();
+    ok('the next round is playable and still holds 70 seeds',
+      resumed.playing && seeds(resumed) === TOTAL, 'round ' + resumed.round + ', ' + seeds(resumed) + ' seeds');
+  }
 
   ok('no JS errors', errs.length === 0, errs.join(' | ') || '');
 
