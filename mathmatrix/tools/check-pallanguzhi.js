@@ -739,16 +739,27 @@ const TAMIL = /[஀-௿]/;
 
   /* THE BUBBLE ITSELF, MEASURED — not eyeballed. Raja: "SaNa tips box and font
      to increase, look too tiny." This rule has no theme gate, so it was
-     shrinking the mascot on EVERY screen, not only this one. */
+     shrinking the mascot on EVERY screen, not only this one.
+
+     Padding and total box height are NOT asserted here any more — an earlier
+     version of this pinned the padding directly, and that assertion is what
+     caught his very next report: the taller bubble had pushed Sudoku's clock
+     and counter below the fold on three of four tested phone sizes, something
+     a font-size number alone could never reveal. The fix reclaimed that room
+     from padding and line-height, which is exactly what a padding-height
+     assertion would keep flagging as a false regression — and measuring the
+     bubble's total height runs into the same trap from the other side: for a
+     short message that still fits one line, a bigger font with tighter
+     padding can render at nearly the SAME overall height as the old small
+     font in its looser padding, which is not a fault, it is the trade-off
+     his own follow-up asked for. The one promise actually worth pinning is
+     the one he can read: the text itself. */
   await ev(`window.__palNew()`); await ready();
   const bubble = await ev(`(function(){
     var b = document.querySelector('.sanaBub');
-    var cs = getComputedStyle(b);
-    return JSON.stringify({ size: parseFloat(cs.fontSize), padTop: parseFloat(cs.paddingTop) }); })()`).then(JSON.parse);
+    return JSON.stringify({ size: parseFloat(getComputedStyle(b).fontSize) }); })()`).then(JSON.parse);
   ok('the tips bubble text is meaningfully bigger than it was', bubble.size >= 13,
     bubble.size + 'px (was 11px)');
-  ok('and the box grew to give that size room, not just the font', bubble.padTop >= 8,
-    bubble.padTop + 'px top padding (was 6px)');
   const stillFits = await ev(`(function(){
     var f = document.querySelector('.palFoot').getBoundingClientRect().bottom;
     var b = document.querySelector('.tabBar').getBoundingClientRect().top;

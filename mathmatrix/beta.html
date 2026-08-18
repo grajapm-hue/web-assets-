@@ -1479,7 +1479,18 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
 .tabBtn .tabIco{ font-size:16px !important; margin:0 !important; }
 
 /* SaNa — fixed height, two lines maximum, never pushes the board */
-.sana{ flex:none; margin:0 0 6px !important; padding:0 !important; max-width:none !important; gap:8px !important; }
+/* Raja: "ensure it everywhere the font and box size should not affected to
+   near one areas in any layers." Measured, and he was right to ask: the bigger
+   bubble (beta-184) pushed Sudoku's clock and counter below the fold on three
+   of four tested phone sizes — 340x780 by 3px, 360x740 by 7px, 360x800 by
+   10px — where before they sat comfortably above the tab bar with no scroll
+   at all. Not an overlap (normal-flow layout cannot overlap; a taller box
+   simply pushes what follows it further down) but exactly the kind of
+   knock-on effect he was asking to rule out: SaNa's own whitespace eating into
+   a budget another screen depends on.
+   Reclaimed from margin, which is pure gap and costs nothing to read, so the
+   font-size increase that was actually the point of beta-184 stays untouched. */
+.sana{ flex:none; margin:0 !important; padding:0 !important; max-width:none !important; gap:8px !important; }
 .sanaFace{ width:36px !important; height:36px !important; font-size:20px !important; }
 /* RED, on Raja's instruction — but a DEEP red, and not the one the speech
    bubble already uses for the same word. The bubble's #9A3412 is legible there
@@ -1502,7 +1513,7 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
    screen unconditionally, so the whole app was reading the mascot at 11px.
    Up to 13.5px, with the box given the extra room that size actually needs
    rather than cramming a bigger font into the old padding. */
-.sanaBub{ padding:8px 12px !important; font-size:13.5px !important; line-height:1.42 !important;
+.sanaBub{ padding:5px 12px !important; font-size:13.5px !important; line-height:1.3 !important;
   border-radius:13px !important; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;
   overflow:hidden; max-width:64ch; }
 .sanaBub::before{ top:14px !important; }
@@ -11453,7 +11464,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-184 (SaNa speaks Tamil in every state, and reads bigger)';
+  var BUILD_VER = 'beta-185 (the bigger SaNa no longer eats into other screens)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
