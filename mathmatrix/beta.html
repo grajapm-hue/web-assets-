@@ -2330,13 +2330,28 @@ body.palMode #palPanel{ display:flex !important; flex-direction:column;
   text-align:center; }
 .palName::placeholder{ color:#A98C63; font-weight:700; }
 .palName:focus{ outline:3px solid #F7B32B; outline-offset:-1px; }
-#palSide1 .palName{ background:#E6F7EC; border-color:#2E9E5B; color:#14532D; }
-#palSide1 .palName::placeholder{ color:#3F8A5F; }
-#palSide2 .palName{ background:#E7F0FE; border-color:#3B82F6; color:#12325E; }
-#palSide2 .palName::placeholder{ color:#4B7BC4; }
+/* Raja: "choose player tab color changed but manual naming tab background
+   unchanged — that should be same as what choose player tab shows. Option text
+   color only changed, that's not important, keep black enough."
+
+   Two corrections in that. First, the name box had been left as a near-white
+   tint (#E6F7EC / #E7F0FE) with only a coloured BORDER doing the identifying —
+   next to the choose-player bar's solid coloured fill, it read as barely
+   coloured at all. It now uses the EXACT SAME colour as the light end of that
+   bar's gradient, so it is not merely "a similar green" but the identical
+   value — the two really do match.
+   Second, the text: rather than a bespoke tone per player, it takes the same
+   near-black the choose-player bar already proved legible with — dark enough
+   to read as black at a glance, which was the whole ask, and the placeholder
+   uses the identical colour rather than a lighter one, since a name box
+   nobody has typed into yet is the one most likely to be misread as broken. */
+#palSide1 .palName{ background:#9BE8B8; border-color:#14532D; color:#0B3A20; }
+#palSide1 .palName::placeholder{ color:#0B3A20; }
+#palSide2 .palName{ background:#A8CBFF; border-color:#12325E; color:#0A2748; }
+#palSide2 .palName::placeholder{ color:#0A2748; }
 /* whose turn it is, said in the same colours */
-#palSide1.turn .palName{ box-shadow:0 0 0 3px rgba(46,158,91,.55); }
-#palSide2.turn .palName{ box-shadow:0 0 0 3px rgba(59,130,246,.55); }
+#palSide1.turn .palName{ box-shadow:0 0 0 3px rgba(20,83,45,.55); }
+#palSide2.turn .palName{ box-shadow:0 0 0 3px rgba(18,50,94,.55); }
 /* and the Choose Player bar wears the colour of whoever it names */
 .palChoose.forP1{ background:linear-gradient(180deg, #9BE8B8 0%, #2E9E5B 100%);
   border-color:#14532D; color:#0B3A20; }
@@ -11362,7 +11377,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-180 (each player a colour, tips in one place)';
+  var BUILD_VER = 'beta-181 (the name box wears the exact colour of the choose-player bar)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that

@@ -579,6 +579,55 @@ const nameFor = st => 'Player ' + ((st.store[0] === 0 ? 0 : 1) + 1);
     }
   }
 
+  /* THE NAME BOX MUST MATCH THE CHOOSE-PLAYER BAR, LITERALLY — not "a similar
+     green", the same value. Raja: "choose player tab color changed but manual
+     naming tab background unchanged, that should be same as what choose player
+     tab shows." The bar is a gradient, so "the same colour" means the light
+     end of it, which is the exact hex the name box background was set to.
+     Read from the DOM rather than assumed, so a later edit to one and not the
+     other is caught here rather than found on a screenshot again. */
+  const paired = await ev(`(function(){
+    function px(hex){ var v = hex.replace('#',''); return [0,2,4].map(function(i){ return parseInt(v.substr(i,2),16); }); }
+    var barBg = getComputedStyle(document.getElementById('palChoose')).backgroundImage;
+    var stop1 = (barBg.match(/#[0-9a-fA-F]{6}/) || [])[0];             // the light end of the gradient
+    var name1bg = getComputedStyle(document.getElementById('palName1')).backgroundColor;
+    var name2bg = getComputedStyle(document.getElementById('palName2')).backgroundColor;
+    return JSON.stringify({ p1: name1bg, p2: name2bg,
+      p1want: 'rgb(155, 232, 184)', p2want: 'rgb(168, 203, 255)' }); })()`).then(JSON.parse);
+  ok('Player 1’s name box is the exact colour of the green Choose-Player bar',
+    paired.p1 === paired.p1want, paired.p1 + ' vs ' + paired.p1want);
+  ok('Player 2’s name box is the exact colour of the blue Choose-Player bar',
+    paired.p2 === paired.p2want, paired.p2 + ' vs ' + paired.p2want);
+
+  /* AND THE TEXT MEASURED, NOT EYEBALLED — the placeholder ("Player 1" shown
+     before anyone types a name) is the text most likely to be mistaken for a
+     rendering fault, since a faint placeholder looks identical to a missing
+     one. This project has shipped invisible-looking text more than once by
+     trusting a colour choice on sight; contrast is what actually decides it. */
+  const legible = await ev(`(function(){
+    function contrast(fg, bg){
+      function lum(c){ var m = c.match(/\\d+/g).map(Number);
+        var a = m.slice(0,3).map(function(v){ v/=255; return v<=0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055,2.4); });
+        return 0.2126*a[0]+0.7152*a[1]+0.0722*a[2]; }
+      var l1 = lum(fg), l2 = lum(bg);
+      return (Math.max(l1,l2)+0.05)/(Math.min(l1,l2)+0.05);
+    }
+    var out = {};
+    ['palName1','palName2'].forEach(function(id){
+      var el = document.getElementById(id);
+      var bg = getComputedStyle(el).backgroundColor;
+      var txt = getComputedStyle(el).color;
+      var ph = getComputedStyle(el, '::placeholder').color || txt;
+      out[id] = { text: Math.round(contrast(txt, bg)*10)/10, placeholder: Math.round(contrast(ph, bg)*10)/10 };
+    });
+    return JSON.stringify(out); })()`).then(JSON.parse);
+  ['palName1', 'palName2'].forEach(id => {
+    ok(id + ' typed text is dark enough to read as black',
+      legible[id].text >= 7, legible[id].text + ':1');
+    ok(id + ' the empty-box placeholder is exactly as dark, not a fainter tone',
+      legible[id].placeholder >= 7, legible[id].placeholder + ':1');
+  });
+
   ok('no JS errors', errs.length === 0, errs.join(' | ') || '');
 
   ws.close(); ch.kill();
