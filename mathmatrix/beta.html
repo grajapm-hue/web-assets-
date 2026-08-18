@@ -2345,13 +2345,15 @@ body.palMode #palPanel{ display:flex !important; flex-direction:column;
    to read as black at a glance, which was the whole ask, and the placeholder
    uses the identical colour rather than a lighter one, since a name box
    nobody has typed into yet is the one most likely to be misread as broken. */
-#palSide1 .palName{ background:#9BE8B8; border-color:#14532D; color:#0B3A20; }
-#palSide1 .palName::placeholder{ color:#0B3A20; }
-#palSide2 .palName{ background:#A8CBFF; border-color:#12325E; color:#0A2748; }
-#palSide2 .palName::placeholder{ color:#0A2748; }
-/* whose turn it is, said in the same colours */
-#palSide1.turn .palName{ box-shadow:0 0 0 3px rgba(20,83,45,.55); }
-#palSide2.turn .palName{ box-shadow:0 0 0 3px rgba(18,50,94,.55); }
+/* No permanent colour any more — see the JS beside the .turn toggle for why. The
+   box stays the plain cream of the base .palName rule until it is that side's
+   turn to move, at which point it takes the exact colour of the choose-player
+   bar. Exactly one side ever carries it, so the other is always, genuinely,
+   white — his words. */
+#palSide1.turn .palName{ background:#9BE8B8; border-color:#14532D; color:#0B3A20; }
+#palSide1.turn .palName::placeholder{ color:#0B3A20; }
+#palSide2.turn .palName{ background:#A8CBFF; border-color:#12325E; color:#0A2748; }
+#palSide2.turn .palName::placeholder{ color:#0A2748; }
 /* and the Choose Player bar wears the colour of whoever it names */
 .palChoose.forP1{ background:linear-gradient(180deg, #9BE8B8 0%, #2E9E5B 100%);
   border-color:#14532D; color:#0B3A20; }
@@ -7965,8 +7967,24 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           var sb = document.querySelector('#palSide' + (d + 1) + ' .palStore');
           if (sb) sb.classList.toggle('toDeal', !dealt[d] && !busy);
         }
-        document.getElementById('palSide1').classList.toggle('turn', playing && turn === 0);
-        document.getElementById('palSide2').classList.toggle('turn', playing && turn === 1);
+        /* Raja: "naming player color bg is permanently placed. Request is who
+           ready to play only colour bg should show, others remain white. When
+           choose player is toggled, the naming player tab bg should change
+           accordingly — so one if colour bg, other should be white, vice versa."
+
+           beta-181 gave each row a fixed identity colour, and that was the
+           actual fault: his screenshot shows the choose-player bar saying
+           Player 1 starts while Player 2's box still sat there coloured blue,
+           because blue was PLAYER 2'S colour regardless of whether it was their
+           turn. Colour has to say "ready to play", not "which row this is".
+
+           So it follows ONE variable, live: whoever is about to move. During
+           play that is turn; before the first ball is dealt, and again between
+           rounds while both stores wait to be tapped, there is no "turn" yet,
+           so it falls back to starter — the same player Choose Player names. */
+        var activeSide = playing ? turn : starter;
+        document.getElementById('palSide1').classList.toggle('turn', activeSide === 0);
+        document.getElementById('palSide2').classList.toggle('turn', activeSide === 1);
         /* Whose turn it is now shows as COLOUR on that player's own name box
            and on the Choose Player bar, rather than as a sentence beside them.
            Raja: "sometime unable remember who finished, who should start" —
@@ -11377,7 +11395,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-181 (the name box wears the exact colour of the choose-player bar)';
+  var BUILD_VER = 'beta-182 (colour follows who is ready to play, not the row)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that

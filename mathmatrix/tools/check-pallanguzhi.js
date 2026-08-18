@@ -579,54 +579,80 @@ const nameFor = st => 'Player ' + ((st.store[0] === 0 ? 0 : 1) + 1);
     }
   }
 
-  /* THE NAME BOX MUST MATCH THE CHOOSE-PLAYER BAR, LITERALLY — not "a similar
-     green", the same value. Raja: "choose player tab color changed but manual
-     naming tab background unchanged, that should be same as what choose player
-     tab shows." The bar is a gradient, so "the same colour" means the light
-     end of it, which is the exact hex the name box background was set to.
-     Read from the DOM rather than assumed, so a later edit to one and not the
-     other is caught here rather than found on a screenshot again. */
-  const paired = await ev(`(function(){
-    function px(hex){ var v = hex.replace('#',''); return [0,2,4].map(function(i){ return parseInt(v.substr(i,2),16); }); }
-    var barBg = getComputedStyle(document.getElementById('palChoose')).backgroundImage;
-    var stop1 = (barBg.match(/#[0-9a-fA-F]{6}/) || [])[0];             // the light end of the gradient
-    var name1bg = getComputedStyle(document.getElementById('palName1')).backgroundColor;
-    var name2bg = getComputedStyle(document.getElementById('palName2')).backgroundColor;
-    return JSON.stringify({ p1: name1bg, p2: name2bg,
-      p1want: 'rgb(155, 232, 184)', p2want: 'rgb(168, 203, 255)' }); })()`).then(JSON.parse);
-  ok('Player 1’s name box is the exact colour of the green Choose-Player bar',
-    paired.p1 === paired.p1want, paired.p1 + ' vs ' + paired.p1want);
-  ok('Player 2’s name box is the exact colour of the blue Choose-Player bar',
-    paired.p2 === paired.p2want, paired.p2 + ' vs ' + paired.p2want);
+  /* COLOUR FOLLOWS WHO IS READY TO PLAY, NOT WHICH ROW THIS IS. beta-181 gave
+     each player a fixed colour, and Raja's screenshot shows exactly why that
+     was wrong: the choose-player bar said Player 1 starts while Player 2's box
+     sat there coloured blue regardless — blue was Player 2's identity, not a
+     statement about whose turn it was. "Who ready to play only colour bg
+     should show, others remain white... one if colour bg, other should be
+     white, vice versa."
 
-  /* AND THE TEXT MEASURED, NOT EYEBALLED — the placeholder ("Player 1" shown
-     before anyone types a name) is the text most likely to be mistaken for a
-     rendering fault, since a faint placeholder looks identical to a missing
-     one. This project has shipped invisible-looking text more than once by
-     trusting a colour choice on sight; contrast is what actually decides it. */
-  const legible = await ev(`(function(){
-    function contrast(fg, bg){
-      function lum(c){ var m = c.match(/\\d+/g).map(Number);
-        var a = m.slice(0,3).map(function(v){ v/=255; return v<=0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055,2.4); });
-        return 0.2126*a[0]+0.7152*a[1]+0.0722*a[2]; }
-      var l1 = lum(fg), l2 = lum(bg);
-      return (Math.max(l1,l2)+0.05)/(Math.min(l1,l2)+0.05);
-    }
-    var out = {};
-    ['palName1','palName2'].forEach(function(id){
+     So exactly one box is ever coloured, it is always the one Choose Player
+     names (or, once a game is under way, whoever's turn it actually is), and
+     its colour still has to be the LITERAL value of the choose-player bar —
+     the earlier fix for that was correct, only which box it landed on was
+     wrong. */
+  const contrastOf = `function(fg, bg){
+    function lum(c){ var m = c.match(/\\d+/g).map(Number);
+      var a = m.slice(0,3).map(function(v){ v/=255; return v<=0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055,2.4); });
+      return 0.2126*a[0]+0.7152*a[1]+0.0722*a[2]; }
+    var l1 = lum(fg), l2 = lum(bg);
+    return (Math.max(l1,l2)+0.05)/(Math.min(l1,l2)+0.05);
+  }`;
+  const nameColours = () => ev(`(function(){
+    var contrast = ${contrastOf};
+    function read(id){
       var el = document.getElementById(id);
       var bg = getComputedStyle(el).backgroundColor;
       var txt = getComputedStyle(el).color;
       var ph = getComputedStyle(el, '::placeholder').color || txt;
-      out[id] = { text: Math.round(contrast(txt, bg)*10)/10, placeholder: Math.round(contrast(ph, bg)*10)/10 };
-    });
-    return JSON.stringify(out); })()`).then(JSON.parse);
-  ['palName1', 'palName2'].forEach(id => {
-    ok(id + ' typed text is dark enough to read as black',
-      legible[id].text >= 7, legible[id].text + ':1');
-    ok(id + ' the empty-box placeholder is exactly as dark, not a fainter tone',
-      legible[id].placeholder >= 7, legible[id].placeholder + ':1');
-  });
+      return { bg: bg, textContrast: Math.round(contrast(txt, bg)*10)/10,
+               phContrast: Math.round(contrast(ph, bg)*10)/10,
+               on: document.getElementById(id === 'palName1' ? 'palSide1' : 'palSide2').classList.contains('turn') };
+    }
+    return JSON.stringify({ p1: read('palName1'), p2: read('palName2') }); })()`).then(JSON.parse);
+
+  const NEUTRAL = 'rgb(255, 246, 231)';                          // the plain cream every other box uses
+  const GREEN = 'rgb(155, 232, 184)', BLUE = 'rgb(168, 203, 255)';
+
+  const c1 = await nameColours();
+  ok('exactly one name box is coloured, matching whoever Choose Player names',
+    c1.p1.on !== c1.p2.on, 'p1 on ' + c1.p1.on + ', p2 on ' + c1.p2.on);
+  const activeBg = c1.p1.on ? c1.p1.bg : c1.p2.bg, wantBg = c1.p1.on ? GREEN : BLUE;
+  ok('the active box is the exact colour of the Choose-Player bar', activeBg === wantBg,
+    activeBg + ' vs ' + wantBg);
+  const idleBg = c1.p1.on ? c1.p2.bg : c1.p1.bg;
+  ok('and the other box is genuinely plain, not a fainter tint', idleBg === NEUTRAL,
+    idleBg + ' vs ' + NEUTRAL);
+  const activeSide = c1.p1.on ? c1.p1 : c1.p2;
+  ok('the active box’s text is dark enough to read as black', activeSide.textContrast >= 7,
+    activeSide.textContrast + ':1');
+  ok('and its placeholder is exactly as dark, not a fainter tone', activeSide.phContrast >= 7,
+    activeSide.phContrast + ':1');
+
+  /* Toggling Choose Player has to MOVE the colour, live — that is the fault as
+     reported: the bar changed and the boxes did not follow. */
+  await ev(`document.getElementById('palChoose').click()`); await ready();
+  const c2 = await nameColours();
+  ok('toggling Choose Player swaps which box is coloured', c1.p1.on !== c2.p1.on,
+    'was p1 on ' + c1.p1.on + ', now p1 on ' + c2.p1.on);
+  ok('and the newly active box takes the bar’s new colour',
+    (c2.p1.on ? c2.p1.bg : c2.p2.bg) === (c2.p1.on ? GREEN : BLUE),
+    (c2.p1.on ? c2.p1.bg : c2.p2.bg));
+
+  /* And once the game is actually under way, colour has to follow the TURN,
+     not just the pre-game starter — a full move played through should hand it
+     to the other player without anyone touching Choose Player. */
+  await ev(`window.__palNew()`); await ready();
+  const before3 = await state();
+  const mine3 = []; for (let i = before3.turn * 7; i < before3.turn * 7 + 7; i++) if (before3.cups[i] > 0) mine3.push(i);
+  await ev(`document.querySelector('#palBoard [data-pal="${mine3[0]}"]').click()`);
+  for (let i = 0; i < 300; i++){ const s = await state(); if (!s.busy) break; await sleep(70); }
+  const after3 = await state(), c3 = await nameColours();
+  if (after3.turn !== before3.turn){
+    ok('after a move changes the turn, the coloured box follows it',
+      (after3.turn === 0) === c3.p1.on, 'turn is now player ' + (after3.turn + 1) + ', p1 coloured: ' + c3.p1.on);
+  }
 
   ok('no JS errors', errs.length === 0, errs.join(' | ') || '');
 
