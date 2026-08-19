@@ -294,6 +294,24 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
       : 'STILL unreachable even scrolled to the end — foot ' + tight.footBottom + ', bar ' + tight.bar);
   ok('and the square frame itself is a sensible size, not crushed', tight.frameWidth >= 250, tight.frameWidth + 'px wide');
 
+  /* D, SaNa and B all sit on the SAME horizontal band in the well's middle
+     row. The well-containment check above only guards the well's OUTER
+     edge — two siblings can each stay safely inside that edge and still
+     collide with each other in the middle, which containment alone would
+     never see. This is the sizing pass's own real risk: Raja asked for
+     "as much maximum increase font and tab size" on these cards, and the
+     first attempt at that (proven by deliberately widening .pal4D to
+     130px during this change) sailed straight through the containment
+     check while visibly overlapping SaNa. Measuring the actual gaps
+     between the three is what catches that a containment check cannot. */
+  const bandGaps = await ev(`(function(){
+    var d = document.querySelector('.pal4D').getBoundingClientRect();
+    var sana = document.querySelector('.pal4SanaFace').getBoundingClientRect();
+    var b = document.querySelector('.pal4B').getBoundingClientRect();
+    return JSON.stringify({ dSanaGap: Math.round(sana.left - d.right), sanaBGap: Math.round(b.left - sana.right) }); })()`).then(JSON.parse);
+  ok('at 340x780, Player D\'s card does not touch SaNa', bandGaps.dSanaGap > 0, bandGaps.dSanaGap + 'px gap');
+  ok('and Player B\'s card does not touch SaNa either', bandGaps.sanaBGap > 0, bandGaps.sanaBGap + 'px gap');
+
   ok('no JS errors', errs.length === 0, errs.join(' | ') || '');
   ws.close(); ch.kill();
   console.log('\n' + (fail === 0 ? 'ALL GREEN' : fail + ' FAILURES'));

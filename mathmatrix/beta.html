@@ -2598,17 +2598,17 @@ body.langTa .palTurn{ font-size:12.5px; }
    input actually fill its 76px card instead of ignoring it; overflow+ellipsis
    is the second line of defence, in case a typed name is still too long for
    that width to hold comfortably. */
-.pal4CardName{ width:100%; box-sizing:border-box; padding:3px 6px; border-radius:8px;
-  font-size:9.5px; font-weight:900; overflow:hidden; text-overflow:ellipsis;
+.pal4CardName{ width:100%; box-sizing:border-box; padding:4px 6px; border-radius:8px;
+  font-size:11.5px; font-weight:900; overflow:hidden; text-overflow:ellipsis;
   white-space:nowrap; background:none; border:1.5px solid transparent; font-family:inherit;
   text-align:center; cursor:default; }
 .pal4CardName::placeholder{ font-weight:700; }
 .pal4CardStore{ display:flex; align-items:center; gap:4px; padding:2px 7px; border-radius:999px;
   background:#4A3117; }
-.pal4CardStoreNum{ min-width:18px; height:15px; border-radius:4px; background:#FFF6E7;
-  border:1.5px solid #8A5E31; display:grid; place-items:center; font-size:8.5px; font-weight:900;
+.pal4CardStoreNum{ min-width:21px; height:17px; border-radius:4px; background:#FFF6E7;
+  border:1.5px solid #8A5E31; display:grid; place-items:center; font-size:10px; font-weight:900;
   color:#33220F; }
-.pal4CardStoreCap{ font-size:6px; font-weight:900; color:#F3D9A9; letter-spacing:.3px; }
+.pal4CardStoreCap{ font-size:7.5px; font-weight:900; color:#F3D9A9; letter-spacing:.3px; }
 .pal4A{ top:4px; left:50%; transform:translateX(-50%); width:76px; }
 .pal4A .pal4CardName{ background:#FDE1A8; color:#5A3A0A; border-color:#92400E; }
 .pal4B{ right:0; top:50%; transform:translateY(-50%); width:76px; }
@@ -2664,11 +2664,11 @@ body.langTa .palTurn{ font-size:12.5px; }
    four-sided board; three or four fill in from there. */
 .pal4Select{ display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap;
   margin:8px 0; padding:8px 10px; border-radius:14px; background:rgba(255,246,231,.55); }
-.pal4SelectLabel{ font-size:10.5px; font-weight:900; color:#5E3D1C; margin-right:2px; }
-.pal4Tick{ display:flex; align-items:center; gap:4px; padding:4px 9px 4px 6px; border-radius:999px;
-  border:2px solid #8A5E31; background:#FFF6E7; cursor:pointer; font-size:11px; font-weight:900;
+.pal4SelectLabel{ font-size:13px; font-weight:900; color:#5E3D1C; margin-right:2px; }
+.pal4Tick{ display:flex; align-items:center; gap:5px; padding:6px 13px 6px 9px; border-radius:999px;
+  border:2px solid #8A5E31; background:#FFF6E7; cursor:pointer; font-size:14px; font-weight:900;
   color:#5E3D1C; user-select:none; }
-.pal4Tick input{ width:15px; height:15px; margin:0; accent-color:#8A5E31; cursor:pointer; }
+.pal4Tick input{ width:19px; height:19px; margin:0; accent-color:#8A5E31; cursor:pointer; }
 /* the box takes the SAME colour as the side it enables, so ticking one and
    watching its row light up is one visual idea, not two to learn separately */
 .pal4Tick.sideA.on{ background:#FDE1A8; border-color:#92400E; }
@@ -12044,7 +12044,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-193 (4-player board: rules button renamed to How to play, matching the 2-player board)';
+  var BUILD_VER = 'beta-194 (4-player board: bigger font/tab size on the player cards and tick-box row)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
