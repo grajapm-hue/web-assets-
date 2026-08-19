@@ -1,4 +1,5 @@
-/* English / தமிழ், for Pallanguzhi only.
+/* English / தமிழ், for the Pallanguzhi family only — both the 2-player board
+   and the 4-player one, one shared LANG switch between them.
 
    The first version of this switched the WHOLE app. Raja looked at the
    screenshots and settled it: "understand change entire app to Tamil is possible
@@ -11,11 +12,13 @@
    "how much of the app is Tamil" but:
 
      1. Pallanguzhi is COMPLETELY Tamil — labels and the running sentences both,
-        since most of what this board says is assembled as it is said.
+        since most of what this board says is assembled as it is said. This now
+        holds for BOTH boards, not just the 2-player one — Raja: "keep the tabs
+        what are in two players existing game have such translation."
      2. NOTHING ELSE CHANGES. A toggle that leaked into the puzzle list would
         bring back exactly the collapse he rejected, and it would do it quietly.
-     3. The switch works BOTH ways, and nothing on the board is cut off in
-        either. */
+     3. The switch works BOTH ways, and nothing on either board is cut off in
+        either, and toggling from EITHER board's own button moves both. */
 const { spawn, execSync } = require('child_process');
 const fs = require('fs'); const path = require('path');
 const PORT = 9984;
@@ -113,6 +116,58 @@ const TAMIL = /[\u0B80-\u0BFF]/;
     board.untranslated.length === 0,
     board.untranslated.length ? board.untranslated.join(' | ') : 'none');
 
+  /* 2B. THE 4-PLAYER BOARD — same guarantee, same mechanism (one shared LANG,
+         walked over #pal4Panel too now). LANG is already 'ta' from above, so
+         opening the board fresh should show Tamil immediately — including
+         the top-bar LOGIC button, which used to show stale content from
+         whichever board opened last until the opener was taught to
+         pre-populate it, same as the 2-player one already does. */
+  await ev(`document.getElementById('tab-scHome').click()`); await sleep(300);
+  await ev(`document.getElementById('pal4Tab').click()`); await sleep(800);
+  const board4 = await ev(`(function(){
+    var out = { untranslated: [], total: 0 };
+    var w = document.createTreeWalker(document.getElementById('pal4Panel'), NodeFilter.SHOW_TEXT), n;
+    while ((n = w.nextNode())){
+      var p = n.parentElement; if (!p) continue;
+      if (p.tagName === 'SCRIPT' || p.tagName === 'STYLE') continue;
+      var s = n.nodeValue.replace(/\\s+/g,' ').trim();
+      if (!s || /^[A-D]$/.test(s)) continue;   // the tick-box letters themselves, not English words
+      // SaNa is a proper name, kept untranslated everywhere in the app —
+      // not "English left behind" the way a sentence or label would be
+      var stripped = s.replace(/SaNa/g, '');
+      if (!/[A-Za-z]{2}/.test(stripped)) continue;
+      out.untranslated.push(s.slice(0, 40));
+    }
+    out.say = document.getElementById('pal4Say').textContent.trim();
+    out.note = document.getElementById('pal4Note').textContent.trim();
+    out.select = document.querySelector('.pal4SelectLabel').textContent.trim();
+    out.choose = document.getElementById('pal4Choose').textContent.trim();
+    out.onBoard = document.getElementById('pal4OnBoard').textContent.trim();
+    out.store = document.querySelector('.pal4CardStoreCap').textContent.trim();
+    out.name = document.querySelector('#pal4CardA .pal4CardName').getAttribute('placeholder');
+    out.newBtn = document.getElementById('pal4New').textContent.trim();
+    out.rulesBtn = document.getElementById('pal4Rules').textContent.trim();
+    out.btn = document.getElementById('pal4LangBtn').textContent.trim();
+    out.logicBox = document.getElementById('logicBox').textContent.trim().slice(0, 60);
+    return JSON.stringify(out); })()`).then(JSON.parse);
+
+  ok('the 4-player button reads Tamil too', TAMIL.test(board4.btn), board4.btn);
+  ok('the 4-player intro line is Tamil', TAMIL.test(board4.say) && !/[A-Za-z]{3}/.test(board4.say.replace(/SaNa/g, '')),
+    JSON.stringify(board4.say.slice(0, 50)));
+  ok('the ring-direction note is Tamil', TAMIL.test(board4.note), JSON.stringify(board4.note.slice(0, 50)));
+  ok('the "Players:" tick-row label is Tamil', TAMIL.test(board4.select), board4.select);
+  ok('the choose-player bar is Tamil, with the live name substituted in', TAMIL.test(board4.choose), board4.choose);
+  ok('the seed-reserve stat is Tamil', TAMIL.test(board4.onBoard), board4.onBoard);
+  ok('the card STORE label is Tamil', TAMIL.test(board4.store), board4.store);
+  ok('an empty card box prompts in Tamil', TAMIL.test(board4.name), board4.name);
+  ok('New game reuses the same Tamil as the 2-player board', TAMIL.test(board4.newBtn), board4.newBtn);
+  ok('How this differs is Tamil', TAMIL.test(board4.rulesBtn), board4.rulesBtn);
+  ok('no English is left anywhere on the 4-player board',
+    board4.untranslated.length === 0,
+    board4.untranslated.length ? board4.untranslated.join(' | ') : 'none');
+  ok('the top-bar LOGIC button is pre-loaded with the 4-player sheet, in Tamil, on open — not stale content from whichever board opened last',
+    TAMIL.test(board4.logicBox) && board4.logicBox.indexOf('வேறுபடுகிறது') > -1, JSON.stringify(board4.logicBox));
+
   /* 3. NOTHING ELSE MOVED. The whole point of narrowing the feature. */
   await ev(`document.getElementById('tab-scHome').click()`); await sleep(800);
   const after = await outside();
@@ -174,19 +229,76 @@ const TAMIL = /[\u0B80-\u0BFF]/;
     return Math.round(f) + ' vs ' + Math.round(b) + (f <= b + 1 ? ' fits' : ' OVERFLOWS'); })()`);
   ok('the Tamil board still fits above the tab bar', / fits$/.test(fits), fits);
 
+  /* 4B. THE 4-PLAYER BOARD IN TAMIL — same two risks as the 2-player board:
+         text cut off, and — its own version of the "player strip" bug — a
+         card's name or store spilling out of the tight 76px well it lives
+         in, the exact class of bug the containment check in
+         check-pallanguzhi-4p.js exists for, run here under Tamil specifically
+         since Tamil is the longer text that would actually trigger it. */
+  await ev(`document.getElementById('tab-scHome').click()`); await sleep(300);
+  await ev(`document.getElementById('pal4Tab').click()`); await sleep(800);
+  const cut4 = JSON.parse(await ev(`(function(){
+    var bad = [];
+    document.querySelectorAll('#pal4Panel *').forEach(function(el){
+      if (!el.offsetParent || el.children.length) return;
+      var s = (el.textContent || '').trim(); if (!s) return;
+      var cs = getComputedStyle(el);
+      var wOver = el.scrollWidth - el.clientWidth, hOver = el.scrollHeight - el.clientHeight;
+      var ell = cs.textOverflow === 'ellipsis';
+      if ((wOver > 1 && (cs.overflowX !== 'visible' || ell)) ||
+          (hOver > 1 && (cs.overflowY !== 'visible' || ell))) bad.push(s.slice(0,28));
+    });
+    return JSON.stringify(bad.slice(0,6)); })()`));
+  ok('nothing on the Tamil 4-player board is cut off', cut4.length === 0, cut4.length ? cut4.join(' | ') : 'every label fits');
+  const contained4 = JSON.parse(await ev(`(function(){
+    var well = document.querySelector('.pal4Well').getBoundingClientRect();
+    var bad = [];
+    document.querySelectorAll('.pal4Card, .pal4CardName, .pal4CardStore, .pal4SanaMid').forEach(function(el){
+      var r = el.getBoundingClientRect();
+      if (r.width === 0 && r.height === 0) return;
+      if (r.left < well.left - 2 || r.right > well.right + 2 || r.top < well.top - 2 || r.bottom > well.bottom + 2)
+        bad.push((el.className.split(' ')[0] || el.tagName));
+    });
+    return JSON.stringify(bad); })()`));
+  ok('in Tamil, every card and its leaf elements still stay inside the well',
+    contained4.length === 0, contained4.length ? contained4.join(' | ') : 'all contained');
+  // #pal4Panel scrolls by design (overflow-y:auto, unlike palPanel) — the
+  // guarantee is reachable, not visible-without-scrolling; see the matching
+  // comment in check-pallanguzhi-4p.js's own tightest-phone check.
+  const fits4 = await ev(`(function(){
+    var panel = document.getElementById('pal4Panel');
+    panel.scrollTop = panel.scrollHeight;
+    var f = document.querySelector('.pal4Foot').getBoundingClientRect().bottom;
+    var b = document.querySelector('.tabBar').getBoundingClientRect().top;
+    return Math.round(f) + ' vs ' + Math.round(b) + (f <= b + 1 ? ' reachable' : ' UNREACHABLE'); })()`);
+  ok('in Tamil, the 4-player foot row is reachable by scrolling', / reachable$/.test(fits4), fits4);
+
   /* 5. Back to English — the direction nobody tests, and the one where a child
         left in a script they cannot read has no way out. */
   await ev(`window.__mmLang('en')`); await sleep(800);
   const back = await ev(`(function(){
     var p = document.getElementById('palPanel');
+    var p4 = document.getElementById('pal4Panel');
     return JSON.stringify({
       tamilLeft: /[\\u0B80-\\u0BFF]/.test(p.textContent),
+      tamilLeft4: /[\\u0B80-\\u0BFF]/.test(p4.textContent),
       say: document.getElementById('palSay').textContent.trim().slice(0,40),
-      btn: document.getElementById('langBtn').textContent.trim()
+      say4: document.getElementById('pal4Say').textContent.trim().slice(0,40),
+      choose4: document.getElementById('pal4Choose').textContent.trim(),
+      onBoard4: document.getElementById('pal4OnBoard').textContent.trim(),
+      btn: document.getElementById('langBtn').textContent.trim(),
+      btn4: document.getElementById('pal4LangBtn').textContent.trim()
     }); })()`).then(JSON.parse);
-  ok('switching back to English leaves no Tamil behind', !back.tamilLeft,
+  ok('switching back to English leaves no Tamil behind on the 2-player board', !back.tamilLeft,
     'say line now: ' + JSON.stringify(back.say));
+  ok('and none on the 4-player board either', !back.tamilLeft4,
+    'say line now: ' + JSON.stringify(back.say4));
+  ok('the 4-player choose-player bar and reserve stat both flip back to English too',
+    !TAMIL.test(back.choose4) && !TAMIL.test(back.onBoard4),
+    back.choose4 + ' | ' + back.onBoard4);
   ok('and the button says English again', /English/.test(back.btn), back.btn);
+  ok('both language buttons agree — toggling either one moves both boards',
+    /English/.test(back.btn4), back.btn4);
 
   ok('no JS errors', errs.length === 0, errs.join(' | ') || '');
   ws.close(); ch.kill();

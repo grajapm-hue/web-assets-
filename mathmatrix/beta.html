@@ -3874,6 +3874,7 @@ body{ background:#C9A87C !important; }
   <div class="pal4Foot">
     <button class="slideBtn" id="pal4New" type="button">🔄 New game</button>
     <button class="slideBtn" id="pal4Rules" type="button">📖 How this differs</button>
+    <span class="palStat" id="pal4OnBoard">140 seeds on the board</span>
   </div>
 </div>
 
@@ -8088,6 +8089,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
          after the whole-app version was seen to collapse the layouts. */
       var PAL_TXT = {
         playerN:   { en:'Player {n}',                     ta:'வீரர் {n}' },
+        playerL:   { en:'Player {a}',                     ta:'வீரர் {a}' },   // 4-player board: A/B/C/D, not 1/2
         filling:   { en:'Filling the board — <b>five seeds</b> in every cup, straight from each store.',
                      ta:'பலகையை நிரப்புகிறோம் — ஒவ்வொரு குழியிலும் <b>ஐந்து விதைகள்</b>, சேமிப்பிலிருந்தே.' },
         starts:    { en:'<b>{a}</b> starts. Tap one of your own cups to lift its seeds.',
@@ -8244,6 +8246,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
          __palNew, __palState and the rest: exposed on window rather than
          moved, since P() and PAL_TXT it depends on belong here. */
       window.__palHowTo = palHowTo;
+      window.__palP = P;   // the 4-player board reuses this same lookup, not a second one
 
       function P(key, v){
         var row = PAL_TXT[key] || {};
@@ -8945,6 +8948,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
          itself never changes shape. */
       var enabled = { A: true, B: true, C: true, D: true };
 
+      function enabledSides(){ return SIDES.filter(function(s){ return enabled[s]; }); }
+
       // next enabled side after `from`, walking the same ring order Choose
       // Player already cycles in — the one place that decides "who's next"
       function nextEnabledIndex(from){
@@ -8959,7 +8964,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         var out = {};
         SIDES.forEach(function(s){
           var el = document.querySelector('#pal4Card' + s + ' .pal4CardName');
-          out[s] = (el && el.value.trim()) || ('Player ' + s);
+          out[s] = (el && el.value.trim()) ||
+            (window.__palP ? window.__palP('playerL', { a: s }) : ('Player ' + s));
         });
         return out;
       }
@@ -8986,7 +8992,17 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         var look = document.getElementById('pal4Look');
         if (look) look.className = 'pal4Look look' + SIDES[active];
         var choose = document.getElementById('pal4Choose');
-        if (choose) choose.textContent = '👤 Choose player — ' + names[SIDES[active]] + ' starts';
+        if (choose) choose.textContent = window.__palP
+          ? window.__palP('chooseP', { a: names[SIDES[active]] })
+          : ('👤 Choose player — ' + names[SIDES[active]] + ' starts');
+        // reserve stat: 35 seeds per enabled side's row, matching the static "5 per cup" sample
+        var onBoard = document.getElementById('pal4OnBoard');
+        if (onBoard){
+          var seedTotal = enabledSides().length * 35;
+          onBoard.textContent = window.__palP
+            ? window.__palP(seedTotal === 1 ? 'onBoard1' : 'onBoardN', { n: seedTotal })
+            : (seedTotal + ' seeds on the board');
+        }
       }
 
       var chooseBtn = document.getElementById('pal4Choose');
@@ -9029,11 +9045,20 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         pal4Draw();
       });
 
-      var pal4RulesBtn = document.getElementById('pal4Rules');
-      if (pal4RulesBtn) pal4RulesBtn.addEventListener('click', function(){
-        var lb2 = document.getElementById('logicBox');
-        if (lb2) lb2.innerHTML =
-          '<h3>🫘 Pallanguzhi · 4 Players — how this differs</h3>' +
+      // bilingual, same ta/en branch pattern as the 2-player board's palHowTo()
+      function pal4HowTo(){
+        var ta = !!(window.__palTa && window.__palTa());
+        if (ta) return '<h3>🫘 பல்லாங்குழி · 4 வீரர்கள் — இது எப்படி வேறுபடுகிறது</h3>' +
+          '<p>இது வடிவம் மட்டுமே, முழுமையான ஆட்டம் அல்ல. ஒவ்வொரு பக்கத்திலும் ஏழு ' +
+          'குழிகள் கொண்ட நான்கு பக்கங்கள், சதுரத்தைச் சுற்றி ஒரே ஒரு தொடர் வளையம் — ' +
+          'இரு வீரர் பலகையின் அதே யோசனை, ஆனால் நீளமான, சதுர சுற்று.</p>' +
+          '<p><b>இன்னும் முடிவு செய்யப்படவில்லை</b>, கீழே எதுவும் இயக்கப்படவில்லை: ' +
+          'இரண்டுக்குப் பதிலாக நான்கு பக்கங்களில் எடுப்பு எந்தக் குழியை நோக்கிச் ' +
+          'செல்லும் என்பது; இரண்டுக்குப் பதிலாக நான்கு சேமிப்புகளுடன் ஒரு சுற்று ' +
+          'எப்போது முடியும் என்பது; பிள்ளை குழியும் பசு வெகுமதியும் மாறாமல் ' +
+          'தொடருமா என்பது. இங்கே வீரரைத் தேர்ந்தெடு என்பது ஒளிர்வை மட்டும் ' +
+          'நகர்த்தும் — இது உண்மையான ஆட்டத்தைத் தொடங்காது.</p>';
+        return '<h3>🫘 Pallanguzhi · 4 Players — how this differs</h3>' +
           '<p>This is the SHAPE, not the finished game. Four sides of seven cups ' +
           'each, one continuous ring around the square — the same idea as the ' +
           'two-player board, just a longer, square lap.</p>' +
@@ -9042,6 +9067,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           'with four reserves instead of two; whether the savings pocket and ' +
           'pasu bonus carry over unchanged. Choose Player here only moves a ' +
           'highlight — it does not start a real game.</p>';
+      }
+      window.__pal4HowTo = pal4HowTo;
+
+      var pal4RulesBtn = document.getElementById('pal4Rules');
+      if (pal4RulesBtn) pal4RulesBtn.addEventListener('click', function(){
+        var lb2 = document.getElementById('logicBox');
+        if (lb2) lb2.innerHTML = pal4HowTo();
         if (typeof openLearn === 'function') openLearn('logic', false);
       });
 
@@ -9069,6 +9101,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         if (window.__pal4Draw) window.__pal4Draw();
         var title = document.getElementById('appBarTitle');
         if (title) title.innerHTML = boxedTitle('🫘 Pallanguzhi 4P');   // the full name truncated in the app bar
+        // matches the 2-player opener: keep the top-bar LOGIC button honest
+        // for whichever board is actually open, not whatever was open last
+        var lb3 = document.getElementById('logicBox');
+        if (lb3 && window.__pal4HowTo) lb3.innerHTML = window.__pal4HowTo();
       });
     });
 
@@ -10233,25 +10269,23 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // the board's own furniture — everything else in the app stays English
     'Store':'சேமிப்பு', '🔄 New game':'🔄 புதிய ஆட்டம்', '📖 How to play':'📖 எப்படி விளையாடுவது',
     'Player 1':'வீரர் 1', 'Player 2':'வீரர் 2',
-    'Tap Start to fill the board.':'பலகையை நிரப்ப தொடங்கு என்பதைத் தட்டுங்கள்.'
+    'Tap Start to fill the board.':'பலகையை நிரப்ப தொடங்கு என்பதைத் தட்டுங்கள்.',
+    // the 4-player board — same family, same rule: translated completely, not patched
+    'STORE':'சேமிப்பு',
+    'Player A':'வீரர் A', 'Player B':'வீரர் B', 'Player C':'வீரர் C', 'Player D':'வீரர் D',
+    'Players:':'வீரர்கள்:',
+    '📖 How this differs':'📖 இது எப்படி வேறுபடுகிறது',
+    'Sample layout — the rules are still being worked out. Choose Player just previews who SaNa is watching.':
+      'மாதிரி அமைப்பு — விளையாட்டு விதிகள் இன்னும் வடிவமைக்கப்பட்டு வருகின்றன. வீரரைத் தேர்ந்தெடு என்பது SaNa யாரைக் கவனிக்கிறார் என்பதை மட்டும் காட்டும்.',
+    'One ring runs the whole way round the frame — A along the top, B down the right, C along the bottom, D up the left, back into A.':
+      'சட்டத்தைச் சுற்றி ஒரே ஒரு வளையம் ஓடுகிறது — மேலே A, வலப் பக்கமாக இறங்கி B, கீழே C, இடப் பக்கமாக ஏறி D, மீண்டும் A-வுக்குள்.'
   };
 
   /* Swap the text in place, remembering the English so the switch works both
      ways. Whole text nodes only: a node that mixes wording with a live number
      ("70 seeds on the board") cannot be matched from a table and belongs to the
      next slice, where the sentence is assembled through a lookup instead. */
-  function applyLang(){
-    /* THE BOARD ONLY. This walked the whole app shell for one build, and the
-       screenshots settled it: Raja — "change entire app to Tamil is possible to
-       collapse the UI decoration." He is right, and it was measurable. Tamil
-       runs longer than English, every layout here is sized by measuring itself,
-       and in Tamil the nine-puzzle ladder stopped fitting one screen and a chip
-       was cut 11px short. Nine puzzles half-translated is worse than nine in
-       English.
-       Pallanguzhi is the opposite case: a Tamil game, whose whole vocabulary is
-       Tamil already — pasu, the cups, the sowing. It is translated COMPLETELY,
-       sentences included, and nothing else is touched. */
-    var root = document.getElementById('palPanel');
+  function applyLangToRoot(root){
     if (!root) return;
     var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), n;
     while ((n = w.nextNode())){
@@ -10270,45 +10304,69 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       if (el.__ph === undefined) el.__ph = el.getAttribute('placeholder');
       el.setAttribute('placeholder', (LANG === 'ta' && TA[el.__ph]) ? TA[el.__ph] : el.__ph);
     });
+  }
+  function applyLang(){
+    /* THE PALLANGUZHI BOARDS ONLY. This walked the whole app shell for one
+       build, and the screenshots settled it: Raja — "change entire app to
+       Tamil is possible to collapse the UI decoration." He is right, and it
+       was measurable. Tamil runs longer than English, every layout here is
+       sized by measuring itself, and in Tamil the nine-puzzle ladder stopped
+       fitting one screen and a chip was cut 11px short. Nine puzzles
+       half-translated is worse than nine in English.
+       Pallanguzhi is the opposite case: a Tamil game, whose whole vocabulary is
+       Tamil already — pasu, the cups, the sowing. Both boards — 2-player and
+       4-player, same family — are translated COMPLETELY, sentences included,
+       and nothing else in the app is touched. */
+    applyLangToRoot(document.getElementById('palPanel'));
+    applyLangToRoot(document.getElementById('pal4Panel'));
     document.documentElement.setAttribute('lang', LANG === 'ta' ? 'ta' : 'en');
     document.body.classList.toggle('langTa', LANG === 'ta');
   }
 
   function refreshLangBtn(){
-    var b = document.getElementById('langBtn');
-    if (b) b.textContent = LANG === 'ta' ? '🌐 தமிழ்' : '🌐 English';
+    var label = LANG === 'ta' ? '🌐 தமிழ்' : '🌐 English';
+    ['langBtn', 'pal4LangBtn'].forEach(function(id){
+      var b = document.getElementById(id);
+      if (b) b.textContent = label;
+    });
   }
-  (function buildLangBtn(){
-    /* ON THE BOARD, not in the app's settings. It began beside Sound and Music
-       because that is where Raja first asked for it, and that was right while it
-       was an app-wide switch. Now that it changes one game and one game only, a
-       control buried in global settings would be a promise the app does not
-       keep — so it sits with New Game and How To Play, on the screen it
-       actually affects. */
-    var row = document.querySelector('.palFoot');
-    if (!row) return;
-    var b = document.createElement('button');
-    b.id = 'langBtn'; b.type = 'button'; b.className = 'slideBtn';
-    row.insertBefore(b, row.firstChild);
-    b.addEventListener('click', function(){
-      LANG = LANG === 'ta' ? 'en' : 'ta';
-      localStorage.setItem('mmLang', LANG);
-      applyLang();
-      refreshLangBtn();
-      /* Redraw the board, because most of what it says is a SENTENCE built at
-         the moment it is said — whose turn it is, what was just won — and those
-         are not sitting in the page waiting to be swapped. Without this the
-         labels turn Tamil while the running commentary stays English until the
-         next move. */
-      if (window.__palRedraw) window.__palRedraw();
-      if (typeof sfx === 'function') try { sfx('card'); } catch(e){}
+  function toggleLang(){
+    LANG = LANG === 'ta' ? 'en' : 'ta';
+    localStorage.setItem('mmLang', LANG);
+    applyLang();
+    refreshLangBtn();
+    /* Redraw both boards, because most of what they say is a SENTENCE built at
+       the moment it is said — whose turn it is, what was just won — and those
+       are not sitting in the page waiting to be swapped. Without this the
+       labels turn Tamil while the running commentary stays English until the
+       next move. */
+    if (window.__palRedraw) window.__palRedraw();
+    if (window.__pal4Draw) window.__pal4Draw();
+    if (typeof sfx === 'function') try { sfx('card'); } catch(e){}
+  }
+  (function buildLangBtns(){
+    /* ON THE BOARDS THEMSELVES, not in the app's settings. It began beside
+       Sound and Music because that is where Raja first asked for it, and that
+       was right while it was an app-wide switch. Now that it changes the
+       Pallanguzhi family only, a control buried in global settings would be a
+       promise the app does not keep — so it sits with New Game and How To
+       Play, on the screens it actually affects. One button per board, same
+       shared LANG underneath, so toggling either one keeps both in step. */
+    [['langBtn', '.palFoot'], ['pal4LangBtn', '.pal4Foot']].forEach(function(pair){
+      var row = document.querySelector(pair[1]);
+      if (!row) return;
+      var b = document.createElement('button');
+      b.id = pair[0]; b.type = 'button'; b.className = 'slideBtn';
+      row.insertBefore(b, row.firstChild);
+      b.addEventListener('click', toggleLang);
     });
     refreshLangBtn();
     if (LANG === 'ta') applyLang();
   })();
   window.__mmLang = function(l){                 // for the checks
     if (l){ LANG = l; localStorage.setItem('mmLang', l); applyLang(); refreshLangBtn();
-            if (window.__palRedraw) window.__palRedraw(); }
+            if (window.__palRedraw) window.__palRedraw();
+            if (window.__pal4Draw) window.__pal4Draw(); }
     return LANG;
   };
   window.__palTa = function(){ return LANG === 'ta'; };
@@ -11987,7 +12045,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-191 (4-player board: New game button resets the tick boxes)';
+  var BUILD_VER = 'beta-192 (4-player board: full Tamil translation, matching the 2-player board)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
