@@ -2682,8 +2682,19 @@ body.langTa .palTurn{ font-size:12.5px; }
    its 76px card; overflow:hidden + ellipsis on the Cap label is the same
    second line of defence used there, in case a translation is ever wider
    still. */
-.pal4CardStore{ display:flex; align-items:center; gap:3px; padding:2px 5px; border-radius:999px;
+.pal4CardStore{ display:flex; align-items:center; gap:3px; padding:10px 5px; border-radius:999px;
   background:#4A3117; max-width:100%; box-sizing:border-box; overflow:hidden; touch-action:manipulation; }
+/* Raja's real device keeps missing this box on tap (logged landing on totally
+   unrelated elements below it) -- measured, its own tappable box was only
+   ~24px tall, well under the 44x44 CSS px minimum touch target Material/HIG
+   both call for. First attempt grew an invisible ::before hit area, but
+   .pal4CardStore's own overflow:hidden (needed to stop long Tamil text
+   bleeding past the card, added earlier this session) clips ANY descendant
+   that tries to extend past its box, pseudo-elements included -- so that
+   never actually worked. Real vertical padding instead: it can't be
+   clipped by the box's own overflow, and only height changes (2px -> 10px
+   top/bottom), so none of the width-based overflow fixes already fought
+   for here are touched. ~40px tall now, close to the 44px target. */
 .pal4CardStore.toDeal{ cursor:pointer; animation:pal4PasuGlow 1.15s ease-in-out infinite; }
 .pal4CardStore.toDeal:active{ transform:translateY(1px); }
 .pal4CardStoreNum{ min-width:26px; height:20px; border-radius:5px; background:#FFF6E7;
@@ -9423,20 +9434,36 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         sow4(i);
       });
 
-      /* TEMPORARY DIAGNOSTIC (beta-203) — the beta-201 click diagnostic below
-         this comment never printed anything on Raja's real device either,
-         even though beta-202's window.onerror banner (page-wide, catches ANY
-         uncaught error) stayed silent too and the board's own idle state
-         (message, tick boxes, "140 seeds") rendered correctly — proof the
-         engine itself runs fine. So the tap genuinely never reaches this
-         'click' listener at all. To see WHY, log every raw pointerdown /
-         touchstart / click anywhere inside #pal4Panel — not just on the
-         store box — so we can tell whether the browser sees the touch at
-         all, where exactly it lands, and whether a click ever follows it.
-         Bottom-of-screen readout, independent of SaNa/panel state so it
-         can't be hidden by whatever else is on screen. Capture phase so it
-         sees events before anything else does. Remove once the real cause
-         is confirmed and fixed. */
+      /* TEMPORARY DIAGNOSTIC (beta-203/204) — the beta-201 click diagnostic
+         below this comment never printed anything on Raja's real device
+         either, even though beta-202's window.onerror banner (page-wide,
+         catches ANY uncaught error) stayed silent too and the board's own
+         idle state (message, tick boxes, "140 seeds") rendered correctly —
+         proof the engine itself runs fine. So the tap genuinely never
+         reaches this 'click' listener at all. To see WHY, log every raw
+         pointerdown / touchstart / click anywhere inside #pal4Panel — not
+         just on the store box — so we can tell whether the browser sees the
+         touch at all, where exactly it lands, and whether a click ever
+         follows it. Bottom-of-screen readout, independent of SaNa/panel
+         state so it can't be hidden by whatever else is on screen. Capture
+         phase so it sees events before anything else does.
+
+         beta-203's first real result: pointerdown/touchstart DID fire, but
+         both landed on #pal4Choose or a bare DIV — nowhere near a store box
+         — even though the screenshot taken right after shows the stores
+         sitting near the top with #pal4Choose ~400px further down. Since
+         hit-testing is always self-consistent with whatever is actually
+         painted at that instant, that gap can only mean the layout at
+         TOUCH time differed from the layout at SCREENSHOT time — most
+         likely #pal4Panel (overflow-y:auto) was scrolled to a different
+         position mid-gesture and settled back before the screenshot was
+         taken. beta-204 also grew .pal4CardStore's real hit area (it
+         measured only ~24px tall, well under the 44px touch-target
+         minimum) as an independent, defensible fix either way. This adds
+         scroll position to every logged line so the NEXT screenshot proves
+         or rules out the scroll-desync theory directly instead of another
+         round of guessing. Remove once the real cause is confirmed and
+         fixed. */
       (function(){
         var log = [];
         function tagOf(e){
@@ -9459,7 +9486,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           document.addEventListener(type, function(e){
             if (!(e.target.closest && e.target.closest('#pal4Panel'))) return;
             var pt = (e.touches && e.touches[0]) || e;
-            log.push(type + ' ' + tagOf(e) + ' @' + Math.round(pt.clientX) + ',' + Math.round(pt.clientY));
+            var panel = document.getElementById('pal4Panel');
+            log.push(type + ' ' + tagOf(e) + ' @' + Math.round(pt.clientX) + ',' + Math.round(pt.clientY)
+              + ' | pageY:' + Math.round(window.scrollY) + ' panelT:' + Math.round(panel ? panel.scrollTop : -1)
+              + ' vh:' + window.innerHeight + '/' + (window.visualViewport ? Math.round(window.visualViewport.height) : '-'));
             show();
           }, true);
         });
@@ -12579,7 +12609,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-203 (4-player board: raw touch/pointer/click event log — the beta-201 click diagnostic never fired, and beta-202 showed no crash, so log every raw event near the board instead)';
+  var BUILD_VER = 'beta-204 (4-player board: store tap-target grown to real touch-target size + scroll state added to the touch log)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
