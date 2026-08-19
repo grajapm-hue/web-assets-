@@ -2685,11 +2685,23 @@ body.langTa .palTurn{ font-size:12.5px; }
    four-sided board; three or four fill in from there. */
 .pal4Select{ display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap;
   margin:8px 0; padding:8px 10px; border-radius:14px; background:rgba(255,246,231,.55); }
-.pal4SelectLabel{ font-size:18px; font-weight:900; color:#5E3D1C; margin-right:2px; }
-.pal4Tick{ display:flex; align-items:center; gap:6px; padding:8px 17px 8px 11px; border-radius:999px;
-  border:2px solid #8A5E31; background:#FFF6E7; cursor:pointer; font-size:19px; font-weight:900;
+/* Raja: "reduce the tab and font size it's too big keep it all in single
+   row." Same lesson as pal4Say: "no self-overflow, no scroll-budget
+   breach" is not the same guarantee as "still lays out the way it's meant
+   to" — four chips in a flex row wrap onto a second line long before
+   anything actually overflows a box, and the scroll-budget search that
+   found 18/19/29 never asked about wrapping at all. Direct-tested for
+   "stays on one line" instead, in both languages, at every width from
+   340 to 412px — the realistic phone range, not just the single 340px
+   edge case. Padding and gap needed to tighten alongside font-size: the
+   ORIGINAL pre-beta-196 sizing (13px/14px/19px) already wrapped at
+   360-375px because its padding/gap alone ate the row's width, which
+   the font-size search never touched. */
+.pal4SelectLabel{ font-size:10px; font-weight:900; color:#5E3D1C; margin-right:2px; }
+.pal4Tick{ display:flex; align-items:center; gap:3px; padding:3px 7px 3px 5px; border-radius:999px;
+  border:2px solid #8A5E31; background:#FFF6E7; cursor:pointer; font-size:14px; font-weight:900;
   color:#5E3D1C; user-select:none; }
-.pal4Tick input{ width:29px; height:29px; margin:0; accent-color:#8A5E31; cursor:pointer; }
+.pal4Tick input{ width:19px; height:19px; margin:0; accent-color:#8A5E31; cursor:pointer; }
 /* the box takes the SAME colour as the side it enables, so ticking one and
    watching its row light up is one visual idea, not two to learn separately */
 .pal4Tick.sideA.on{ background:#FDE1A8; border-color:#92400E; }
@@ -12090,7 +12102,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-197 (4-player board: fixed a real regression — SaNa bubble was hiding the tick row and Choose Player)';
+  var BUILD_VER = 'beta-198 (4-player board: tick-box row shrunk back to fit one line, not two)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that

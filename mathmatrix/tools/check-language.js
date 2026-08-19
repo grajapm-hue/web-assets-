@@ -309,6 +309,23 @@ const TAMIL = /[\u0B80-\u0BFF]/;
     onOpen4.selectVisible, 'select bottom ' + onOpen4.selectBottom + ' vs tab bar ' + onOpen4.tabBarTop);
   ok('and so is Choose Player', onOpen4.chooseVisible, 'choose bottom ' + onOpen4.chooseBottom + ' vs tab bar ' + onOpen4.tabBarTop);
 
+  /* Raja: "reduce the tab and font size it's too big keep it all in single
+     row." Tamil is the language most likely to force a wrap first — longer
+     words ("வீரர்கள்:", "A"/"B"/"C"/"D" chip padding aside) push the row's
+     content width further than English does at the same size. Checked
+     across the realistic phone width range, same as the English version
+     in check-pallanguzhi-4p.js. */
+  for (const w of [340, 360, 375, 390, 412]){
+    await send('Emulation.setDeviceMetricsOverride', { width: w, height: 800, deviceScaleFactor: 2, mobile: true });
+    await ev(`document.getElementById('tab-scHome').click()`); await sleep(150);
+    await ev(`document.getElementById('pal4Tab').click()`); await sleep(500);
+    const row = await ev(`(function(){
+      var tops = Array.from(document.querySelectorAll('.pal4Tick')).map(function(c){ return Math.round(c.getBoundingClientRect().top); });
+      return JSON.stringify({ singleRow: new Set(tops).size === 1, tops: tops }); })()`).then(JSON.parse);
+    ok('in Tamil at ' + w + 'px, all four tick boxes stay on one line', row.singleRow, JSON.stringify(row.tops));
+  }
+  await send('Emulation.setDeviceMetricsOverride', { width: 360, height: 800, deviceScaleFactor: 2, mobile: true });
+
   /* 5. Back to English — the direction nobody tests, and the one where a child
         left in a script they cannot read has no way out. */
   await ev(`window.__mmLang('en')`); await sleep(800);

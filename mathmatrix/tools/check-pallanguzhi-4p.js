@@ -322,6 +322,26 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   ok('and so is Choose Player', onOpen.chooseVisible, 'choose bottom ' + onOpen.chooseBottom + ' vs tab bar ' + onOpen.tabBarTop);
   ok('and the square frame itself is a sensible size, not crushed', tight.frameWidth >= 250, tight.frameWidth + 'px wide');
 
+  /* Raja again, on the tick-box row specifically: "reduce the tab and font
+     size it's too big keep it all in single row." The row not overflowing
+     ITS OWN box (already checked) is not the same guarantee as the four
+     chips staying on one LINE — flex-wrap kicks in long before any actual
+     overflow, so no prior check ever caught it. Checked across the whole
+     realistic phone width range (340-412px), not just the one tightest
+     size, since the wrap point turned out to depend on width in a way a
+     single sample would miss. */
+  const widths = [340, 360, 375, 390, 412];
+  for (const w of widths){
+    await send('Emulation.setDeviceMetricsOverride', { width: w, height: 800, deviceScaleFactor: 2, mobile: true });
+    await ev(`document.getElementById('tab-scHome').click()`); await sleep(150);
+    await ev(`document.getElementById('pal4Tab').click()`); await sleep(500);
+    const row = await ev(`(function(){
+      var tops = Array.from(document.querySelectorAll('.pal4Tick')).map(function(c){ return Math.round(c.getBoundingClientRect().top); });
+      return JSON.stringify({ singleRow: new Set(tops).size === 1, tops: tops }); })()`).then(JSON.parse);
+    ok('at ' + w + 'px, all four tick boxes stay on one line', row.singleRow, JSON.stringify(row.tops));
+  }
+  await send('Emulation.setDeviceMetricsOverride', { width: 340, height: 780, deviceScaleFactor: 2, mobile: true });
+
   /* D, SaNa and B all sit on the SAME horizontal band in the well's middle
      row. The well-containment check above only guards the well's OUTER
      edge — two siblings can each stay safely inside that edge and still
