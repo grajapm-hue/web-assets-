@@ -139,14 +139,25 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   const overlap = await ev(`(function(){
     var well = document.querySelector('.pal4Well').getBoundingClientRect();
     var bad = [];
-    document.querySelectorAll('.pal4Card, .pal4SanaMid').forEach(function(el){
+    /* THE LEAF ELEMENTS, not just the containers around them. Raja circled the
+       exact bug this replaced: the containers (.pal4Card) were always sized
+       correctly — a fixed, absolutely-positioned 76px box, safely inside the
+       well — while the <input> living inside one took the browser's own
+       default width (about 170-200px, from the implicit size=20 no one had
+       overridden) and simply ignored its parent's declared size, bleeding
+       into the cup ring on both sides. A check that only measures the
+       container never sees that, because the container never moved — only
+       its child did. Proved by putting the old CSS back: the container-only
+       version of this check stayed green throughout. */
+    document.querySelectorAll('.pal4Card, .pal4SanaMid, .pal4CardName, .pal4CardStore').forEach(function(el){
       var r = el.getBoundingClientRect();
+      if (r.width === 0 && r.height === 0) return;
       if (r.left < well.left - 2 || r.right > well.right + 2 || r.top < well.top - 2 || r.bottom > well.bottom + 2)
-        bad.push(el.className.split(' ')[0] || el.tagName);
+        bad.push((el.className.split(' ')[0] || el.tagName) + ' [' + Math.round(r.left) + '..' + Math.round(r.right) + '] vs well [' + Math.round(well.left) + '..' + Math.round(well.right) + ']');
     });
     return JSON.stringify(bad); })()`).then(JSON.parse);
-  ok('every card and SaNa stay inside the open well, nothing spills onto the ring',
-    overlap.length === 0, overlap.length ? overlap.join(', ') + ' spilled out' : 'all contained');
+  ok('every card, its name box, its store, and SaNa all stay inside the open well',
+    overlap.length === 0, overlap.length ? overlap.join(' | ') : 'all contained, leaf elements included');
 
   /* SWITCHING AWAY MUST CLOSE THIS CLEANLY, and switching to every other
      puzzle from here must not leave this panel showing underneath it. The

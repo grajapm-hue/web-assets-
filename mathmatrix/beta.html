@@ -2586,7 +2586,20 @@ body.langTa .palTurn{ font-size:12.5px; }
    nearest its own row of cups, so ownership reads at a glance without
    leaving the board to look for it. */
 .pal4Card{ position:absolute; display:flex; flex-direction:column; align-items:center; gap:2px; }
-.pal4CardName{ padding:3px 9px; border-radius:8px; font-size:9.5px; font-weight:900;
+/* Raja circled it exactly: these bled into the cup columns on both sides. The
+   cause was not the text at all — it is an <input>, and an unstyled <input>
+   takes its BROWSER-NATIVE default width (about 170-200px, from the implicit
+   size=20) regardless of what its parent declares. The parent card was set to
+   76px, but nothing ever told the input itself to respect that, and a flex
+   column with align-items:center does not shrink a child down to the
+   column's own width — it just centres the child at whatever width the child
+   wants, which is why the overflow was symmetrical, spilling into the cup
+   ring equally on both sides. width:100% plus box-sizing:border-box makes the
+   input actually fill its 76px card instead of ignoring it; overflow+ellipsis
+   is the second line of defence, in case a typed name is still too long for
+   that width to hold comfortably. */
+.pal4CardName{ width:100%; box-sizing:border-box; padding:3px 6px; border-radius:8px;
+  font-size:9.5px; font-weight:900; overflow:hidden; text-overflow:ellipsis;
   white-space:nowrap; background:none; border:1.5px solid transparent; font-family:inherit;
   text-align:center; cursor:default; }
 .pal4CardName::placeholder{ font-weight:700; }
@@ -11872,7 +11885,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-188 (Pallanguzhi 4 Players — the table, UI only)';
+  var BUILD_VER = 'beta-189 (the 4-player name boxes no longer bleed into the cups)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
