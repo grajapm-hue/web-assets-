@@ -16,6 +16,36 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0d0d0d">
+<!-- TEMP DIAGNOSTIC (beta-202): Raja's 4-player store tap still does nothing on
+     his real device even after the touch-action fix, and the tap-details capture
+     added in beta-201 never showed up in SaNa's bubble either — meaning the click
+     may never be reaching ANY document-level JS at all on his phone. The one thing
+     that would explain silence from EVERY handler at once is an uncaught error
+     earlier in the same <script> block aborting execution before the pal4 (or
+     even earlier) event listeners ever get registered. There is no error handler
+     anywhere in this file to see that. This one is registered before any other
+     script runs, so it catches a syntax or runtime error anywhere below it,
+     including ones headless desktop Chrome never hits. It writes to a fixed
+     on-page banner (not a console, which he can't see) so the NEXT screenshot
+     tells us the real cause instead of another guess. Remove once the cause is
+     confirmed and fixed. -->
+<script>
+window.onerror = function(msg, src, line, col, err){
+  try{
+    var b = document.getElementById('__errBanner');
+    if (!b){
+      b = document.createElement('div');
+      b.id = '__errBanner';
+      b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:2147483647;'
+        + 'background:#c0392b;color:#fff;font:11px/1.4 monospace;padding:6px 8px;'
+        + 'white-space:pre-wrap;word-break:break-word;max-height:45vh;overflow:auto;';
+      (document.body || document.documentElement).appendChild(b);
+    }
+    b.textContent += '⚠ ' + msg + '  @' + String(src || '').split('/').pop() + ':' + line + ':' + col + '\n';
+  }catch(e){}
+  return false;
+};
+</script>
 <!-- Raja, after three rounds landing on the same wall: "install"/"download" can
      only ever fall back to the same manual instructions without a real manifest
      — so, deliberately, build the real thing now. beta-manifest.json is its OWN
@@ -12531,7 +12561,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-201 (4-player board: temporary on-screen diagnostic for the still-unfixed store-tap bug)';
+  var BUILD_VER = 'beta-202 (4-player board: page-wide error banner — the beta-201 tap diagnostic never fired, so catch anything that runs before it)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
