@@ -273,7 +273,7 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
      overflow a narrow screen, since its height is tied to its width. Unlike
      the 2-player board, #pal4Panel is built with overflow-y:auto — scrolling
      to reach the foot row is the DESIGN, not a failure, especially now that
-     the foot row carries four items (language, New game, How this differs,
+     the foot row carries four items (language, New game, How to play,
      the reserve stat) instead of the original one. The guarantee here is
      "reachable", not "visible without scrolling". */
   await send('Emulation.setDeviceMetricsOverride', { width: 340, height: 780, deviceScaleFactor: 2, mobile: true });
@@ -287,7 +287,7 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
     var b = document.querySelector('.tabBar').getBoundingClientRect().top;
     return JSON.stringify({ footReachable: f.bottom <= b + 1, footBottom: Math.round(f.bottom), bar: Math.round(b),
       frameWidth: Math.round(frame.width), scrolled: panel.scrollHeight > panel.clientHeight + 1 }); })()`).then(JSON.parse);
-  ok('at 340x780, the foot row (language / New game / How this differs / reserve) is reachable by scrolling',
+  ok('at 340x780, the foot row (language / New game / How to play / reserve) is reachable by scrolling',
     tight.footReachable,
     tight.footReachable
       ? 'foot ' + tight.footBottom + ', bar ' + tight.bar + (tight.scrolled ? ' (scrolling was needed)' : ' (fit without scrolling)')

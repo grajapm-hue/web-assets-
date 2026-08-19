@@ -3873,7 +3873,7 @@ body{ background:#C9A87C !important; }
 
   <div class="pal4Foot">
     <button class="slideBtn" id="pal4New" type="button">🔄 New game</button>
-    <button class="slideBtn" id="pal4Rules" type="button">📖 How this differs</button>
+    <button class="slideBtn" id="pal4Rules" type="button">📖 How to play</button>
     <span class="palStat" id="pal4OnBoard">140 seeds on the board</span>
   </div>
 </div>
@@ -10274,7 +10274,6 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     'STORE':'சேமிப்பு',
     'Player A':'வீரர் A', 'Player B':'வீரர் B', 'Player C':'வீரர் C', 'Player D':'வீரர் D',
     'Players:':'வீரர்கள்:',
-    '📖 How this differs':'📖 இது எப்படி வேறுபடுகிறது',
     'Sample layout — the rules are still being worked out. Choose Player just previews who SaNa is watching.':
       'மாதிரி அமைப்பு — விளையாட்டு விதிகள் இன்னும் வடிவமைக்கப்பட்டு வருகின்றன. வீரரைத் தேர்ந்தெடு என்பது SaNa யாரைக் கவனிக்கிறார் என்பதை மட்டும் காட்டும்.',
     'One ring runs the whole way round the frame — A along the top, B down the right, C along the bottom, D up the left, back into A.':
@@ -12045,7 +12044,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-192 (4-player board: full Tamil translation, matching the 2-player board)';
+  var BUILD_VER = 'beta-193 (4-player board: rules button renamed to How to play, matching the 2-player board)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that

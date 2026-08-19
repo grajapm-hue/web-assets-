@@ -103,6 +103,7 @@ const TAMIL = /[\u0B80-\u0BFF]/;
     out.store = document.querySelector('.palStoreCap').textContent.trim();
     out.name = document.getElementById('palName1').getAttribute('placeholder');
     out.btn = document.getElementById('langBtn').textContent.trim();
+    out.btnLabel2p = document.getElementById('palRules').textContent.trim();
     return JSON.stringify(out); })()`).then(JSON.parse);
 
   ok('the button switches to Tamil', TAMIL.test(board.btn), board.btn);
@@ -161,7 +162,12 @@ const TAMIL = /[\u0B80-\u0BFF]/;
   ok('the card STORE label is Tamil', TAMIL.test(board4.store), board4.store);
   ok('an empty card box prompts in Tamil', TAMIL.test(board4.name), board4.name);
   ok('New game reuses the same Tamil as the 2-player board', TAMIL.test(board4.newBtn), board4.newBtn);
-  ok('How this differs is Tamil', TAMIL.test(board4.rulesBtn), board4.rulesBtn);
+  // Raja: "remove how this differ replace it with how to play... both
+  // english and tamil" — the button now reuses the 2-player board's exact
+  // own label/key, so this also confirms the two literally match, not just
+  // that both happen to be Tamil.
+  ok('the rules button reads "How to play", reusing the 2-player board\'s own label exactly',
+    board4.rulesBtn === board.btnLabel2p, board4.rulesBtn + ' vs 2-player’s ' + JSON.stringify(board.btnLabel2p));
   ok('no English is left anywhere on the 4-player board',
     board4.untranslated.length === 0,
     board4.untranslated.length ? board4.untranslated.join(' | ') : 'none');
