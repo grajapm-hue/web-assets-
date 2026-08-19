@@ -9423,29 +9423,47 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         sow4(i);
       });
 
-      /* TEMPORARY DIAGNOSTIC — Raja: "all pockets and reserves just bubbling
-         effect not game starting" on a real device, after the touch-action
-         fix (beta-200) did not resolve it. Every test this session reaches
-         the deal logic correctly (both element.click() and coordinate-based
-         mouse events in headless Chrome), which means the failure is
-         something about a REAL device's touch handling this session cannot
-         reproduce or observe remotely. Rather than guess again, this writes
-         exactly what happens on tap directly into the visible SaNa bubble —
-         readable and screenshot-able without needing phone devtools. Remove
-         once the real cause is confirmed and fixed. Capture phase (true) so
-         it sees the tap before anything else does. */
-      document.addEventListener('click', function(e){
-        var box = e.target.closest && e.target.closest('#pal4Panel .pal4CardStore');
-        if (!box) return;
-        var tgt = e.target.tagName + (e.target.className ? '.' + String(e.target.className).split(' ').join('.') : '');
-        var card = box.closest('.pal4Card');
-        var m = card && card.id.match(/^pal4Card([A-D])$/);
-        if (!m){ pal4Say('🔧 tap seen on ' + tgt + ' but no card id matched: ' + (card ? card.id : 'null')); return; }
-        var p = SIDES.indexOf(m[1]);
-        var dbg = '🔧 tap on ' + m[1] + ' (via ' + tgt + ') — enabled:' + enabled[SIDES[p]] +
-          ' dealt:' + dealt4[p] + ' busy:' + busy4 + ' allDealt:' + enabledSides().every(function(s){ return dealt4[SIDES.indexOf(s)]; });
-        pal4Say(dbg);
-      }, true);
+      /* TEMPORARY DIAGNOSTIC (beta-203) — the beta-201 click diagnostic below
+         this comment never printed anything on Raja's real device either,
+         even though beta-202's window.onerror banner (page-wide, catches ANY
+         uncaught error) stayed silent too and the board's own idle state
+         (message, tick boxes, "140 seeds") rendered correctly — proof the
+         engine itself runs fine. So the tap genuinely never reaches this
+         'click' listener at all. To see WHY, log every raw pointerdown /
+         touchstart / click anywhere inside #pal4Panel — not just on the
+         store box — so we can tell whether the browser sees the touch at
+         all, where exactly it lands, and whether a click ever follows it.
+         Bottom-of-screen readout, independent of SaNa/panel state so it
+         can't be hidden by whatever else is on screen. Capture phase so it
+         sees events before anything else does. Remove once the real cause
+         is confirmed and fixed. */
+      (function(){
+        var log = [];
+        function tagOf(e){
+          var t = e.target;
+          return (t && t.tagName || '?') + (t && t.className ? '.' + String(t.className).split(' ').join('.') : '');
+        }
+        function show(){
+          var b = document.getElementById('__touchLog');
+          if (!b){
+            b = document.createElement('div');
+            b.id = '__touchLog';
+            b.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:2147483646;'
+              + 'background:#1b5e20;color:#fff;font:10px/1.35 monospace;padding:6px 8px;'
+              + 'white-space:pre-wrap;word-break:break-word;max-height:35vh;overflow:auto;';
+            (document.body || document.documentElement).appendChild(b);
+          }
+          b.textContent = log.slice(-8).join('\n');
+        }
+        ['pointerdown', 'touchstart', 'click'].forEach(function(type){
+          document.addEventListener(type, function(e){
+            if (!(e.target.closest && e.target.closest('#pal4Panel'))) return;
+            var pt = (e.touches && e.touches[0]) || e;
+            log.push(type + ' ' + tagOf(e) + ' @' + Math.round(pt.clientX) + ',' + Math.round(pt.clientY));
+            show();
+          }, true);
+        });
+      })();
 
       /* STORE TAPS — tap your own to lay out your own row. */
       document.addEventListener('click', function(e){
@@ -12561,7 +12579,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-202 (4-player board: page-wide error banner — the beta-201 tap diagnostic never fired, so catch anything that runs before it)';
+  var BUILD_VER = 'beta-203 (4-player board: raw touch/pointer/click event log — the beta-201 click diagnostic never fired, and beta-202 showed no crash, so log every raw event near the board instead)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
