@@ -309,8 +309,15 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
     var sana = document.querySelector('.pal4SanaFace').getBoundingClientRect();
     var b = document.querySelector('.pal4B').getBoundingClientRect();
     return JSON.stringify({ dSanaGap: Math.round(sana.left - d.right), sanaBGap: Math.round(b.left - sana.right) }); })()`).then(JSON.parse);
-  ok('at 340x780, Player D\'s card does not touch SaNa', bandGaps.dSanaGap > 0, bandGaps.dSanaGap + 'px gap');
-  ok('and Player B\'s card does not touch SaNa either', bandGaps.sanaBGap > 0, bandGaps.sanaBGap + 'px gap');
+  /* 4px is not an arbitrary floor — it is the actual safety margin the
+     card-width search (beta-196) was run against when finding the true
+     maximum size for these cards: "your self verify how much maximum font
+     size can fix any where with out collide to near any one." Enforcing
+     the same number here means a future size bump that erodes back below
+     the margin the search itself required gets caught, not just anything
+     that touches outright. */
+  ok('at 340x780, Player D\'s card keeps its full design margin from SaNa', bandGaps.dSanaGap >= 4, bandGaps.dSanaGap + 'px gap');
+  ok('and Player B\'s card keeps its margin too', bandGaps.sanaBGap >= 4, bandGaps.sanaBGap + 'px gap');
 
   ok('no JS errors', errs.length === 0, errs.join(' | ') || '');
   ws.close(); ch.kill();
