@@ -9442,66 +9442,17 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         sow4(i);
       });
 
-      /* TEMPORARY DIAGNOSTIC (beta-203/204) — the beta-201 click diagnostic
-         below this comment never printed anything on Raja's real device
-         either, even though beta-202's window.onerror banner (page-wide,
-         catches ANY uncaught error) stayed silent too and the board's own
-         idle state (message, tick boxes, "140 seeds") rendered correctly —
-         proof the engine itself runs fine. So the tap genuinely never
-         reaches this 'click' listener at all. To see WHY, log every raw
-         pointerdown / touchstart / click anywhere inside #pal4Panel — not
-         just on the store box — so we can tell whether the browser sees the
-         touch at all, where exactly it lands, and whether a click ever
-         follows it. Bottom-of-screen readout, independent of SaNa/panel
-         state so it can't be hidden by whatever else is on screen. Capture
-         phase so it sees events before anything else does.
-
-         beta-203's first real result: pointerdown/touchstart DID fire, but
-         both landed on #pal4Choose or a bare DIV — nowhere near a store box
-         — even though the screenshot taken right after shows the stores
-         sitting near the top with #pal4Choose ~400px further down. Since
-         hit-testing is always self-consistent with whatever is actually
-         painted at that instant, that gap can only mean the layout at
-         TOUCH time differed from the layout at SCREENSHOT time — most
-         likely #pal4Panel (overflow-y:auto) was scrolled to a different
-         position mid-gesture and settled back before the screenshot was
-         taken. beta-204 also grew .pal4CardStore's real hit area (it
-         measured only ~24px tall, well under the 44px touch-target
-         minimum) as an independent, defensible fix either way. This adds
-         scroll position to every logged line so the NEXT screenshot proves
-         or rules out the scroll-desync theory directly instead of another
-         round of guessing. Remove once the real cause is confirmed and
-         fixed. */
-      (function(){
-        var log = [];
-        function tagOf(e){
-          var t = e.target;
-          return (t && t.tagName || '?') + (t && t.className ? '.' + String(t.className).split(' ').join('.') : '');
-        }
-        function show(){
-          var b = document.getElementById('__touchLog');
-          if (!b){
-            b = document.createElement('div');
-            b.id = '__touchLog';
-            b.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:2147483646;'
-              + 'background:#1b5e20;color:#fff;font:10px/1.35 monospace;padding:6px 8px;'
-              + 'white-space:pre-wrap;word-break:break-word;max-height:35vh;overflow:auto;';
-            (document.body || document.documentElement).appendChild(b);
-          }
-          b.textContent = log.slice(-8).join('\n');
-        }
-        ['pointerdown', 'touchstart', 'click'].forEach(function(type){
-          document.addEventListener(type, function(e){
-            if (!(e.target.closest && e.target.closest('#pal4Panel'))) return;
-            var pt = (e.touches && e.touches[0]) || e;
-            var panel = document.getElementById('pal4Panel');
-            log.push(type + ' ' + tagOf(e) + ' @' + Math.round(pt.clientX) + ',' + Math.round(pt.clientY)
-              + ' | pageY:' + Math.round(window.scrollY) + ' panelT:' + Math.round(panel ? panel.scrollTop : -1)
-              + ' vh:' + window.innerHeight + '/' + (window.visualViewport ? Math.round(window.visualViewport.height) : '-'));
-            show();
-          }, true);
-        });
-      })();
+      /* The beta-203/204 raw touch/pointer/click logger that lived here is
+         gone (beta-206). Its job was to find why store taps looked like
+         they did nothing — beta-205's pal4Draw() fix (found by reading the
+         2-player board's own code, not from this log's output) was the
+         real cause and Raja confirmed the two-step deal now works. Left
+         running afterward, the log itself became a new, real problem: a
+         fixed bottom-of-screen box that grew with every tap and covered the
+         app's own tab bar and board controls. Removed. window.onerror
+         (beta-202, just above the <head> of this file) stays — it renders
+         nothing at all unless a real uncaught error fires, so it costs
+         nothing to leave in place as an ongoing safety net. */
 
       /* STORE TAPS — tap your own to lay out your own row. */
       document.addEventListener('click', function(e){
@@ -12617,7 +12568,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-205 (4-player board: real root cause found — pal4Draw() was not updating cups/store on screen until EVERY side had dealt; now unconditional, matching the 2-player board exactly)';
+  var BUILD_VER = 'beta-206 (4-player board: removed the beta-203/204 touch-log diagnostic — it was covering the tab bar and controls; the deal bug it was chasing is confirmed fixed)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
