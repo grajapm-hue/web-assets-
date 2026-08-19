@@ -133,6 +133,62 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
     return JSON.stringify({ text: t.textContent.trim(), overflows: t.scrollWidth > t.clientWidth + 1 }); })()`).then(JSON.parse);
   ok('the app-bar title fits without truncating', !titleFit.overflows, JSON.stringify(titleFit));
 
+  /* THE TICK BOXES — Raja: "select sub level, either 2 player or 3 or
+     four... the select will done by four tick box that decide who are to
+     enable the run fill seed sequence." Measured on the actual cups and
+     cards, not a proxy — the lesson from the input-width bug earlier in
+     this file: a container can look right while its content doesn't. */
+  const tickState = () => ev(`JSON.stringify(window.__pal4State())`).then(JSON.parse);
+
+  const t0 = await tickState();
+  ok('all four sides start enabled', ['A', 'B', 'C', 'D'].every(s => t0.enabled[s]), JSON.stringify(t0.enabled));
+
+  await ev(`document.querySelector('.pal4Tick.sideB input').click()`); await sleep(150);
+  const afterB = await ev(`(function(){
+    var cups = document.querySelectorAll('.pal4Cup.sideB');
+    var allOff = cups.length === 7 && Array.from(cups).every(function(c){ return c.classList.contains('off'); });
+    var card = document.getElementById('pal4CardB');
+    return JSON.stringify({ allOff: allOff, cardOff: card.classList.contains('off') }); })()`).then(JSON.parse);
+  ok('unticking B dims all 7 of its cups', afterB.allOff, JSON.stringify(afterB));
+  ok('and dims its card too', afterB.cardOff);
+
+  await ev(`document.querySelector('.pal4Tick.sideC input').click()`); await sleep(150);
+  const t2 = await tickState();
+  ok('dropping to 2 players (A and D) is allowed', t2.enabled.A && !t2.enabled.B && !t2.enabled.C && t2.enabled.D, JSON.stringify(t2.enabled));
+
+  await ev(`document.querySelector('.pal4Tick.sideD input').click()`); await sleep(150);
+  const dChecked = await ev(`document.querySelector('.pal4Tick.sideD input').checked`);
+  const t3 = await tickState();
+  ok('a third uncheck that would drop to 1 player is blocked',
+    dChecked === true && t3.enabled.D === true, 'checked=' + dChecked + ' enabled.D=' + t3.enabled.D);
+
+  await ev(`document.getElementById('pal4Choose').click()`); await sleep(150);
+  const afterChoose1 = await tickState();
+  ok('Choose Player skips disabled sides entirely — lands on D, not B or C', afterChoose1.active === 'D', afterChoose1.active);
+  await ev(`document.getElementById('pal4Choose').click()`); await sleep(150);
+  const afterChoose2 = await tickState();
+  ok('and cycles only back to A, never touching B or C', afterChoose2.active === 'A', afterChoose2.active);
+
+  await ev(`document.querySelector('.pal4Tick.sideB input').click()`); await sleep(150);
+  const bRestored = await ev(`(function(){
+    var cups = document.querySelectorAll('.pal4Cup.sideB');
+    return Array.from(cups).every(function(c){ return !c.classList.contains('off'); }); })()`);
+  ok('re-ticking B lifts the dimming from all 7 of its cups', bRestored);
+
+  /* Active side is A here (A/B/D enabled, C still off). Unticking the
+     ACTIVE side itself — not some other side — is the case the earlier
+     sequence never exercised, since active stayed on A throughout it. */
+  await ev(`document.querySelector('.pal4Tick.sideA input').click()`); await sleep(150);
+  const afterActiveUnticked = await tickState();
+  ok('unticking the currently-active side moves the highlight off it, not stuck on a disabled side',
+    afterActiveUnticked.enabled[afterActiveUnticked.active] === true && afterActiveUnticked.active !== 'A',
+    JSON.stringify(afterActiveUnticked));
+  await ev(`document.querySelector('.pal4Tick.sideA input').click()`); await sleep(150);   // restore A
+
+  await ev(`document.querySelector('.pal4Tick.sideC input').click()`); await sleep(150);
+  const tFinal = await tickState();
+  ok('all four sides back to enabled by the end', ['A', 'B', 'C', 'D'].every(s => tFinal.enabled[s]), JSON.stringify(tFinal.enabled));
+
   /* THE WELL. Nothing inside the square's open middle should spill outside
      it or overlap the cup ring — a real risk on the narrowest phones, since
      the well shrinks with the whole frame while the cards inside it don't. */

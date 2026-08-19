@@ -2650,6 +2650,39 @@ body.langTa .palTurn{ font-size:12.5px; }
 .pal4Note{ text-align:center; font-size:10px; color:#6B4A25; font-weight:700; margin-top:8px; padding:0 8px; }
 .pal4Foot{ display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap; margin-top:10px; }
 
+/* ══ WHO IS PLAYING — four tick boxes ═══════════════════════════════════
+   Raja: "one more tab to add for select sub level, either 2 player or 3 or
+   four — if two player select, the fill sequence will enable to those rows
+   only, like 3 players and four players. The select will done by four tick
+   box that decide who are to enable the run fill seed sequence."
+
+   The board itself does not change shape — it is still the same square, all
+   28 cups drawn — only which of the four sides is IN the game changes. A
+   side left unticked sits there dimmed: no seed count, no turn, taken out of
+   Choose Player's rotation entirely, exactly what "enable to those rows
+   only" asks for. Two ticked is a two-player game played out on the
+   four-sided board; three or four fill in from there. */
+.pal4Select{ display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap;
+  margin:8px 0; padding:8px 10px; border-radius:14px; background:rgba(255,246,231,.55); }
+.pal4SelectLabel{ font-size:10.5px; font-weight:900; color:#5E3D1C; margin-right:2px; }
+.pal4Tick{ display:flex; align-items:center; gap:4px; padding:4px 9px 4px 6px; border-radius:999px;
+  border:2px solid #8A5E31; background:#FFF6E7; cursor:pointer; font-size:11px; font-weight:900;
+  color:#5E3D1C; user-select:none; }
+.pal4Tick input{ width:15px; height:15px; margin:0; accent-color:#8A5E31; cursor:pointer; }
+/* the box takes the SAME colour as the side it enables, so ticking one and
+   watching its row light up is one visual idea, not two to learn separately */
+.pal4Tick.sideA.on{ background:#FDE1A8; border-color:#92400E; }
+.pal4Tick.sideB.on{ background:#A8CBFF; border-color:#12325E; }
+.pal4Tick.sideC.on{ background:#9BE8B8; border-color:#14532D; }
+.pal4Tick.sideD.on{ background:#DCC8FB; border-color:#5B21B6; }
+/* An unticked side is taken OUT of the game, and has to read that way at a
+   glance: its cups go flat and colourless rather than merely a bit dimmer,
+   the same distance a "spent" key or a solved cell already signals "done
+   with this" elsewhere in this app. */
+.pal4Cup.off{ opacity:.32; filter:grayscale(1); box-shadow:inset 0 3px 7px rgba(0,0,0,.55) !important; }
+.pal4Card.off{ opacity:.32; filter:grayscale(1); }
+.pal4Card.off .pal4CardName{ pointer-events:none; }
+
 /* Slide Magic hides the same grid furniture the other card games do — there
    is no magic square to build, no target to preview, nothing to Watch. Same
    body-class mechanism as binaryMode and gateMode rather than a third way. */
@@ -3820,6 +3853,18 @@ body{ background:#C9A87C !important; }
         <div class="pal4SanaName">SaNa</div>
       </div>
     </div>
+  </div>
+
+  <!-- Raja: "select sub level, either 2 player or 3 or four... the select
+       will done by four tick box that decide who are to enable the run fill
+       seed sequence." All four start ticked, matching the board as it was
+       before this — nobody who was already playing loses a seat by default. -->
+  <div class="pal4Select" id="pal4Select">
+    <span class="pal4SelectLabel">Players:</span>
+    <label class="pal4Tick sideA on"><input type="checkbox" checked data-side="A"><span>A</span></label>
+    <label class="pal4Tick sideB on"><input type="checkbox" checked data-side="B"><span>B</span></label>
+    <label class="pal4Tick sideC on"><input type="checkbox" checked data-side="C"><span>C</span></label>
+    <label class="pal4Tick sideD on"><input type="checkbox" checked data-side="D"><span>D</span></label>
   </div>
 
   <button class="pal4Choose" id="pal4Choose" type="button">👤 Choose player — Player A starts</button>
@@ -8892,6 +8937,22 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     (function(){
       var SIDES = ['A', 'B', 'C', 'D'];
       var active = 0;
+      /* Raja: "the select will done by four tick box that decide who are to
+         enable the run fill seed sequence." All four start enabled — the
+         board as it already was. Dropping to 2 or 3 just takes the unticked
+         side's cups and card out of Choose Player's rotation; the frame
+         itself never changes shape. */
+      var enabled = { A: true, B: true, C: true, D: true };
+
+      // next enabled side after `from`, walking the same ring order Choose
+      // Player already cycles in — the one place that decides "who's next"
+      function nextEnabledIndex(from){
+        for (var k = 1; k <= 4; k++){
+          var idx = (from + k) % 4;
+          if (enabled[SIDES[idx]]) return idx;
+        }
+        return from;
+      }
 
       function pal4Names(){
         var out = {};
@@ -8903,13 +8964,23 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       }
 
       function pal4Draw(){
+        if (!enabled[SIDES[active]]) active = nextEnabledIndex(active);
         var names = pal4Names();
         SIDES.forEach(function(s, i){
-          var isActive = i === active;
+          var isOn = enabled[s];
+          var isActive = isOn && i === active;
           var cups = document.querySelectorAll('.pal4Cup.side' + s);
-          cups.forEach(function(c){ c.classList.toggle('active', isActive); });
+          cups.forEach(function(c){
+            c.classList.toggle('active', isActive);
+            c.classList.toggle('off', !isOn);
+          });
           var card = document.getElementById('pal4Card' + s);
-          if (card) card.classList.toggle('active', isActive);
+          if (card){
+            card.classList.toggle('active', isActive);
+            card.classList.toggle('off', !isOn);
+          }
+          var tick = document.querySelector('.pal4Tick.side' + s);
+          if (tick) tick.classList.toggle('on', isOn);
         });
         var look = document.getElementById('pal4Look');
         if (look) look.className = 'pal4Look look' + SIDES[active];
@@ -8919,9 +8990,24 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
       var chooseBtn = document.getElementById('pal4Choose');
       if (chooseBtn) chooseBtn.addEventListener('click', function(){
-        active = (active + 1) % 4;
+        active = nextEnabledIndex(active);
         if (typeof sfx === 'function') try { sfx('card'); } catch(e){}
         pal4Draw();
+      });
+
+      document.querySelectorAll('#pal4Select input[type=checkbox]').forEach(function(cb){
+        cb.addEventListener('change', function(){
+          var s = cb.dataset.side;
+          if (!cb.checked){
+            var onCount = SIDES.filter(function(x){ return enabled[x]; }).length;
+            if (onCount <= 2){ cb.checked = true; return; }   // can't go below 2 players
+            enabled[s] = false;
+          } else {
+            enabled[s] = true;
+          }
+          if (typeof sfx === 'function') try { sfx('card'); } catch(e){}
+          pal4Draw();
+        });
       });
 
       document.querySelectorAll('#pal4Panel .pal4CardName').forEach(function(el){
@@ -8945,6 +9031,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       });
 
       window.__pal4Draw = pal4Draw;   // for the checks
+      window.__pal4State = function(){ return { active: SIDES[active], enabled: Object.assign({}, enabled) }; };
     })();
 
     document.querySelectorAll('.toggleBtn[data-pal4-level]').forEach(function(btn){
@@ -11885,7 +11972,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-189 (the 4-player name boxes no longer bleed into the cups)';
+  var BUILD_VER = 'beta-190 (4-player board: 4 tick boxes choose 2, 3 or 4 active sides)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
