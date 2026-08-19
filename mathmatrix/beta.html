@@ -2603,12 +2603,22 @@ body.langTa .palTurn{ font-size:12.5px; }
   white-space:nowrap; background:none; border:1.5px solid transparent; font-family:inherit;
   text-align:center; cursor:default; }
 .pal4CardName::placeholder{ font-weight:700; }
-.pal4CardStore{ display:flex; align-items:center; gap:4px; padding:2px 7px; border-radius:999px;
-  background:#4A3117; }
-.pal4CardStoreNum{ min-width:21px; height:17px; border-radius:4px; background:#FFF6E7;
-  border:1.5px solid #8A5E31; display:grid; place-items:center; font-size:10px; font-weight:900;
-  color:#33220F; }
-.pal4CardStoreCap{ font-size:7.5px; font-weight:900; color:#F3D9A9; letter-spacing:.3px; }
+/* Same bug class as .pal4CardName in beta-189, same fix: a flex CHILD of a
+   flex-column parent with align-items:center is never shrunk to the
+   parent's width — it is centred at whatever width its own content wants,
+   which is exactly how "STORE" bled past the well's edge the moment the
+   longer Tamil "சேமிப்பு" met the bigger font size this pass asked for.
+   max-width:100% + box-sizing:border-box makes the pill actually respect
+   its 76px card; overflow:hidden + ellipsis on the Cap label is the same
+   second line of defence used there, in case a translation is ever wider
+   still. */
+.pal4CardStore{ display:flex; align-items:center; gap:3px; padding:2px 5px; border-radius:999px;
+  background:#4A3117; max-width:100%; box-sizing:border-box; overflow:hidden; }
+.pal4CardStoreNum{ min-width:19px; height:16px; border-radius:4px; background:#FFF6E7;
+  border:1.5px solid #8A5E31; display:grid; place-items:center; font-size:9.5px; font-weight:900;
+  color:#33220F; flex:0 0 auto; }
+.pal4CardStoreCap{ font-size:8.5px; font-weight:900; color:#F3D9A9; letter-spacing:.3px;
+  min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .pal4A{ top:4px; left:50%; transform:translateX(-50%); width:76px; }
 .pal4A .pal4CardName{ background:#FDE1A8; color:#5A3A0A; border-color:#92400E; }
 .pal4B{ right:0; top:50%; transform:translateY(-50%); width:76px; }
@@ -2647,7 +2657,7 @@ body.langTa .palTurn{ font-size:12.5px; }
   border-radius:14px; cursor:pointer; font-family:inherit; font-size:12.5px; font-weight:900;
   text-align:center; background:linear-gradient(180deg,#FDE68A 0%,#F59E0B 100%); color:#5A3A0A;
   border:2px solid #92400E; }
-.pal4Note{ text-align:center; font-size:10px; color:#6B4A25; font-weight:700; margin-top:8px; padding:0 8px; }
+.pal4RingBtn{ display:block; width:fit-content; margin:8px auto 0; }
 .pal4Foot{ display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap; margin-top:10px; }
 
 /* ══ WHO IS PLAYING — four tick boxes ═══════════════════════════════════
@@ -3869,7 +3879,11 @@ body{ background:#C9A87C !important; }
 
   <button class="pal4Choose" id="pal4Choose" type="button">👤 Choose player — Player A starts</button>
 
-  <div class="pal4Note" id="pal4Note">One ring runs the whole way round the frame — A along the top, B down the right, C along the bottom, D up the left, back into A.</div>
+  <!-- Raja: "add tab below text to cover under choose player in both
+       languages" — the always-visible ring-direction sentence became a
+       tappable chip instead, same family as New game / How to play,
+       right where the sentence used to sit. -->
+  <button class="slideBtn pal4RingBtn" id="pal4RingBtn" type="button">🔄 Ring order</button>
 
   <div class="pal4Foot">
     <button class="slideBtn" id="pal4New" type="button">🔄 New game</button>
@@ -9077,6 +9091,29 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         if (typeof openLearn === 'function') openLearn('logic', false);
       });
 
+      /* Raja: "add tab below text to cover under choose player in both
+         languages" — the ring-direction sentence that used to sit here
+         always-on is now behind its own tap, same sheet/mechanism as How
+         to play, just its own short content instead. */
+      function pal4RingInfo(){
+        var ta = !!(window.__palTa && window.__palTa());
+        if (ta) return '<h3>🔄 பல்லாங்குழி · 4 வீரர்கள் — வளைய வரிசை</h3>' +
+          '<p>சட்டத்தைச் சுற்றி ஒரே ஒரு வளையம் ஓடுகிறது — மேலே A, வலப் ' +
+          'பக்கமாக இறங்கி B, கீழே C, இடப் பக்கமாக ஏறி D, மீண்டும் A-வுக்குள்.</p>';
+        return '<h3>🔄 Pallanguzhi · 4 Players — ring order</h3>' +
+          '<p>One ring runs the whole way round the frame — A along the top, ' +
+          'B down the right, C along the bottom, D up the left, back into A.</p>';
+      }
+      window.__pal4RingInfo = pal4RingInfo;
+
+      var pal4RingBtn = document.getElementById('pal4RingBtn');
+      if (pal4RingBtn) pal4RingBtn.addEventListener('click', function(){
+        var lb3 = document.getElementById('logicBox');
+        if (lb3) lb3.innerHTML = pal4RingInfo();
+        if (typeof sfx === 'function') try { sfx('card'); } catch(e){}
+        if (typeof openLearn === 'function') openLearn('logic', false);
+      });
+
       window.__pal4Draw = pal4Draw;   // for the checks
       window.__pal4State = function(){ return { active: SIDES[active], enabled: Object.assign({}, enabled) }; };
     })();
@@ -10273,11 +10310,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // the 4-player board — same family, same rule: translated completely, not patched
     'STORE':'சேமிப்பு',
     'Player A':'வீரர் A', 'Player B':'வீரர் B', 'Player C':'வீரர் C', 'Player D':'வீரர் D',
-    'Players:':'வீரர்கள்:',
+    'Players:':'வீரர்கள்:', '🔄 Ring order':'🔄 வளைய வரிசை',
     'Sample layout — the rules are still being worked out. Choose Player just previews who SaNa is watching.':
-      'மாதிரி அமைப்பு — விளையாட்டு விதிகள் இன்னும் வடிவமைக்கப்பட்டு வருகின்றன. வீரரைத் தேர்ந்தெடு என்பது SaNa யாரைக் கவனிக்கிறார் என்பதை மட்டும் காட்டும்.',
-    'One ring runs the whole way round the frame — A along the top, B down the right, C along the bottom, D up the left, back into A.':
-      'சட்டத்தைச் சுற்றி ஒரே ஒரு வளையம் ஓடுகிறது — மேலே A, வலப் பக்கமாக இறங்கி B, கீழே C, இடப் பக்கமாக ஏறி D, மீண்டும் A-வுக்குள்.'
+      'மாதிரி அமைப்பு — விளையாட்டு விதிகள் இன்னும் வடிவமைக்கப்பட்டு வருகின்றன. வீரரைத் தேர்ந்தெடு என்பது SaNa யாரைக் கவனிக்கிறார் என்பதை மட்டும் காட்டும்.'
   };
 
   /* Swap the text in place, remembering the English so the switch works both
@@ -12044,7 +12079,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-194 (4-player board: bigger font/tab size on the player cards and tick-box row)';
+  var BUILD_VER = 'beta-195 (4-player board: bigger STORE, ring note is now a tappable chip)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that

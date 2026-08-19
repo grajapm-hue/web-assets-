@@ -140,7 +140,7 @@ const TAMIL = /[\u0B80-\u0BFF]/;
       out.untranslated.push(s.slice(0, 40));
     }
     out.say = document.getElementById('pal4Say').textContent.trim();
-    out.note = document.getElementById('pal4Note').textContent.trim();
+    out.ringBtn = document.getElementById('pal4RingBtn').textContent.trim();
     out.select = document.querySelector('.pal4SelectLabel').textContent.trim();
     out.choose = document.getElementById('pal4Choose').textContent.trim();
     out.onBoard = document.getElementById('pal4OnBoard').textContent.trim();
@@ -155,7 +155,14 @@ const TAMIL = /[\u0B80-\u0BFF]/;
   ok('the 4-player button reads Tamil too', TAMIL.test(board4.btn), board4.btn);
   ok('the 4-player intro line is Tamil', TAMIL.test(board4.say) && !/[A-Za-z]{3}/.test(board4.say.replace(/SaNa/g, '')),
     JSON.stringify(board4.say.slice(0, 50)));
-  ok('the ring-direction note is Tamil', TAMIL.test(board4.note), JSON.stringify(board4.note.slice(0, 50)));
+  // Raja: "add tab below text to cover under choose player in both
+  // languages" — the always-visible sentence became a tappable chip;
+  // check both the chip's own label AND what tapping it actually shows.
+  ok('the ring-order chip reads in Tamil', TAMIL.test(board4.ringBtn), board4.ringBtn);
+  await ev(`document.getElementById('pal4RingBtn').click()`); await sleep(300);
+  const ringPopup = await ev(`document.getElementById('logicBox').textContent.trim().slice(0, 80)`);
+  ok('tapping it shows the ring-order explanation, in Tamil', TAMIL.test(ringPopup) && ringPopup.indexOf('வளையம்') > -1,
+    JSON.stringify(ringPopup));
   ok('the "Players:" tick-row label is Tamil', TAMIL.test(board4.select), board4.select);
   ok('the choose-player bar is Tamil, with the live name substituted in', TAMIL.test(board4.choose), board4.choose);
   ok('the seed-reserve stat is Tamil', TAMIL.test(board4.onBoard), board4.onBoard);
