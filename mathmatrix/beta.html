@@ -7892,6 +7892,97 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         nextGame:  { en:'<b>{a}</b> will start the next game.',
                      ta:'அடுத்த ஆட்டத்தை <b>{a}</b> தொடங்குவார்.' }
       };
+      /* THE "HOW TO PLAY" SHEET — bilingual, and brought up to date.
+
+         Raja: "try to translate to tamil match to play." Two faults in one
+         request. The sheet was English-only, set ONCE from a static string
+         when the level opened, never touched by the language toggle — so it
+         could not follow Pallanguzhi into Tamil the way every other line on
+         the board already does. And separately, "match to play": the text
+         itself had fallen behind the game. It still described the single-
+         round version from before pillai paandi — no Choose Player, no
+         rounds, no refilling, no savings pocket — while the board underneath
+         it had grown four builds past that. Translating stale English would
+         only have doubled the staleness in two languages instead of one.
+
+         Rebuilt from scratch to match what beta-185 actually plays, and
+         generated fresh in whichever language is current every time it is
+         opened — the same P() lookup every other Pallanguzhi sentence uses,
+         just assembled once into a page of HTML rather than one line. */
+      function palHowTo(){
+        var ta = !!(window.__palTa && window.__palTa());
+        if (ta) return '<h3>🫘 பல்லாங்குழி — எப்படி விளையாடுவது</h3>' +
+          '<p>ஏழு குழிகள் கொண்ட இரு வரிசைகள். கீழ் வரிசை <b>வீரர் 1</b>-க்கும், மேல் வரிசை ' +
+          '<b>வீரர் 2</b>-க்கும் சொந்தம். நிரப்புவதற்கு முன் எப்போது வேண்டுமானாலும் ' +
+          '<b>வீரரைத் தேர்ந்தெடு</b> தட்டி யார் தொடங்குவார் என முடிவு செய்யலாம்.</p>' +
+          '<p>ஒவ்வொரு வீரரும் தன் <b>சேமிப்பைத் தட்டி</b> தன் வரிசையை நிரப்புவார்: சேமிப்பு ' +
+          'இருக்கும் வரை ஒவ்வொரு குழிக்கும் <b>ஐந்து விதைகள்</b>, பிறகு மீதமுள்ளதை ஒரே ' +
+          'குழியில் — அது <b>பிள்ளை குழி</b> ஆகும், கீழே பாருங்கள்.</p>' +
+          '<ol>' +
+          '<li>உங்கள் முறையில், உங்கள் சொந்தக் <b>குழி ஒன்றைத்</b> தட்டுங்கள். அதன் அனைத்து ' +
+          'விதைகளும் தூக்கப்படும்.</li>' +
+          '<li>அவை <b>ஒவ்வொன்றாக</b>, பலகையைச் சுற்றி அடுத்தடுத்த குழிகளில் விழும்.</li>' +
+          '<li>கடைசி விதை விழும்போது, <b>அடுத்த குழியைப்</b> பாருங்கள். அதில் விதைகள் ' +
+          'இருந்தால், அவற்றையும் தூக்கித் தொடருங்கள்.</li>' +
+          '<li><b>காலியா?</b> அப்போது அதற்கு அடுத்த குழியில் உள்ள விதைகள் உங்களுடையவை — ' +
+          'உங்கள் சேமிப்பிற்குச் செல்லும், உங்கள் முறை முடியும்.</li>' +
+          '<li>அதுவும் காலியாக இருந்தால், எதுவும் கிடைக்காது, முறை மாறும்.</li>' +
+          '</ol>' +
+          '<p><b>🫘 பசு — வெகுமதி.</b> எந்த குழியும் சரியாக <b>நான்கு விதைகள்</b> கொண்டவுடன் ' +
+          'அது ஒளிர ஆரம்பிக்கும். அந்தக் குழி எந்த <b>வரிசையில்</b> உள்ளதோ, அந்த வீரர் மட்டுமே ' +
+          'அதை எடுக்க முடியும், <b>தானே தட்ட வேண்டும்</b> — எப்போது வேண்டுமானாலும், மற்றவர் ' +
+          'இன்னும் விதைத்துக் கொண்டிருந்தாலும் கூட. ஐந்தாவது விதை விழுந்தால் <b>வாய்ப்பு ' +
+          'என்றென்றும் போய்விடும்</b>. அதைக் கவனிப்பதே ஆட்டம்.</p>' +
+          '<p><b>🔒 பிள்ளை குழி.</b> ஐந்துக்குக் குறைவாக நிரப்பப்பட்ட குழி அந்தச் சுற்றுக்கு ' +
+          'ஒரு பிள்ளை குழி ஆகும்: <b>யாரும் அதிலிருந்து எடுக்க முடியாது</b>, யாரும் அதை ' +
+          'வெல்லவும் முடியாது. அதைக் கடந்து செல்லும் விதைப்பாளர் அதன் <b>அளவை முழுவதுமாகக் ' +
+          'கொடுக்க வேண்டும்</b>, இல்லையெனில் அங்கேயே நிறுத்த வேண்டும். சுற்று முடிவில், ' +
+          'அதில் உள்ளவை அதன் <b>சொந்தக்காரரின் சேமிப்பிற்குத்</b> திரும்பும்.</p>' +
+          '<p>ஒரு வீரருக்கு தூக்க விதைகள் இல்லாதபோது, <b>சுற்று முடிவடையும்</b>. மற்ற வீரர் ' +
+          'தன் பக்கம் மீதமுள்ள விதைகளைத் தன் சேமிப்பில் வைத்துக்கொள்வார், பிறகு இருவரும் ' +
+          'மீண்டும் தங்கள் சேமிப்பைத் தட்டி அடுத்த சுற்றை நிரப்புவார்கள்.</p>' +
+          '<p><b>ஒரு குழியைக் கூட நிரப்ப முடியாத வீரர் ஆட்டத்தில் தோற்றுவிடுவார்.</b> ' +
+          'இல்லையெனில், ஆட்டம் சுற்று சுற்றாகத் தொடரும்.</p>';
+        return '<h3>🫘 Pallanguzhi — how to play</h3>' +
+          '<p>Two rows of seven cups. The <b>bottom row belongs to Player 1</b>, the ' +
+          '<b>top row to Player 2</b>. Tap <b>Choose Player</b> any time before dealing to ' +
+          'decide who opens.</p>' +
+          '<p>Each player <b>taps their own store</b> to lay out their row: five seeds to a ' +
+          'cup while the reserve allows, then whatever is left in one last cup — a ' +
+          '<b>savings pocket</b>, see below.</p>' +
+          '<ol>' +
+          '<li>On your turn, tap <b>one of your own cups</b>. All its seeds are lifted.</li>' +
+          '<li>They are dropped <b>one at a time</b> into the cups that follow, right around ' +
+          'the board.</li>' +
+          '<li>When the last seed falls, look at the <b>next cup</b>. Seeds in it? Lift those ' +
+          'too and keep going.</li>' +
+          '<li><b>Empty?</b> Then the seeds in the cup <b>after</b> it are yours — into your ' +
+          'store, and your turn ends.</li>' +
+          '<li>If that one is empty too, nothing is won and the turn passes.</li>' +
+          '</ol>' +
+          '<p><b>🫘 Pasu — the bonus.</b> The moment any cup holds <b>exactly four</b> seeds ' +
+          'it starts to glow. Only the player whose <b>row it sits in</b> may take it, and ' +
+          'they must <b>tap it themselves</b> — at any time, even while the other player is ' +
+          'still sowing. Let a fifth seed fall in and <b>the chance is gone for good</b>. ' +
+          'Watching for it is the game.</p>' +
+          '<p><b>🔒 The savings pocket.</b> A cup laid out with fewer than five is a ' +
+          '<b>pillai pocket</b> for that round: nobody may lift it, and nobody may capture ' +
+          'it. A sower passing it must <b>pay it its own size</b>, or the move stops right ' +
+          'there. At the end of the round, whatever it holds goes home to <b>its own ' +
+          'owner\'s reserve</b>.</p>' +
+          '<p>When a player has no seeds left to lift, <b>the round ends</b>. The other ' +
+          'player keeps their own remaining seeds into their reserve, and both tap their ' +
+          'stores again to lay out the next round.</p>' +
+          '<p><b>A player who cannot lay out even one cup has lost the game.</b> Otherwise, ' +
+          'play continues round after round.</p>';
+      }
+      /* The two places that need this — the level-open handler and the How To
+         Play button — both live OUTSIDE this closure, in the outer scope
+         alongside every other Pallanguzhi tab-click handler. Same pattern as
+         __palNew, __palState and the rest: exposed on window rather than
+         moved, since P() and PAL_TXT it depends on belong here. */
+      window.__palHowTo = palHowTo;
+
       function P(key, v){
         var row = PAL_TXT[key] || {};
         var ta = !!(window.__palTa && window.__palTa());
@@ -8542,6 +8633,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     if (palNewBtn) palNewBtn.addEventListener('click', function(){ window.__palNew(); });
     var palRulesBtn = document.getElementById('palRules');
     if (palRulesBtn) palRulesBtn.addEventListener('click', function(){
+      var lb2 = document.getElementById('logicBox');
+      if (lb2) lb2.innerHTML = window.__palHowTo();   // fresh in whichever language is current
       if (typeof openLearn === 'function') openLearn('logic', false);
     });
 
@@ -8566,22 +8659,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         var title = document.getElementById('appBarTitle');
         if (title) title.innerHTML = boxedTitle('🫘 Pallanguzhi');
         var lb = document.getElementById('logicBox');
-        if (lb) lb.innerHTML = '<h3>🫘 Pallanguzhi — how to play</h3>' +
-          '<p>Two rows of seven cups. The <b>bottom row belongs to Player 1</b>, the ' +
-          '<b>top row to Player 2</b>. Every cup starts with <b>five seeds</b>, taken from ' +
-          'each player\'s store of 35 — which is why both stores read 0 once the board is full.</p>' +
-          '<ol>' +
-          '<li>On your turn, tap <b>one of your own cups</b>. All its seeds are lifted.</li>' +
-          '<li>They are dropped <b>one at a time</b> into the cups that follow, right around the board.</li>' +
-          '<li>When the last seed falls, look at the <b>next cup</b>. Seeds in it? Lift those too and keep going.</li>' +
-          '<li><b>Empty?</b> Then the seeds in the cup <b>after</b> it are yours — into your store, and your turn ends.</li>' +
-          '<li>If that one is empty too, nothing is won and the turn passes.</li>' +
-          '</ol>' +
-          '<p><b>🫘 Pasu — the bonus.</b> The moment any cup holds <b>exactly four</b> seeds it starts ' +
-          'to glow. Only the player whose <b>row it sits in</b> may take it, and they must <b>tap it ' +
-          'themselves</b> — at any time, even while the other player is still sowing. ' +
-          'Let a fifth seed fall in and <b>the chance is gone for good</b>. Watching for it is the game.</p>' +
-          '<p>The player with the most seeds when the board runs empty wins.</p>';
+        if (lb) lb.innerHTML = window.__palHowTo();
       });
     });
 
@@ -11499,7 +11577,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-186 (target and level notes, merged into one row)';
+  var BUILD_VER = 'beta-187 (How to play — Tamil, and brought up to date)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that

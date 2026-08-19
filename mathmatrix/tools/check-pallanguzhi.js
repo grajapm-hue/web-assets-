@@ -766,6 +766,70 @@ const TAMIL = /[஀-௿]/;
     return Math.round(f) + ' vs ' + Math.round(b) + (f <= b + 1 ? ' fits' : ' OVERFLOWS'); })()`);
   ok('the bigger bubble did not push the board under the tab bar', / fits$/.test(stillFits), stillFits);
 
+  /* ══ THE "HOW TO PLAY" SHEET ═══════════════════════════════════════════
+     Raja: "try to translate to tamil match to play." Two things were wrong,
+     not one — the sheet was English-only, never touched by the language
+     toggle, AND its content had fallen behind: no Choose Player, no rounds,
+     no savings pocket, all added since this text was first written. Rebuilt
+     to describe what beta-185 actually plays, in both languages. */
+  const howTo = () => ev(`window.__palHowTo ? window.__palHowTo() : ''`);
+
+  await ev(`window.__mmLang('en')`);
+  const enHtml = await howTo();
+  ok('English how-to-play names the current opener choice',
+    /Choose Player/.test(enHtml), 'mentions "Choose Player"');
+  ok('and the savings pocket', /savings pocket/.test(enHtml));
+  ok('and that a round ends and refills', /round ends/.test(enHtml) && /lay out the next round/.test(enHtml));
+  ok('and that an empty reserve loses the game', /lost the game/.test(enHtml));
+
+  /* THE MALFORMED-TAG BUG — found by looking at a screenshot, not by any
+     check, until now. A typo turned one </b> into </b followed by a Tamil
+     combining mark instead of the closing >, so the browser's HTML tokenizer
+     read "b்," with no following space as one long END-TAG NAME and kept
+     consuming characters until the NEXT literal > — which belonged to an
+     unrelated <b> further along. That swallowed a whole clause AND the <b>
+     meant to open after it, silently dropping one bold element from the page
+     (21 became 20) without leaving any stray < or > sitting inside another
+     element's text. This scan for stray brackets is left in as a CHEAP FIRST
+     PASS, but it is not what actually catches this fault — reinstating the
+     exact bug leaves it green, bold count and all. The assertion that proves
+     it, below, reads the real rendered paragraph end to end. */
+  const tagCheck = ev => ev(`(function(){
+    var div = document.createElement('div');
+    div.innerHTML = window.__palHowTo();
+    var bad = [];
+    // any bold run whose own text still contains a raw '<' or '>' means a
+    // tag failed to close where intended and ate real content as its name
+    div.querySelectorAll('b').forEach(function(b){
+      if (/[<>]/.test(b.textContent)) bad.push(b.textContent.slice(0, 40));
+    });
+    return JSON.stringify({ ok: bad.length === 0, bad: bad, boldCount: div.querySelectorAll('b').length });
+  })()`).then(JSON.parse);
+  const tagsEn = await tagCheck(ev);
+  ok('every <b> tag in the English sheet closed where it was meant to',
+    tagsEn.ok, tagsEn.ok ? tagsEn.boldCount + ' bold runs, all clean' : 'swallowed content: ' + tagsEn.bad.join(' | '));
+
+  await ev(`window.__mmLang('ta')`);
+  const taHtml = await howTo();
+  ok('Tamil how-to-play is genuinely Tamil, not the English fallback',
+    TAMIL.test(taHtml) && !/Choose Player/.test(taHtml), 'no English "Choose Player" leaking through');
+  ok('and mentions the savings pocket by name (பிள்ளை)', /பிள்ளை/.test(taHtml));
+  ok('and the round-end rule (சுற்று)', /சுற்று/.test(taHtml));
+  const tagsTa = await tagCheck(ev);
+  ok('every <b> tag in the Tamil sheet closed where it was meant to (a cheap first pass, not the real guard below)',
+    tagsTa.ok, tagsTa.ok ? tagsTa.boldCount + ' bold runs, all clean' : 'swallowed content: ' + tagsTa.bad.join(' | '));
+
+  /* And the actual rendered paragraph, end to end, so a passing tag-check
+     alone can't hide a subtler version of the same fault. */
+  await ev(`document.getElementById('palRules').click()`); await sleep(500);
+  const pocketPara = await ev(`(function(){
+    var ps = document.querySelectorAll('#logicBox p');
+    for (var i=0;i<ps.length;i++) if (ps[i].textContent.indexOf('பிள்ளை குழி') > -1 && ps[i].textContent.indexOf('சொந்தக்காரரின்') > -1) return ps[i].textContent;
+    return null; })()`);
+  ok('the savings-pocket paragraph reads start to finish, nothing dropped mid-sentence',
+    !!pocketPara && pocketPara.indexOf('கொடுக்க வேண்டும், இல்லையெனில்') > -1,
+    pocketPara ? JSON.stringify(pocketPara.slice(0, 90)) + '…' : 'paragraph not found at all');
+
   ok('no JS errors', errs.length === 0, errs.join(' | ') || '');
 
   ws.close(); ch.kill();
