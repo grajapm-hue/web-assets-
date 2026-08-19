@@ -1,17 +1,23 @@
-/* Pallanguzhi · 4 Players — UI ONLY, per Raja's own staging: "do UI process
-   first around table contents." No sowing, no capture, no rounds, no reserve
-   arithmetic exists yet — those wait on two open questions (which cup a
-   capture points at with four sides instead of two; how a round ends with
-   four reserves). What DOES exist, and is what this checks, is the table
-   itself: the square frame, whose cups belong to whom, the four name+store
-   cards, SaNa in the middle, and the cosmetic Choose Player preview.
+/* Pallanguzhi · 4 Players — the real game.
 
-   The frame is a genuinely different shape from every other puzzle here — a
-   ring rather than a line or a grid — so the things worth measuring are
-   different too: is it actually 28 cups in a closed square, do all four sides
-   carry a distinct identity, does the interior well hold everyone without
-   overlapping, and does opening/closing this new mode leave every other
-   puzzle exactly as it was. */
+   Started as UI-only, per Raja's own staging: "do UI process first around
+   table contents." The bottom half of this file is that original pass —
+   the frame is a genuinely different shape from every other puzzle here, a
+   ring rather than a line or a grid, so the things worth measuring were
+   different too: is it actually 28 cups in a closed square, do all four
+   sides carry a distinct identity, does the interior well hold everyone
+   without overlapping.
+
+   The top of the file (below) is the rules pass: "go through for
+   integration of code for same as existing 2 player game rules and
+   procedures... the seed fill sequence will circulate by as same methode
+   of existing game." Same algorithm as the 2-player board — sowing,
+   capture, pasu, pillai pockets, round-end — run on a 28-cup ring with 2,
+   3 or 4 live seats instead of a fixed 14-cup, 2-seat board. Verified with
+   real invariants (seed conservation in cups+store+hand, no negative
+   counts, turn only ever lands on an enabled side) rather than eyeballing
+   a screenshot, the same discipline the 2-player board's own check file
+   uses. */
 const { spawn, execSync } = require('child_process');
 const fs = require('fs'); const path = require('path');
 const PORT = 9953;
@@ -366,6 +372,144 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
      that touches outright. */
   ok('at 340x780, Player D\'s card keeps its full design margin from SaNa', bandGaps.dSanaGap >= 4, bandGaps.dSanaGap + 'px gap');
   ok('and Player B\'s card keeps its margin too', bandGaps.sanaBGap >= 4, bandGaps.sanaBGap + 'px gap');
+
+  /* ══ THE REAL GAME ═══════════════════════════════════════════════════
+     Back to a normal, un-shrunk phone and a fresh board for the rules
+     pass — the UI-fit checks above deliberately left things resized. */
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+  await ev(`document.getElementById('tab-scHome').click()`); await sleep(200);
+  await ev(`document.getElementById('pal4Tab').click()`); await sleep(700);   // __pal4New() fires, fresh state
+
+  const state = () => ev(`JSON.stringify(window.__pal4State())`).then(JSON.parse);
+  const total = s => s.cups.reduce((a, b) => a + b, 0) + s.store.reduce((a, b) => a + b, 0) + s.hand;
+  async function untick(side){ await ev(`document.querySelector('.pal4Tick.side${side} input').click()`); await sleep(60); }
+  async function dealSide(side){
+    await ev(`document.querySelector('#pal4Card${side} .pal4CardStore').click()`);
+    await sleep(2050);   // 7 drops * 260ms + margin — real time, not force-finished (see the deal/sow note below)
+  }
+  async function findLiftable(activeLetter){
+    return ev(`(function(){
+      var SIDES = ['A','B','C','D'], p = SIDES.indexOf('${activeLetter}');
+      var st = window.__pal4State();
+      for (var i = p*7; i < p*7+7; i++) if (st.cups[i] > 0 && !st.pillai[i]) return i;
+      return null; })()`);
+  }
+  async function findPasu(){
+    return ev(`(function(){
+      var st = window.__pal4State();
+      for (var i = 0; i < 28; i++) if (st.cups[i] === 4 && !st.dead[i] && !st.pillai[i]) return i;
+      return null; })()`);
+  }
+
+  /* DEALING — before any deal, tapping a cup must refuse with "lay out
+     both rows first", never silently do nothing. */
+  const preDeal = await ev(`(function(){
+    var say = document.getElementById('pal4Say').innerHTML;
+    document.querySelector('.pal4Cup[data-pal4="0"]').click();
+    return { before: say, after: document.getElementById('pal4Say').innerHTML }; })()`);
+  ok('tapping a cup before anyone has dealt is refused, not silently ignored', preDeal.after !== preDeal.before, preDeal.after);
+
+  await dealSide('A');
+  let st = await state();
+  ok('after only A deals, play has not started yet', !st.playing, JSON.stringify(st.dealt));
+  ok('A’s row is 5 seeds a cup, A’s store is drained to 0', st.cups.slice(0, 7).every(c => c === 5) && st.store[0] === 0,
+    'A cups=' + JSON.stringify(st.cups.slice(0, 7)) + ' store=' + st.store[0]);
+  ok('every OTHER row is still empty and every other store still 35', st.cups.slice(7).every(c => c === 0) && st.store.slice(1).every(s => s === 35),
+    JSON.stringify(st.store));
+
+  const alreadyDealt = await ev(`(function(){
+    var say = document.getElementById('pal4Say').innerHTML;
+    document.querySelector('#pal4CardA .pal4CardStore').click();
+    return document.getElementById('pal4Say').innerHTML !== say; })()`);
+  ok('tapping an already-dealt store says so rather than re-dealing', alreadyDealt);
+
+  await dealSide('B'); await dealSide('C'); await dealSide('D');
+  st = await state();
+  ok('play starts the instant the LAST enabled side deals', st.playing, JSON.stringify(st.dealt));
+  ok('every store drained to 0, every cup at 5, 140 seeds total', total(st) === 140 && st.store.every(s => s === 0) && st.cups.every(c => c === 5),
+    'total=' + total(st));
+  ok('active starts on the chosen starter (A by default)', st.active === 'A', st.active);
+
+  /* TICK BOXES LOCK once dealing has begun — not just cosmetically; the
+     actual `enabled` state must refuse to change, since the ring math and
+     everyone's reserves already assume this exact seat list. */
+  const lockAttempt = await ev(`(function(){
+    var cb = document.querySelector('.pal4Tick.sideD input');
+    cb.checked = false; cb.dispatchEvent(new Event('change'));
+    return cb.checked; })()`);
+  ok('unticking a side mid-game is rejected — checkbox snaps back', lockAttempt === true, 'checked=' + lockAttempt);
+  st = await state();
+  ok('and D is still genuinely enabled in the real game state, not just the checkbox', st.enabled.D === true, JSON.stringify(st.enabled));
+
+  /* NOT YOURS / EMPTY / PLAY A REAL MOVE, with seed conservation checked
+     after every single move — the one assertion (mirroring the 2-player
+     check file's own) that would catch a sowing loop dropping a seed, a
+     capture paying out twice, or a pasu claimed from an already-empty cup. */
+  const notYours = await ev(`(function(){
+    var say = document.getElementById('pal4Say').innerHTML;
+    document.querySelector('.pal4Cup[data-pal4="7"]').click();   // cup 7 is B's, A is active
+    return document.getElementById('pal4Say').innerHTML !== say; })()`);
+  ok('tapping a cup that is not the active player’s own is refused', notYours);
+
+  let pasuClaimed = false, sawMultiCupCascade = false, moveCount = 0;
+  while (moveCount < 60){
+    st = await state();
+    if (!st.playing) break;
+    const pasuIdx = await findPasu();
+    if (pasuIdx !== null && !pasuClaimed){
+      const before = await state();
+      await ev(`document.querySelector('.pal4Cup[data-pal4="${pasuIdx}"]').click()`); await sleep(80);
+      const after = await state();
+      ok('claiming a pasu (cup of four) pays out correctly and clears the cup',
+        total(before) === total(after) && after.cups[pasuIdx] === 0, 'before=' + total(before) + ' after=' + total(after));
+      pasuClaimed = true;
+      continue;
+    }
+    const liftIdx = await findLiftable(st.active);
+    if (liftIdx === null) break;
+    const before = await state();
+    await ev(`document.querySelector('.pal4Cup[data-pal4="${liftIdx}"]').click()`);
+    await ev(`window.__pal4Stop()`);   // force this move to finish instantly, same safety valve the 2-player board exposes
+    await sleep(40);
+    const after = await state();
+    if (total(before) !== total(after)){
+      ok('seed conservation on move ' + moveCount, false, 'before=' + total(before) + ' after=' + total(after));
+      break;
+    }
+    if (after.dropped > 1) sawMultiCupCascade = true;
+    if (after.playing && !Object.keys(after.enabled).filter(k => after.enabled[k]).includes(after.active)){
+      ok('turn only ever lands on an enabled side', false, 'active=' + after.active);
+      break;
+    }
+    moveCount++;
+  }
+  ok('seed total (140) held across every move played', total(await state()) === 140, 'moves played: ' + moveCount);
+  ok('at least one cascading multi-cup move occurred', sawMultiCupCascade);
+
+  /* A 2-OF-4 GAME — the disabled sides' reserves must never move, not even
+     by one seed, across the whole game. */
+  await ev(`document.getElementById('tab-scHome').click()`); await sleep(200);
+  await ev(`document.getElementById('pal4Tab').click()`); await sleep(700);
+  await untick('B'); await untick('D');
+  await dealSide('A'); await dealSide('C');
+  st = await state();
+  ok('a 2-player game (A+C) starts once just those two have dealt', st.playing, JSON.stringify(st.dealt));
+  ok('B and D’s 35 each sit completely untouched at 70 seeds in play', st.store[1] === 35 && st.store[3] === 35 &&
+    st.cups.slice(7, 14).every(c => c === 0) && st.cups.slice(21, 28).every(c => c === 0),
+    'store=' + JSON.stringify(st.store));
+  for (let i = 0; i < 15 && st.playing; i++){
+    const liftIdx = await findLiftable(st.active);
+    if (liftIdx === null) break;
+    await ev(`document.querySelector('.pal4Cup[data-pal4="${liftIdx}"]').click()`);
+    await ev(`window.__pal4Stop()`); await sleep(40);
+    st = await state();
+  }
+  ok('B and D still completely untouched after real play in a 2-player game',
+    st.store[1] === 35 && st.store[3] === 35 && st.cups.slice(7, 14).every(c => c === 0) && st.cups.slice(21, 28).every(c => c === 0),
+    'store=' + JSON.stringify(st.store));
+  ok('and the 70 seeds actually in play are still fully conserved', st.cups.slice(0, 7).reduce((a, b) => a + b, 0) +
+    st.cups.slice(14, 21).reduce((a, b) => a + b, 0) + st.store[0] + st.store[2] + st.hand === 70,
+    JSON.stringify(st));
 
   ok('no JS errors', errs.length === 0, errs.join(' | ') || '');
   ws.close(); ch.kill();

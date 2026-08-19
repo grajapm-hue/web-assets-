@@ -2564,7 +2564,9 @@ body.langTa .palTurn{ font-size:12.5px; }
   gap:3px; padding:8px; border-radius:20px;
   background:linear-gradient(160deg,#8A6A3C 0%,#6B4E28 100%);
   box-shadow:inset 0 3px 12px rgba(0,0,0,.35); }
-.pal4Cup{ border-radius:50%; display:grid; place-items:center; font-size:13px; font-weight:900;
+.pal4Cup{ position:relative; border:0; padding:0; font-family:inherit; cursor:default;
+  border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:2px; overflow:hidden; font-size:13px; font-weight:900;
   color:#FFE9C4; background:radial-gradient(ellipse at 50% 32%,#5C3F20 0%,#3A2611 100%);
   box-shadow:inset 0 3px 7px rgba(0,0,0,.55); }
 .pal4Corner{ border-radius:8px; background:rgba(0,0,0,.18); }
@@ -2578,6 +2580,34 @@ body.langTa .palTurn{ font-size:12.5px; }
 .pal4Cup.sideD{ box-shadow:inset 0 3px 7px rgba(0,0,0,.55), 0 0 0 2px #A78BFA; }   /* left   */
 .pal4Cup.active{ animation:pal4Pulse 1.1s ease-in-out infinite; }
 @keyframes pal4Pulse{ 50%{ transform:scale(1.08); } }
+
+/* THE GAME ITSELF — same rendering language as the 2-player board's own
+   .palCup/.palSeeds/.palCount, just laid onto the ring instead of two rows.
+   Raja: "go through for integration of code for same as existing 2 player
+   game rules and procedures... the seed fill sequence will circulate by as
+   same methode of existing game." */
+.pal4Count{ font-size:11px; font-weight:900; line-height:1; color:#FFE9C4;
+  font-variant-numeric:tabular-nums; text-shadow:0 1px 3px rgba(0,0,0,.8); }
+.pal4Cup.empty .pal4Count{ color:#8A6A3C; }
+.pal4Seeds{ display:flex; flex-wrap:wrap; align-items:center; justify-content:center;
+  gap:1px; max-width:78%; }
+.pal4Seeds:empty{ display:none; }
+.pal4Seed{ width:4px; height:4px; border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, #FFF3D4, #C89A54); }
+.pal4Cup.pickable{ cursor:pointer; }
+.pal4Cup.pickable:active{ transform:translateY(1px); }
+.pal4Cup.sowing{ box-shadow:inset 0 3px 7px rgba(0,0,0,.55), 0 0 0 3px #F7B32B; }
+.pal4Cup.pasu{ animation:pal4PasuGlow 1s ease-in-out infinite; cursor:pointer; }
+@keyframes pal4PasuGlow{
+  0%,100%{ box-shadow:inset 0 3px 7px rgba(0,0,0,.55), 0 0 0 3px #FFD166, 0 0 10px 2px rgba(255,209,102,.55); }
+  50%    { box-shadow:inset 0 3px 7px rgba(0,0,0,.55), 0 0 0 5px #FFE9A8, 0 0 18px 6px rgba(255,209,102,.85); }
+}
+.pal4Cup.pillai{ box-shadow:inset 0 3px 7px rgba(0,0,0,.55), 0 0 0 3px #34D399; }
+.pal4Cup.pillai::after{ content:'🔒'; position:absolute; top:-2px; right:-2px;
+  font-size:7px; font-weight:900; line-height:1; padding:1px 2px; border-radius:6px;
+  background:#065F46; color:#D1FAE5; border:1px solid #34D399; }
+.pal4Cup.won{ animation:pal4Won .6s ease-in-out 1; }
+@keyframes pal4Won{ 50%{ transform:scale(1.18); } }
 
 .pal4Well{ grid-column:2/9; grid-row:2/9; border-radius:14px; position:relative;
   background:radial-gradient(ellipse at 50% 45%, rgba(255,255,255,.05), rgba(0,0,0,.12)); }
@@ -2614,6 +2644,8 @@ body.langTa .palTurn{ font-size:12.5px; }
    still. */
 .pal4CardStore{ display:flex; align-items:center; gap:3px; padding:2px 5px; border-radius:999px;
   background:#4A3117; max-width:100%; box-sizing:border-box; overflow:hidden; }
+.pal4CardStore.toDeal{ cursor:pointer; animation:pal4PasuGlow 1.15s ease-in-out infinite; }
+.pal4CardStore.toDeal:active{ transform:translateY(1px); }
 .pal4CardStoreNum{ min-width:26px; height:20px; border-radius:5px; background:#FFF6E7;
   border:1.5px solid #8A5E31; display:grid; place-items:center; font-size:12px; font-weight:900;
   color:#33220F; flex:0 0 auto; }
@@ -2712,7 +2744,8 @@ body.langTa .palTurn{ font-size:12.5px; }
    glance: its cups go flat and colourless rather than merely a bit dimmer,
    the same distance a "spent" key or a solved cell already signals "done
    with this" elsewhere in this app. */
-.pal4Cup.off{ opacity:.32; filter:grayscale(1); box-shadow:inset 0 3px 7px rgba(0,0,0,.55) !important; }
+.pal4Cup.off{ opacity:.32; filter:grayscale(1); box-shadow:inset 0 3px 7px rgba(0,0,0,.55) !important;
+  pointer-events:none; cursor:default; }
 .pal4Card.off{ opacity:.32; filter:grayscale(1); }
 .pal4Card.off .pal4CardName{ pointer-events:none; }
 
@@ -3835,37 +3868,42 @@ body{ background:#C9A87C !important; }
     <div class="pal4Corner" style="grid-column:1;grid-row:9"></div>
     <div class="pal4Corner" style="grid-column:9;grid-row:9"></div>
 
-    <div class="pal4Cup sideA" style="grid-column:2;grid-row:1">5</div>
-    <div class="pal4Cup sideA" style="grid-column:3;grid-row:1">5</div>
-    <div class="pal4Cup sideA" style="grid-column:4;grid-row:1">5</div>
-    <div class="pal4Cup sideA" style="grid-column:5;grid-row:1">5</div>
-    <div class="pal4Cup sideA" style="grid-column:6;grid-row:1">5</div>
-    <div class="pal4Cup sideA" style="grid-column:7;grid-row:1">5</div>
-    <div class="pal4Cup sideA" style="grid-column:8;grid-row:1">5</div>
+    <!-- data-pal4 is the RING INDEX, 0-27, clockwise: A0..A6, B0..B6, C0..C6,
+         D0..D6 — this DOM order already runs clockwise per side (A left to
+         right, B top to bottom, C right to left, D bottom to top), so the
+         index just counts straight through it. Sowing math is (pos+1)%28
+         against this same index — no separate "which side is next" table. -->
+    <button class="pal4Cup sideA" type="button" data-pal4="0" style="grid-column:2;grid-row:1"><span class="pal4Seeds"></span><span class="pal4Count">5</span></button>
+    <button class="pal4Cup sideA" type="button" data-pal4="1" style="grid-column:3;grid-row:1"><span class="pal4Seeds"></span><span class="pal4Count">5</span></button>
+    <button class="pal4Cup sideA" type="button" data-pal4="2" style="grid-column:4;grid-row:1"><span class="pal4Seeds"></span><span class="pal4Count">5</span></button>
+    <button class="pal4Cup sideA" type="button" data-pal4="3" style="grid-column:5;grid-row:1"><span class="pal4Seeds"></span><span class="pal4Count">5</span></button>
+    <button class="pal4Cup sideA" type="button" data-pal4="4" style="grid-column:6;grid-row:1"><span class="pal4Seeds"></span><span class="pal4Count">5</span></button>
+    <button class="pal4Cup sideA" type="button" data-pal4="5" style="grid-column:7;grid-row:1"><span class="pal4Seeds"></span><span class="pal4Count">5</span></button>
+    <button class="pal4Cup sideA" type="button" data-pal4="6" style="grid-column:8;grid-row:1"><span class="pal4Seeds"></span><span class="pal4Count">5</span></button>
 
-    <div class="pal4Cup sideB" style="grid-column:9;grid-row:2">5</div>
-    <div class="pal4Cup sideB" style="grid-column:9;grid-row:3">5</div>
-    <div class="pal4Cup sideB" style="grid-column:9;grid-row:4">5</div>
-    <div class="pal4Cup sideB" style="grid-column:9;grid-row:5">5</div>
-    <div class="pal4Cup sideB" style="grid-column:9;grid-row:6">5</div>
-    <div class="pal4Cup sideB" style="grid-column:9;grid-row:7">5</div>
-    <div class="pal4Cup sideB" style="grid-column:9;grid-row:8">5</div>
+    <button class="pal4Cup sideB" type="button" data-pal4="7" style="grid-column:9;grid-row:2"><span class="pal4Seeds"></span><span class="pal4Count">5</span></button>
+    <button class="pal4Cup sideB" type="button" data-pal4="8" style="grid-column:9;grid-row:3"><span class="pal4Seeds"></span><span class="pal4Count">5</span></button>
+    <button class="pal4Cup sideB" type="button" data-pal4="9" style="grid-column:9;grid-row:4"><span class="pal4Seeds"></span><span class="pal4Count">5</span></button>
+    <button class="pal4Cup sideB" type="button" data-pal4="10" style="grid-column:9;grid-row:5"><span class="pal4Seeds"></span><span class="pal4Count">5</span></button>
+    <button class="pal4Cup sideB" type="button" data-pal4="11" style="grid-column:9;grid-row:6"><span class="pal4Seeds"></span><span class="pal4Count">5</span></button>
+    <button class="pal4Cup sideB" type="button" data-pal4="12" style="grid-column:9;grid-row:7"><span class="pal4Seeds"></span><span class="pal4Count">5</span></button>
+    <button class="pal4Cup sideB" type="button" data-pal4="13" style="grid-column:9;grid-row:8"><span class="pal4Seeds"></span><span class="pal4Count">5</span></button>
 
-    <div class="pal4Cup sideC" style="grid-column:8;grid-row:9">5</div>
-    <div class="pal4Cup sideC" style="grid-column:7;grid-row:9">5</div>
-    <div class="pal4Cup sideC" style="grid-column:6;grid-row:9">5</div>
-    <div class="pal4Cup sideC" style="grid-column:5;grid-row:9">5</div>
-    <div class="pal4Cup sideC" style="grid-column:4;grid-row:9">5</div>
-    <div class="pal4Cup sideC" style="grid-column:3;grid-row:9">5</div>
-    <div class="pal4Cup sideC" style="grid-column:2;grid-row:9">5</div>
+    <button class="pal4Cup sideC" type="button" data-pal4="14" style="grid-column:8;grid-row:9"><span class="pal4Seeds"></span><span class="pal4Count">5</span></button>
+    <button class="pal4Cup sideC" type="button" data-pal4="15" style="grid-column:7;grid-row:9"><span class="pal4Seeds"></span><span class="pal4Count">5</span></button>
+    <button class="pal4Cup sideC" type="button" data-pal4="16" style="grid-column:6;grid-row:9"><span class="pal4Seeds"></span><span class="pal4Count">5</span></button>
+    <button class="pal4Cup sideC" type="button" data-pal4="17" style="grid-column:5;grid-row:9"><span class="pal4Seeds"></span><span class="pal4Count">5</span></button>
+    <button class="pal4Cup sideC" type="button" data-pal4="18" style="grid-column:4;grid-row:9"><span class="pal4Seeds"></span><span class="pal4Count">5</span></button>
+    <button class="pal4Cup sideC" type="button" data-pal4="19" style="grid-column:3;grid-row:9"><span class="pal4Seeds"></span><span class="pal4Count">5</span></button>
+    <button class="pal4Cup sideC" type="button" data-pal4="20" style="grid-column:2;grid-row:9"><span class="pal4Seeds"></span><span class="pal4Count">5</span></button>
 
-    <div class="pal4Cup sideD" style="grid-column:1;grid-row:8">5</div>
-    <div class="pal4Cup sideD" style="grid-column:1;grid-row:7">5</div>
-    <div class="pal4Cup sideD" style="grid-column:1;grid-row:6">5</div>
-    <div class="pal4Cup sideD" style="grid-column:1;grid-row:5">5</div>
-    <div class="pal4Cup sideD" style="grid-column:1;grid-row:4">5</div>
-    <div class="pal4Cup sideD" style="grid-column:1;grid-row:3">5</div>
-    <div class="pal4Cup sideD" style="grid-column:1;grid-row:2">5</div>
+    <button class="pal4Cup sideD" type="button" data-pal4="21" style="grid-column:1;grid-row:8"><span class="pal4Seeds"></span><span class="pal4Count">5</span></button>
+    <button class="pal4Cup sideD" type="button" data-pal4="22" style="grid-column:1;grid-row:7"><span class="pal4Seeds"></span><span class="pal4Count">5</span></button>
+    <button class="pal4Cup sideD" type="button" data-pal4="23" style="grid-column:1;grid-row:6"><span class="pal4Seeds"></span><span class="pal4Count">5</span></button>
+    <button class="pal4Cup sideD" type="button" data-pal4="24" style="grid-column:1;grid-row:5"><span class="pal4Seeds"></span><span class="pal4Count">5</span></button>
+    <button class="pal4Cup sideD" type="button" data-pal4="25" style="grid-column:1;grid-row:4"><span class="pal4Seeds"></span><span class="pal4Count">5</span></button>
+    <button class="pal4Cup sideD" type="button" data-pal4="26" style="grid-column:1;grid-row:3"><span class="pal4Seeds"></span><span class="pal4Count">5</span></button>
+    <button class="pal4Cup sideD" type="button" data-pal4="27" style="grid-column:1;grid-row:2"><span class="pal4Seeds"></span><span class="pal4Count">5</span></button>
 
     <div class="pal4Well">
       <!-- Raja: "add one empty box near player, but should be blank, can enter
@@ -4914,12 +4952,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
        the player comes back to it. */
     if (!on && window.__palStop) window.__palStop();
   }
-  /* No sowing timer to stop here — the UI-only 4-player board has no clock
-     running, nothing to interrupt by leaving. */
   function showPal4Mode(on){
     document.body.classList.toggle('pal4Mode', !!on);
     var pp = document.getElementById('pal4Panel');
     if (pp) pp.style.display = on ? 'block' : 'none';
+    // same reason as the 2-player board: leaving mid-move must not leave a
+    // sowing timer dropping seeds into a board nobody is looking at
+    if (!on && window.__pal4Stop) window.__pal4Stop();
   }
   function showSlideMode(on){
     document.body.classList.toggle('slideMode', !!on);
@@ -8191,7 +8230,26 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         chooseP:   { en:'👤 Choose player — {a} starts',
                      ta:'👤 வீரரைத் தேர்ந்தெடு — {a} தொடங்குகிறார்' },
         nextGame:  { en:'<b>{a}</b> will start the next game.',
-                     ta:'அடுத்த ஆட்டத்தை <b>{a}</b> தொடங்குவார்.' }
+                     ta:'அடுத்த ஆட்டத்தை <b>{a}</b> தொடங்குவார்.' },
+        /* 3-4 PLAYER PHRASING — the 2-player sentences above all assume
+           exactly one opponent ("the other player", "to {m}"), which stops
+           working the moment a third or fourth side can be in the game.
+           These four keys are the only places that genuinely needed new
+           wording rather than reuse; everything else (pasu, pillai, sowing,
+           per-cup messages) carries over unchanged since none of it was
+           ever really "two-player" — it only ever talked about {a}, never
+           assumed how many other rows existed. */
+        dealWaitingMulti:{ en:'<b>{a}</b>’s row is down. Waiting on: {names}.',
+                     ta:'<b>{a}</b> வரிசை தயார். காத்திருப்பது: {names}.' },
+        roundOver4:{ en:'{msg}<br>Round over — everyone’s leftover seeds go home to their own reserve. Tap your stores for the next round.',
+                     ta:'{msg}<br>சுற்று முடிந்தது — ஒவ்வொருவரின் மீதமுள்ள விதைகளும் அவரவர் சேமிப்பிற்குச் செல்கின்றன. அடுத்த சுற்றுக்கு உங்கள் சேமிப்பைத் தட்டுங்கள்.' },
+        roundCheer4:{ en:'Round over — everyone keeps their own leftover seeds.',
+                     ta:'சுற்று முடிந்தது — ஒவ்வொருவரும் தங்கள் மீதமுள்ள விதைகளை வைத்திருக்கிறார்கள்.' },
+        lostAllN:  { en:'<b>{a}</b> cannot lay out a single cup — the game is over.',
+                     ta:'<b>{a}</b> ஒரு குழியைக் கூட நிரப்ப முடியவில்லை — ஆட்டம் முடிந்தது.' },
+        finalScores:{ en:'Final: {list}.', ta:'இறுதி: {list}.' },
+        winsGameTie:{ en:'A dead heat between {names} — {n} seeds each!',
+                     ta:'{names} இடையே சமநிலை — தலா {n} விதைகள்!' }
       };
       /* THE "HOW TO PLAY" SHEET — bilingual, and brought up to date.
 
@@ -8966,24 +9024,60 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       });
     });
 
-    /* ══ PALLANGUZHI · 4 PLAYERS — UI ONLY ═══════════════════════════════
-       See the long comment on .pal4Frame in the CSS for why this stops at
-       layout: Raja asked for the table itself first, rules after. Everything
-       below is cosmetic — one variable tracking which of the four sides is
-       "being watched", cycled by tapping Choose Player, moving a highlight
-       and SaNa's arrow. No seed ever moves, no store ever changes, and
-       nothing here is meant to survive the rules pass unchanged; it exists so
-       the shape can be reviewed sitting in the real app instead of a
-       screenshot. */
+    /* ══ PALLANGUZHI · 4 PLAYERS — THE REAL GAME ══════════════════════════
+       Raja: "go through for integration of code for same as existing 2
+       player game rules and procedures the add on is transformed to 4
+       player with choose option for how many players can include and
+       accordingly the seed fill sequence will circulate by as same methode
+       of existing game."
+
+       Same algorithm as the 2-player board (see the long comments on
+       sowStep/endTurn/endRound over there), run on a 28-cup ring instead of
+       14, with the number of live seats set by the tick boxes rather than
+       fixed at two. The capture rule never referenced how many rows exist —
+       it only ever asked "is the next cup empty, is the one after that
+       full" — so CUPS4=28 in place of CUPS=14 is the entire change sowing
+       needed. Round-end simplifies too: the 2-player rule ("the side that
+       still has seeds sweeps everything, pillai pockets go home to their
+       own owner regardless") is mathematically identical to "every
+       remaining seed, pillai or not, goes home to its own cup's row-owner"
+       — the two-player code just never had a reason to say it that way,
+       because with only one other row there was only ever one "owner" left
+       to sweep to. That owner-driven form is what generalises to 3 or 4. */
     (function(){
       var SIDES = ['A', 'B', 'C', 'D'];
-      var active = 0;
+      var CUPS4 = 28, PER_CUP4 = 5, PASU4 = 4;
+      function owner4(i){ return Math.floor(i / 7); }   // 0=A,1=B,2=C,3=D
+      /* The next cup that belongs to an ENABLED side. A disabled side is out
+         of the game entirely — no seed count, no turn, per Raja's own tick-
+         box rule — so sowing has to skip its whole 7-cup block, not just
+         refuse to lift from it. Dropping ONE seed as a hand is carried
+         around the ring never checked ownership at all, so a long cascade
+         (and these do run 40-60 cups deep) would otherwise still deposit
+         seeds into cups nobody is playing. Every ring-advance in sowStep4
+         goes through this, never raw (i+1)%CUPS4. */
+      function nextLiveCup(i){
+        for (var k = 1; k <= CUPS4; k++){
+          var n = (i + k) % CUPS4;
+          if (enabled[SIDES[owner4(n)]]) return n;
+        }
+        return (i + 1) % CUPS4;   // unreachable with the "at least 2 enabled" guard in place
+      }
+
+      var active = 0;     // idle: the starter preview. live game: the current turn.
+      var starter4 = 0;   // who opens each round — Choose Player sets this, same split as 2p's starter/turn
       /* Raja: "the select will done by four tick box that decide who are to
-         enable the run fill seed sequence." All four start enabled — the
-         board as it already was. Dropping to 2 or 3 just takes the unticked
-         side's cups and card out of Choose Player's rotation; the frame
-         itself never changes shape. */
+         enable the run fill seed sequence." All four start enabled. Dropping
+         to 2 or 3 takes the unticked side's cups and card out of the game
+         entirely — no seeds, no turn, out of Choose Player's rotation — the
+         frame itself never changes shape. */
       var enabled = { A: true, B: true, C: true, D: true };
+
+      var cups4 = [], store4 = [0, 0, 0, 0], pasuDead4 = [], pillai4 = [];
+      var playing4 = false, busy4 = false, step4 = null, inHand4 = 0, sowPos4 = 0;
+      var dealt4 = [false, false, false, false];
+      var everDealt4 = false;
+      var round4 = 1;
 
       function enabledSides(){ return SIDES.filter(function(s){ return enabled[s]; }); }
 
@@ -9006,17 +9100,245 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         });
         return out;
       }
+      function pal4NameOf(p){ return pal4Names()[SIDES[p]]; }
+      function pal4P(key, v){ return window.__palP ? window.__palP(key, v) : key; }
+      function pal4Say(html){ var el = document.getElementById('pal4Say'); if (el) el.innerHTML = html; }
+      function pal4Cheer(line){
+        if (typeof sfx === 'function') try { sfx('card'); } catch(e){}
+        if (typeof sana === 'function') try { sana(line, 'cheer'); } catch(e){}
+      }
+
+      function seedsOnBoard4(){ var t = 0; for (var i = 0; i < CUPS4; i++) t += cups4[i]; return t; }
+      /* A savings pocket cannot be lifted, so seeds sitting in one are not a
+         move — same rule, same reason as the 2-player board's rowEmpty. */
+      function rowEmpty4(p){
+        for (var i = p * 7; i < p * 7 + 7; i++) if (cups4[i] > 0 && !pillai4[i]) return false;
+        return true;
+      }
+      function markSowed4(i){
+        if (cups4[i] === PASU4 + 1) pasuDead4[i] = true;
+        if (cups4[i] === 0) pasuDead4[i] = false;
+      }
+
+      function newGame4(){
+        if (step4){ clearTimeout(step4); step4 = null; }
+        /* Same reset the New Game button always did cosmetically, now the
+           single place both the button AND the tab opener route through —
+           back to all four sides enabled, Player A up first, so opening
+           this board fresh from Home always starts from the same place the
+           2-player one does. */
+        SIDES.forEach(function(s){
+          enabled[s] = true;
+          var cb = document.querySelector('.pal4Tick.side' + s + ' input');
+          if (cb) cb.checked = true;
+        });
+        active = 0; starter4 = 0;
+        cups4 = []; pasuDead4 = []; pillai4 = [];
+        for (var i = 0; i < CUPS4; i++){ cups4.push(0); pasuDead4.push(false); pillai4.push(0); }
+        store4 = [PER_CUP4 * 7, PER_CUP4 * 7, PER_CUP4 * 7, PER_CUP4 * 7];   // 35 each
+        dealt4 = [false, false, false, false];
+        round4 = 1; everDealt4 = false;
+        playing4 = false; busy4 = false; inHand4 = 0;
+        pal4Say(pal4P('dealPrompt'));
+        pal4Cheer(pal4P('dealPrompt'));
+        pal4Draw();
+      }
+
+      /* DEALING IS A MOVE, same as the 2-player board — each enabled player
+         taps their own store to lay out their own row. Play starts the
+         moment every ENABLED side (not all four — only the ones ticked in)
+         has dealt. */
+      function dealRow4(p){
+        if (dealt4[p] || busy4 || !enabled[SIDES[p]]) return;
+        busy4 = true;
+        var c = 0;
+        pal4Say(pal4P('fillingRow', { a: pal4NameOf(p) }));
+        (function one(){
+          if (c >= 7){
+            dealt4[p] = true; busy4 = false; step4 = null;
+            var need = enabledSides().map(function(s){ return SIDES.indexOf(s); });
+            var allDealt = need.every(function(idx){ return dealt4[idx]; });
+            if (allDealt){
+              playing4 = true; everDealt4 = true;
+              active = starter4;
+              pal4Say(pal4P('starts', { a: pal4NameOf(active) }));
+              pal4Cheer(pal4P('newBoard', { a: pal4NameOf(active) }));
+            } else {
+              var waiting = need.filter(function(idx){ return !dealt4[idx]; })
+                .map(function(idx){ return pal4NameOf(idx); }).join(', ');
+              pal4Say(pal4P('dealWaitingMulti', { a: pal4NameOf(p), names: waiting }));
+            }
+            pal4Draw();
+            return;
+          }
+          var i = p * 7 + c; c++;
+          pillai4[i] = 0;
+          if (store4[p] >= PER_CUP4){ cups4[i] = PER_CUP4; store4[p] -= PER_CUP4; }
+          else if (store4[p] > 0){ cups4[i] = store4[p]; pillai4[i] = store4[p]; store4[p] = 0; }
+          else { cups4[i] = 0; }
+          pal4Draw();
+          if (typeof sfx === 'function') try { sfx('card'); } catch(e){}
+          step4 = setTimeout(one, 260);
+        })();
+      }
+
+      /* A ROUND ENDS THE MOMENT THE PLAYER TO MOVE HAS AN EMPTY ROW — same
+         rule as the 2-player board, just walking to the next ENABLED side
+         instead of hard-swapping between exactly two. */
+      function endTurn4(msg){
+        busy4 = false; inHand4 = 0;
+        active = nextEnabledIndex(active);
+        if (rowEmpty4(active)){ endRound4(msg); return; }
+        pal4Say(pal4P('nowTurn', { msg: msg, a: pal4NameOf(active) }));
+        pal4Draw();
+      }
+
+      function endRound4(msg){
+        for (var i = 0; i < CUPS4; i++){
+          if (!cups4[i]) continue;
+          store4[owner4(i)] += cups4[i]; cups4[i] = 0;   // pillai or not, home to its own owner
+        }
+        for (var i = 0; i < CUPS4; i++){ pasuDead4[i] = false; pillai4[i] = 0; }
+        playing4 = false; busy4 = false;
+        dealt4 = [false, false, false, false];
+        round4++;
+        starter4 = nextEnabledIndex(starter4);   // opener alternates every round, same as 2p
+        active = starter4;
+        /* A player who cannot fill even ONE cup has nothing left to lay out.
+            2p ends the whole game the instant either side hits this — the
+            same read carries over: any enabled side reaching zero ends the
+            match, decided among whoever is still standing. */
+        var out = enabledSides().filter(function(s){ return store4[SIDES.indexOf(s)] === 0; });
+        if (out.length){
+          pal4Say(pal4P('lostAllN', { a: pal4NameOf(SIDES.indexOf(out[0])) }));
+          pal4Finish();
+          return;
+        }
+        pal4Say(pal4P('roundOver4', { msg: msg }));
+        pal4Cheer(pal4P('roundCheer4'));
+        pal4Draw();
+      }
+
+      function pal4Finish(){
+        playing4 = false; busy4 = false;
+        var scores = enabledSides().map(function(s){
+          var idx = SIDES.indexOf(s);
+          return { i: idx, n: store4[idx] };
+        });
+        var max = Math.max.apply(null, scores.map(function(x){ return x.n; }));
+        var winners = scores.filter(function(x){ return x.n === max; });
+        var list = scores.map(function(x){ return pal4NameOf(x.i) + ' ' + x.n; }).join(', ');
+        var resultLine = winners.length > 1
+          ? pal4P('winsGameTie', { names: winners.map(function(w){ return pal4NameOf(w.i); }).join(', '), n: max })
+          : pal4P('winsGame', { a: pal4NameOf(winners[0].i) });
+        pal4Say(pal4P('finalScores', { list: list }) + '<br>' + resultLine);
+        pal4Cheer(resultLine);
+        pal4Draw();
+      }
+
+      /* ONE SOWING MOVE — identical mechanics to the 2-player board's
+         sowStep: land empty-handed, the NEXT cup with seeds gets picked up
+         and carried on; the next cup empty (or a locked pillai pocket) means
+         look one further for the capture. Never once asks who owns what. */
+      var sowDropped4 = 0, sowWon4 = 0, sowLanded4 = -1, sowStopped4 = false;
+      function sowStep4(){
+        if (inHand4 > 0){
+          var nx = nextLiveCup(sowPos4);
+          if (pillai4[nx]){
+            if (inHand4 < pillai4[nx]){
+              sowPos4 = nx; cups4[sowPos4] += inHand4; inHand4 = 0; sowDropped4++;
+              sowLanded4 = sowPos4; sowWon4 = 0; sowStopped4 = true;
+              return false;
+            }
+            sowPos4 = nx; cups4[sowPos4] += pillai4[nx]; inHand4 -= pillai4[nx]; sowDropped4++;
+            sowLanded4 = sowPos4;
+            return true;
+          }
+          sowPos4 = nx; cups4[sowPos4]++; inHand4--; sowDropped4++; markSowed4(sowPos4);
+          sowLanded4 = sowPos4;
+          return true;
+        }
+        var next = nextLiveCup(sowPos4);
+        if (cups4[next] > 0 && !pillai4[next]){
+          inHand4 = cups4[next]; cups4[next] = 0; sowPos4 = next; markSowed4(next);
+          sowLanded4 = -1;
+          return true;
+        }
+        var take = nextLiveCup(next);
+        if (cups4[take] > 0 && !pillai4[take]){
+          sowWon4 = cups4[take];
+          store4[active] += sowWon4; cups4[take] = 0; pasuDead4[take] = false;
+          var el2 = document.querySelector('.pal4Cup[data-pal4="' + take + '"]');
+          if (el2){ el2.classList.add('won'); setTimeout(function(){ el2.classList.remove('won'); }, 600); }
+        } else sowWon4 = 0;
+        return false;
+      }
+
+      function sowFinish4(){
+        if (sowStopped4){ endTurn4(pal4P('pillaiStop')); return; }
+        if (sowWon4 > 0){
+          pal4Cheer(pal4P('wonCheer', { a: pal4NameOf(active), n: sowWon4 }));
+          endTurn4(pal4P('wonSay', { a: pal4NameOf(active), n: sowWon4 }));
+        } else {
+          endTurn4(pal4P('nothing'));
+        }
+      }
+
+      function sow4(from){
+        busy4 = true;
+        inHand4 = cups4[from]; sowPos4 = from; sowDropped4 = 0; sowWon4 = 0; sowStopped4 = false;
+        cups4[from] = 0; markSowed4(from);
+        pal4Draw();
+        (function tick(){
+          if (!sowStep4()){ pal4Draw(); sowFinish4(); return; }
+          if (sowLanded4 >= 0){
+            var el = document.querySelector('.pal4Cup[data-pal4="' + sowLanded4 + '"]');
+            if (el){ el.classList.add('sowing'); setTimeout(function(){ el.classList.remove('sowing'); }, 130); }
+          }
+          pal4Draw();
+          step4 = setTimeout(tick, 400);
+        })();
+      }
+
+      function claimPasu4(i){
+        var p = owner4(i);
+        store4[p] += cups4[i]; cups4[i] = 0; pasuDead4[i] = false;
+        var el = document.querySelector('.pal4Cup[data-pal4="' + i + '"]');
+        if (el){ el.classList.add('won'); setTimeout(function(){ el.classList.remove('won'); }, 600); }
+        pal4Cheer(pal4P('pasuCheer', { a: pal4NameOf(p) }));
+        pal4Draw();
+        var line = pal4P('pasuTook', { a: pal4NameOf(p) });
+        pal4Say(busy4 ? line + pal4P('sowingOn') : line + pal4P('yourTurn', { a: pal4NameOf(active) }));
+      }
 
       function pal4Draw(){
         if (!enabled[SIDES[active]]) active = nextEnabledIndex(active);
+        if (!enabled[SIDES[starter4]]) starter4 = nextEnabledIndex(starter4);
         var names = pal4Names();
         SIDES.forEach(function(s, i){
           var isOn = enabled[s];
           var isActive = isOn && i === active;
-          var cups = document.querySelectorAll('.pal4Cup.side' + s);
-          cups.forEach(function(c){
+          var cupsEls = document.querySelectorAll('.pal4Cup.side' + s);
+          cupsEls.forEach(function(c, k){
+            var idx = i * 7 + k;
             c.classList.toggle('active', isActive);
             c.classList.toggle('off', !isOn);
+            if (everDealt4){
+              var n = cups4[idx] || 0;
+              var countEl = c.querySelector('.pal4Count'), seedsEl = c.querySelector('.pal4Seeds');
+              if (countEl) countEl.textContent = n;
+              if (seedsEl){
+                var dots = '';
+                if (n > 0 && n <= 4) for (var d = 0; d < n; d++) dots += '<span class="pal4Seed"></span>';
+                seedsEl.innerHTML = dots;
+              }
+              c.classList.toggle('empty', n === 0);
+              var claimable = playing4 && n === PASU4 && !pasuDead4[idx] && !pillai4[idx];
+              c.classList.toggle('pasu', claimable);
+              c.classList.toggle('pillai', !!pillai4[idx]);
+              var canLift = playing4 && !busy4 && isOn && owner4(idx) === active && n > 0 && !pillai4[idx];
+              c.classList.toggle('pickable', canLift || claimable);
+            }
           });
           var card = document.getElementById('pal4Card' + s);
           if (card){
@@ -9025,32 +9347,72 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           }
           var tick = document.querySelector('.pal4Tick.side' + s);
           if (tick) tick.classList.toggle('on', isOn);
+          var storeNumEl = document.querySelector('#pal4Card' + s + ' .pal4CardStoreNum');
+          if (storeNumEl) storeNumEl.textContent = everDealt4 ? store4[i] : 35;
+          var storeBox = document.querySelector('#pal4Card' + s + ' .pal4CardStore');
+          if (storeBox) storeBox.classList.toggle('toDeal', isOn && !dealt4[i] && !busy4 && !playing4);
         });
         var look = document.getElementById('pal4Look');
         if (look) look.className = 'pal4Look look' + SIDES[active];
         var choose = document.getElementById('pal4Choose');
-        if (choose) choose.textContent = window.__palP
-          ? window.__palP('chooseP', { a: names[SIDES[active]] })
-          : ('👤 Choose player — ' + names[SIDES[active]] + ' starts');
-        // reserve stat: 35 seeds per enabled side's row, matching the static "5 per cup" sample
+        if (choose) choose.textContent = pal4P('chooseP', { a: names[SIDES[starter4]] });
         var onBoard = document.getElementById('pal4OnBoard');
         if (onBoard){
-          var seedTotal = enabledSides().length * 35;
-          onBoard.textContent = window.__palP
-            ? window.__palP(seedTotal === 1 ? 'onBoard1' : 'onBoardN', { n: seedTotal })
-            : (seedTotal + ' seeds on the board');
+          var seedTotal = everDealt4 ? seedsOnBoard4() : enabledSides().length * 35;
+          onBoard.textContent = pal4P(seedTotal === 1 ? 'onBoard1' : 'onBoardN', { n: seedTotal });
         }
       }
 
+      /* CUP TAPS — own cup to sow, any cup of four to claim at any moment,
+         same rules as the 2-player board's own click handler. */
+      document.addEventListener('click', function(e){
+        var b = e.target.closest && e.target.closest('#pal4Frame .pal4Cup');
+        if (!b) return;
+        var i = +b.dataset.pal4;
+        if (!enabled[SIDES[owner4(i)]]) return;   // disabled side — not part of the game
+        if (!playing4){
+          if (!everDealt4 || dealt4.some(function(d, idx){ return enabled[SIDES[idx]] && !d; }))
+            pal4Say(pal4P('fillFirst'));
+          return;
+        }
+        if (cups4[i] === PASU4 && !pasuDead4[i] && !pillai4[i]){ claimPasu4(i); return; }
+        if (busy4) return;
+        if (owner4(i) !== active){ pal4Say(pal4P('notYours', { a: pal4NameOf(owner4(i)) })); return; }
+        if (pillai4[i]){ pal4Say(pal4P('pillaiLocked')); return; }
+        if (cups4[i] === 0){ pal4Say(pal4P('cupEmpty')); return; }
+        sow4(i);
+      });
+
+      /* STORE TAPS — tap your own to lay out your own row. */
+      document.addEventListener('click', function(e){
+        var box = e.target.closest && e.target.closest('#pal4Panel .pal4CardStore');
+        if (!box) return;
+        var card = box.closest('.pal4Card');
+        var m = card && card.id.match(/^pal4Card([A-D])$/);
+        if (!m) return;
+        var p = SIDES.indexOf(m[1]);
+        if (!enabled[SIDES[p]]) return;
+        if (enabledSides().every(function(s){ return dealt4[SIDES.indexOf(s)]; })) return;
+        if (dealt4[p]){ pal4Say(pal4P('alreadyDealt', { a: pal4NameOf(p) })); return; }
+        dealRow4(p);
+      });
+
       var chooseBtn = document.getElementById('pal4Choose');
       if (chooseBtn) chooseBtn.addEventListener('click', function(){
-        active = nextEnabledIndex(active);
+        starter4 = nextEnabledIndex(starter4);
+        if (!playing4) active = starter4;
         if (typeof sfx === 'function') try { sfx('card'); } catch(e){}
+        if (playing4) pal4Say(pal4P('nextGame', { a: pal4NameOf(starter4) }));
         pal4Draw();
       });
 
       document.querySelectorAll('#pal4Select input[type=checkbox]').forEach(function(cb){
         cb.addEventListener('change', function(){
+          /* Can't change who's playing once dealing has started — the ring
+             indices and everyone's reserves already assume this exact seat
+             list. Same spirit as 2p's own guards against a stray tap wiping
+             a live game. */
+          if (playing4 || dealt4.some(Boolean)){ cb.checked = enabled[cb.dataset.side]; return; }
           var s = cb.dataset.side;
           if (!cb.checked){
             var onCount = SIDES.filter(function(x){ return enabled[x]; }).length;
@@ -9070,40 +9432,55 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
       var pal4NewBtn = document.getElementById('pal4New');
       if (pal4NewBtn) pal4NewBtn.addEventListener('click', function(){
-        // UI-only reset, mirrors the 2-player board's New game: back to all
-        // four sides enabled, Player A up first. No seed logic exists yet.
-        SIDES.forEach(function(s){
-          enabled[s] = true;
-          var cb = document.querySelector('.pal4Tick.side' + s + ' input');
-          if (cb) cb.checked = true;
-        });
-        active = 0;
         if (typeof sfx === 'function') try { sfx('card'); } catch(e){}
-        pal4Draw();
+        newGame4();
       });
 
       // bilingual, same ta/en branch pattern as the 2-player board's palHowTo()
       function pal4HowTo(){
         var ta = !!(window.__palTa && window.__palTa());
-        if (ta) return '<h3>🫘 பல்லாங்குழி · 4 வீரர்கள் — இது எப்படி வேறுபடுகிறது</h3>' +
-          '<p>இது வடிவம் மட்டுமே, முழுமையான ஆட்டம் அல்ல. ஒவ்வொரு பக்கத்திலும் ஏழு ' +
-          'குழிகள் கொண்ட நான்கு பக்கங்கள், சதுரத்தைச் சுற்றி ஒரே ஒரு தொடர் வளையம் — ' +
-          'இரு வீரர் பலகையின் அதே யோசனை, ஆனால் நீளமான, சதுர சுற்று.</p>' +
-          '<p><b>இன்னும் முடிவு செய்யப்படவில்லை</b>, கீழே எதுவும் இயக்கப்படவில்லை: ' +
-          'இரண்டுக்குப் பதிலாக நான்கு பக்கங்களில் எடுப்பு எந்தக் குழியை நோக்கிச் ' +
-          'செல்லும் என்பது; இரண்டுக்குப் பதிலாக நான்கு சேமிப்புகளுடன் ஒரு சுற்று ' +
-          'எப்போது முடியும் என்பது; பிள்ளை குழியும் பசு வெகுமதியும் மாறாமல் ' +
-          'தொடருமா என்பது. இங்கே வீரரைத் தேர்ந்தெடு என்பது ஒளிர்வை மட்டும் ' +
-          'நகர்த்தும் — இது உண்மையான ஆட்டத்தைத் தொடங்காது.</p>';
-        return '<h3>🫘 Pallanguzhi · 4 Players — how this differs</h3>' +
-          '<p>This is the SHAPE, not the finished game. Four sides of seven cups ' +
-          'each, one continuous ring around the square — the same idea as the ' +
-          'two-player board, just a longer, square lap.</p>' +
-          '<p><b>Not decided yet</b>, and nothing below is wired up: which cup a ' +
-          'capture points at with four sides instead of two; when a round ends ' +
-          'with four reserves instead of two; whether the savings pocket and ' +
-          'pasu bonus carry over unchanged. Choose Player here only moves a ' +
-          'highlight — it does not start a real game.</p>';
+        if (ta) return '<h3>🫘 பல்லாங்குழி · 4 வீரர்கள் — எப்படி விளையாடுவது</h3>' +
+          '<p>ஏழு குழிகள் கொண்ட நான்கு பக்கங்கள், சதுரத்தைச் சுற்றி ஒரே ஒரு தொடர் ' +
+          'வளையம். 2, 3 அல்லது 4 வீரர்கள் — கீழே உள்ள tick பெட்டிகளால் ' +
+          'தேர்ந்தெடுக்கவும். ஒவ்வொருவரும் தன் <b>சேமிப்பைத் தட்டி</b> தன் ' +
+          'வரிசையை நிரப்புவார்.</p>' +
+          '<ol>' +
+          '<li>உங்கள் முறையில், உங்கள் சொந்தக் <b>குழி ஒன்றைத்</b> தட்டுங்கள். ' +
+          'அதன் அனைத்து விதைகளும் தூக்கப்படும்.</li>' +
+          '<li>அவை <b>ஒவ்வொன்றாக</b>, வளையத்தைச் சுற்றி அடுத்தடுத்த குழிகளில் விழும் — ' +
+          'A, B, C, D வழியாக, மீண்டும் A-வுக்குள்.</li>' +
+          '<li>கடைசி விதை விழும்போது, அடுத்த குழியைப் பாருங்கள். விதைகள் ' +
+          'இருந்தால், தூக்கித் தொடருங்கள்.</li>' +
+          '<li><b>காலியா?</b> அதற்கு அடுத்த குழியில் உள்ள விதைகள் உங்களுடையவை — ' +
+          'யாருடைய வரிசையாக இருந்தாலும் சரி.</li>' +
+          '</ol>' +
+          '<p><b>🫘 பசு.</b> எந்த குழியும் சரியாக நான்கு விதைகள் கொண்டவுடன், அதன் ' +
+          'சொந்தக்காரர் எப்போது வேண்டுமானாலும் அதைத் தட்டி எடுக்கலாம்.</p>' +
+          '<p><b>🔒 பிள்ளை குழி.</b> ஐந்துக்குக் குறைவாக நிரப்பப்பட்ட குழி அந்தச் ' +
+          'சுற்றுக்கு ஒரு பிள்ளை குழி ஆகும் — யாரும் எடுக்கவோ வெல்லவோ முடியாது.</p>' +
+          '<p>ஒரு வீரருக்கு தூக்க விதைகள் இல்லாதபோது, <b>சுற்று முடிவடையும்</b> — ' +
+          'ஒவ்வொருவரும் தங்கள் மீதமுள்ள விதைகளைத் தங்கள் சேமிப்பில் வைத்துக்கொள்வார்கள். ' +
+          'ஒரு குழியைக் கூட நிரப்ப முடியாத வீரர் வந்தால், ஆட்டம் முடிந்துவிடும்.</p>';
+        return '<h3>🫘 Pallanguzhi · 4 Players — how to play</h3>' +
+          '<p>Four sides of seven cups each, one continuous ring around the ' +
+          'square. 2, 3 or 4 players — chosen with the tick boxes below. Each ' +
+          'player <b>taps their own store</b> to lay out their own row.</p>' +
+          '<ol>' +
+          '<li>On your turn, tap <b>one of your own cups</b>. All its seeds are lifted.</li>' +
+          '<li>They are dropped <b>one at a time</b> around the ring — through A, B, ' +
+          'C, D, back into A.</li>' +
+          '<li>When the last seed falls, look at the next cup. Seeds in it? Lift ' +
+          'those too and keep going.</li>' +
+          '<li><b>Empty?</b> The seeds in the cup after that are yours — whoever’s ' +
+          'row it sits in.</li>' +
+          '</ol>' +
+          '<p><b>🫘 Pasu.</b> The moment any cup holds exactly four seeds, its own ' +
+          'owner may tap it and take it, any time.</p>' +
+          '<p><b>🔒 The savings pocket.</b> A cup laid out with fewer than five is a ' +
+          'pillai pocket for that round — nobody may lift it or capture it.</p>' +
+          '<p>When a player has no seeds left to lift, <b>the round ends</b> — ' +
+          'everyone keeps their own leftover seeds into their own reserve. A ' +
+          'player who cannot lay out even one cup has lost the game.</p>';
       }
       window.__pal4HowTo = pal4HowTo;
 
@@ -9114,10 +9491,6 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         if (typeof openLearn === 'function') openLearn('logic', false);
       });
 
-      /* Raja: "add tab below text to cover under choose player in both
-         languages" — the ring-direction sentence that used to sit here
-         always-on is now behind its own tap, same sheet/mechanism as How
-         to play, just its own short content instead. */
       function pal4RingInfo(){
         var ta = !!(window.__palTa && window.__palTa());
         if (ta) return '<h3>🔄 பல்லாங்குழி · 4 வீரர்கள் — வளைய வரிசை</h3>' +
@@ -9137,8 +9510,28 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         if (typeof openLearn === 'function') openLearn('logic', false);
       });
 
+      window.__pal4New = function(){ newGame4(); };
+      window.__pal4Stop = function(){
+        if (step4){ clearTimeout(step4); step4 = null; }
+        if (busy4){
+          var guard = 0;
+          while (sowStep4() && guard++ < 4000){}
+          sowFinish4();
+        }
+        busy4 = false;
+        pal4Draw();
+      };
+      window.__pal4Redraw = function(){
+        if (!everDealt4) { pal4Say(pal4P('dealPrompt')); return; }
+        if (playing4 && !busy4) pal4Say(pal4P('tapYours', { a: pal4NameOf(active) }));
+      };
       window.__pal4Draw = pal4Draw;   // for the checks
-      window.__pal4State = function(){ return { active: SIDES[active], enabled: Object.assign({}, enabled) }; };
+      window.__pal4State = function(){
+        return { active: SIDES[active], starter: SIDES[starter4], enabled: Object.assign({}, enabled),
+                 cups: cups4.slice(), store: store4.slice(), playing: playing4, busy: busy4,
+                 dealt: dealt4.slice(), pillai: pillai4.slice(), dead: pasuDead4.slice(),
+                 round: round4, everDealt: everDealt4, hand: inHand4, dropped: sowDropped4 };
+      };
     })();
 
     document.querySelectorAll('.toggleBtn[data-pal4-level]').forEach(function(btn){
@@ -9158,7 +9551,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         currentSize = 'pallanguzhi4';
         goScreen('scPlay');
         showPal4Mode(true);
-        if (window.__pal4Draw) window.__pal4Draw();
+        if (window.__pal4New) window.__pal4New();   // fresh game on open, same as the 2-player tab
         var title = document.getElementById('appBarTitle');
         if (title) title.innerHTML = boxedTitle('🫘 Pallanguzhi 4P');   // the full name truncated in the app bar
         // matches the 2-player opener: keep the top-bar LOGIC button honest
@@ -10399,6 +10792,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
        next move. */
     if (window.__palRedraw) window.__palRedraw();
     if (window.__pal4Draw) window.__pal4Draw();
+    if (window.__pal4Redraw) window.__pal4Redraw();
     if (typeof sfx === 'function') try { sfx('card'); } catch(e){}
   }
   (function buildLangBtns(){
@@ -10423,7 +10817,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   window.__mmLang = function(l){                 // for the checks
     if (l){ LANG = l; localStorage.setItem('mmLang', l); applyLang(); refreshLangBtn();
             if (window.__palRedraw) window.__palRedraw();
-            if (window.__pal4Draw) window.__pal4Draw(); }
+            if (window.__pal4Draw) window.__pal4Draw();
+            if (window.__pal4Redraw) window.__pal4Redraw(); }
     return LANG;
   };
   window.__palTa = function(){ return LANG === 'ta'; };
@@ -12102,7 +12497,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-198 (4-player board: tick-box row shrunk back to fit one line, not two)';
+  var BUILD_VER = 'beta-199 (4-player board: real game rules — sowing, capture, pasu, pillai, rounds, 2-4 players)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that

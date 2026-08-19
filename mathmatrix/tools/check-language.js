@@ -178,8 +178,11 @@ const TAMIL = /[\u0B80-\u0BFF]/;
   ok('no English is left anywhere on the 4-player board',
     board4.untranslated.length === 0,
     board4.untranslated.length ? board4.untranslated.join(' | ') : 'none');
+  // "how this differs" became "how to play" once the rules pass shipped —
+  // the button/popup content changed on purpose (beta content-changelog),
+  // so the keyword this checks for changed with it, not the assertion's intent
   ok('the top-bar LOGIC button is pre-loaded with the 4-player sheet, in Tamil, on open — not stale content from whichever board opened last',
-    TAMIL.test(board4.logicBox) && board4.logicBox.indexOf('வேறுபடுகிறது') > -1, JSON.stringify(board4.logicBox));
+    TAMIL.test(board4.logicBox) && board4.logicBox.indexOf('விளையாடுவது') > -1, JSON.stringify(board4.logicBox));
 
   /* 3. NOTHING ELSE MOVED. The whole point of narrowing the feature. */
   await ev(`document.getElementById('tab-scHome').click()`); await sleep(800);
@@ -352,6 +355,28 @@ const TAMIL = /[\u0B80-\u0BFF]/;
   ok('and the button says English again', /English/.test(back.btn), back.btn);
   ok('both language buttons agree — toggling either one moves both boards',
     /English/.test(back.btn4), back.btn4);
+
+  /* THE N-PLAYER MESSAGE KEYS — dealWaitingMulti, starts, and the rest are
+     genuinely NEW additions for the rules pass ("go through for
+     integration of code for same as existing 2 player game rules and
+     procedures"), not reused 2-player strings, so their Tamil branch has
+     never actually been exercised until now. */
+  await ev(`window.__mmLang('ta')`); await sleep(400);
+  await ev(`document.getElementById('tab-scHome').click()`); await sleep(200);
+  await ev(`document.getElementById('pal4Tab').click()`); await sleep(700);   // __pal4New(), fresh Tamil board
+  const dealtOne = await ev(`(function(){
+    document.querySelector('#pal4CardA .pal4CardStore').click();
+    return null; })()`);
+  await sleep(2100);
+  const waitingLine = await ev(`document.getElementById('pal4Say').innerHTML`);
+  ok('dealing one of several sides shows the multi-player "waiting on" line, in Tamil',
+    TAMIL.test(waitingLine) && !/[A-Za-z]{3}/.test(waitingLine.replace(/SaNa/g, '')), waitingLine);
+  await ev(`document.querySelector('#pal4CardB .pal4CardStore').click()`); await sleep(2100);
+  await ev(`document.querySelector('#pal4CardC .pal4CardStore').click()`); await sleep(2100);
+  await ev(`document.querySelector('#pal4CardD .pal4CardStore').click()`); await sleep(2100);
+  const startsLine = await ev(`document.getElementById('pal4Say').innerHTML`);
+  ok('once everyone has dealt, the "starts" line reads in Tamil too', TAMIL.test(startsLine), startsLine);
+  await ev(`window.__mmLang('en')`); await sleep(300);   // leave the suite back in English, same as every other section here
 
   ok('no JS errors', errs.length === 0, errs.join(' | ') || '');
   ws.close(); ch.kill();
