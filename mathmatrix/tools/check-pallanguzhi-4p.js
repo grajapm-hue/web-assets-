@@ -189,6 +189,22 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   const tFinal = await tickState();
   ok('all four sides back to enabled by the end', ['A', 'B', 'C', 'D'].every(s => tFinal.enabled[s]), JSON.stringify(tFinal.enabled));
 
+  /* NEW GAME — UI-only reset, mirrors the 2-player board's 🔄 New game.
+     Leave the board in a scrambled state (some sides off, Choose Player
+     cycled), hit it, and confirm everything actually snaps back: state,
+     AND the checkbox elements themselves, not just the JS side of it. */
+  await ev(`document.querySelector('.pal4Tick.sideB input').click()`); await sleep(150);
+  await ev(`document.querySelector('.pal4Tick.sideC input').click()`); await sleep(150);
+  await ev(`document.getElementById('pal4Choose').click()`); await sleep(150);
+  await ev(`document.getElementById('pal4New').click()`); await sleep(300);
+  const afterNew = await tickState();
+  const boxesChecked = await ev(`(function(){
+    return ['A','B','C','D'].every(function(s){
+      return document.querySelector('.pal4Tick.side' + s + ' input').checked; }); })()`);
+  ok('New game resets all four sides enabled and Choose Player back to A',
+    ['A', 'B', 'C', 'D'].every(s => afterNew.enabled[s]) && afterNew.active === 'A', JSON.stringify(afterNew));
+  ok('and the tick-box elements themselves show checked, not just internal state', boxesChecked);
+
   /* THE WELL. Nothing inside the square's open middle should spill outside
      it or overlap the cup ring — a real risk on the narrowest phones, since
      the well shrinks with the whole frame while the cards inside it don't. */

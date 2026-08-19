@@ -3872,6 +3872,7 @@ body{ background:#C9A87C !important; }
   <div class="pal4Note" id="pal4Note">One ring runs the whole way round the frame — A along the top, B down the right, C along the bottom, D up the left, back into A.</div>
 
   <div class="pal4Foot">
+    <button class="slideBtn" id="pal4New" type="button">🔄 New game</button>
     <button class="slideBtn" id="pal4Rules" type="button">📖 How this differs</button>
   </div>
 </div>
@@ -9014,6 +9015,20 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         el.addEventListener('input', pal4Draw);
       });
 
+      var pal4NewBtn = document.getElementById('pal4New');
+      if (pal4NewBtn) pal4NewBtn.addEventListener('click', function(){
+        // UI-only reset, mirrors the 2-player board's New game: back to all
+        // four sides enabled, Player A up first. No seed logic exists yet.
+        SIDES.forEach(function(s){
+          enabled[s] = true;
+          var cb = document.querySelector('.pal4Tick.side' + s + ' input');
+          if (cb) cb.checked = true;
+        });
+        active = 0;
+        if (typeof sfx === 'function') try { sfx('card'); } catch(e){}
+        pal4Draw();
+      });
+
       var pal4RulesBtn = document.getElementById('pal4Rules');
       if (pal4RulesBtn) pal4RulesBtn.addEventListener('click', function(){
         var lb2 = document.getElementById('logicBox');
@@ -11972,7 +11987,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-190 (4-player board: 4 tick boxes choose 2, 3 or 4 active sides)';
+  var BUILD_VER = 'beta-191 (4-player board: New game button resets the tick boxes)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
