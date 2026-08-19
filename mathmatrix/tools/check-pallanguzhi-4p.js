@@ -292,6 +292,34 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
     tight.footReachable
       ? 'foot ' + tight.footBottom + ', bar ' + tight.bar + (tight.scrolled ? ' (scrolling was needed)' : ' (fit without scrolling)')
       : 'STILL unreachable even scrolled to the end — foot ' + tight.footBottom + ', bar ' + tight.bar);
+
+  /* Raja: "are you ensured and verified your self the correction of text
+     font size increase change should not over ride or that cause existing
+     any tab or usage area should not Miss out in with in screen." Direct
+     answer: no, the first attempt at pal4Say's own size (19px, passing
+     every overflow/collision/scroll-budget check that existed at the time)
+     pushed the tick-box row and Choose Player button below the fold ON
+     OPEN, unscrolled — a real regression none of those checks were built
+     to catch, since none of them asked "is everything still visible
+     without scrolling the moment this screen opens." This is that check,
+     kept permanent so a future size change can't reintroduce the same gap
+     silently. */
+  await ev(`document.getElementById('tab-scHome').click()`); await sleep(200);
+  await ev(`document.getElementById('pal4Tab').click()`); await sleep(800);
+  const onOpen = await ev(`(function(){
+    var panel = document.getElementById('pal4Panel');
+    panel.scrollTop = 0;   // exactly how the screen looks the moment it opens
+    var tabBar = document.querySelector('.tabBar').getBoundingClientRect();
+    var select = document.querySelector('.pal4Select').getBoundingClientRect();
+    var choose = document.querySelector('.pal4Choose').getBoundingClientRect();
+    return JSON.stringify({
+      selectVisible: select.bottom <= tabBar.top + 1 && select.top >= 0,
+      chooseVisible: choose.bottom <= tabBar.top + 1 && choose.top >= 0,
+      selectBottom: Math.round(select.bottom), chooseBottom: Math.round(choose.bottom),
+      tabBarTop: Math.round(tabBar.top) }); })()`).then(JSON.parse);
+  ok('at 340x780, the tick-box row is visible the moment the screen opens — no scroll needed',
+    onOpen.selectVisible, 'select bottom ' + onOpen.selectBottom + ' vs tab bar ' + onOpen.tabBarTop);
+  ok('and so is Choose Player', onOpen.chooseVisible, 'choose bottom ' + onOpen.chooseBottom + ' vs tab bar ' + onOpen.tabBarTop);
   ok('and the square frame itself is a sensible size, not crushed', tight.frameWidth >= 250, tight.frameWidth + 'px wide');
 
   /* D, SaNa and B all sit on the SAME horizontal band in the well's middle

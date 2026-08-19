@@ -2651,8 +2651,19 @@ body.langTa .palTurn{ font-size:12.5px; }
 .pal4Look.lookD{ top:50%; left:0; margin-left:-15px; transform:translateY(-50%) rotate(180deg); }
 .pal4Look{ border-left:11px solid #F0A828; }
 
-.pal4Say{ background:rgba(255,246,231,.72); border-radius:16px; padding:9px 14px; margin:6px 0 0;
-  font-size:19px; font-weight:800; text-align:center; color:#33220F; }
+/* NOT the same ceiling as CardName/CardStore/Tick. Those are bounded by a
+   hard collision (touching SaNa) or a self-overflow (ellipsis engaging) —
+   pal4Say has neither, since its bubble just grows taller and the panel
+   already scrolls. That absence of a hard wall is exactly what let the
+   first attempt at "maximum" here (19px) push the tick-box row and Choose
+   Player button below the fold on open in Tamil at smaller phones — both
+   individually fine (no overflow, no collision) and yet a real control
+   made invisible without scrolling, which no overflow/collision check
+   was set up to catch. The real ceiling is functional, not geometric:
+   the largest size that still leaves the tick row and Choose Player
+   visible on open, unscrolled, at the worst case (340x780, Tamil). */
+.pal4Say{ background:rgba(255,246,231,.72); border-radius:16px; padding:8px 13px; margin:6px 0 0;
+  font-size:12.5px; font-weight:800; text-align:center; color:#33220F; }
 .pal4Choose{ display:block; width:100%; box-sizing:border-box; margin:10px 0; padding:9px 12px;
   border-radius:14px; cursor:pointer; font-family:inherit; font-size:12.5px; font-weight:900;
   text-align:center; background:linear-gradient(180deg,#FDE68A 0%,#F59E0B 100%); color:#5A3A0A;
@@ -12079,7 +12090,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-196 (4-player board: true measured maximum font sizes throughout)';
+  var BUILD_VER = 'beta-197 (4-player board: fixed a real regression — SaNa bubble was hiding the tick row and Choose Player)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that

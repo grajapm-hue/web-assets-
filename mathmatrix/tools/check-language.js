@@ -286,6 +286,29 @@ const TAMIL = /[\u0B80-\u0BFF]/;
     return Math.round(f) + ' vs ' + Math.round(b) + (f <= b + 1 ? ' reachable' : ' UNREACHABLE'); })()`);
   ok('in Tamil, the 4-player foot row is reachable by scrolling', / reachable$/.test(fits4), fits4);
 
+  /* Raja: "are you ensured and verified your self the correction of text
+     font size increase change should not over ride or that cause existing
+     any tab or usage area should not Miss out in with in screen." The
+     first attempt at pal4Say's Tamil size passed every existing check
+     (no self-overflow, no scroll-budget breach) while quietly pushing the
+     tick-box row and Choose Player button below the fold in exactly this
+     language, at exactly this size — the combination that actually
+     surfaced it. Kept permanent so a future translation or size change
+     can't reintroduce the same gap. */
+  await ev(`(function(){ document.getElementById('pal4Panel').scrollTop = 0; })()`);
+  const onOpen4 = await ev(`(function(){
+    var tabBar = document.querySelector('.tabBar').getBoundingClientRect();
+    var select = document.querySelector('.pal4Select').getBoundingClientRect();
+    var choose = document.querySelector('.pal4Choose').getBoundingClientRect();
+    return JSON.stringify({
+      selectVisible: select.bottom <= tabBar.top + 1 && select.top >= 0,
+      chooseVisible: choose.bottom <= tabBar.top + 1 && choose.top >= 0,
+      selectBottom: Math.round(select.bottom), chooseBottom: Math.round(choose.bottom),
+      tabBarTop: Math.round(tabBar.top) }); })()`).then(JSON.parse);
+  ok('in Tamil at 360x800, the tick-box row is visible the moment the screen opens — no scroll needed',
+    onOpen4.selectVisible, 'select bottom ' + onOpen4.selectBottom + ' vs tab bar ' + onOpen4.tabBarTop);
+  ok('and so is Choose Player', onOpen4.chooseVisible, 'choose bottom ' + onOpen4.chooseBottom + ' vs tab bar ' + onOpen4.tabBarTop);
+
   /* 5. Back to English — the direction nobody tests, and the one where a child
         left in a script they cannot read has no way out. */
   await ev(`window.__mmLang('en')`); await sleep(800);
