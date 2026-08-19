@@ -9407,7 +9407,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           var tick = document.querySelector('.pal4Tick.side' + s);
           if (tick) tick.classList.toggle('on', isOn);
           var storeNumEl = document.querySelector('#pal4Card' + s + ' .pal4CardStoreNum');
-          if (storeNumEl) storeNumEl.textContent = store4[i];   // always real, same as 2p's palStore1/2
+          /* Raja: an unticked player should show no reserve at all, not a
+             dimmed "35" that still reads as "this player has seeds
+             waiting" — blank makes "not in this game" unambiguous. */
+          if (storeNumEl) storeNumEl.textContent = isOn ? store4[i] : '';
           var storeBox = document.querySelector('#pal4Card' + s + ' .pal4CardStore');
           if (storeBox) storeBox.classList.toggle('toDeal', isOn && !dealt4[i] && !busy4 && !playing4);
         });
@@ -9479,12 +9482,20 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
       document.querySelectorAll('#pal4Select input[type=checkbox]').forEach(function(cb){
         cb.addEventListener('change', function(){
-          /* Can't change who's playing once dealing has started — the ring
-             indices and everyone's reserves already assume this exact seat
-             list. Same spirit as 2p's own guards against a stray tap wiping
-             a live game. */
-          if (playing4 || dealt4.some(Boolean)){ cb.checked = enabled[cb.dataset.side]; return; }
           var s = cb.dataset.side;
+          var p = SIDES.indexOf(s);
+          /* Raja: dealing A and C first, then trying to untick B and D to
+             drop them, hit this guard even though B and D had never dealt
+             a single seed — it blocked ANY tick change the moment ANY side
+             had dealt, not just the side being changed. A player who has
+             already dealt can't be removed cleanly (their 35 seeds are
+             already split across their own 7 cups with nowhere to go), so
+             THAT stays locked, same as before dealing has fully finished
+             (playing4). But a side that hasn't dealt yet is untouched by
+             anything happening elsewhere on the board, so switching it off
+             is always safe, even mid-selection with other sides already
+             down. */
+          if (playing4 || dealt4[p]){ cb.checked = enabled[s]; return; }
           if (!cb.checked){
             var onCount = SIDES.filter(function(x){ return enabled[x]; }).length;
             if (onCount <= 2){ cb.checked = true; return; }   // can't go below 2 players
@@ -12568,7 +12579,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-206 (4-player board: removed the beta-203/204 touch-log diagnostic — it was covering the tab bar and controls; the deal bug it was chasing is confirmed fixed)';
+  var BUILD_VER = 'beta-207 (4-player board: unticking a player who has not personally dealt now works even after other players have already dealt, and disabled players show a blank reserve instead of a dimmed 35)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
