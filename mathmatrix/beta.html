@@ -9393,6 +9393,30 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         sow4(i);
       });
 
+      /* TEMPORARY DIAGNOSTIC — Raja: "all pockets and reserves just bubbling
+         effect not game starting" on a real device, after the touch-action
+         fix (beta-200) did not resolve it. Every test this session reaches
+         the deal logic correctly (both element.click() and coordinate-based
+         mouse events in headless Chrome), which means the failure is
+         something about a REAL device's touch handling this session cannot
+         reproduce or observe remotely. Rather than guess again, this writes
+         exactly what happens on tap directly into the visible SaNa bubble —
+         readable and screenshot-able without needing phone devtools. Remove
+         once the real cause is confirmed and fixed. Capture phase (true) so
+         it sees the tap before anything else does. */
+      document.addEventListener('click', function(e){
+        var box = e.target.closest && e.target.closest('#pal4Panel .pal4CardStore');
+        if (!box) return;
+        var tgt = e.target.tagName + (e.target.className ? '.' + String(e.target.className).split(' ').join('.') : '');
+        var card = box.closest('.pal4Card');
+        var m = card && card.id.match(/^pal4Card([A-D])$/);
+        if (!m){ pal4Say('🔧 tap seen on ' + tgt + ' but no card id matched: ' + (card ? card.id : 'null')); return; }
+        var p = SIDES.indexOf(m[1]);
+        var dbg = '🔧 tap on ' + m[1] + ' (via ' + tgt + ') — enabled:' + enabled[SIDES[p]] +
+          ' dealt:' + dealt4[p] + ' busy:' + busy4 + ' allDealt:' + enabledSides().every(function(s){ return dealt4[SIDES.indexOf(s)]; });
+        pal4Say(dbg);
+      }, true);
+
       /* STORE TAPS — tap your own to lay out your own row. */
       document.addEventListener('click', function(e){
         var box = e.target.closest && e.target.closest('#pal4Panel .pal4CardStore');
@@ -12507,7 +12531,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-200 (4-player board: fixed real-device taps on the store not starting the deal)';
+  var BUILD_VER = 'beta-201 (4-player board: temporary on-screen diagnostic for the still-unfixed store-tap bug)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
