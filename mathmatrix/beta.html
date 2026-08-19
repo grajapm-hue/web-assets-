@@ -9374,22 +9374,30 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
             var idx = i * 7 + k;
             c.classList.toggle('active', isActive);
             c.classList.toggle('off', !isOn);
-            if (everDealt4){
-              var n = cups4[idx] || 0;
-              var countEl = c.querySelector('.pal4Count'), seedsEl = c.querySelector('.pal4Seeds');
-              if (countEl) countEl.textContent = n;
-              if (seedsEl){
-                var dots = '';
-                if (n > 0 && n <= 4) for (var d = 0; d < n; d++) dots += '<span class="pal4Seed"></span>';
-                seedsEl.innerHTML = dots;
-              }
-              c.classList.toggle('empty', n === 0);
-              var claimable = playing4 && n === PASU4 && !pasuDead4[idx] && !pillai4[idx];
-              c.classList.toggle('pasu', claimable);
-              c.classList.toggle('pillai', !!pillai4[idx]);
-              var canLift = playing4 && !busy4 && isOn && owner4(idx) === active && n > 0 && !pillai4[idx];
-              c.classList.toggle('pickable', canLift || claimable);
+            /* Raja, cross-checked against the 2-player board's own draw():
+               that one renders cups[i]/store[d] unconditionally, every call,
+               from the moment the board opens (cups start at 0 there too).
+               Gating this block behind everDealt4 (only true once EVERY
+               enabled side has fully finished dealing) meant a real deal
+               correctly drained store4 and filled cups4 in the data, but
+               nothing on screen reflected it until all sides were done --
+               with all four sides enabled by default, one player's tap
+               looked like it did nothing at all. Unconditional now, same
+               as 2p. */
+            var n = cups4[idx] || 0;
+            var countEl = c.querySelector('.pal4Count'), seedsEl = c.querySelector('.pal4Seeds');
+            if (countEl) countEl.textContent = n;
+            if (seedsEl){
+              var dots = '';
+              if (n > 0 && n <= 4) for (var d = 0; d < n; d++) dots += '<span class="pal4Seed"></span>';
+              seedsEl.innerHTML = dots;
             }
+            c.classList.toggle('empty', n === 0);
+            var claimable = playing4 && n === PASU4 && !pasuDead4[idx] && !pillai4[idx];
+            c.classList.toggle('pasu', claimable);
+            c.classList.toggle('pillai', !!pillai4[idx]);
+            var canLift = playing4 && !busy4 && isOn && owner4(idx) === active && n > 0 && !pillai4[idx];
+            c.classList.toggle('pickable', canLift || claimable);
           });
           var card = document.getElementById('pal4Card' + s);
           if (card){
@@ -9399,7 +9407,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           var tick = document.querySelector('.pal4Tick.side' + s);
           if (tick) tick.classList.toggle('on', isOn);
           var storeNumEl = document.querySelector('#pal4Card' + s + ' .pal4CardStoreNum');
-          if (storeNumEl) storeNumEl.textContent = everDealt4 ? store4[i] : 35;
+          if (storeNumEl) storeNumEl.textContent = store4[i];   // always real, same as 2p's palStore1/2
           var storeBox = document.querySelector('#pal4Card' + s + ' .pal4CardStore');
           if (storeBox) storeBox.classList.toggle('toDeal', isOn && !dealt4[i] && !busy4 && !playing4);
         });
@@ -9409,7 +9417,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         if (choose) choose.textContent = pal4P('chooseP', { a: names[SIDES[starter4]] });
         var onBoard = document.getElementById('pal4OnBoard');
         if (onBoard){
-          var seedTotal = everDealt4 ? seedsOnBoard4() : enabledSides().length * 35;
+          var seedTotal = seedsOnBoard4();   // always real, same as 2p's seedsOnBoard()
           onBoard.textContent = pal4P(seedTotal === 1 ? 'onBoard1' : 'onBoardN', { n: seedTotal });
         }
       }
@@ -12609,7 +12617,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-204 (4-player board: store tap-target grown to real touch-target size + scroll state added to the touch log)';
+  var BUILD_VER = 'beta-205 (4-player board: real root cause found — pal4Draw() was not updating cups/store on screen until EVERY side had dealt; now unconditional, matching the 2-player board exactly)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
