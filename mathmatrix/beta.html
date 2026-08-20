@@ -2569,6 +2569,16 @@ body.langTa .palTurn{ font-size:12.5px; }
   top:2px; right:2px; font-size:9px; font-weight:900; line-height:1;
   padding:2px 3px; border-radius:7px; background:#065F46; color:#D1FAE5;
   border:1px solid #34D399; }
+/* Raja: same "green ring = looks like Player C's colour" confusion the
+   4-player board had (beta-208), just never applied here -- a fixed green
+   pillai ring happened to be identical to Player 1's OWN theme colour
+   (mine1, #4ade80), so Player 2's savings pocket read as if it belonged
+   to Player 1. Each cup already carries mine1/mine2 (owner(i)===0/1) for
+   its own ring, so the same classes work here too -- Player 1 stays green
+   (no visual change, it was already that colour), Player 2 gets its own
+   blue instead of the shared fixed green. */
+.palCup.pillai.mine2{ box-shadow:inset 0 4px 10px rgba(0,0,0,.55), 0 0 0 3px #60a5fa; }
+.palCup.pillai.mine2::after{ background:#12325E; border-color:#60a5fa; }
 .palCup.won{ animation:palWon .6s ease-in-out 1; }
 @keyframes palWon{ 50%{ transform:scale(1.18); } }
 
@@ -12801,7 +12811,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-214 (Pallanguzhi, both boards: a light tick sound now plays for every seed as it drops during sowing -- dealing already had one, sowing had none, and it honours the existing sound on/off setting)';
+  var BUILD_VER = 'beta-215 (2-player board: Player 2s pillai lock ring now uses their own blue instead of a fixed green that read as Player 1s colour -- same fix the 4-player board got in beta-208)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
