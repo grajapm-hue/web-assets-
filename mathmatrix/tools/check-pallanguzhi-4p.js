@@ -387,6 +387,19 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
     await ev(`document.querySelector('#pal4Card${side} .pal4CardStore').click()`);
     await sleep(2050);   // 7 drops * 260ms + margin — real time, not force-finished (see the deal/sow note below)
   }
+  /* Pillai pockets left over from the round that just ended (beta-212) now
+     block dealing until every owner has tapped their own to collect it --
+     any redeal loop written before that landed needs to clear those first,
+     or dealSide() calls just get silently refused forever. */
+  async function collectAllPillai4(){
+    for (let guard = 0; guard < 10; guard++){
+      const st = await state();
+      const idx = st.pillai.findIndex((p, i) => p && st.cups[i] > 0 && !st.dealt[Math.floor(i / 7)]);
+      if (idx < 0) return;
+      await ev(`document.querySelector('.pal4Cup[data-pal4="${idx}"]').click()`);
+      await sleep(150);
+    }
+  }
   async function findLiftable(activeLetter){
     return ev(`(function(){
       var SIDES = ['A','B','C','D'], p = SIDES.indexOf('${activeLetter}');
@@ -532,6 +545,8 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
       st = await state();
       if (!st.playing){
         if (st.store[0] > 0 && st.store[2] > 0 && (!st.dealt[0] || !st.dealt[2])){
+          await collectAllPillai4();   // clear any leftover pillai first, or dealSide below just gets refused
+          st = await state();
           if (st.store[0] !== st.store[2]){
             preSplit = st;
             if (!st.dealt[0]) await dealSide('A');
@@ -590,6 +605,7 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
       if (!st.playing){
         const letters = ['A', 'B', 'C', 'D'];
         if (letters.every(s => st.store[letters.indexOf(s)] === 0)) break outerPasu;
+        await collectAllPillai4();   // clear any leftover pillai first, or dealSide below just gets refused
         for (const s of letters) if (!st.dealt[letters.indexOf(s)]) await dealSide(s);
         continue;
       }
@@ -621,6 +637,71 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
       pasuAfter.playing === false || pasuAfter.active !== pasuBefore.active,
       'active: ' + pasuAfter.active + ' playing: ' + pasuAfter.playing);
     ok('all 140 seeds still conserved through the round-end the claim triggered', total(pasuAfter) === 140, 'total: ' + total(pasuAfter));
+  }
+
+  /* MANUAL PILLAI COLLECTION (beta-212) — Raja: "keep pillai pandi in cup
+     who owned... later by click pillai pandi the seeds will transfer to
+     store." Play until a round ends with a pending pillai pocket, confirm
+     dealing is refused until it's collected, collect it by tapping the
+     cup, confirm the exact amount moves into its own owner's store, and
+     confirm dealing works again afterward -- without a fresh pillai formed
+     by that very redeal (a real gap this caught) blocking anyone else. */
+  await ev(`document.getElementById('tab-scHome').click()`); await sleep(200);
+  await ev(`document.getElementById('pal4Tab').click()`); await sleep(700);
+  await untick('B'); await untick('D');
+  await dealSide('A'); await dealSide('C');
+  let roundEndedWithPillai = false, pillaiEndState = null;
+  outerCollect:
+  for (let round = 0; round < 8 && !roundEndedWithPillai; round++){
+    for (let move = 0; move < 150; move++){
+      st = await state();
+      if (!st.playing){
+        const hasPending = st.pillai.some((p, idx) => p && st.cups[idx] > 0);
+        if (hasPending){ roundEndedWithPillai = true; pillaiEndState = st; break outerCollect; }
+        if (st.store[0] > 0 && st.store[2] > 0 && (!st.dealt[0] || !st.dealt[2])){
+          if (!st.dealt[0]) await dealSide('A');
+          if (!st.dealt[2]) await dealSide('C');
+          continue;
+        }
+        break outerCollect;
+      }
+      const liftIdx = asymLift(st, st.active);
+      if (liftIdx === null) break;
+      await ev(`document.querySelector('.pal4Cup[data-pal4="${liftIdx}"]').click()`);
+      await ev(`window.__pal4Stop()`); await sleep(30);
+    }
+  }
+  ok('reached a round-end with at least one pending pillai pocket to collect', roundEndedWithPillai,
+    roundEndedWithPillai ? 'found' : 'never happened in the move budget');
+  if (roundEndedWithPillai){
+    const pendIdx = pillaiEndState.pillai.findIndex((p, idx) => p && pillaiEndState.cups[idx] > 0);
+    const pendOwnerIdx = Math.floor(pendIdx / 7);
+    const pendOwner = ['A', 'B', 'C', 'D'][pendOwnerIdx];
+
+    const sayBefore = await ev(`document.getElementById('pal4Say').textContent`);
+    await ev(`document.querySelector('#pal4Card${pendOwner} .pal4CardStore').click()`); await sleep(200);
+    const stRefused = await state();
+    const sayAfterRefusal = await ev(`document.getElementById('pal4Say').textContent`);
+    ok('dealing is refused while a pillai pocket is still pending', stRefused.dealt[pendOwnerIdx] === false && sayAfterRefusal !== sayBefore, sayAfterRefusal);
+
+    const before = await state();
+    const storeBefore = before.store[pendOwnerIdx], pillaiAmount = before.cups[pendIdx];
+    await ev(`document.querySelector('.pal4Cup[data-pal4="${pendIdx}"]').click()`); await sleep(200);
+    const after = await state();
+    ok('tapping the pillai cup moves exactly its own amount into the owner’s store',
+      after.store[pendOwnerIdx] === storeBefore + pillaiAmount, storeBefore + ' + ' + pillaiAmount + ' = ' + after.store[pendOwnerIdx]);
+    ok('the cup is now empty and no longer marked pillai', after.cups[pendIdx] === 0 && after.pillai[pendIdx] === 0);
+
+    await collectAllPillai4();
+    const stClear = await state();
+    ok('no pillai pockets remain pending after collecting them all', !stClear.pillai.some((p, idx) => p && stClear.cups[idx] > 0));
+
+    if (!stClear.dealt[0]) await dealSide('A');
+    if (!stClear.dealt[2]) await dealSide('C');
+    const stRedeal = await state();
+    ok('dealing (and so the next round) works again once every pillai pocket is collected — including when that very redeal forms a brand-new one',
+      stRedeal.playing === true, JSON.stringify({ playing: stRedeal.playing, dealt: stRedeal.dealt }));
+    ok('all 140 seeds still conserved through the whole collect-then-redeal sequence', total(stRedeal) === 140, 'total: ' + total(stRedeal));
   }
 
   ok('no JS errors', errs.length === 0, errs.join(' | ') || '');

@@ -8328,7 +8328,17 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
                      ta:'<b>{a}</b> ஒரு குழியைக் கூட நிரப்ப முடியவில்லை — ஆட்டம் முடிந்தது.' },
         finalScores:{ en:'Final: {list}.', ta:'இறுதி: {list}.' },
         winsGameTie:{ en:'A dead heat between {names} — {n} seeds each!',
-                     ta:'{names} இடையே சமநிலை — தலா {n} விதைகள்!' }
+                     ta:'{names} இடையே சமநிலை — தலா {n} விதைகள்!' },
+        /* PILLAI POCKETS NO LONGER SWEEP THEMSELVES — Raja: "keep pillai
+           pandi in cup who owned... later by click pillai pandi the seeds
+           will transfer to store." A pocket now sits visible in its own
+           cup after a round ends until its own owner taps it. */
+        roundOverPillaiPending:{ en:'{msg}<br>Round over — tap your own savings pocket to add it to your store, then tap your store for the next round.',
+                     ta:'{msg}<br>சுற்று முடிந்தது — உங்கள் பிள்ளை குழியைத் தட்டி சேமிப்பில் சேர்க்கவும், பின் அடுத்த சுற்றுக்கு உங்கள் சேமிப்பைத் தட்டுங்கள்.' },
+        pillaiCollected:{ en:'<b>{a}</b>’s savings pocket goes home — store now <b>{n}</b>.',
+                     ta:'<b>{a}</b> வின் பிள்ளை குழி சேமிப்பிற்குச் சென்றது — சேமிப்பு இப்போது <b>{n}</b>.' },
+        collectFirst:{ en:'Collect every savings pocket first — tap your own to add it to your store.',
+                     ta:'முதலில் எல்லாப் பிள்ளை குழிகளையும் சேகரிக்கவும் — அவரவர் தங்கள் குழியைத் தட்டி சேமிப்பில் சேர்க்கவும்.' }
       };
       /* THE "HOW TO PLAY" SHEET — bilingual, and brought up to date.
 
@@ -8552,13 +8562,26 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           if (pillai[i]) el.setAttribute('data-pillai', pillai[i]);
           else el.removeAttribute('data-pillai');
           var canLift = playing && !busy && owner(i) === turn && n > 0;
-          el.classList.toggle('pickable', canLift || claimable);
+          /* Between rounds, a savings pocket LEFT OVER from the round that
+             just ended is its own owner's to tap and collect — mark it
+             pickable too, same visual invitation a liftable cup already
+             gets. Not a pocket this same owner's OWN redeal for the
+             CURRENT round just formed (dealt[owner] already true) — that
+             one stays locked the normal way. */
+          var canCollect = !playing && pillai[i] && n > 0 && !dealt[owner(i)];
+          el.classList.toggle('pickable', canLift || claimable || canCollect);
         }
         document.getElementById('palStore1').textContent = store[0];
         document.getElementById('palStore2').textContent = store[1];
+        /* Don't glow "tap to deal" while a savings pocket LEFT OVER from
+           the last round is still sitting uncollected anywhere — that tap
+           would be refused (collectFirst) until its own owner has claimed
+           it. A pocket someone's OWN current deal just formed does not
+           count — normal, expected, not something blocking anyone. */
+        var anyOldPillaiPending = cups.some(function(c, i){ return pillai[i] && c > 0 && !dealt[owner(i)]; });
         for (var d = 0; d < 2; d++){
           var sb = document.querySelector('#palSide' + (d + 1) + ' .palStore');
-          if (sb) sb.classList.toggle('toDeal', !dealt[d] && !busy);
+          if (sb) sb.classList.toggle('toDeal', !dealt[d] && !busy && !anyOldPillaiPending);
         }
         /* Raja: "naming player color bg is permanently placed. Request is who
            ready to play only colour bg should show, others remain white. When
@@ -8715,22 +8738,32 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         draw();
       }
 
+      /* Raja: "end of sequence the pillai pandi is immediately transferred
+         to stores, that should avoid -- instead keep pillai pandi in cup
+         who owned... later by click pillai pandi the seeds will transfer
+         to store, to know how much seeds in stores on end of sequence and
+         after pillai pandi how much in stores." Same fix as the 4-player
+         board's own endRound4: a savings pocket stays sitting in its own
+         cup, still locked-looking, until its own owner taps it. */
+      function hasAnySeeds(idx){
+        if (store[idx] > 0) return true;
+        for (var i = idx * 7; i < idx * 7 + 7; i++) if (cups[i] > 0) return true;
+        return false;
+      }
       function endRound(msg){
         var keeper = 1 - turn;              // the side that still has seeds
         var swept = 0;
-        /* Every savings pocket goes home to the player whose row it sits in —
-           Raja: "the pillai pocket, which filled by one only, get back to his
-           reserves" — INCLUDING the one on the side that just ran dry, which
-           is exactly how a player with nothing playable left still comes back
-           with something to lay out. Everything else on the board belongs to
-           the side that still had seeds. */
+        /* Everything EXCEPT a savings pocket goes home to the side that
+           still had seeds; a savings pocket now stays put, collected by
+           hand — INCLUDING the one on the side that just ran dry, which is
+           exactly how a player with nothing playable left still comes back
+           with something to lay out, once they tap it themselves. */
         for (var i = 0; i < CUPS; i++){
-          if (!cups[i]) continue;
-          if (pillai[i]){ store[owner(i)] += cups[i]; cups[i] = 0; }
-          else if (owner(i) === keeper){ swept += cups[i]; cups[i] = 0; }
+          if (!cups[i] || pillai[i]) continue;
+          if (owner(i) === keeper){ swept += cups[i]; cups[i] = 0; }
         }
         store[keeper] += swept;
-        for (var i = 0; i < CUPS; i++){ pasuDead[i] = false; pillai[i] = 0; }
+        for (var i = 0; i < CUPS; i++) pasuDead[i] = false;
         playing = false; busy = false;
         dealt = [false, false];
         round++;
@@ -8745,16 +8778,30 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
            Player still works as an override on top of this, same as before. */
         starter = 1 - starter;
         /* A player who cannot fill even ONE cup has nothing left to lay out and
-           the game is over. Everything else is another round. */
-        if (store[0] === 0 || store[1] === 0){
-          var lost = store[0] === 0 ? 0 : 1;
+           the game is over. Everything else is another round. Store alone is
+           not enough here — a side can still be holding everything in an
+           as-yet-uncollected savings pocket. */
+        if (!hasAnySeeds(0) || !hasAnySeeds(1)){
+          var lost = !hasAnySeeds(0) ? 0 : 1;
+          /* The game is over — there is no next round left to delay the
+             reveal for, so sweep any still-uncollected pillai straight
+             into its owner's store now, silently, before the final tally. */
+          for (var i = 0; i < CUPS; i++){
+            if (!cups[i]) continue;
+            store[owner(i)] += cups[i]; cups[i] = 0;
+          }
+          for (var i = 0; i < CUPS; i++) pillai[i] = 0;
           playing = false;
           say(P('lostAll', { a: nameOf(lost), b: nameOf(1 - lost) }));
           palCheer(P('winsGame', { a: nameOf(1 - lost) }), 'party', true);
           draw();
           return;
         }
-        say(P('roundOver', { msg: msg, a: nameOf(keeper), n: swept }));
+        if (cups.some(function(c, i){ return pillai[i] && c > 0; })){
+          say(P('roundOverPillaiPending', { msg: msg }));
+        } else {
+          say(P('roundOver', { msg: msg, a: nameOf(keeper), n: swept }));
+        }
         if (typeof sana === 'function') try { sana(P('roundCheer', { a: nameOf(keeper), n: swept }), 'cheer'); } catch(e){}
         draw();
       }
@@ -8925,6 +8972,20 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         if (!b) return;
         var i = +b.dataset.pal;
         if (!playing){
+          /* Between rounds, a savings pocket LEFT OVER from the round that
+             just ended is a live tap target now — its own owner's cup
+             only (owner(i) already pins that), whenever they get to it.
+             A pocket this same owner's OWN redeal for the CURRENT round
+             just formed (dealt[owner(i)] already true) is NOT this — that
+             one stays locked the normal way, only collectible once THIS
+             round ends. */
+          if (pillai[i] && cups[i] > 0 && !dealt[owner(i)]){
+            var pOwner = owner(i);
+            store[pOwner] += cups[i]; cups[i] = 0; pillai[i] = 0;
+            draw();
+            say(P('pillaiCollected', { a: nameOf(pOwner), n: store[pOwner] }));
+            return;
+          }
           /* Before both rows are down there is no game to play, and saying so
              is better than a dead tap on a board that looks ready. */
           if (!dealt[0] || !dealt[1]) say(P('fillFirst'));
@@ -8964,6 +9025,17 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         var side = box.closest('.palSide');
         var p = side && side.id === 'palSide2' ? 1 : 0;
         if (dealt[0] && dealt[1]) return;              // nothing to deal
+        /* Only a savings pocket LEFT OVER from the round that just ended
+           blocks dealing — its owner hasn't dealt for the CURRENT round
+           yet, so it can only be old business. One this same owner's OWN
+           redeal for the current round just formed does not count: its
+           owner has already dealt, and that pocket stays locked the usual
+           way until THIS round ends, not something anyone else is waiting
+           on. */
+        if (cups.some(function(c, i){ return pillai[i] && c > 0 && !dealt[owner(i)]; })){
+          say(P('collectFirst'));
+          return;
+        }
         if (dealt[p]){ say(P('alreadyDealt', { a: nameOf(p) })); return; }
         dealRow(p);
       });
@@ -9288,12 +9360,28 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         pal4Draw();
       }
 
+      /* Raja: "end of sequence the pillai pandi is immediately transferred
+         to stores, that should avoid -- instead keep pillai pandi in cup
+         who owned... later by click pillai pandi the seeds will transfer
+         to store, to know how much seeds in stores on end of sequence and
+         after pillai pandi how much in stores." Non-pillai leftovers still
+         sweep home automatically; a pillai pocket stays sitting in its own
+         cup, still locked-looking, until its own owner (solo right, same
+         as during play) taps it to move it into their store -- so the
+         store total is visibly split into "what I ended the round with"
+         and "what my savings pocket then added", one tap at a time, in
+         each owner's own time. */
+      function hasAnySeeds4(idx){
+        if (store4[idx] > 0) return true;
+        for (var i = idx * 7; i < idx * 7 + 7; i++) if (cups4[i] > 0) return true;
+        return false;
+      }
       function endRound4(msg){
         for (var i = 0; i < CUPS4; i++){
-          if (!cups4[i]) continue;
-          store4[owner4(i)] += cups4[i]; cups4[i] = 0;   // pillai or not, home to its own owner
+          if (!cups4[i] || pillai4[i]) continue;   // pillai stays put, collected by hand
+          store4[owner4(i)] += cups4[i]; cups4[i] = 0;
         }
-        for (var i = 0; i < CUPS4; i++){ pasuDead4[i] = false; pillai4[i] = 0; }
+        for (var i = 0; i < CUPS4; i++) pasuDead4[i] = false;
         playing4 = false; busy4 = false;
         dealt4 = [false, false, false, false];
         round4++;
@@ -9302,14 +9390,28 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         /* A player who cannot fill even ONE cup has nothing left to lay out.
             2p ends the whole game the instant either side hits this — the
             same read carries over: any enabled side reaching zero ends the
-            match, decided among whoever is still standing. */
-        var out = enabledSides().filter(function(s){ return store4[SIDES.indexOf(s)] === 0; });
+            match, decided among whoever is still standing. Store alone is
+            not enough here — a side can still be holding everything in an
+            as-yet-uncollected pillai pocket. */
+        var out = enabledSides().filter(function(s){ return !hasAnySeeds4(SIDES.indexOf(s)); });
         if (out.length){
+          /* The game is over — there is no next round left to delay the
+             reveal for, so sweep any still-uncollected pillai straight
+             into its owner's store now, silently, before the final tally. */
+          for (var i = 0; i < CUPS4; i++){
+            if (!cups4[i]) continue;
+            store4[owner4(i)] += cups4[i]; cups4[i] = 0;
+          }
+          for (var i = 0; i < CUPS4; i++) pillai4[i] = 0;
           pal4Say(pal4P('lostAllN', { a: pal4NameOf(SIDES.indexOf(out[0])) }));
           pal4Finish();
           return;
         }
-        pal4Say(pal4P('roundOver4', { msg: msg }));
+        if (cups4.some(function(c, i){ return pillai4[i] && c > 0; })){
+          pal4Say(pal4P('roundOverPillaiPending', { msg: msg }));
+        } else {
+          pal4Say(pal4P('roundOver4', { msg: msg }));
+        }
         pal4Cheer(pal4P('roundCheer4'));
         pal4Draw();
       }
@@ -9459,7 +9561,16 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
             c.classList.toggle('pasu', claimable);
             c.classList.toggle('pillai', !!pillai4[idx]);
             var canLift = playing4 && !busy4 && isOn && owner4(idx) === active && n > 0 && !pillai4[idx];
-            c.classList.toggle('pickable', canLift || claimable);
+            /* Between rounds, a still-full pillai pocket LEFT OVER from
+               the round that just ended is its own owner's to tap and
+               collect — mark it pickable too, same visual invitation a
+               liftable cup already gets. Not the same as a pillai pocket
+               this same player's OWN redeal for the CURRENT round just
+               formed (dealt4[i] already true by then) — that one stays
+               locked the normal way, only collectible once THIS round
+               itself ends. */
+            var canCollect = !playing4 && pillai4[idx] && n > 0 && !dealt4[i];
+            c.classList.toggle('pickable', canLift || claimable || canCollect);
           });
           var card = document.getElementById('pal4Card' + s);
           if (card){
@@ -9474,7 +9585,14 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
              waiting" — blank makes "not in this game" unambiguous. */
           if (storeNumEl) storeNumEl.textContent = isOn ? store4[i] : '';
           var storeBox = document.querySelector('#pal4Card' + s + ' .pal4CardStore');
-          if (storeBox) storeBox.classList.toggle('toDeal', isOn && !dealt4[i] && !busy4 && !playing4);
+          /* Don't glow "tap to deal" while a pillai pocket LEFT OVER from
+             the last round is still sitting uncollected anywhere — that
+             tap would be refused (collectFirst) until every such owner
+             has claimed their own. A pillai pocket someone's OWN CURRENT
+             deal just formed does not count here — that is a normal,
+             expected part of dealing, not something blocking anyone. */
+          var anyOldPillaiPending = cups4.some(function(c2, i2){ return pillai4[i2] && c2 > 0 && !dealt4[owner4(i2)]; });
+          if (storeBox) storeBox.classList.toggle('toDeal', isOn && !dealt4[i] && !busy4 && !playing4 && !anyOldPillaiPending);
         });
         var look = document.getElementById('pal4Look');
         if (look) look.className = 'pal4Look look' + SIDES[active];
@@ -9495,6 +9613,21 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         var i = +b.dataset.pal4;
         if (!enabled[SIDES[owner4(i)]]) return;   // disabled side — not part of the game
         if (!playing4){
+          /* Between rounds, a pillai pocket LEFT OVER from the round that
+             just ended is a live tap target now — its own owner's cup
+             only (owner4(i) already pins that; nobody can collect anyone
+             else's), one pocket at a time, whenever they get to it. A
+             pillai pocket this same owner's OWN redeal for the CURRENT
+             round just formed (dealt4[owner4(i)] already true) is NOT
+             this — that one stays locked the normal way, same as any
+             pillai during play, only collectible once THIS round ends. */
+          if (pillai4[i] && cups4[i] > 0 && !dealt4[owner4(i)]){
+            var pOwner = owner4(i);
+            store4[pOwner] += cups4[i]; cups4[i] = 0; pillai4[i] = 0;
+            pal4Draw();
+            pal4Say(pal4P('pillaiCollected', { a: pal4NameOf(pOwner), n: store4[pOwner] }));
+            return;
+          }
           if (!everDealt4 || dealt4.some(function(d, idx){ return enabled[SIDES[idx]] && !d; }))
             pal4Say(pal4P('fillFirst'));
           return;
@@ -9529,6 +9662,17 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         var p = SIDES.indexOf(m[1]);
         if (!enabled[SIDES[p]]) return;
         if (enabledSides().every(function(s){ return dealt4[SIDES.indexOf(s)]; })) return;
+        /* Only a pillai pocket LEFT OVER from the round that just ended
+           blocks dealing — its owner hasn't dealt for the CURRENT round
+           yet, so it can only be old business. A pillai pocket someone's
+           OWN redeal for the current round just formed does not count:
+           its owner has already dealt, and that pocket is normal, locked
+           the usual way until THIS round ends, not something anyone else
+           is waiting on. */
+        if (cups4.some(function(c, i){ return pillai4[i] && c > 0 && !dealt4[owner4(i)]; })){
+          pal4Say(pal4P('collectFirst'));
+          return;
+        }
         if (dealt4[p]){ pal4Say(pal4P('alreadyDealt', { a: pal4NameOf(p) })); return; }
         dealRow4(p);
       });
@@ -12641,7 +12785,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-211 (Pallanguzhi, both boards: claiming your own last cup as a pasu bonus now correctly ends the round, instead of leaving the game stuck waiting on a player with nothing left)';
+  var BUILD_VER = 'beta-213 (Pallanguzhi, both boards: pillai savings pockets no longer auto-sweep at round end -- each owner taps their own to move it into their store, one pocket at a time)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that

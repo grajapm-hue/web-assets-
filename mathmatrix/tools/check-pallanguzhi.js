@@ -58,8 +58,17 @@ const TAMIL = /[஀-௿]/;
         const s2 = JSON.parse(st);
         if (s2.playing && !s2.busy) return true;
         if (!s2.busy && s2.dealt){
-          const p = !s2.dealt[0] ? 1 : (!s2.dealt[1] ? 2 : 0);
-          if (p) await ev(`document.querySelector('#palSide${p} .palStore').click()`);
+          /* A savings pocket left over from the round that just ended
+             (beta-213) now blocks dealing until its own owner has
+             collected it, or the store-tap below just gets silently
+             refused forever. Clear one such pocket per iteration first. */
+          const pendIdx = s2.pillai ? s2.pillai.findIndex((p, idx) => p && s2.cups[idx] > 0 && !s2.dealt[Math.floor(idx / 7)]) : -1;
+          if (pendIdx >= 0){
+            await ev(`document.querySelector('#palBoard [data-pal="${pendIdx}"]').click()`);
+          } else {
+            const p = !s2.dealt[0] ? 1 : (!s2.dealt[1] ? 2 : 0);
+            if (p) await ev(`document.querySelector('#palSide${p} .palStore').click()`);
+          }
         }
       }
       await sleep(60);
@@ -882,14 +891,78 @@ const TAMIL = /[஀-௿]/;
   ok('reached a state where the active player’s only remaining cups were all exactly 4', pasuStuckFound,
     pasuStuckFound ? ('turn was P' + (pasuBefore.turn + 1)) : 'never happened in the move budget');
   if (pasuStuckFound){
-    const rowNowEmpty = pasuAfter.cups.slice(pasuBefore.turn * 7, pasuBefore.turn * 7 + 7).every(c => c === 0);
-    ok('P' + (pasuBefore.turn + 1) + '’s row is genuinely empty after claiming its last cups as pasu bonuses', rowNowEmpty,
-      JSON.stringify(pasuAfter.cups.slice(pasuBefore.turn * 7, pasuBefore.turn * 7 + 7)));
+    /* "Empty" here means no LIFTABLE seeds remain -- a leftover, still
+       uncollected pillai pocket from an earlier round in this same
+       playthrough (beta-213: pillai no longer auto-sweeps at round end)
+       can legitimately still be sitting in this row with a nonzero count,
+       untouched, exactly as designed. That is not the same as the row
+       still having a real move available. */
+    const rowSlice = pasuAfter.cups.slice(pasuBefore.turn * 7, pasuBefore.turn * 7 + 7);
+    const pillaiSlice = pasuAfter.pillai.slice(pasuBefore.turn * 7, pasuBefore.turn * 7 + 7);
+    const rowNowEmpty = rowSlice.every((c, k) => c === 0 || pillaiSlice[k]);
+    ok('P' + (pasuBefore.turn + 1) + '’s row has no liftable seeds left after claiming its last cups as pasu bonuses', rowNowEmpty,
+      JSON.stringify(rowSlice) + ' pillai: ' + JSON.stringify(pillaiSlice));
     ok('the game does not stay stuck on P' + (pasuBefore.turn + 1) + ' -- the round ended or turn moved on',
       pasuAfter.playing === false || pasuAfter.turn !== pasuBefore.turn,
       'turn: P' + (pasuAfter.turn + 1) + ' playing: ' + pasuAfter.playing);
     const total2 = pasuAfter.cups.reduce((a, b) => a + b, 0) + pasuAfter.store.reduce((a, b) => a + b, 0);
     ok('all 70 seeds still conserved through the round-end the claim triggered', total2 === 70, 'total: ' + total2);
+  }
+
+  /* MANUAL PILLAI COLLECTION (beta-213) — Raja: "keep pillai pandi in cup
+     who owned... later by click pillai pandi the seeds will transfer to
+     store." Same fix and same test shape as the 4-player board's own.
+     Play until a round ends with a pending pocket, confirm dealing is
+     refused until it's collected, collect it by tapping the cup, confirm
+     the exact amount moves into its own owner's store, confirm dealing
+     works again afterward -- even when that very redeal forms a brand new
+     pocket of its own (a real gap this caught on the 4-player board). */
+  await ev(`window.__palNew()`); await ready();
+  let roundEndedWithPillai = false, pillaiEndState = null;
+  outerCollect2:
+  for (let round = 0; round < 25; round++){
+    for (let move = 0; move < 150; move++){
+      let s2 = await state();
+      if (!s2.playing){
+        if (s2.store[0] === 0 || s2.store[1] === 0) break outerCollect2;
+        const hasPending = s2.pillai.some((p, idx) => p && s2.cups[idx] > 0);
+        if (hasPending){ roundEndedWithPillai = true; pillaiEndState = s2; break outerCollect2; }
+        const redealt = await ready();
+        if (!redealt) break outerCollect2;
+        continue;
+      }
+      const ownLiftable = [];
+      for (let i = s2.turn * 7; i < s2.turn * 7 + 7; i++) if (s2.cups[i] > 0 && !s2.pillai[i]) ownLiftable.push(i);
+      if (ownLiftable.length === 0) break;
+      await ev(`document.querySelector('#palBoard [data-pal="${ownLiftable[0]}"]').click()`);
+      await ev(`window.__palStop && window.__palStop()`); await sleep(30);
+    }
+  }
+  ok('reached a round-end with at least one pending pillai pocket to collect', roundEndedWithPillai,
+    roundEndedWithPillai ? 'found' : 'never happened in the move budget');
+  if (roundEndedWithPillai){
+    const pendIdx = pillaiEndState.pillai.findIndex((p, idx) => p && pillaiEndState.cups[idx] > 0);
+    const pendOwnerIdx = pendIdx < 7 ? 0 : 1;
+
+    const sayBefore = await ev(`document.getElementById('palSay') ? document.getElementById('palSay').textContent : ''`);
+    await ev(`document.querySelector('#palSide${pendOwnerIdx + 1} .palStore').click()`); await sleep(200);
+    const stRefused = await state();
+    const sayAfterRefusal = await ev(`document.getElementById('palSay') ? document.getElementById('palSay').textContent : ''`);
+    ok('dealing is refused while a savings pocket is still pending', stRefused.dealt[pendOwnerIdx] === false && sayAfterRefusal !== sayBefore, sayAfterRefusal);
+
+    const before = await state();
+    const storeBefore = before.store[pendOwnerIdx], pillaiAmount = before.cups[pendIdx];
+    await ev(`document.querySelector('#palBoard [data-pal="${pendIdx}"]').click()`); await sleep(200);
+    const after = await state();
+    ok('tapping the savings pocket moves exactly its own amount into the owner’s store',
+      after.store[pendOwnerIdx] === storeBefore + pillaiAmount, storeBefore + ' + ' + pillaiAmount + ' = ' + after.store[pendOwnerIdx]);
+    ok('the cup is now empty and no longer marked pillai', after.cups[pendIdx] === 0 && after.pillai[pendIdx] === 0);
+
+    await ready();
+    const stRedeal = await state();
+    ok('dealing (and so the next round) works again once every savings pocket is collected — including when that very redeal forms a brand-new one',
+      stRedeal.playing === true, JSON.stringify({ playing: stRedeal.playing, dealt: stRedeal.dealt }));
+    ok('all 70 seeds still conserved through the whole collect-then-redeal sequence', seeds(stRedeal) === TOTAL, 'total: ' + seeds(stRedeal));
   }
 
   ok('no JS errors', errs.length === 0, errs.join(' | ') || '');
