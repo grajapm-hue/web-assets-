@@ -830,6 +830,68 @@ const TAMIL = /[஀-௿]/;
     !!pocketPara && pocketPara.indexOf('கொடுக்க வேண்டும், இல்லையெனில்') > -1,
     pocketPara ? JSON.stringify(pocketPara.slice(0, 90)) + '…' : 'paragraph not found at all');
 
+  /* PASU CLAIM ON YOUR OWN LAST CUP — same fix as the 4-player board's own
+     claimPasu4, same root cause: a pasu claim is allowed at any time and
+     correctly never consumes a turn, but that also meant it never checked
+     whether the player to move now has an empty row, the way a completed
+     sow does via endTurn. Play until the active player's only remaining
+     liftable cups are ALL exactly 4, claim them as pasu bonuses instead of
+     sowing, and confirm the round ends instead of the game sitting stuck. */
+  /* This board is fully deterministic (no real randomness anywhere), so a
+     SINGLE fixed strategy either reaches "all remaining cups are exactly
+     4" or structurally never does on this exact trajectory -- and which
+     player opens first (left over from whichever test ran immediately
+     before this one) changes that trajectory entirely. A bigger move
+     budget cannot fix a path that just never crosses the target state,
+     so try two different, deliberately different-shaped strategies
+     (favour the leftmost liftable cup, then a fresh board favouring the
+     rightmost) rather than only ever retrying the same one. */
+  let pasuStuckFound = false, pasuBefore = null, pasuAfter = null;
+  for (const preferRight of [false, true]){
+    if (pasuStuckFound) break;
+    await ev(`window.__palNew()`); await ready();
+    outerPasu:
+    for (let round = 0; round < 25; round++){
+      for (let move = 0; move < 150; move++){
+        let s2 = await state();
+        if (!s2.playing){
+          if (s2.store[0] === 0 || s2.store[1] === 0) break outerPasu;
+          const redealt = await ready();   // returns a bare boolean, not state -- re-fetch to check
+          if (!redealt) break outerPasu;
+          s2 = await state();
+          if (!s2.playing) break outerPasu;
+          continue;
+        }
+        const ownLiftable = [];
+        for (let i = s2.turn * 7; i < s2.turn * 7 + 7; i++) if (s2.cups[i] > 0 && !s2.pillai[i]) ownLiftable.push(i);
+        const allFour = ownLiftable.length > 0 && ownLiftable.every(i => s2.cups[i] === 4 && !s2.dead[i]);
+        if (allFour){
+          pasuBefore = s2;
+          for (const idx of ownLiftable){ await ev(`document.querySelector('#palBoard [data-pal="${idx}"]').click()`); await sleep(150); }
+          pasuAfter = await state();
+          pasuStuckFound = true;
+          break outerPasu;
+        }
+        if (ownLiftable.length === 0) break;
+        const pick = preferRight ? ownLiftable[ownLiftable.length - 1] : ownLiftable[0];
+        await ev(`document.querySelector('#palBoard [data-pal="${pick}"]').click()`);
+        await ev(`window.__palStop && window.__palStop()`); await sleep(30);
+      }
+    }
+  }
+  ok('reached a state where the active player’s only remaining cups were all exactly 4', pasuStuckFound,
+    pasuStuckFound ? ('turn was P' + (pasuBefore.turn + 1)) : 'never happened in the move budget');
+  if (pasuStuckFound){
+    const rowNowEmpty = pasuAfter.cups.slice(pasuBefore.turn * 7, pasuBefore.turn * 7 + 7).every(c => c === 0);
+    ok('P' + (pasuBefore.turn + 1) + '’s row is genuinely empty after claiming its last cups as pasu bonuses', rowNowEmpty,
+      JSON.stringify(pasuAfter.cups.slice(pasuBefore.turn * 7, pasuBefore.turn * 7 + 7)));
+    ok('the game does not stay stuck on P' + (pasuBefore.turn + 1) + ' -- the round ended or turn moved on',
+      pasuAfter.playing === false || pasuAfter.turn !== pasuBefore.turn,
+      'turn: P' + (pasuAfter.turn + 1) + ' playing: ' + pasuAfter.playing);
+    const total2 = pasuAfter.cups.reduce((a, b) => a + b, 0) + pasuAfter.store.reduce((a, b) => a + b, 0);
+    ok('all 70 seeds still conserved through the round-end the claim triggered', total2 === 70, 'total: ' + total2);
+  }
+
   ok('no JS errors', errs.length === 0, errs.join(' | ') || '');
 
   ws.close(); ch.kill();

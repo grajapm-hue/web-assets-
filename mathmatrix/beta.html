@@ -8908,6 +8908,14 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         palCheer(P('pasuCheer', { a: nameOf(p) }), 'cheer');
         draw();
         var line = P('pasuTook', { a: nameOf(p) });
+        /* Same fix as the 4-player board's own claimPasu4: a pasu claim is
+           allowed at any time and correctly never consumes a turn, but that
+           also means it never checked whether the player to move now has
+           an empty row, the way a completed sow does via endTurn. If the
+           claim was the active player's own last cup, the round has to end
+           right here or the game waits forever on a player with nothing
+           left to play. */
+        if (playing && !busy && rowEmpty(turn)){ endRound(line); return; }
         if (busy) say(line + P('sowingOn'));
         else say(line + P('yourTurn', { a: nameOf(turn) }));
       }
@@ -9404,6 +9412,15 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         pal4Cheer(pal4P('pasuCheer', { a: pal4NameOf(p) }));
         pal4Draw();
         var line = pal4P('pasuTook', { a: pal4NameOf(p) });
+        /* Raja: Player B claimed their own last remaining cup as a pasu —
+           allowed at any time, so it correctly never consumes a turn — but
+           that also means it never went through the same "does the player
+           to move now have an empty row" check a completed sow gets in
+           endTurn4. If the claim happens to be the active player's own
+           move and it was their last cup, their row is now genuinely
+           empty and the round has to end right here — otherwise the game
+           sits waiting forever on a player with nothing left to play. */
+        if (playing4 && !busy4 && rowEmpty4(active)){ endRound4(line); return; }
         pal4Say(busy4 ? line + pal4P('sowingOn') : line + pal4P('yourTurn', { a: pal4NameOf(active) }));
       }
 
@@ -12624,7 +12641,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-210 (Pallanguzhi, both boards: the pillai lock badge was being clipped away by the cups own circular overflow -- moved it inside the visible circle so it actually shows)';
+  var BUILD_VER = 'beta-211 (Pallanguzhi, both boards: claiming your own last cup as a pasu bonus now correctly ends the round, instead of leaving the game stuck waiting on a player with nothing left)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that

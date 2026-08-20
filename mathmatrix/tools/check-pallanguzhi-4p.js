@@ -569,6 +569,60 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
       poorer + ' pillai cups: ' + poorerPillai + ' (remainder past full fives: ' + (poorerAmount % 5) + ')');
   }
 
+  /* PASU CLAIM ON YOUR OWN LAST CUP — Raja, from a real device: with B's
+     whole row empty, the game never handed the turn to C; it just sat
+     stuck on B, and B had nothing to tap. Root cause: a pasu claim is
+     allowed at any time and correctly never consumes a turn, but that
+     also meant it never checked whether the player to move now has an
+     empty row, the way a completed sow does via endTurn4. Play until the
+     active player's only remaining liftable cups are ALL exactly 4 (a
+     symmetric "always leftmost" strategy never produces this on its own,
+     so this specifically claims pasus instead of sowing once it arises),
+     then claim them as pasu bonuses instead of sowing and confirm the
+     round ends instead of leaving the game stuck. */
+  await ev(`document.getElementById('tab-scHome').click()`); await sleep(200);
+  await ev(`document.getElementById('pal4Tab').click()`); await sleep(700);
+  let pasuStuckFound = false, pasuBefore = null, pasuAfter = null;
+  outerPasu:
+  for (let round = 0; round < 15; round++){
+    for (let move = 0; move < 150; move++){
+      st = await state();
+      if (!st.playing){
+        const letters = ['A', 'B', 'C', 'D'];
+        if (letters.every(s => st.store[letters.indexOf(s)] === 0)) break outerPasu;
+        for (const s of letters) if (!st.dealt[letters.indexOf(s)]) await dealSide(s);
+        continue;
+      }
+      const activeIdx = ['A', 'B', 'C', 'D'].indexOf(st.active);
+      const ownLiftable = [];
+      for (let i = activeIdx * 7; i < activeIdx * 7 + 7; i++) if (st.cups[i] > 0 && !st.pillai[i]) ownLiftable.push(i);
+      const allFour = ownLiftable.length > 0 && ownLiftable.every(i => st.cups[i] === 4 && !st.dead[i]);
+      if (allFour){
+        pasuBefore = st;
+        for (const idx of ownLiftable){ await ev(`document.querySelector('.pal4Cup[data-pal4="${idx}"]').click()`); await sleep(150); }
+        pasuAfter = await state();
+        pasuStuckFound = true;
+        break outerPasu;
+      }
+      const liftIdx = await findLiftable(st.active);
+      if (liftIdx === null) break;
+      await ev(`document.querySelector('.pal4Cup[data-pal4="${liftIdx}"]').click()`);
+      await ev(`window.__pal4Stop()`); await sleep(30);
+    }
+  }
+  ok('reached a state where the active player’s only remaining cups were all exactly 4', pasuStuckFound,
+    pasuStuckFound ? ('active was ' + pasuBefore.active) : 'never happened in the move budget');
+  if (pasuStuckFound){
+    const activeIdx = ['A', 'B', 'C', 'D'].indexOf(pasuBefore.active);
+    const rowNowEmpty = pasuAfter.cups.slice(activeIdx * 7, activeIdx * 7 + 7).every(c => c === 0);
+    ok(pasuBefore.active + '’s row is genuinely empty after claiming its last cups as pasu bonuses', rowNowEmpty,
+      JSON.stringify(pasuAfter.cups.slice(activeIdx * 7, activeIdx * 7 + 7)));
+    ok('the game does not stay stuck on ' + pasuBefore.active + ' -- the round ended or turn moved on',
+      pasuAfter.playing === false || pasuAfter.active !== pasuBefore.active,
+      'active: ' + pasuAfter.active + ' playing: ' + pasuAfter.playing);
+    ok('all 140 seeds still conserved through the round-end the claim triggered', total(pasuAfter) === 140, 'total: ' + total(pasuAfter));
+  }
+
   ok('no JS errors', errs.length === 0, errs.join(' | ') || '');
   ws.close(); ch.kill();
   console.log('\n' + (fail === 0 ? 'ALL GREEN' : fail + ' FAILURES'));
