@@ -8941,6 +8941,17 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           if (sowLanded >= 0){
             var el = boardEl.children[ORDER.indexOf(sowLanded)];
             if (el){ el.classList.add('sowing'); setTimeout(function(){ el.classList.remove('sowing'); }, 130); }
+            /* Raja: "why can't implement touch sound for every seed during
+               seed fills into cup during sequence order." Dealing already
+               plays one per cup (sfx('card')); sowing never played anything
+               at all. sowLanded >= 0 is exactly "a seed just dropped" -- the
+               same condition already driving the visual glow above, so this
+               fires once per real drop, never on a pickup. 'tick' (a short,
+               quiet click) rather than 'card' (a bigger pop) because this
+               can repeat many times in one fast cascade; sfx() itself
+               already respects the sound on/off setting, so no separate
+               check is needed here. */
+            if (typeof sfx === 'function') try { sfx('tick'); } catch(e){}
           }
           draw();
           step = setTimeout(tick, dropDelay(sowDropped));
@@ -9500,6 +9511,11 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           if (sowLanded4 >= 0){
             var el = document.querySelector('.pal4Cup[data-pal4="' + sowLanded4 + '"]');
             if (el){ el.classList.add('sowing'); setTimeout(function(){ el.classList.remove('sowing'); }, 130); }
+            /* Same fix as the 2-player board's own sow() -- a sound per
+               real drop (sowLanded4 >= 0, same condition driving the glow
+               above), never on a pickup. See its comment for why 'tick'
+               and why sfx() alone already covers the sound on/off setting. */
+            if (typeof sfx === 'function') try { sfx('tick'); } catch(e){}
           }
           pal4Draw();
           step4 = setTimeout(tick, 400);
@@ -12785,7 +12801,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-213 (Pallanguzhi, both boards: pillai savings pockets no longer auto-sweep at round end -- each owner taps their own to move it into their store, one pocket at a time)';
+  var BUILD_VER = 'beta-214 (Pallanguzhi, both boards: a light tick sound now plays for every seed as it drops during sowing -- dealing already had one, sowing had none, and it honours the existing sound on/off setting)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
