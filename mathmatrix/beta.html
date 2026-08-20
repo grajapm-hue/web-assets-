@@ -2646,6 +2646,18 @@ body.langTa .palTurn{ font-size:12.5px; }
 .pal4Cup.pillai::after{ content:'🔒'; position:absolute; top:-2px; right:-2px;
   font-size:7px; font-weight:900; line-height:1; padding:1px 2px; border-radius:6px;
   background:#065F46; color:#D1FAE5; border:1px solid #34D399; }
+/* Raja: a fixed green ring on every pillai cup, regardless of whose row it
+   sits in, happened to look identical to Player C's own theme colour — a
+   pillai locked in Player A's row read as if it belonged to C. The ring
+   now carries each row's OWN theme colour instead, so at a glance across a
+   full board you can tell not just THAT a cup is locked, but whose savings
+   it is and how many each player currently has, without reading names. */
+.pal4Cup.pillai.sideA{ box-shadow:inset 0 3px 7px rgba(0,0,0,.55), 0 0 0 3px #F7B32B; }
+.pal4Cup.pillai.sideA::after{ background:#7C4A03; border-color:#F7B32B; }
+.pal4Cup.pillai.sideB{ box-shadow:inset 0 3px 7px rgba(0,0,0,.55), 0 0 0 3px #3B82F6; }
+.pal4Cup.pillai.sideB::after{ background:#12325E; border-color:#3B82F6; }
+.pal4Cup.pillai.sideD{ box-shadow:inset 0 3px 7px rgba(0,0,0,.55), 0 0 0 3px #A78BFA; }
+.pal4Cup.pillai.sideD::after{ background:#4C1D95; border-color:#A78BFA; }
 .pal4Cup.won{ animation:pal4Won .6s ease-in-out 1; }
 @keyframes pal4Won{ 50%{ transform:scale(1.18); } }
 
@@ -12579,7 +12591,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-207 (4-player board: unticking a player who has not personally dealt now works even after other players have already dealt, and disabled players show a blank reserve instead of a dimmed 35)';
+  var BUILD_VER = 'beta-208 (4-player board: pillai lock ring now uses each row own theme colour instead of one fixed green, so it cannot be misread as belonging to Player C)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
