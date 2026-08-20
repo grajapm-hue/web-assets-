@@ -8793,6 +8793,14 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       function sowStep(){
         if (inHand > 0){
           var nx = (sowPos + 1) % CUPS;
+          /* Raja: "no opponent should fill [a savings pocket] during play...
+             this is solo right by who filled this cup from the beginning."
+             A pillai pocket used to take a toll from WHOEVER's hand passed
+             it, opponent included -- growing one player's forced savings
+             with the other side's seeds. Only its own owner can ever add to
+             it now; anyone else's hand walks straight past it, same as it
+             would past a cup that simply is not there. */
+          while (pillai[nx] && owner(nx) !== turn) nx = (nx + 1) % CUPS;
           if (pillai[nx]){
             /* A savings pocket takes its own size or nothing. Hold fewer than
                that and the move ends right here — which is the whole point of
@@ -9307,7 +9315,16 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       function sowStep4(){
         if (inHand4 > 0){
           var nx = nextLiveCup(sowPos4);
-          if (pillai4[nx]){
+          /* Raja: "no opponent should fill [a savings pocket] during play...
+             this is solo right by who filled this cup from the beginning."
+             Same fix as the 2-player board's own sowStep, same reasoning:
+             only a pillai pocket's OWN row-owner can ever add to it. Any
+             other player's hand walks straight past it, same as it already
+             walks past a disabled side's whole row via nextLiveCup. Capped
+             at CUPS4 skips so a board that somehow had nothing else live
+             cannot spin forever. */
+          for (var guard = 0; guard < CUPS4 && pillai4[nx] && owner4(nx) !== active; guard++) nx = nextLiveCup(nx);
+          if (pillai4[nx] && owner4(nx) === active){
             if (inHand4 < pillai4[nx]){
               sowPos4 = nx; cups4[sowPos4] += inHand4; inHand4 = 0; sowDropped4++;
               sowLanded4 = sowPos4; sowWon4 = 0; sowStopped4 = true;
@@ -12591,7 +12608,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-208 (4-player board: pillai lock ring now uses each row own theme colour instead of one fixed green, so it cannot be misread as belonging to Player C)';
+  var BUILD_VER = 'beta-209 (Pallanguzhi, both boards: a pillai savings pocket can now only be filled by its own owner -- an opponents sowing hand walks straight past it instead of topping it up)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
