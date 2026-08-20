@@ -511,6 +511,64 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
     st.cups.slice(14, 21).reduce((a, b) => a + b, 0) + st.store[0] + st.store[2] + st.hand === 70,
     JSON.stringify(st));
 
+  /* PILLAI FORMATION ON A REDEAL — Raja: "pillai savings should be filled
+     by only who previously ended the sequence in shortfall... but here
+     both are filling during sequence." A symmetric "always leftmost cup"
+     strategy for both sides mirrors their play exactly and their stores
+     never diverge, so this deliberately plays A and C asymmetrically
+     (leftmost vs rightmost) until a round ends with an UNEVEN split, then
+     inspects the very next deal directly: the richer side (>35, a surplus)
+     must get NO pillai pockets at all; the shortfall side (<35) must get
+     exactly one, sized to its own remainder past the last full five. */
+  function asymLift(state, letter){
+    var range = letter === 'A' ? [0, 6] : [14, 20];
+    if (letter === 'A'){ for (var i = range[0]; i <= range[1]; i++) if (state.cups[i] > 0 && !state.pillai[i]) return i; }
+    else { for (var i = range[1]; i >= range[0]; i--) if (state.cups[i] > 0 && !state.pillai[i]) return i; }
+    return null;
+  }
+  let unevenFound = false, preSplit = null, postDeal = null;
+  for (let round = 0; round < 6 && !unevenFound; round++){
+    for (let move = 0; move < 80; move++){
+      st = await state();
+      if (!st.playing){
+        if (st.store[0] > 0 && st.store[2] > 0 && (!st.dealt[0] || !st.dealt[2])){
+          if (st.store[0] !== st.store[2]){
+            preSplit = st;
+            if (!st.dealt[0]) await dealSide('A');
+            if (!st.dealt[2]) await dealSide('C');
+            postDeal = await state();
+            unevenFound = true;
+          } else {
+            if (!st.dealt[0]) await dealSide('A');
+            if (!st.dealt[2]) await dealSide('C');
+            continue;
+          }
+        }
+        break;
+      }
+      const liftIdx = asymLift(st, st.active);
+      if (liftIdx === null) break;
+      await ev(`document.querySelector('.pal4Cup[data-pal4="${liftIdx}"]').click()`);
+      await ev(`window.__pal4Stop()`); await sleep(40);
+    }
+  }
+  ok('an uneven A/C store split happened after a round ended', unevenFound && preSplit,
+    preSplit ? ('A=' + preSplit.store[0] + ' C=' + preSplit.store[2]) : 'never happened');
+  if (unevenFound){
+    const aStore = preSplit.store[0], cStore = preSplit.store[2];
+    const richer = aStore > cStore ? 'A' : 'C', poorer = richer === 'A' ? 'C' : 'A';
+    const richerRange = richer === 'A' ? [0, 6] : [14, 20], poorerRange = poorer === 'A' ? [0, 6] : [14, 20];
+    let richerPillai = 0, poorerPillai = 0;
+    for (let i = richerRange[0]; i <= richerRange[1]; i++) if (postDeal.pillai[i]) richerPillai++;
+    for (let i = poorerRange[0]; i <= poorerRange[1]; i++) if (postDeal.pillai[i]) poorerPillai++;
+    const poorerAmount = Math.min(aStore, cStore);
+    ok('richer side (' + richer + ', had ' + Math.max(aStore, cStore) + ') gets NO pillai pockets on redeal',
+      richerPillai === 0, richer + ' pillai cups: ' + richerPillai);
+    ok('shortfall side (' + poorer + ', had ' + poorerAmount + ') gets exactly the one pillai pocket its own remainder implies',
+      poorerAmount % 5 === 0 ? poorerPillai === 0 : poorerPillai === 1,
+      poorer + ' pillai cups: ' + poorerPillai + ' (remainder past full fives: ' + (poorerAmount % 5) + ')');
+  }
+
   ok('no JS errors', errs.length === 0, errs.join(' | ') || '');
   ws.close(); ch.kill();
   console.log('\n' + (fail === 0 ? 'ALL GREEN' : fail + ' FAILURES'));
