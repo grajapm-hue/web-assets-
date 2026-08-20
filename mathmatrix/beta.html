@@ -2557,8 +2557,16 @@ body.langTa .palTurn{ font-size:12.5px; }
    different rules: it cannot be lifted, cannot be captured, and charges its own
    size to anyone sowing past it. A green rim and its price on the rim. */
 .palCup.pillai{ box-shadow:inset 0 4px 10px rgba(0,0,0,.55), 0 0 0 3px #34D399; }
+/* Raja circled the pillai cups on the 4-player board asking where their own
+   special mark was -- there wasn't one visible. .palCup is round
+   (border-radius:50%) AND clips its own content (overflow:hidden), and this
+   badge sat at top:-2px/right:-2px -- just outside the circle's own edge,
+   so the circular clip cut it away almost entirely. Same bug here on the
+   2-player board (same CSS shape, same offset), just never reported before
+   now. Positive offsets keep it inside the visible circle instead of
+   past its rim. */
 .palCup.pillai::after{ content:'🔒' attr(data-pillai); position:absolute;
-  top:-2px; right:-2px; font-size:9px; font-weight:900; line-height:1;
+  top:2px; right:2px; font-size:9px; font-weight:900; line-height:1;
   padding:2px 3px; border-radius:7px; background:#065F46; color:#D1FAE5;
   border:1px solid #34D399; }
 .palCup.won{ animation:palWon .6s ease-in-out 1; }
@@ -2643,7 +2651,15 @@ body.langTa .palTurn{ font-size:12.5px; }
   50%    { box-shadow:inset 0 3px 7px rgba(0,0,0,.55), 0 0 0 5px #FFE9A8, 0 0 18px 6px rgba(255,209,102,.85); }
 }
 .pal4Cup.pillai{ box-shadow:inset 0 3px 7px rgba(0,0,0,.55), 0 0 0 3px #34D399; }
-.pal4Cup.pillai::after{ content:'🔒'; position:absolute; top:-2px; right:-2px;
+/* Raja circled the pillai cups asking where their own special mark was —
+   there wasn't one visible. .pal4Cup is round (border-radius:50%) AND clips
+   its own content (overflow:hidden), and this badge sat at top:-2px/
+   right:-2px — just outside the circle's own edge, so the circular clip
+   cut it away almost entirely. Same bug exists on the 2-player board's own
+   pillai badge (identical shape, identical offset), fixed there too.
+   Positive offsets keep it inside the visible circle instead of past its
+   rim. */
+.pal4Cup.pillai::after{ content:'🔒'; position:absolute; top:2px; right:2px;
   font-size:7px; font-weight:900; line-height:1; padding:1px 2px; border-radius:6px;
   background:#065F46; color:#D1FAE5; border:1px solid #34D399; }
 /* Raja: a fixed green ring on every pillai cup, regardless of whose row it
@@ -12608,7 +12624,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-209 (Pallanguzhi, both boards: a pillai savings pocket can now only be filled by its own owner -- an opponents sowing hand walks straight past it instead of topping it up)';
+  var BUILD_VER = 'beta-210 (Pallanguzhi, both boards: the pillai lock badge was being clipped away by the cups own circular overflow -- moved it inside the visible circle so it actually shows)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
