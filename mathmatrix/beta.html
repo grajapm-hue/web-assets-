@@ -5087,23 +5087,34 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       document.body.classList.remove('toolsOff');
       applyAccent();                      // this puzzle's colour takes over the whole app
       goScreen('scPlay');                 // picking a level takes you straight to the board
+      /* Raja: opening a puzzle from this family left an EARLIER one (Sudoku,
+         Pallanguzhi, sometimes Slide) still visibly stacked underneath after
+         a few more taps -- these checks used to be gated on currentSize
+         already being exactly the mode being left, so the FIRST tile-open
+         anywhere that forgot to hide a sibling (Slide's own handler did,
+         see its own comment) silently poisoned currentSize for every
+         handler downstream: each one's own check still fires on the right
+         *name*, but the *condition* never matches again once currentSize no
+         longer reflects what is actually on screen. Every showXMode(false)
+         is a harmless no-op when that mode was never open, so there is no
+         reason to gate any of these on a guess about current state at all. */
       if (newSize === 'binary' || newSize === 'binary2'){   // card games, not grid puzzles
-        if (currentSize === 'gatelogic') showGateMode(false);
-        if (currentSize === 'slide') showSlideMode(false);
-      if (currentSize === 'sudoku') showSudokuMode(false);
-      if (currentSize === 'pallanguzhi') showPalMode(false);
-      if (currentSize === 'pallanguzhi4') showPal4Mode(false);
+        showGateMode(false);
+        showSlideMode(false);
+        showSudokuMode(false);
+        showPalMode(false);
+        showPal4Mode(false);
         currentSize = newSize;
         showBinaryMode(true);
         highlightNowPlaying();
         return;
       }
-      if (currentSize === 'binary' || currentSize === 'binary2') showBinaryMode(false);   // back to the grids
-      if (currentSize === 'gatelogic') showGateMode(false);                               // back to the grids
-      if (currentSize === 'slide') showSlideMode(false);
-      if (currentSize === 'sudoku') showSudokuMode(false);
-      if (currentSize === 'pallanguzhi') showPalMode(false);                                  // back to the grids
-      if (currentSize === 'pallanguzhi4') showPal4Mode(false);                                // back to the grids
+      showBinaryMode(false);   // back to the grids
+      showGateMode(false);                               // back to the grids
+      showSlideMode(false);
+      showSudokuMode(false);
+      showPalMode(false);                                  // back to the grids
+      showPal4Mode(false);                                // back to the grids
       if (newSize !== currentSize) {
         currentSize = newSize;
         initBoard();
@@ -7619,8 +7630,17 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         document.querySelectorAll('.toggleBtn').forEach(function(b){ b.classList.remove('active'); });
         btn.classList.add('active');
         applyAccent();
-        if (currentSize === 'binary' || currentSize === 'binary2') showBinaryMode(false);
-        if (currentSize === 'gatelogic') showGateMode(false);
+        // Raja: opening Slide from Sudoku (or either Pallanguzhi board) left
+        // that earlier puzzle's panel stacked underneath -- this handler
+        // predates all three and was never taught to hide them. Unconditional
+        // because showXMode(false) is a harmless no-op when that mode was
+        // never open, and a currentSize-gated guess is what let this go
+        // unnoticed (see the data-size handler's own comment on why).
+        showBinaryMode(false);
+        showGateMode(false);
+        showSudokuMode(false);
+        showPalMode(false);
+        showPal4Mode(false);
         currentSize = 'slide';
         goScreen('scPlay');
         showSlideMode(true);
@@ -8180,8 +8200,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         document.querySelectorAll('.toggleBtn').forEach(function(b){ b.classList.remove('active'); });
         btn.classList.add('active');
         applyAccent();
-        if (currentSize === 'binary' || currentSize === 'binary2') showBinaryMode(false);
-        if (currentSize === 'gatelogic') showGateMode(false);
+        showBinaryMode(false);
+        showGateMode(false);
         showSlideMode(false);
         showSudokuMode(false);
         showPalMode(false);
@@ -9268,8 +9288,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         document.querySelectorAll('.toggleBtn').forEach(function(b){ b.classList.remove('active'); });
         btn.classList.add('active');
         applyAccent();
-        if (currentSize === 'binary' || currentSize === 'binary2') showBinaryMode(false);
-        if (currentSize === 'gatelogic') showGateMode(false);
+        showBinaryMode(false);
+        showGateMode(false);
         showSlideMode(false);
         showSudokuMode(false);
         showPalMode(false);
@@ -10000,8 +10020,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         document.querySelectorAll('.toggleBtn').forEach(function(b){ b.classList.remove('active'); });
         btn.classList.add('active');
         applyAccent();
-        if (currentSize === 'binary' || currentSize === 'binary2') showBinaryMode(false);
-        if (currentSize === 'gatelogic') showGateMode(false);
+        showBinaryMode(false);
+        showGateMode(false);
         showSlideMode(false);
         showSudokuMode(false);
         showPalMode(false);
@@ -10035,11 +10055,11 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         document.querySelectorAll('.toggleBtn').forEach(function(b){ b.classList.remove('active'); });
         gateListBtn.classList.add('active');
         applyAccent();
-        if (currentSize === 'binary' || currentSize === 'binary2') showBinaryMode(false);
-        if (currentSize === 'slide') showSlideMode(false);
-      if (currentSize === 'sudoku') showSudokuMode(false);
-      if (currentSize === 'pallanguzhi') showPalMode(false);
-      if (currentSize === 'pallanguzhi4') showPal4Mode(false);
+        showBinaryMode(false);
+        showSlideMode(false);
+        showSudokuMode(false);
+        showPalMode(false);
+        showPal4Mode(false);
         currentSize = 'gatelogic';
         goScreen('scPlay');
         showGateMode(true);
@@ -12961,7 +12981,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-219 (Pallanguzhi: SaNa and the tips box no longer say the identical sentence at the start of a game -- the mascot now has its own short line, matching how every other moment already works)';
+  var BUILD_VER = 'beta-220 (fixed a real live bug: Sudoku -- and in principle any puzzle -- could stay visibly stacked underneath the next puzzle you opened; every puzzle tile now unconditionally hides every sibling instead of trusting a guess about what is already showing)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
