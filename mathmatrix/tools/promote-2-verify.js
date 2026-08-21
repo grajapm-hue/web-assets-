@@ -16,9 +16,16 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   const src = fs.readFileSync(BUILT, 'utf8');
 
   console.log('--- static ---');
-  // every <script> block must parse
+  // every <script> block must parse. HTML comments are stripped FIRST -- a
+  // comment that mentions "<script>" as plain prose (there is one, discussing
+  // this file's own window.onerror banner) otherwise confuses this into
+  // splitting mid-comment and reporting a real block as broken. Found when
+  // this check failed on a build that had already loaded and run cleanly in
+  // a real browser two sections below -- that direct evidence is what a regex
+  // split can never be as sure of.
   let bad = 0, n = 0;
-  src.replace(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g, (m, js) => {
+  const srcNoComments = src.replace(/<!--[\s\S]*?-->/g, '');
+  srcNoComments.replace(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g, (m, js) => {
     n++;
     const f = path.join(__dirname, '_chk' + n + '.js');
     fs.writeFileSync(f, js, 'utf8');
