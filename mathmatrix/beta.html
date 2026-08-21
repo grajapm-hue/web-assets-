@@ -1111,6 +1111,15 @@ window.onerror = function(msg, src, line, col, err){
     display:block; margin-top:6px; font-style:italic; font-weight:700;
     color:#FFD166;
   }
+  /* Raja: the caution note (#cautionNote, sharing .journeyNote's own card;
+     the full 3-point version lives on the splash itself now) needs to read
+     as the loudest body text on the sheet -- heavier weight and a bigger
+     size than .journeyNote's own 12.5px, plus the same fixed gold
+     .journeyCall already uses for "this is the important line" so it does
+     not fight for a new colour language. */
+  #cautionNote{ border-left-color:#FFD166 !important; }
+  .cautionList{ font-size:13px; font-weight:800; line-height:1.6; color:#FFD166; }
+  .cautionList b{ color:#FFD166; }
 
   /* Tagline — glowing gradient that drifts slowly across the words */
   /* fixed colour, not the drifting gradient — see .splashTag for why */
@@ -3286,6 +3295,18 @@ body.gateMode #logicBox{ box-shadow:none !important; border-radius:0 !important;
   color:#3DD68C;
   text-shadow:0 2px 10px rgba(0,0,0,.75), 0 0 6px rgba(0,0,0,.65), 0 0 2px rgba(0,0,0,.9);
   animation:splashUp .4s .28s both; }
+/* Raja: "there is nothing more important than health" -- a permanent
+   reminder on the very first screen, not gated behind a tap (see the full
+   3-point version inside About). A dark pill rather than a bare text
+   colour sidesteps the whole "which colour survives this drifting
+   gradient" problem .splashTag's own comment above documents fighting --
+   guaranteed contrast against any of it, not just the ones sampled. */
+.splashCaution{ margin:10px auto 0; max-width:27em; font-size:11.5px; font-weight:700; line-height:1.55;
+  text-align:left; color:#FFFFFF; background:rgba(0,0,0,.42); border:1.5px solid rgba(255,209,102,.55);
+  border-radius:14px; padding:9px 14px; box-shadow:inset 0 0 0 1px rgba(255,255,255,.1);
+  animation:splashUp .4s .31s both; }
+.splashCaution b{ color:#FFD166; }
+.splashCaution > b:first-child{ display:block; text-align:center; font-size:12.5px; margin-bottom:4px; }
 /* Bigger — it was too timid to find. Still quieter than Tap to play, but a
    proper target now rather than a footnote. */
 .splashAbout{ margin-top:20px; display:inline-block; font-family:inherit; cursor:pointer;
@@ -3508,6 +3529,11 @@ body{ background:#C9A87C !important; }
   border-color:#B08D5F !important; border-left-color:#8A5E31 !important; }
 .journeyNote b{ color:#5E2A0A !important; }
 .journeyCall{ color:#9A3412 !important; }
+/* #cautionNote's own gold (readable on the dark theme's near-black card) has
+   poor contrast on this theme's cream one -- same dark rust .journeyCall
+   already uses here for "the important line", carried over. */
+#cautionNote{ border-left-color:#9A3412 !important; }
+.cautionList, .cautionList b{ color:#7A1E0A !important; }
 .credit{ color:#4A331A !important; }
 .credit a{ color:#0F5C8C !important; }
 
@@ -4441,13 +4467,14 @@ body{ background:#C9A87C !important; }
 
 
 
-<!-- The journey of these puzzles: paper -> spreadsheets -> AI -> whatever comes next -->
-<div class="journeyNote">
-  <b>📜 How these puzzles travelled</b><br>
-  Collected in <b>school days</b> on paper · kept through the <b>1990s</b> in spreadsheets ·
-  rebuilt today with <b>AI</b>.<br>
-  <span class="journeyCall">If you keep them, in twenty years you may open them in a way none of us can imagine yet.
-  Preserve · explore · pass them on.</span>
+<!-- Raja: "keep this in opening UI, swap the word to about page" -- the
+     full 3-point version now lives on the splash itself (see splashCaution
+     in the JS that builds it), so this shorter line is its About-page
+     companion instead of a duplicate. Still replaces the puzzles'-history
+     note that used to sit here; still bolder than the surrounding card, per
+     his original "more important than the puzzle" instruction. -->
+<div class="journeyNote" id="cautionNote">
+  <div class="cautionList">🛡️ <b>Low brightness</b> (Night Mode after dark) · <b>short breaks</b> · <b>play with a parent</b></div>
 </div>
 
 <div class="credit">
@@ -12724,6 +12751,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         '</div>' +
         '<div class="splashName">' + name + '</div>' +
         '<div class="splashTag">' + (tag ? tag.textContent : '') + '</div>' +
+        /* Raja: "keep this in opening UI" -- the full 3-point version, not
+           a shortened one, and not a gate to tap past either. About
+           (#cautionNote) carries the short line instead now. */
+        '<div class="splashCaution"><b>🛡️ Before you play — health first</b><br>' +
+          '1. Keep the screen <b>brightness low</b> — Night Mode / Blue Light filter too, after dark.<br>' +
+          '2. <b>Don\'t play for long stretches</b> — take breaks often.<br>' +
+          '3. <b>Play with a parent or guardian nearby.</b></div>' +
         '<button class="splashPlay" type="button" id="splashPlay">▶ Tap to play</button>' +
         /* Where these puzzles came from — Raja asked for it on the opening
            screen. It already exists as the About sheet: the journey from paper
@@ -12981,7 +13015,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-220 (fixed a real live bug: Sudoku -- and in principle any puzzle -- could stay visibly stacked underneath the next puzzle you opened; every puzzle tile now unconditionally hides every sibling instead of trusting a guess about what is already showing)';
+  var BUILD_VER = 'beta-221 (health caution notice for kids: full brightness/breaks/parent-supervision reminder on the opening splash, a shorter version in About this project)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
