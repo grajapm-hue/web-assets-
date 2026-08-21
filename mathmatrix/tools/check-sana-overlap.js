@@ -113,6 +113,7 @@ const GRID_LEVELS = ['3x3', '4x4', '5x5', '6x6', '8x8', '10x10', '3cube', 'trian
   }
 
   await ev(`document.getElementById('tab-scHome').click()`); await sleep(200);
+  await ev(`window.__palClearSave && window.__palClearSave()`);   // force fresh -- see beta-217 comment above
   await ev(`document.getElementById('palTab').click()`); await sleep(1200);
   await check('pallanguzhi');
 
@@ -139,6 +140,7 @@ const GRID_LEVELS = ['3x3', '4x4', '5x5', '6x6', '8x8', '10x10', '3cube', 'trian
   for (const S of TIGHT){
     await send('Emulation.setDeviceMetricsOverride', { width: S.w, height: S.h, deviceScaleFactor: 2, mobile: true });
     await ev(`document.getElementById('tab-scHome').click()`); await sleep(200);
+    await ev(`window.__palClearSave && window.__palClearSave()`);   // force fresh -- see beta-217 comment above
     await ev(`document.getElementById('palTab').click()`);
     for (let i = 0; i < 200; i++){
       const s = await ev(`window.__palState?JSON.stringify(window.__palState()):""`);

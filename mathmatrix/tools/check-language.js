@@ -64,6 +64,7 @@ const TAMIL = /[\u0B80-\u0BFF]/;
     }); })()`).then(JSON.parse);
   const beforeSwitch = await outside();
 
+  await ev(`window.__palClearSave && window.__palClearSave()`);   // force fresh -- see beta-217 comment above
   await ev(`document.getElementById('palTab').click()`); await palReady(ev, sleep);
 
   /* 1. The toggle lives ON THE BOARD. It began beside Sound and Music, which was
@@ -124,6 +125,7 @@ const TAMIL = /[\u0B80-\u0BFF]/;
          whichever board opened last until the opener was taught to
          pre-populate it, same as the 2-player one already does. */
   await ev(`document.getElementById('tab-scHome').click()`); await sleep(300);
+  await ev(`window.__pal4ClearSave && window.__pal4ClearSave()`);   // force fresh -- see beta-217 comment above
   await ev(`document.getElementById('pal4Tab').click()`); await sleep(800);
   const board4 = await ev(`(function(){
     var out = { untranslated: [], total: 0 };
@@ -207,6 +209,7 @@ const TAMIL = /[\u0B80-\u0BFF]/;
 
   /* 4. Nothing on the Tamil board is cut off — Tamil runs longer than English
         and this board is full of fixed shapes. */
+  await ev(`window.__palClearSave && window.__palClearSave()`);   // force fresh -- see beta-217 comment above
   await ev(`document.getElementById('palTab').click()`); await palReady(ev, sleep);
   const cut = JSON.parse(await ev(`(function(){
     var bad = [];
@@ -254,6 +257,7 @@ const TAMIL = /[\u0B80-\u0BFF]/;
          check-pallanguzhi-4p.js exists for, run here under Tamil specifically
          since Tamil is the longer text that would actually trigger it. */
   await ev(`document.getElementById('tab-scHome').click()`); await sleep(300);
+  await ev(`window.__pal4ClearSave && window.__pal4ClearSave()`);   // force fresh -- see beta-217 comment above
   await ev(`document.getElementById('pal4Tab').click()`); await sleep(800);
   const cut4 = JSON.parse(await ev(`(function(){
     var bad = [];
@@ -323,6 +327,7 @@ const TAMIL = /[\u0B80-\u0BFF]/;
   for (const w of [340, 360, 375, 390, 412]){
     await send('Emulation.setDeviceMetricsOverride', { width: w, height: 800, deviceScaleFactor: 2, mobile: true });
     await ev(`document.getElementById('tab-scHome').click()`); await sleep(150);
+    await ev(`window.__pal4ClearSave && window.__pal4ClearSave()`);   // force fresh -- see beta-217 comment above
     await ev(`document.getElementById('pal4Tab').click()`); await sleep(500);
     const row = await ev(`(function(){
       var tops = Array.from(document.querySelectorAll('.pal4Tick')).map(function(c){ return Math.round(c.getBoundingClientRect().top); });
@@ -365,6 +370,7 @@ const TAMIL = /[\u0B80-\u0BFF]/;
      never actually been exercised until now. */
   await ev(`window.__mmLang('ta')`); await sleep(400);
   await ev(`document.getElementById('tab-scHome').click()`); await sleep(200);
+  await ev(`window.__pal4ClearSave && window.__pal4ClearSave()`);   // force fresh -- see beta-217 comment above
   await ev(`document.getElementById('pal4Tab').click()`); await sleep(700);   // __pal4New(), fresh Tamil board
   const dealtOne = await ev(`(function(){
     document.querySelector('#pal4CardA .pal4CardStore').click();

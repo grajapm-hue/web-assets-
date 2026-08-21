@@ -53,6 +53,7 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   await ev(`(document.querySelector('.splashPlay')||{click(){}}).click()`); await sleep(900);
 
   ok('the 4-player card is on the puzzle list', await ev(`!!document.getElementById('pal4Tab')`));
+  await ev(`window.__pal4ClearSave && window.__pal4ClearSave()`);   // force fresh -- see beta-217 comment above
   await ev(`document.getElementById('pal4Tab').click()`); await sleep(800);
   ok('the panel opens', await ev(`getComputedStyle(document.getElementById('pal4Panel')).display`) !== 'none');
 
@@ -251,6 +252,7 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   ];
   for (const o of others){
     await ev(`document.getElementById('tab-scHome').click()`); await sleep(200);
+    await ev(`window.__pal4ClearSave && window.__pal4ClearSave()`);   // force fresh -- see beta-217 comment above
     await ev(`document.getElementById('pal4Tab').click()`); await sleep(700);   // open it fresh each time
     await ev(o.go); await sleep(o.wait);
     const still = await ev(`getComputedStyle(document.getElementById('pal4Panel')).display`);
@@ -266,6 +268,7 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   for (const f of froms){
     await ev(`document.getElementById('tab-scHome').click()`); await sleep(200);
     await ev(f.go); await sleep(f.wait);
+    await ev(`window.__pal4ClearSave && window.__pal4ClearSave()`);   // force fresh -- see beta-217 comment above
     await ev(`document.getElementById('pal4Tab').click()`); await sleep(800);
     const nowOpen = await ev(`getComputedStyle(document.getElementById('pal4Panel')).display`) !== 'none';
     ok('opening the 4-player board from ' + f.name + ' actually shows it', nowOpen);
@@ -284,6 +287,7 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
      "reachable", not "visible without scrolling". */
   await send('Emulation.setDeviceMetricsOverride', { width: 340, height: 780, deviceScaleFactor: 2, mobile: true });
   await ev(`document.getElementById('tab-scHome').click()`); await sleep(200);
+  await ev(`window.__pal4ClearSave && window.__pal4ClearSave()`);   // force fresh -- see beta-217 comment above
   await ev(`document.getElementById('pal4Tab').click()`); await sleep(800);
   const tight = await ev(`(function(){
     var panel = document.getElementById('pal4Panel');
@@ -311,6 +315,7 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
      kept permanent so a future size change can't reintroduce the same gap
      silently. */
   await ev(`document.getElementById('tab-scHome').click()`); await sleep(200);
+  await ev(`window.__pal4ClearSave && window.__pal4ClearSave()`);   // force fresh -- see beta-217 comment above
   await ev(`document.getElementById('pal4Tab').click()`); await sleep(800);
   const onOpen = await ev(`(function(){
     var panel = document.getElementById('pal4Panel');
@@ -340,6 +345,7 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   for (const w of widths){
     await send('Emulation.setDeviceMetricsOverride', { width: w, height: 800, deviceScaleFactor: 2, mobile: true });
     await ev(`document.getElementById('tab-scHome').click()`); await sleep(150);
+    await ev(`window.__pal4ClearSave && window.__pal4ClearSave()`);   // force fresh -- see beta-217 comment above
     await ev(`document.getElementById('pal4Tab').click()`); await sleep(500);
     const row = await ev(`(function(){
       var tops = Array.from(document.querySelectorAll('.pal4Tick')).map(function(c){ return Math.round(c.getBoundingClientRect().top); });
@@ -378,6 +384,7 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
      pass — the UI-fit checks above deliberately left things resized. */
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
   await ev(`document.getElementById('tab-scHome').click()`); await sleep(200);
+  await ev(`window.__pal4ClearSave && window.__pal4ClearSave()`);   // force fresh -- see beta-217 comment above
   await ev(`document.getElementById('pal4Tab').click()`); await sleep(700);   // __pal4New() fires, fresh state
 
   const state = () => ev(`JSON.stringify(window.__pal4State())`).then(JSON.parse);
@@ -502,6 +509,7 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   /* A 2-OF-4 GAME — the disabled sides' reserves must never move, not even
      by one seed, across the whole game. */
   await ev(`document.getElementById('tab-scHome').click()`); await sleep(200);
+  await ev(`window.__pal4ClearSave && window.__pal4ClearSave()`);   // force fresh -- see beta-217 comment above
   await ev(`document.getElementById('pal4Tab').click()`); await sleep(700);
   await untick('B'); await untick('D');
   await dealSide('A'); await dealSide('C');
@@ -596,6 +604,7 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
      then claim them as pasu bonuses instead of sowing and confirm the
      round ends instead of leaving the game stuck. */
   await ev(`document.getElementById('tab-scHome').click()`); await sleep(200);
+  await ev(`window.__pal4ClearSave && window.__pal4ClearSave()`);   // force fresh -- see beta-217 comment above
   await ev(`document.getElementById('pal4Tab').click()`); await sleep(700);
   let pasuStuckFound = false, pasuBefore = null, pasuAfter = null;
   outerPasu:
@@ -647,6 +656,7 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
      confirm dealing works again afterward -- without a fresh pillai formed
      by that very redeal (a real gap this caught) blocking anyone else. */
   await ev(`document.getElementById('tab-scHome').click()`); await sleep(200);
+  await ev(`window.__pal4ClearSave && window.__pal4ClearSave()`);   // force fresh -- see beta-217 comment above
   await ev(`document.getElementById('pal4Tab').click()`); await sleep(700);
   await untick('B'); await untick('D');
   await dealSide('A'); await dealSide('C');

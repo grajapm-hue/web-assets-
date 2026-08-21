@@ -8630,6 +8630,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         if (ch) ch.textContent = P('chooseP', { a: nameOf(starter) });
         var roundChip = document.getElementById('palRoundChip');
         if (roundChip) roundChip.textContent = P('roundNo', { n: round });
+        savePalGame();
       }
 
       function markSowed(i){
@@ -8643,6 +8644,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
       function newGame(){
         if (step){ clearTimeout(step); step = null; }
+        // New Game is the one sanctioned way to abandon a saved game --
+        // anything else (backgrounding, closing, reopening the tab) resumes it
+        try { localStorage.removeItem(PAL_SAVE_KEY); } catch(e){}
         cups = []; pasuDead = []; pillai = [];
         for (var i = 0; i < CUPS; i++){ cups.push(0); pasuDead.push(false); pillai.push(0); }
         store = [PER_CUP * 7, PER_CUP * 7];       // the 35 each Raja asked for
@@ -8825,6 +8829,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
       function finish(msg){
         playing = false; busy = false;
+        // a finished game has nothing left to resume -- same clear as New Game
+        try { localStorage.removeItem(PAL_SAVE_KEY); } catch(e){}
         var a = store[0], b = store[1];
         var who = a === b ? null : (a > b ? 0 : 1);
         say(msg + '<br>' + (who === null
@@ -9182,6 +9188,58 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
                  dropped: sowDropped, dealt: dealt.slice(), round: round,
                  pillai: pillai.slice(), starter: starter, everDealt: everDealt };
       };
+
+      /* Raja: "implement app memory to continue the game from where we left
+         over, go back or app closed by slide up the app or phone is off --
+         except manually closed the game by clear or new game." Saved on
+         every settle (see draw()'s own tail) plus a hard checkpoint right
+         before the tab is hidden -- see the shared visibilitychange/pagehide
+         hook near the bottom of the file, which reuses __palStop() (already
+         built to run a mid-air move out rather than lose it) so nothing is
+         ever snapshotted mid-sow. New Game -- the only sanctioned way to
+         abandon a game -- clears this key itself, in newGame(). */
+      var PAL_SAVE_KEY = 'mmPalSave';
+      function savePalGame(){
+        if (!everDealt || busy) return;   // nothing worth keeping yet, or mid-move -- settle first
+        try {
+          localStorage.setItem(PAL_SAVE_KEY, JSON.stringify({
+            v: 1, cups: cups, store: store, turn: turn, starter: starter,
+            playing: playing, dealt: dealt, pillai: pillai, dead: pasuDead,
+            round: round, everDealt: everDealt,
+            name1: (document.getElementById('palName1') || {}).value || '',
+            name2: (document.getElementById('palName2') || {}).value || ''
+          }));
+        } catch(e){}
+      }
+      function loadPalSave(){
+        try {
+          var raw = localStorage.getItem(PAL_SAVE_KEY);
+          if (!raw) return null;
+          var sv = JSON.parse(raw);
+          // schema guard -- a stale save from a different build must never
+          // crash a restore; fall back to a fresh game instead
+          if (!sv || sv.v !== 1 || !Array.isArray(sv.cups) || sv.cups.length !== CUPS ||
+              !Array.isArray(sv.store) || sv.store.length !== 2) return null;
+          return sv;
+        } catch(e){ return null; }
+      }
+      function restorePalGame(sv){
+        build();
+        cups = sv.cups.slice(); store = sv.store.slice();
+        turn = sv.turn; starter = sv.starter; playing = !!sv.playing;
+        dealt = sv.dealt.slice(); pillai = sv.pillai.slice(); pasuDead = sv.dead.slice();
+        round = sv.round; everDealt = sv.everDealt;
+        busy = false; inHand = 0;   // a saved game is always at rest -- see savePalGame()
+        var n1 = document.getElementById('palName1'), n2 = document.getElementById('palName2');
+        if (n1 && sv.name1) n1.value = sv.name1;
+        if (n2 && sv.name2) n2.value = sv.name2;
+        palFit();
+        if (window.__palRedraw) window.__palRedraw(); else draw();
+      }
+      window.__palSave = savePalGame;
+      window.__palLoadSave = loadPalSave;
+      window.__palRestore = restorePalGame;
+      window.__palClearSave = function(){ try { localStorage.removeItem(PAL_SAVE_KEY); } catch(e){} };
     })();
 
     var palNewBtn = document.getElementById('palNew');
@@ -9211,7 +9269,16 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         currentSize = 'pallanguzhi';
         goScreen('scPlay');
         showPalMode(true);
-        window.__palNew();
+        // Raja: "continue the game from where we left" -- opening the tile
+        // used to always start fresh, wiping a real game in progress. Now it
+        // resumes a saved one and only starts fresh when there is nothing to
+        // resume (or the last game was ended with New Game, which clears it).
+        var palSaved = window.__palLoadSave ? window.__palLoadSave() : null;
+        var palRestored = false;
+        if (palSaved && window.__palRestore){
+          try { window.__palRestore(palSaved); palRestored = true; } catch(e){}
+        }
+        if (!palRestored) window.__palNew();
         var title = document.getElementById('appBarTitle');
         if (title) title.innerHTML = boxedTitle('🫘 Pallanguzhi');
         var lb = document.getElementById('logicBox');
@@ -9317,6 +9384,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
       function newGame4(){
         if (step4){ clearTimeout(step4); step4 = null; }
+        try { localStorage.removeItem(PAL4_SAVE_KEY); } catch(e){}
         /* Same reset the New Game button always did cosmetically, now the
            single place both the button AND the tab opener route through —
            back to all four sides enabled, Player A up first, so opening
@@ -9446,6 +9514,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
       function pal4Finish(){
         playing4 = false; busy4 = false;
+        // a finished game has nothing left to resume -- same clear as New Game
+        try { localStorage.removeItem(PAL4_SAVE_KEY); } catch(e){}
         var scores = enabledSides().map(function(s){
           var idx = SIDES.indexOf(s);
           return { i: idx, n: store4[idx] };
@@ -9638,6 +9708,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         }
         var roundChip = document.getElementById('pal4RoundChip');
         if (roundChip) roundChip.textContent = pal4P('roundNo', { n: round4 });
+        savePal4Game();
       }
 
       /* CUP TAPS — own cup to sow, any cup of four to claim at any moment,
@@ -9840,7 +9911,77 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
                  dealt: dealt4.slice(), pillai: pillai4.slice(), dead: pasuDead4.slice(),
                  round: round4, everDealt: everDealt4, hand: inHand4, dropped: sowDropped4 };
       };
+
+      /* Same save/resume as the 2-player board -- see its own PAL_SAVE_KEY
+         comment for the why. */
+      var PAL4_SAVE_KEY = 'mmPal4Save';
+      function savePal4Game(){
+        if (!everDealt4 || busy4) return;
+        try {
+          localStorage.setItem(PAL4_SAVE_KEY, JSON.stringify({
+            v: 1, cups: cups4, store: store4, active: active, starter4: starter4,
+            enabled: enabled, playing: playing4, dealt: dealt4, pillai: pillai4,
+            dead: pasuDead4, round: round4, everDealt: everDealt4,
+            names: SIDES.map(function(s){
+              var el = document.querySelector('#pal4Card' + s + ' .pal4CardName');
+              return (el && el.value) || '';
+            })
+          }));
+        } catch(e){}
+      }
+      function loadPal4Save(){
+        try {
+          var raw = localStorage.getItem(PAL4_SAVE_KEY);
+          if (!raw) return null;
+          var sv = JSON.parse(raw);
+          if (!sv || sv.v !== 1 || !Array.isArray(sv.cups) || sv.cups.length !== CUPS4 ||
+              !Array.isArray(sv.store) || sv.store.length !== 4 ||
+              !sv.enabled || typeof sv.enabled !== 'object') return null;
+          return sv;
+        } catch(e){ return null; }
+      }
+      function restorePal4Game(sv){
+        SIDES.forEach(function(s, i){
+          enabled[s] = !!sv.enabled[s];
+          var cb = document.querySelector('.pal4Tick.side' + s + ' input');
+          if (cb) cb.checked = enabled[s];
+        });
+        cups4 = sv.cups.slice(); store4 = sv.store.slice();
+        active = sv.active; starter4 = sv.starter4; playing4 = !!sv.playing;
+        dealt4 = sv.dealt.slice(); pillai4 = sv.pillai.slice(); pasuDead4 = sv.dead.slice();
+        round4 = sv.round; everDealt4 = sv.everDealt;
+        busy4 = false; inHand4 = 0;
+        if (sv.names) SIDES.forEach(function(s, i){
+          var el = document.querySelector('#pal4Card' + s + ' .pal4CardName');
+          if (el && sv.names[i]) el.value = sv.names[i];
+        });
+        pal4Draw();
+        if (window.__pal4Redraw) window.__pal4Redraw();
+      }
+      window.__pal4Save = savePal4Game;
+      window.__pal4LoadSave = loadPal4Save;
+      window.__pal4Restore = restorePal4Game;
+      window.__pal4ClearSave = function(){ try { localStorage.removeItem(PAL4_SAVE_KEY); } catch(e){} };
     })();
+
+    /* The actual "slide up / close / phone off" checkpoint for both boards'
+       save-to-resume. visibilitychange fires reliably on Android/iOS the
+       moment the app is backgrounded -- before the OS can ever kill the
+       process -- and pagehide covers an outright tab close. __palStop() /
+       __pal4Stop() already exist to run a mid-air move out to a legal rest
+       state rather than lose it; each one's own draw()/pal4Draw() call then
+       does the actual save (see their tails above), so there is nothing
+       left to do here but settle whichever move, if any, is in flight.
+       Harmless to call for a board that was never opened this session --
+       both stops are no-ops unless their own busy flag is set. */
+    function palSaveCheckpoint(){
+      if (window.__palStop) try { window.__palStop(); } catch(e){}
+      if (window.__pal4Stop) try { window.__pal4Stop(); } catch(e){}
+    }
+    document.addEventListener('visibilitychange', function(){
+      if (document.hidden) palSaveCheckpoint();
+    });
+    window.addEventListener('pagehide', palSaveCheckpoint);
 
     document.querySelectorAll('.toggleBtn[data-pal4-level]').forEach(function(btn){
       btn.addEventListener('click', function(){
@@ -9859,7 +10000,14 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         currentSize = 'pallanguzhi4';
         goScreen('scPlay');
         showPal4Mode(true);
-        if (window.__pal4New) window.__pal4New();   // fresh game on open, same as the 2-player tab
+        // resume a saved game, same rule as the 2-player tab; fresh only
+        // when there is nothing to resume
+        var pal4Saved = window.__pal4LoadSave ? window.__pal4LoadSave() : null;
+        var pal4Restored = false;
+        if (pal4Saved && window.__pal4Restore){
+          try { window.__pal4Restore(pal4Saved); pal4Restored = true; } catch(e){}
+        }
+        if (!pal4Restored && window.__pal4New) window.__pal4New();
         var title = document.getElementById('appBarTitle');
         if (title) title.innerHTML = boxedTitle('🫘 Pallanguzhi 4P');   // the full name truncated in the app bar
         // matches the 2-player opener: keep the top-bar LOGIC button honest
@@ -12805,7 +12953,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-216 (Stage 1 of round-status: Ring order tab on 4-player replaced by a Live Round chip -- both boards -- ring-order text folded into How to play instead)';
+  var BUILD_VER = 'beta-217 (Pallanguzhi remembers your game -- slide the app away, close the tab, or turn the phone off, and reopening the tile resumes right where you left it, both boards -- New Game is still the only way to actually start over)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
