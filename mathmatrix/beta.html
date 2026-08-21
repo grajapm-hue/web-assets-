@@ -8303,6 +8303,14 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         onBoardN:  { en:'{n} seeds on the board',         ta:'பலகையில் {n} விதைகள்' },
         dealPrompt:{ en:'Each player taps their own store to lay out their row.',
                      ta:'ஒவ்வொரு வீரரும் தன் சேமிப்பைத் தட்டி தன் வரிசையை நிரப்பவும்.' },
+        // Raja: SaNa's own bubble and the tips box below it were saying this
+        // exact same sentence at the very start of a game — a real clone,
+        // unlike every other moment, where the two already say different
+        // things (compare roundOver/roundCheer, wonSay/wonCheer, above and
+        // below). This gives the mascot its own short version here too,
+        // matching that established pattern instead of repeating the tip.
+        dealPromptCheer: { en:'New board — tap your own store to lay it out!',
+                     ta:'புதிய பலகை — உங்கள் சேமிப்பைத் தட்டி நிரப்புங்கள்!' },
         roundOver: { en:'{msg}<br>Round over — <b>{a}</b> keeps the <b>{n}</b> seeds left on their side. Tap your stores for the next round.',
                      ta:'{msg}<br>சுற்று முடிந்தது — தன் பக்கம் மீதமுள்ள <b>{n}</b> விதைகளை <b>{a}</b> எடுத்துக்கொள்கிறார். அடுத்த சுற்றுக்கு உங்கள் சேமிப்பைத் தட்டுங்கள்.' },
         roundCheer:{ en:'Round over — <b>{a}</b> gathers <b>{n}</b> seeds.',
@@ -8660,7 +8668,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
            one message on screen still describing a game that no longer existed.
            Cleared here, where the new board is dealt. */
         if (typeof sana === 'function') try {
-          sana(P('dealPrompt'), 'cheer');
+          sana(P('dealPromptCheer'), 'cheer');
         } catch(e){}
         draw();
       }
@@ -9403,7 +9411,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         round4 = 1; everDealt4 = false;
         playing4 = false; busy4 = false; inHand4 = 0;
         pal4Say(pal4P('dealPrompt'));
-        pal4Cheer(pal4P('dealPrompt'));
+        pal4Cheer(pal4P('dealPromptCheer'));
         pal4Draw();
       }
 
@@ -12953,7 +12961,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-218 (Online Update now lands back on the puzzle you actually had open -- it only recognized the original magic-square tiles before, so Sudoku, Slide, Pallanguzhi and Gate Logic all silently dropped you elsewhere and could leave two screens tangled together)';
+  var BUILD_VER = 'beta-219 (Pallanguzhi: SaNa and the tips box no longer say the identical sentence at the start of a game -- the mascot now has its own short line, matching how every other moment already works)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
