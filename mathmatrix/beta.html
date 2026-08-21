@@ -3309,6 +3309,22 @@ body.gateMode #logicBox{ box-shadow:none !important; border-radius:0 !important;
 .splashCaution > b:first-child{ display:block; text-align:center; font-size:12.5px; margin-bottom:4px; }
 /* Bigger — it was too timid to find. Still quieter than Tap to play, but a
    proper target now rather than a footnote. */
+/* Raja: the actual install offer needs to be unmissable on first open --
+   a solid fill (not a translucent pill like .splashAbout below it) plus a
+   slow pulse draws the eye without competing with Tap to play for being
+   THE thing to press. Visible from the start, same as installBtn/
+   diffInstall already are -- markInstalled()/markHowTo() (see
+   window.__pwaRegisterInstallBtn) adjust its TEXT once the real state is
+   known, the same way they already do for those two, rather than this one
+   depending on extra reveal logic neither of them needs. */
+.splashInstallBtn{ margin-top:10px; font-family:inherit; cursor:pointer;
+  font-size:14px; font-weight:900; letter-spacing:.3px; color:#04233E;
+  background:#38bdf8; border:2px solid #FFFFFF; border-radius:999px; padding:12px 28px;
+  min-height:46px; box-shadow:0 4px 16px rgba(56,189,248,.55), inset 0 0 0 1px rgba(255,255,255,.3);
+  animation:splashUp .4s .37s both, installPulse 1.8s 1.4s ease-in-out infinite; }
+.splashInstallBtn:active{ transform:translateY(2px); animation:none; }
+@keyframes installPulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.045); } }
+@media(prefers-reduced-motion:reduce){ .splashInstallBtn{ animation:splashUp .4s .37s both !important; } }
 .splashAbout{ margin-top:20px; display:inline-block; font-family:inherit; cursor:pointer;
   font-size:14px; font-weight:800; letter-spacing:.3px; color:#FFFFFF;
   background:rgba(0,0,0,.34); border:0; border-radius:999px; padding:13px 26px;
@@ -6287,6 +6303,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     var iBtns = [document.getElementById('installBtn'), document.getElementById('diffInstall')].filter(Boolean);
     if (!iBtns.length) return;
     var deferred = null;
+    var installPromptSettled = false;   // true once the 2.5s wait below has run its course
 
     function markInstalled(){
       // Raja: the green-on-warm-brown combo didn't suit the sandalwood
@@ -6333,7 +6350,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
     // No install event (iPhone, unsupported browser, or already installed):
     // stop promising a one-tap install and offer the instructions instead.
-    setTimeout(function(){ if (!deferred) markHowTo(); }, 2500);
+    setTimeout(function(){ installPromptSettled = true; if (!deferred) markHowTo(); }, 2500);
 
     window.addEventListener('appinstalled', function(){
       deferred = null;
@@ -6341,7 +6358,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       sfx('unlock');
     });
 
-    iBtns.forEach(function(b){
+    function wireInstallClick(b){
       b.addEventListener('click', function(){
         if (soundOn) ensureAudio();
         if (deferred){
@@ -6356,7 +6373,40 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         // per-platform instructions, same sheet Home's offline chip opens.
         openSheet('offline', '📲 Play offline');
       });
-    });
+    }
+    iBtns.forEach(wireInstallClick);
+
+    /* Raja: the install prompt was too easy to miss -- a small chip, not
+       obviously the way to a clean, badge-free icon (see the whole thread
+       that started with a Chrome browser badge showing up on a shortcut
+       added the wrong way). The splash button is created much later in
+       the file (it's built by JS on load, not static HTML), so it can't
+       just be added to iBtns above the way installBtn/diffInstall were --
+       it does not exist yet when this IIFE runs. Registering it here,
+       once it's actually in the DOM, gets it the exact same live state
+       (Install App / Installed / How to Install) as the other two,
+       rather than a second copy of this logic to keep in sync by hand. */
+    window.__pwaRegisterInstallBtn = function(b){
+      if (!b || iBtns.indexOf(b) > -1) return;
+      iBtns.push(b);
+      wireInstallClick(b);
+      // sync immediately -- beforeinstallprompt or the 2.5s fallback may
+      // already have fired for the other buttons by the time this one
+      // is created, and neither will fire again just for this button
+      var standaloneNow = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
+      if (standaloneNow || window.navigator.standalone){ markInstalled(); return; }
+      if (deferred){
+        b.textContent = '📥 Install App';
+        b.style.borderColor = '#38bdf8'; b.style.color = '#7dd3fc';
+      } else if (installPromptSettled){
+        markHowTo();
+      }
+      // else: beforeinstallprompt genuinely hasn't resolved either way yet
+      // -- leave the button's own static "Install App" text as the same
+      // optimistic default the others started with, and let the shared
+      // beforeinstallprompt listener above (iBtns now includes this one)
+      // update it the moment it does.
+    };
   })();
 
   // ---- Gate Logic — a real Play-screen game, not a sheet -------------------
@@ -12759,6 +12809,14 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           '2. <b>Don\'t play for long stretches</b> — take breaks often.<br>' +
           '3. <b>Play with a parent or guardian nearby.</b></div>' +
         '<button class="splashPlay" type="button" id="splashPlay">▶ Tap to play</button>' +
+        /* Raja: "should get attention... the first time" -- the native
+           Chrome mini-banner that sometimes appears above this whole page
+           is not this app's own UI and can't be restyled (a small plain
+           chip, easy to miss, and not shown at all on every device). This
+           is the app's own unmistakable version of the same offer, wired
+           to the exact same install state machine installBtn/diffInstall
+           already use -- see window.__pwaRegisterInstallBtn below. */
+        '<button class="splashInstallBtn" type="button" id="splashInstall">📥 Install App</button>' +
         /* Where these puzzles came from — Raja asked for it on the opening
            screen. It already exists as the About sheet: the journey from paper
            through 1990s spreadsheets to today, the credit, the contact address
@@ -12770,6 +12828,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           '📜 About this project</button>' +
       '</div>';
     shell.appendChild(s);
+    if (typeof window.__pwaRegisterInstallBtn === 'function'){
+      window.__pwaRegisterInstallBtn(document.getElementById('splashInstall'));
+    }
 
     // the die really rolls — which pips are lit changes while it tumbles.
     // grid slots are numbered 0..8 across the 3x3 face.
@@ -13015,7 +13076,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-221 (health caution notice for kids: full brightness/breaks/parent-supervision reminder on the opening splash, a shorter version in About this project)';
+  var BUILD_VER = 'beta-222 (an unmissable Install App button now sits right on the opening splash screen, next to Tap to play -- the app own clean, badge-free install, not the small native browser banner that is easy to miss)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
