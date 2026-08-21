@@ -12953,7 +12953,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-217 (Pallanguzhi remembers your game -- slide the app away, close the tab, or turn the phone off, and reopening the tile resumes right where you left it, both boards -- New Game is still the only way to actually start over)';
+  var BUILD_VER = 'beta-218 (Online Update now lands back on the puzzle you actually had open -- it only recognized the original magic-square tiles before, so Sudoku, Slide, Pallanguzhi and Gate Logic all silently dropped you elsewhere and could leave two screens tangled together)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
@@ -13040,13 +13040,36 @@ if (navigator.storage && navigator.storage.persist) {
          reload; the block at the end of this file spends it on the way back in.
          The screen and the puzzle only — NOT a half-filled board. A new build
          can change a grid, and pouring stale cells into a different puzzle is
-         worse than starting it clean. */
+         worse than starting it clean.
+
+         Raja: puzzles beyond the original 3x3-style family (Sudoku, Slide,
+         Pallanguzhi) left the app on the WRONG puzzle after Update -- this only
+         ever looked for data-size, which only the original magic-square family
+         carries. Every other family keys its own tile a different way
+         (data-sud-level, data-slide-level, data-pal-level, data-pal4-level),
+         so an update from any of them saved z:'' and silently defaulted back to
+         3x3 -- with everything downstream that keys off currentSize now
+         disagreeing with what actually got shown. That mismatch, not the cache
+         itself, is what let two puzzles' panels end up on screen together after
+         enough further taps. Now every family's own attribute is recognised.
+         Gate Logic's own tile carries no data-*-level at all -- it opens a
+         picker, not a single puzzle -- so it falls back to its id, landing back
+         on the gate list rather than the specific room (still correct, just not
+         as deep). */
       try {
         var open = document.querySelector('[data-screen].on');
-        var lvl  = document.querySelector('.toggleBtn.active[data-size]');
+        var lvl  = document.querySelector('.toggleBtn.active');
+        var lvlAttr = '', lvlVal = '';
+        if (lvl){
+          var LEVEL_ATTRS = ['data-size', 'data-slide-level', 'data-sud-level', 'data-pal-level', 'data-pal4-level'];
+          for (var lai = 0; lai < LEVEL_ATTRS.length; lai++){
+            if (lvl.hasAttribute(LEVEL_ATTRS[lai])){ lvlAttr = LEVEL_ATTRS[lai]; lvlVal = lvl.getAttribute(LEVEL_ATTRS[lai]); break; }
+          }
+          if (!lvlAttr && lvl.id){ lvlAttr = 'id'; lvlVal = lvl.id; }
+        }
         sessionStorage.setItem('mm.resume', JSON.stringify({
           s: open ? open.getAttribute('data-screen') : 'scHome',
-          z: lvl  ? lvl.getAttribute('data-size')    : ''
+          za: lvlAttr, z: lvlVal
         }));
       } catch (e) {}
       var jobs = [];
@@ -13096,8 +13119,13 @@ if (navigator.storage && navigator.storage.persist) {
 
     // The level card takes you to the board, so open it first and let the tab
     // have the last word — otherwise landing on Home would be overruled.
+    // za names which attribute the tile was found by (see the save side,
+    // above) — 'id' for Gate Logic's own tile, one of the data-*-level
+    // attributes for every other puzzle family.
     if (st.z){
-      var card = document.querySelector('.toggleBtn[data-size="' + st.z + '"]');
+      var za = st.za || 'data-size';   // old notes saved before this fix had no za
+      var card = za === 'id' ? document.getElementById(st.z)
+                              : document.querySelector('.toggleBtn[' + za + '="' + st.z + '"]');
       if (card) card.click();
     }
     // Fall back to Home if that screen has no tab any more. scLearn is already
