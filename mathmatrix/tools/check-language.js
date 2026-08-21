@@ -140,7 +140,7 @@ const TAMIL = /[\u0B80-\u0BFF]/;
       out.untranslated.push(s.slice(0, 40));
     }
     out.say = document.getElementById('pal4Say').textContent.trim();
-    out.ringBtn = document.getElementById('pal4RingBtn').textContent.trim();
+    out.roundChip = document.getElementById('pal4RoundChip').textContent.trim();
     out.select = document.querySelector('.pal4SelectLabel').textContent.trim();
     out.choose = document.getElementById('pal4Choose').textContent.trim();
     out.onBoard = document.getElementById('pal4OnBoard').textContent.trim();
@@ -155,14 +155,16 @@ const TAMIL = /[\u0B80-\u0BFF]/;
   ok('the 4-player button reads Tamil too', TAMIL.test(board4.btn), board4.btn);
   ok('the 4-player intro line is Tamil', TAMIL.test(board4.say) && !/[A-Za-z]{3}/.test(board4.say.replace(/SaNa/g, '')),
     JSON.stringify(board4.say.slice(0, 50)));
-  // Raja: "add tab below text to cover under choose player in both
-  // languages" — the always-visible sentence became a tappable chip;
-  // check both the chip's own label AND what tapping it actually shows.
-  ok('the ring-order chip reads in Tamil', TAMIL.test(board4.ringBtn), board4.ringBtn);
-  await ev(`document.getElementById('pal4RingBtn').click()`); await sleep(300);
-  const ringPopup = await ev(`document.getElementById('logicBox').textContent.trim().slice(0, 80)`);
-  ok('tapping it shows the ring-order explanation, in Tamil', TAMIL.test(ringPopup) && ringPopup.indexOf('வளையம்') > -1,
-    JSON.stringify(ringPopup));
+  // Raja: "ring order is not much need to know... it was just information
+  // — replace this tab to Live Round." The chip below Choose Player is now
+  // informational (round number, not a button); its old ring-order
+  // explanation moved into How to play instead — check both.
+  ok('the live-round chip reads in Tamil', TAMIL.test(board4.roundChip), board4.roundChip);
+  await ev(`document.getElementById('pal4Rules').click()`); await sleep(300);
+  const howToText = await ev(`document.getElementById('logicBox').textContent.trim()`);
+  ok('How to play now folds in the ring-order explanation, in Tamil',
+    TAMIL.test(howToText) && howToText.indexOf('வலப் பக்கமாக இறங்கி B') > -1,
+    JSON.stringify(howToText.slice(0, 120)));
   ok('the "Players:" tick-row label is Tamil', TAMIL.test(board4.select), board4.select);
   ok('the choose-player bar is Tamil, with the live name substituted in', TAMIL.test(board4.choose), board4.choose);
   ok('the seed-reserve stat is Tamil', TAMIL.test(board4.onBoard), board4.onBoard);

@@ -2789,7 +2789,9 @@ body.langTa .palTurn{ font-size:12.5px; }
   border-radius:14px; cursor:pointer; font-family:inherit; font-size:12.5px; font-weight:900;
   text-align:center; background:linear-gradient(180deg,#FDE68A 0%,#F59E0B 100%); color:#5A3A0A;
   border:2px solid #92400E; touch-action:manipulation; }
-.pal4RingBtn{ display:block; width:fit-content; margin:8px auto 0; }
+/* Shared by both boards' Live-Round chip -- informational, not tappable,
+   so it drops slideBtn's pointer cursor while keeping its pill look. */
+.roundChip{ display:block; width:fit-content; margin:8px auto 0; cursor:default; }
 .pal4Foot{ display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap; margin-top:10px; }
 
 /* ══ WHO IS PLAYING — four tick boxes ═══════════════════════════════════
@@ -3923,6 +3925,10 @@ body{ background:#C9A87C !important; }
        questions still sitting with his family. -->
   <button class="palChoose" id="palChoose" type="button">👤 Choose player</button>
 
+  <!-- Same Live Round chip the 4-player board got, same spot relative to
+       Choose Player -- informational only, no click handler. -->
+  <span class="slideBtn roundChip" id="palRoundChip">Round 1</span>
+
   <div class="palSide p2" id="palSide2">
     <input class="palName" id="palName2" type="text" maxlength="14"
            placeholder="Player 2" autocomplete="off" spellcheck="false">
@@ -4029,11 +4035,11 @@ body{ background:#C9A87C !important; }
 
   <button class="pal4Choose" id="pal4Choose" type="button">👤 Choose player — Player A starts</button>
 
-  <!-- Raja: "add tab below text to cover under choose player in both
-       languages" — the always-visible ring-direction sentence became a
-       tappable chip instead, same family as New game / How to play,
-       right where the sentence used to sit. -->
-  <button class="slideBtn pal4RingBtn" id="pal4RingBtn" type="button">🔄 Ring order</button>
+  <!-- Raja: "ring order is not much need to know... it was just
+       information — replace this tab to Live Round." The ring-order text
+       moved into How to play; this slot now shows the live round number
+       instead, informational only (no click handler). -->
+  <span class="slideBtn roundChip" id="pal4RoundChip">Round 1</span>
 
   <div class="pal4Foot">
     <button class="slideBtn" id="pal4New" type="button">🔄 New game</button>
@@ -8619,10 +8625,11 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         var ch2 = document.getElementById('palChoose');
         if (ch2){ ch2.classList.toggle('forP1', starter === 0); ch2.classList.toggle('forP2', starter === 1); }
         var ob = seedsOnBoard();
-        if (onBoardEl) onBoardEl.textContent = (round > 1 ? P('roundNo', { n: round }) + ' · ' : '') +
-          P(ob === 1 ? 'onBoard1' : 'onBoardN', { n: ob });
+        if (onBoardEl) onBoardEl.textContent = P(ob === 1 ? 'onBoard1' : 'onBoardN', { n: ob });
         var ch = document.getElementById('palChoose');
         if (ch) ch.textContent = P('chooseP', { a: nameOf(starter) });
+        var roundChip = document.getElementById('palRoundChip');
+        if (roundChip) roundChip.textContent = P('roundNo', { n: round });
       }
 
       function markSowed(i){
@@ -9629,6 +9636,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           var seedTotal = seedsOnBoard4();   // always real, same as 2p's seedsOnBoard()
           onBoard.textContent = pal4P(seedTotal === 1 ? 'onBoard1' : 'onBoardN', { n: seedTotal });
         }
+        var roundChip = document.getElementById('pal4RoundChip');
+        if (roundChip) roundChip.textContent = pal4P('roundNo', { n: round4 });
       }
 
       /* CUP TAPS — own cup to sow, any cup of four to claim at any moment,
@@ -9758,6 +9767,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           'வளையம். 2, 3 அல்லது 4 வீரர்கள் — கீழே உள்ள tick பெட்டிகளால் ' +
           'தேர்ந்தெடுக்கவும். ஒவ்வொருவரும் தன் <b>சேமிப்பைத் தட்டி</b> தன் ' +
           'வரிசையை நிரப்புவார்.</p>' +
+          '<p>சட்டத்தைச் சுற்றி ஒரே ஒரு வளையம் ஓடுகிறது — மேலே A, வலப் ' +
+          'பக்கமாக இறங்கி B, கீழே C, இடப் பக்கமாக ஏறி D, மீண்டும் A-வுக்குள்.</p>' +
           '<ol>' +
           '<li>உங்கள் முறையில், உங்கள் சொந்தக் <b>குழி ஒன்றைத்</b> தட்டுங்கள். ' +
           'அதன் அனைத்து விதைகளும் தூக்கப்படும்.</li>' +
@@ -9779,6 +9790,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           '<p>Four sides of seven cups each, one continuous ring around the ' +
           'square. 2, 3 or 4 players — chosen with the tick boxes below. Each ' +
           'player <b>taps their own store</b> to lay out their own row.</p>' +
+          '<p>One ring runs the whole way round the frame — A along the top, ' +
+          'B down the right, C along the bottom, D up the left, back into A.</p>' +
           '<ol>' +
           '<li>On your turn, tap <b>one of your own cups</b>. All its seeds are lifted.</li>' +
           '<li>They are dropped <b>one at a time</b> around the ring — through A, B, ' +
@@ -9802,25 +9815,6 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       if (pal4RulesBtn) pal4RulesBtn.addEventListener('click', function(){
         var lb2 = document.getElementById('logicBox');
         if (lb2) lb2.innerHTML = pal4HowTo();
-        if (typeof openLearn === 'function') openLearn('logic', false);
-      });
-
-      function pal4RingInfo(){
-        var ta = !!(window.__palTa && window.__palTa());
-        if (ta) return '<h3>🔄 பல்லாங்குழி · 4 வீரர்கள் — வளைய வரிசை</h3>' +
-          '<p>சட்டத்தைச் சுற்றி ஒரே ஒரு வளையம் ஓடுகிறது — மேலே A, வலப் ' +
-          'பக்கமாக இறங்கி B, கீழே C, இடப் பக்கமாக ஏறி D, மீண்டும் A-வுக்குள்.</p>';
-        return '<h3>🔄 Pallanguzhi · 4 Players — ring order</h3>' +
-          '<p>One ring runs the whole way round the frame — A along the top, ' +
-          'B down the right, C along the bottom, D up the left, back into A.</p>';
-      }
-      window.__pal4RingInfo = pal4RingInfo;
-
-      var pal4RingBtn = document.getElementById('pal4RingBtn');
-      if (pal4RingBtn) pal4RingBtn.addEventListener('click', function(){
-        var lb3 = document.getElementById('logicBox');
-        if (lb3) lb3.innerHTML = pal4RingInfo();
-        if (typeof sfx === 'function') try { sfx('card'); } catch(e){}
         if (typeof openLearn === 'function') openLearn('logic', false);
       });
 
@@ -11040,7 +11034,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // the 4-player board — same family, same rule: translated completely, not patched
     'STORE':'சேமிப்பு',
     'Player A':'வீரர் A', 'Player B':'வீரர் B', 'Player C':'வீரர் C', 'Player D':'வீரர் D',
-    'Players:':'வீரர்கள்:', '🔄 Ring order':'🔄 வளைய வரிசை',
+    'Players:':'வீரர்கள்:',
     'Sample layout — the rules are still being worked out. Choose Player just previews who SaNa is watching.':
       'மாதிரி அமைப்பு — விளையாட்டு விதிகள் இன்னும் வடிவமைக்கப்பட்டு வருகின்றன. வீரரைத் தேர்ந்தெடு என்பது SaNa யாரைக் கவனிக்கிறார் என்பதை மட்டும் காட்டும்.'
   };
@@ -12811,7 +12805,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-215 (2-player board: Player 2s pillai lock ring now uses their own blue instead of a fixed green that read as Player 1s colour -- same fix the 4-player board got in beta-208)';
+  var BUILD_VER = 'beta-216 (Stage 1 of round-status: Ring order tab on 4-player replaced by a Live Round chip -- both boards -- ring-order text folded into How to play instead)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
