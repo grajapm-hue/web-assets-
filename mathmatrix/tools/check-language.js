@@ -164,8 +164,14 @@ const TAMIL = /[\u0B80-\u0BFF]/;
   ok('the live-round chip reads in Tamil', TAMIL.test(board4.roundChip), board4.roundChip);
   await ev(`document.getElementById('pal4Rules').click()`); await sleep(300);
   const howToText = await ev(`document.getElementById('logicBox').textContent.trim()`);
-  ok('How to play now folds in the ring-order explanation, in Tamil',
-    TAMIL.test(howToText) && howToText.indexOf('வலப் பக்கமாக இறங்கி B') > -1,
+  /* The ring turned ANTI-CLOCKWISE to match the 2-player board (Raja: "in 2
+     player it is anti-clockwise which is the normal order, but in 4 player it
+     is opposite"), so this now checks the Tamil describes the CORRECT way
+     round -- down the LEFT into D -- not merely that some ring sentence is
+     present. A direction flip that left the instructions describing the old
+     path would be exactly the kind of quiet contradiction worth catching. */
+  ok('How to play folds in the ring order, in Tamil, describing the anti-clockwise path',
+    TAMIL.test(howToText) && howToText.indexOf('இடப் பக்கமாக இறங்கி D') > -1,
     JSON.stringify(howToText.slice(0, 120)));
   ok('the "Players:" tick-row label is Tamil', TAMIL.test(board4.select), board4.select);
   ok('the choose-player bar is Tamil, with the live name substituted in', TAMIL.test(board4.choose), board4.choose);

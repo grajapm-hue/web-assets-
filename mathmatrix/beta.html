@@ -9423,12 +9423,37 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
          (and these do run 40-60 cups deep) would otherwise still deposit
          seeds into cups nobody is playing. Every ring-advance in sowStep4
          goes through this, never raw (i+1)%CUPS4. */
+      /* ANTI-CLOCKWISE, matching the 2-player board.
+
+         Raja: "in 2 player it is anti-clockwise which is the normal order,
+         but in 4 player it is opposite." Measured both boards on screen
+         before changing anything and he was exactly right: the 2-player ring
+         starts bottom-left and runs right along the bottom (anti-clockwise),
+         while this one started top-left and ran right along the top
+         (clockwise). Two boards of the same game disagreeing is wrong
+         whichever way is right, and he confirmed anti-clockwise is how
+         Pallanguzhi is actually played.
+
+         The whole direction lives HERE and nowhere else: every ring advance
+         in sowStep4 -- the sow itself, the "next cup" that continues a
+         cascade, and the one-further cup a capture takes -- goes through
+         this function, and every sowPos4 comes either from it or from the
+         cup the player lifted. So stepping backwards through the index
+         instead of forwards turns the entire game anti-clockwise, with no
+         second place to keep in sync.
+
+         DOM index order still runs clockwise (A along the top, B down the
+         right, C along the bottom, D up the left) -- that is just how the
+         cups are laid out in the markup, and it stays as it is. Walking it
+         in reverse is what a player sees as anti-clockwise: from A's first
+         cup the hand now goes UP the left side into D, rather than right
+         along the top into B. */
       function nextLiveCup(i){
         for (var k = 1; k <= CUPS4; k++){
-          var n = (i + k) % CUPS4;
+          var n = ((i - k) % CUPS4 + CUPS4) % CUPS4;   // +CUPS4 before % : JS keeps the sign on a negative modulo
           if (enabled[SIDES[owner4(n)]]) return n;
         }
-        return (i + 1) % CUPS4;   // unreachable with the "at least 2 enabled" guard in place
+        return ((i - 1) % CUPS4 + CUPS4) % CUPS4;   // unreachable with the "at least 2 enabled" guard in place
       }
 
       var active = 0;     // idle: the starter preview. live game: the current turn.
@@ -9943,13 +9968,14 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           'வளையம். 2, 3 அல்லது 4 வீரர்கள் — கீழே உள்ள tick பெட்டிகளால் ' +
           'தேர்ந்தெடுக்கவும். ஒவ்வொருவரும் தன் <b>சேமிப்பைத் தட்டி</b> தன் ' +
           'வரிசையை நிரப்புவார்.</p>' +
-          '<p>சட்டத்தைச் சுற்றி ஒரே ஒரு வளையம் ஓடுகிறது — மேலே A, வலப் ' +
-          'பக்கமாக இறங்கி B, கீழே C, இடப் பக்கமாக ஏறி D, மீண்டும் A-வுக்குள்.</p>' +
+          '<p>சட்டத்தைச் சுற்றி ஒரே ஒரு வளையம் <b>இடஞ்சுழியாக</b> ஓடுகிறது — ' +
+          'மேலே A, இடப் பக்கமாக இறங்கி D, கீழே C, வலப் பக்கமாக ஏறி B, ' +
+          'மீண்டும் A-வுக்குள். 2 வீரர் பலகையின் அதே திசை.</p>' +
           '<ol>' +
           '<li>உங்கள் முறையில், உங்கள் சொந்தக் <b>குழி ஒன்றைத்</b> தட்டுங்கள். ' +
           'அதன் அனைத்து விதைகளும் தூக்கப்படும்.</li>' +
           '<li>அவை <b>ஒவ்வொன்றாக</b>, வளையத்தைச் சுற்றி அடுத்தடுத்த குழிகளில் விழும் — ' +
-          'A, B, C, D வழியாக, மீண்டும் A-வுக்குள்.</li>' +
+          'A, D, C, B வழியாக, மீண்டும் A-வுக்குள்.</li>' +
           '<li>கடைசி விதை விழும்போது, அடுத்த குழியைப் பாருங்கள். விதைகள் ' +
           'இருந்தால், தூக்கித் தொடருங்கள்.</li>' +
           '<li><b>காலியா?</b> அதற்கு அடுத்த குழியில் உள்ள விதைகள் உங்களுடையவை — ' +
@@ -9966,12 +9992,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           '<p>Four sides of seven cups each, one continuous ring around the ' +
           'square. 2, 3 or 4 players — chosen with the tick boxes below. Each ' +
           'player <b>taps their own store</b> to lay out their own row.</p>' +
-          '<p>One ring runs the whole way round the frame — A along the top, ' +
-          'B down the right, C along the bottom, D up the left, back into A.</p>' +
+          '<p>One ring runs the whole way round the frame, <b>anti-clockwise</b> — ' +
+          'from A it goes down the left into D, along the bottom into C, up the ' +
+          'right into B, and back into A. Same direction as the 2-player board.</p>' +
           '<ol>' +
           '<li>On your turn, tap <b>one of your own cups</b>. All its seeds are lifted.</li>' +
-          '<li>They are dropped <b>one at a time</b> around the ring — through A, B, ' +
-          'C, D, back into A.</li>' +
+          '<li>They are dropped <b>one at a time</b> around the ring — through A, D, ' +
+          'C, B, back into A.</li>' +
           '<li>When the last seed falls, look at the next cup. Seeds in it? Lift ' +
           'those too and keep going.</li>' +
           '<li><b>Empty?</b> The seeds in the cup after that are yours — whoever’s ' +
@@ -13076,7 +13103,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-223 (open the app with no internet and get your signal back mid-game, and it now picks up the newest version by itself -- before, it stayed on the cached build for the whole session)';
+  var BUILD_VER = 'beta-224 (Pallanguzhi 4-player now sows ANTI-CLOCKWISE, the way the game is really played and the way the 2-player board always has -- the two boards were running opposite ways round)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
