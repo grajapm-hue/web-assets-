@@ -133,6 +133,43 @@ function signedArea(pts){          // POSITIVE = clockwise on screen (y down)
   ok('a real sow still conserves every seed after the flip', tot(after) === 140, tot(before) + ' -> ' + tot(after));
   ok('and the sow actually moved seeds', JSON.stringify(before.cups) !== JSON.stringify(after.cups));
 
+  /* THE TURN MUST TRAVEL THE SAME WAY THE SEEDS DO.
+
+     Raja: "the auto next player SaNa pointer should be in ADCB direction."
+     If the seeds run anti-clockwise but the turn still passes A->B->C->D,
+     SaNa's arrow hands play to the side OPPOSITE the one the sowing just
+     ran towards. This plays real moves and records who is actually up
+     next, rather than reading the turn function -- the pointer a player
+     sees is driven by the same `active` value being checked here. */
+  const turns = [];
+  for (let m = 0; m < 10; m++){
+    const s = await ev(`JSON.stringify(window.__pal4State())`).then(JSON.parse);
+    if (!s.playing) break;
+    if (turns[turns.length - 1] !== s.active) turns.push(s.active);
+    if (turns.length >= 5) break;
+    const ai = ['A','B','C','D'].indexOf(s.active);
+    let idx = -1;
+    for (let k = ai * 7; k < ai * 7 + 7; k++){ if (s.cups[k] > 0 && !s.pillai[k]){ idx = k; break; } }
+    if (idx < 0) break;
+    await ev(`document.querySelector('#pal4Frame .pal4Cup[data-pal4="${idx}"]').click()`);
+    for (let i = 0; i < 120; i++){ if (!(await ev(`window.__pal4State().busy`))) break; await sleep(100); }
+  }
+  // expected walk from wherever it started, going A -> D -> C -> B -> A
+  const ORDER = ['A', 'D', 'C', 'B'];
+  let expected = [];
+  if (turns.length){
+    let at = ORDER.indexOf(turns[0]);
+    for (let i = 0; i < turns.length; i++) expected.push(ORDER[(at + i) % 4]);
+  }
+  ok('the turn passes A -> D -> C -> B (anti-clockwise), matching the seeds',
+    turns.length >= 3 && turns.join('') === expected.join(''),
+    'observed ' + turns.join('>') + (expected.length ? '   expected ' + expected.join('>') : ''));
+
+  const lookCls = await ev(`(document.getElementById('pal4Look')||{}).className || ''`);
+  const liveActive = await ev(`window.__pal4State().active`);
+  ok("SaNa's pointer points at whoever is actually up next",
+    lookCls.indexOf('look' + liveActive) > -1, lookCls + ' vs active=' + liveActive);
+
   ok('no JS errors', errs.length === 0, errs.join(' | '));
   console.log(fail ? `\n${fail} FAILED` : '\nALL GREEN');
 

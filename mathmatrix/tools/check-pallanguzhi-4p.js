@@ -108,7 +108,13 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
     return JSON.stringify({ cls: look.className, txt: document.getElementById('pal4Choose').textContent }); })()`).then(JSON.parse);
   ok('starts pointed at Player A', /lookA/.test(before.cls) && /Player A starts/.test(before.txt), JSON.stringify(before));
 
-  for (const want of ['B', 'C', 'D', 'A']){
+  /* A -> D -> C -> B, not A -> B -> C -> D. Raja, once the seeds themselves
+     were turned anti-clockwise to match the 2-player board: "the auto next
+     player SaNa pointer should be in ADCB direction." Play now travels the
+     same way round as the sowing does -- four people sitting round a phone
+     pass play the way the board runs, not against it -- so this expects the
+     new order deliberately. */
+  for (const want of ['D', 'C', 'B', 'A']){
     await ev(`document.getElementById('pal4Choose').click()`); await sleep(150);
     const st = await ev(`(function(){
       var look = document.getElementById('pal4Look');
@@ -126,9 +132,9 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   await ev(`var el = document.querySelector('#pal4CardA .pal4CardName'); el.value = 'Raja';
             el.dispatchEvent(new Event('input'));`);
   await sleep(150);
-  await ev(`document.getElementById('pal4Choose').click()`); await sleep(150);   // -> B
-  await ev(`document.getElementById('pal4Choose').click()`); await sleep(150);   // -> C
   await ev(`document.getElementById('pal4Choose').click()`); await sleep(150);   // -> D
+  await ev(`document.getElementById('pal4Choose').click()`); await sleep(150);   // -> C
+  await ev(`document.getElementById('pal4Choose').click()`); await sleep(150);   // -> B
   await ev(`document.getElementById('pal4Choose').click()`); await sleep(150);   // -> A (Raja)
   const renamed = await ev(`document.getElementById('pal4Choose').textContent`);
   ok('a typed name reaches the Choose Player label', /Raja starts/.test(renamed), renamed);
@@ -639,9 +645,19 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
     pasuStuckFound ? ('active was ' + pasuBefore.active) : 'never happened in the move budget');
   if (pasuStuckFound){
     const activeIdx = ['A', 'B', 'C', 'D'].indexOf(pasuBefore.active);
-    const rowNowEmpty = pasuAfter.cups.slice(activeIdx * 7, activeIdx * 7 + 7).every(c => c === 0);
-    ok(pasuBefore.active + '’s row is genuinely empty after claiming its last cups as pasu bonuses', rowNowEmpty,
-      JSON.stringify(pasuAfter.cups.slice(activeIdx * 7, activeIdx * 7 + 7)));
+    const rowSlice = pasuAfter.cups.slice(activeIdx * 7, activeIdx * 7 + 7);
+    const pillaiSlice = pasuAfter.pillai.slice(activeIdx * 7, activeIdx * 7 + 7);
+    /* "No LIFTABLE seeds left", not "every cup reads zero". Since beta-213 a
+       savings pocket is NOT swept at round end -- it stays in its own cup
+       until its owner taps it -- so a legitimately-uncollected pillai can
+       still show a nonzero here and that is correct, not a leftover. The
+       2-player suite's twin assertion was corrected the same way for the
+       same reason; this one only started failing once the turn order changed
+       and the playthrough happened to arrive with a pocket standing. */
+    const noneLiftable = rowSlice.every((c, k) => c === 0 || pillaiSlice[k]);
+    ok(pasuBefore.active + '’s row has no liftable seeds left after claiming its last cups as pasu bonuses',
+      noneLiftable,
+      JSON.stringify(rowSlice) + ' pillai: ' + JSON.stringify(pillaiSlice));
     ok('the game does not stay stuck on ' + pasuBefore.active + ' -- the round ended or turn moved on',
       pasuAfter.playing === false || pasuAfter.active !== pasuBefore.active,
       'active: ' + pasuAfter.active + ' playing: ' + pasuAfter.playing);

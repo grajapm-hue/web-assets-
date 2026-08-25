@@ -9473,11 +9473,21 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
       function enabledSides(){ return SIDES.filter(function(s){ return enabled[s]; }); }
 
-      // next enabled side after `from`, walking the same ring order Choose
-      // Player already cycles in — the one place that decides "who's next"
+      /* Next enabled side after `from` — the one place that decides "who's
+         next", shared by the automatic turn change, the round opener, and
+         the Choose Player button.
+
+         ANTI-CLOCKWISE: A -> D -> C -> B -> A. Raja, once the seeds
+         themselves were turned anti-clockwise: "the auto next player SaNa
+         pointer should be in ADCB direction." The turn has to travel the
+         same way the seeds do, or SaNa's arrow hands play to the side
+         OPPOSITE the one the sowing just ran towards -- four people sitting
+         round a phone pass play the way the board runs, not against it.
+         Walking the side index backwards is the same reversal nextLiveCup
+         does for the cups, for the same reason. */
       function nextEnabledIndex(from){
         for (var k = 1; k <= 4; k++){
-          var idx = (from + k) % 4;
+          var idx = ((from - k) % 4 + 4) % 4;   // +4 before % : JS keeps the sign on a negative modulo
           if (enabled[SIDES[idx]]) return idx;
         }
         return from;
@@ -13103,7 +13113,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-224 (Pallanguzhi 4-player now sows ANTI-CLOCKWISE, the way the game is really played and the way the 2-player board always has -- the two boards were running opposite ways round)';
+  var BUILD_VER = 'beta-225 (Pallanguzhi 4-player: the turn and SaNas pointer now pass A to D to C to B, anti-clockwise -- play travels the same way round as the seeds instead of against them)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
