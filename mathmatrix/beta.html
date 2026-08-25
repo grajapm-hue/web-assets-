@@ -5064,6 +5064,49 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   }
   var timerInt = null, startTime = null;
 
+  /* ══ SAVED GAMES — one shelf, every puzzle that has a board ═══════════
+     Raja: "can opt in app restore memory to all games like pallanguzhi,
+     hence sudoku / 10x10 matrix take more time -- if go and come, existing
+     trial should stay."
+
+     He is describing the same thing the Pallanguzhi boards already do, and
+     the reason is sharpest on the slow puzzles: a half-finished 10x10 or a
+     9x9 Sudoku is real work, and losing it to a stray tap on another tile
+     is the kind of thing that stops a child coming back to it.
+
+     Three helpers rather than three separate implementations. Each puzzle
+     family keeps its own key AND its own level in that key
+     (mm.save.magic.10x10, mm.save.sudoku.hard, ...) so a 3x3 board can
+     never be poured into a 10x10 grid, and switching level keeps both
+     games waiting rather than one clobbering the other.
+
+     Deliberately NOT saved: the clock. What matters is the work -- the
+     numbers in the boxes -- and a timer that resumes mid-count raises
+     questions ("was it running while the app was shut?") that the board
+     itself never does. Timers restart; boards are kept.
+
+     On window because the three families live in separate closures, the
+     same way __palSave/__pal4Save already reach across. */
+  window.__mmSave = function(key, obj){
+    try { obj.v = 1; localStorage.setItem(key, JSON.stringify(obj)); } catch (e) {}
+  };
+  /* `ok` is the shape guard -- a stale save written by an older build, or
+     one for a different board size, must fall back to a fresh puzzle rather
+     than half-loading and leaving a broken grid. Same schema-guard reasoning
+     as the Pallanguzhi saves. */
+  window.__mmLoad = function(key, ok){
+    try {
+      var raw = localStorage.getItem(key);
+      if (!raw) return null;
+      var o = JSON.parse(raw);
+      if (!o || o.v !== 1) return null;
+      return (typeof ok === 'function' && !ok(o)) ? null : o;
+    } catch (e) { return null; }
+  };
+  window.__mmClear = function(key){
+    try { localStorage.removeItem(key); } catch (e) {}
+  };
+
   // Top-level like showBinaryMode (defined below, called here — function
   // hoisting makes the order fine), not nested in the Gate Logic IIFE: this
   // handler needs to call it directly when leaving gate mode for a real
@@ -5163,6 +5206,12 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         initBoard();
         applyTheme(); // Apply colors and diagonal guide
       }
+      /* Raja: "if go and come, existing trial should stay." Bring back an
+         unfinished square for THIS size, if there is one. Safe to run even
+         when initBoard() did not (tapping the tile you are already on): the
+         save is written on every entry, so it matches what is on the board
+         and re-applying it changes nothing. */
+      restoreMagic();
     });
   });
 
@@ -5997,12 +6046,54 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       msg.textContent = '';
       msg.className = '';
     }
+    saveMagic();       // every change to the board is worth keeping — see saveMagic()
   }
-  
+
+  /* KEEPING AN UNFINISHED SQUARE (Raja: "if go and come, existing trial
+     should stay"). Saved per SIZE, so a 4x4 in progress and a 10x10 in
+     progress both survive and neither can be poured into the other's grid.
+     update() already runs on every entry, so this rides along with it
+     rather than needing its own hook on each of the several places that
+     can change a cell (typing, the keypad, +/-, backspace, paste). */
+  function magicKey(size){ return 'mm.save.magic.' + (size || currentSize); }
+  function saveMagic(){
+    if (!cells.length || solvedFlag) return;   // nothing to keep, or already won
+    var vals = [], any = false;
+    for (var r = 0; r < cells.length; r++){
+      var row = [];
+      for (var c = 0; c < cells[r].length; c++){
+        var v = cells[r][c].value || '';
+        if (v !== '') any = true;
+        row.push(v);
+      }
+      vals.push(row);
+    }
+    // An untouched board is not a game in progress; saving it would only
+    // mean "restoring" emptiness over a board the player is about to use.
+    if (!any){ window.__mmClear(magicKey()); return; }
+    window.__mmSave(magicKey(), { size: currentSize, vals: vals });
+  }
+  function restoreMagic(){
+    var sv = window.__mmLoad(magicKey(), function(o){
+      return o.size === currentSize && Array.isArray(o.vals) &&
+             o.vals.length === cells.length &&
+             o.vals.every(function(row, i){ return Array.isArray(row) && cells[i] && row.length === cells[i].length; });
+    });
+    if (!sv) return false;
+    for (var r = 0; r < cells.length; r++)
+      for (var c = 0; c < cells[r].length; c++)
+        cells[r][c].value = sv.vals[r][c];
+    update();          // re-runs every line check, so badges/target/dups all catch up
+    return true;
+  }
+  window.__magicRestore = restoreMagic;
+  window.__magicClear = function(){ window.__mmClear(magicKey()); };
+
 
   
   function win(actualTarget){
     solvedFlag = true;
+    window.__mmClear(magicKey());   // solved — there is no unfinished game left to come back to
     sfx('win');          // 🎉 celebratory fanfare
     celebrate();         // emoji burst + flash (works even when muted)
     stopTimer();
@@ -7234,13 +7325,43 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     var SLIDE_COLS = 3, SLIDE_ROWS = 4, SLIDE_N = 12, SLIDE_TILES = 9;
     var slideCells = [], slideMoves = 0, slideSolved = false;
 
+    var slideLvKey = 'fifteen';
     function slideUseLevel(key){
+      slideLvKey = SLIDE_LEVELS[key] ? key : 'fifteen';
       slideLv = SLIDE_LEVELS[key] || SLIDE_LEVELS.fifteen;
       SLIDE_COLS = slideLv.cols;
       SLIDE_ROWS = slideLv.rows;               // rows is the whole grid now — no parking row
       SLIDE_N = SLIDE_COLS * SLIDE_ROWS;
       SLIDE_TILES = slideLv.tiles.length;
     }
+
+    /* KEEPING A HALF-SLID BOARD (Raja: "if go and come, existing trial
+       should stay"). Per level, like the other two, so 1-15 and A-Z+1-9 can
+       both be part-solved at once. The move count travels with the board --
+       coming back to "solved in 3 moves" on a board you had worked for
+       forty would be worse than not restoring at all. */
+    function slideKey(k){ return 'mm.save.slide.' + (k || slideLvKey); }
+    function slideSave(){
+      if (slideSolved || !slideCells.length) return;
+      // A board still exactly as dealt is not progress; restoring it would
+      // only pin the player to one shuffle they never touched.
+      if (slideMoves === 0){ window.__mmClear(slideKey()); return; }
+      window.__mmSave(slideKey(), { lv: slideLvKey, cells: slideCells, moves: slideMoves });
+    }
+    function slideRestore(){
+      var sv = window.__mmLoad(slideKey(), function(o){
+        return o.lv === slideLvKey && Array.isArray(o.cells) &&
+               o.cells.length === SLIDE_N && typeof o.moves === 'number';
+      });
+      if (!sv) return false;
+      slideCells = sv.cells.slice();
+      slideMoves = sv.moves;
+      slideSolved = false;
+      slideSel = null;
+      renderSlide();
+      return true;
+    }
+    window.__slideClear = function(){ window.__mmClear(slideKey()); };
     function slideNeighbours(i){
       var r = Math.floor(i / SLIDE_COLS), c = i % SLIDE_COLS, out = [];
       if (r > 0) out.push(i - SLIDE_COLS);
@@ -7266,6 +7387,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       slideSel = null;
     }
     function slideShuffle(){
+      window.__mmClear(slideKey());   // a fresh shuffle replaces whatever was saved for this level
       slideReset();
       // Legal moves from the solved board — scaled to the size, since 160
       // barely disturbs 36 tiles though it thoroughly scrambles 9. Every one
@@ -7440,8 +7562,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       slideSel = null; slideMoves++;
       sfx('yes');
       renderSlide();
+      slideSave();   // the board changed, so keep it
       if (slideFinished()){
         slideSolved = true;
+        window.__mmClear(slideKey());   // solved — nothing unfinished left to resume
         var head = document.getElementById('slideHead');
         if (head) head.innerHTML = '🎉 <b>All in order!</b> ' + slideLv.name + ' — solved in ' + slideMoves + ' moves.';
         try { celebrate(); } catch(e){}
@@ -7738,7 +7862,11 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           '<p>' + slideLv.goal + '</p><p>Rows start <b>red</b> and turn <b>green</b> when every block in them is right, so the red rows are the ones still to fix — and a row goes back to red if you disturb it. Finish the top row, then the next: that is how these puzzles are solved.</p>' +
           '<p>Every deal is built by shuffling a finished board with real moves, so <b>every game can always be solved</b>. ' +
           'A puzzle scattered at random would not be: half of those cannot be finished at all.</p>';
-        slideShuffle();
+        /* Raja: "if go and come, existing trial should stay." Bring back a
+           half-slid board for this level rather than shuffling a new one
+           over the top of it; only a genuinely fresh level, or Shuffle
+           again, deals a new board. */
+        if (!slideRestore()) slideShuffle();
         // Raja: "need sana hints along show play". The first thing a child
         // needs is not the goal — it is which blocks can even be touched.
         try {
@@ -7896,11 +8024,66 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       return { puzzle: puz, solution: sol };
     }
 
+    /* Which level is open, as its KEY. sudLv holds the level OBJECT, and a
+       saved game has to name the level in a form that survives a reload --
+       and that a restore can check against, so a Master save can never be
+       poured into the 3x3 grid. */
+    var sudLvKey = 'mini';
     function sudUseLevel(key){
+      sudLvKey = SUD_LEVELS[key] ? key : 'mini';
       sudLv = SUD_LEVELS[key] || SUD_LEVELS.mini;
+      /* Raja: "if go and come, existing trial should stay." Reopening a
+         level with a game still going resumes it instead of dealing a fresh
+         puzzle over the top of it -- a 9x9 is far too much work to lose to
+         a stray tap. Only a genuinely new level, or New puzzle, deals. */
+      if (sudRestore()) return;
       sudNewPuzzle();
     }
+    /* KEEPING AN UNFINISHED SUDOKU. Saved per LEVEL, so a 9x9 Master and a
+       3x3 Easy can both be part-done at once without either overwriting the
+       other.
+
+       The SOLUTION is saved along with the grid, and it has to be: every
+       puzzle here is generated fresh, and the app marks a wrong entry red by
+       comparing against that specific answer. Restore the grid without it
+       and the board would look right but could never be judged. */
+    function sudKey(k){ return 'mm.save.sudoku.' + (k || sudLvKey); }
+    function sudSave(){
+      if (sudDone || !sudCells.length) return;      // finished, or nothing dealt yet
+      var touched = sudCells.some(function(v, i){ return v !== sudGiven[i]; });
+      // An untouched puzzle is not progress worth restoring -- and saving it
+      // would pin the player to one deal they never started.
+      if (!touched){ window.__mmClear(sudKey()); return; }
+      window.__mmSave(sudKey(), {
+        lv: sudLvKey, given: sudGiven, cells: sudCells, solution: sudSolution
+      });
+    }
+    function sudRestore(){
+      var n = sudLv.n, want = n * n;
+      var sv = window.__mmLoad(sudKey(), function(o){
+        return o.lv === sudLvKey &&
+               Array.isArray(o.given) && Array.isArray(o.cells) && Array.isArray(o.solution) &&
+               o.given.length === want && o.cells.length === want && o.solution.length === want;
+      });
+      if (!sv) return false;
+      sudGiven = sv.given.slice();
+      sudCells = sv.cells.slice();
+      sudSolution = sv.solution.slice();
+      sudPick = -1; sudDone = false;
+      sudFresh = true; sudCellCap = 0;
+      var head = document.getElementById('sudHead');
+      if (head) head.innerHTML = sudLv.goal;
+      sudRender();
+      sudTimerStart();
+      try {
+        sana('Picking up where you left off — tap a square, then a number.', 'think', true);
+      } catch(e){}
+      return true;
+    }
+    window.__sudClear = function(){ window.__mmClear(sudKey()); };
+
     function sudNewPuzzle(){
+      window.__mmClear(sudKey());   // a new deal replaces whatever was saved for this level
       var made = sudMake(sudLv);
       if (!made) return;
       sudGiven = made.puzzle.slice();
@@ -8167,8 +8350,11 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       var fEl = document.getElementById('sudFilled');
       if (fEl) fEl.textContent = mine + ' of ' + blanks + ' filled in';
 
+      sudSave();   // every render follows a change, so the save rides along
+
       if (!sudDone && sudSolved()){
         sudDone = true;
+        window.__mmClear(sudKey());   // solved — nothing unfinished left to resume
         /* Name the rules as a LIST and join it, rather than gluing commas on and
            hoping the last piece supplies the "and". On the 3x3, which has
            neither boxes nor diagonals, that glued version ended mid-list:
@@ -13113,7 +13299,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-225 (Pallanguzhi 4-player: the turn and SaNas pointer now pass A to D to C to B, anti-clockwise -- play travels the same way round as the seeds instead of against them)';
+  var BUILD_VER = 'beta-226 (every puzzle with a board now remembers an unfinished game -- magic squares, Sudoku and Slide join Pallanguzhi, so a half-done 10x10 or 9x9 survives going away and coming back)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that

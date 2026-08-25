@@ -89,6 +89,7 @@ function countAnswers(grid, L, cap){
   for (const key of Object.keys(LEVELS)){
     const L = LEVELS[key];
     await ev(`document.getElementById('tab-scHome').click()`); await sleep(250);
+    await ev(`Object.keys(localStorage).filter(function(k){return k.indexOf('mm.save.sudoku.')===0;}).forEach(function(k){localStorage.removeItem(k);})`);   // these tests want a FRESH deal -- see beta-226
     await ev(`document.querySelector('.toggleBtn[data-sud-level="${key}"]').click()`); await sleep(1400);
 
     const state = await ev(`(function(){
@@ -133,6 +134,7 @@ function countAnswers(grid, L, cap){
   /* Playing: a right number stays black, a wrong one turns red, and neither
      ever ends the game — Raja's rule, since the motivation is not to test. */
   await ev(`document.getElementById('tab-scHome').click()`); await sleep(250);
+  await ev(`Object.keys(localStorage).filter(function(k){return k.indexOf('mm.save.sudoku.')===0;}).forEach(function(k){localStorage.removeItem(k);})`);   // these tests want a FRESH deal -- see beta-226
   await ev(`document.querySelector('.toggleBtn[data-sud-level="mini"]').click()`); await sleep(900);
   const play = await ev(`(function(){
     var cells = Array.from(document.querySelectorAll('#sudBoard [data-sud]'));
@@ -186,6 +188,7 @@ function countAnswers(grid, L, cap){
   for (const key of ['mini', 'medium']){
     const L = LEVELS[key], n = L.n;
     await ev(`document.getElementById('tab-scHome').click()`); await sleep(250);
+    await ev(`Object.keys(localStorage).filter(function(k){return k.indexOf('mm.save.sudoku.')===0;}).forEach(function(k){localStorage.removeItem(k);})`);   // these tests want a FRESH deal -- see beta-226
     await ev(`document.querySelector('.toggleBtn[data-sud-level="${key}"]').click()`); await sleep(1300);
     const probe = await ev(`(function(){
       var cells = Array.from(document.querySelectorAll('#sudBoard [data-sud]'));
@@ -216,6 +219,7 @@ function countAnswers(grid, L, cap){
      the puzzle is done — a clock still running afterwards makes the number mean
      nothing. Solved here by writing the stored answer straight in. */
   await ev(`document.getElementById('tab-scHome').click()`); await sleep(250);
+  await ev(`Object.keys(localStorage).filter(function(k){return k.indexOf('mm.save.sudoku.')===0;}).forEach(function(k){localStorage.removeItem(k);})`);   // these tests want a FRESH deal -- see beta-226
   await ev(`document.querySelector('.toggleBtn[data-sud-level="mini"]').click()`); await sleep(900);
   const t1 = await ev(`document.getElementById('sudTime').textContent`);
   await sleep(2600);
@@ -263,6 +267,7 @@ function countAnswers(grid, L, cap){
      that entering a colliding number ANIMATES, and that the squares already
      holding that number animate with it, so the alert says WHERE the clash is. */
   await ev(`document.getElementById('tab-scHome').click()`); await sleep(250);
+  await ev(`Object.keys(localStorage).filter(function(k){return k.indexOf('mm.save.sudoku.')===0;}).forEach(function(k){localStorage.removeItem(k);})`);   // these tests want a FRESH deal -- see beta-226
   await ev(`document.querySelector('.toggleBtn[data-sud-level="medium"]').click()`); await sleep(1400);
   const flash = await ev(`(function(){
     var cells = Array.from(document.querySelectorAll('#sudBoard [data-sud]'));
@@ -320,6 +325,7 @@ function countAnswers(grid, L, cap){
      wrong. Filling all 36 blanks also drives every digit to nine copies, which
      is the only way the "spent" ticks are all reached. */
   await ev(`document.getElementById('tab-scHome').click()`); await sleep(250);
+  await ev(`Object.keys(localStorage).filter(function(k){return k.indexOf('mm.save.sudoku.')===0;}).forEach(function(k){localStorage.removeItem(k);})`);   // these tests want a FRESH deal -- see beta-226
   await ev(`document.querySelector('.toggleBtn[data-sud-level="medium"]').click()`); await sleep(1500);
   const big = await ev(`Array.from(document.querySelectorAll('#sudBoard [data-sud]')).map(function(c){
     return c.textContent.trim() ? parseInt(c.textContent, 10) : 0; })`);
@@ -373,6 +379,7 @@ function countAnswers(grid, L, cap){
      green, that the rest of the board does NOT, and that breaking it takes the
      green away again. A reward that never leaves would stop meaning anything. */
   await ev(`document.getElementById('tab-scHome').click()`); await sleep(250);
+  await ev(`Object.keys(localStorage).filter(function(k){return k.indexOf('mm.save.sudoku.')===0;}).forEach(function(k){localStorage.removeItem(k);})`);   // these tests want a FRESH deal -- see beta-226
   await ev(`document.querySelector('.toggleBtn[data-sud-level="medium"]').click()`); await sleep(1500);
   const boardB = await ev(`Array.from(document.querySelectorAll('#sudBoard [data-sud]')).map(function(c){
     return c.textContent.trim() ? parseInt(c.textContent, 10) : 0; })`);
@@ -437,6 +444,7 @@ function countAnswers(grid, L, cap){
      not the answer, and check it goes red anyway. Without this the old
      rule-only behaviour would pass every other check silently. */
   await ev(`document.getElementById('tab-scHome').click()`); await sleep(250);
+  await ev(`Object.keys(localStorage).filter(function(k){return k.indexOf('mm.save.sudoku.')===0;}).forEach(function(k){localStorage.removeItem(k);})`);   // these tests want a FRESH deal -- see beta-226
   await ev(`document.querySelector('.toggleBtn[data-sud-level="medium"]').click()`); await sleep(1500);
   const boardC = await ev(`Array.from(document.querySelectorAll('#sudBoard [data-sud]')).map(function(c){
     return c.textContent.trim() ? parseInt(c.textContent, 10) : 0; })`);
@@ -488,6 +496,7 @@ function countAnswers(grid, L, cap){
      the box rule in disguise: a 9-wide row spans three boxes, none of which is
      finished by it. Then the same for a column. */
   await ev(`document.getElementById('tab-scHome').click()`); await sleep(250);
+  await ev(`Object.keys(localStorage).filter(function(k){return k.indexOf('mm.save.sudoku.')===0;}).forEach(function(k){localStorage.removeItem(k);})`);   // these tests want a FRESH deal -- see beta-226
   await ev(`document.querySelector('.toggleBtn[data-sud-level="medium"]').click()`); await sleep(1500);
   const solveBoard = (grid, L) => {
     const n = L.n, g = grid.slice();
