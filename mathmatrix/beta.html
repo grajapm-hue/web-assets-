@@ -13076,7 +13076,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-222 (an unmissable Install App button now sits right on the opening splash screen, next to Tap to play -- the app own clean, badge-free install, not the small native browser banner that is easy to miss)';
+  var BUILD_VER = 'beta-223 (open the app with no internet and get your signal back mid-game, and it now picks up the newest version by itself -- before, it stayed on the cached build for the whole session)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
@@ -13107,30 +13107,56 @@ if (navigator.storage && navigator.storage.persist) {
      string is what actually defeats the cache, since a plain reload is free
      to hand back the very copy we are trying to replace. */
   (function autoFresh(){
-    if (!navigator.onLine || !window.fetch) return;
+    if (!window.fetch) return;
     var ONCE = 'mm.freshChecked';
-    try {
-      if (sessionStorage.getItem(ONCE)) return;
-      sessionStorage.setItem(ONCE, '1');
-    } catch (e) { return; }        // no sessionStorage means no loop guard, so do not risk it
-    fetch(location.pathname + '?fresh=' + Date.now(), { cache: 'no-store' })
-      .then(function(r){ return r.ok ? r.text() : null; })
-      .then(function(txt){
-        if (!txt) return;
-        /* Read BUILD_VER, not BETA_VER. This regex wants a QUOTED STRING, and
-           BETA_VER stopped being one in beta-150 — it is derived from BUILD_VER
-           now, which is exactly what stopped the two drifting apart. The match
-           then found nothing, returned early every time, and the silent
-           self-update quietly stopped working: the app would sit on an old
-           version until someone tapped Update. BUILD_VER is the literal, so
-           read that and take its first word, the same way BETA_VER does. */
-        var m = txt.match(/BUILD_VER\s*=\s*'([^']+)'/);
-        if (!m || !m[1]) return;
-        var fresh = m[1].split(' ')[0];
-        if (fresh === window.BETA_VER) return;
-        location.replace(location.pathname + '?v=' + encodeURIComponent(fresh));
-      })
-      .catch(function(){});        // offline mid-flight, or blocked: keep playing
+    /* Raja: "ensure it auto refreshing in offline to online change over."
+       This used to bail on `!navigator.onLine` at the very top and run
+       exactly once, at load. That is precisely the case this app invites --
+       it advertises "plays with no internet", so opening it from the cache
+       with no signal is normal, not an edge case. Measured before changing
+       anything: launch offline, then bring the connection back while still
+       in the app, and the silent update NEVER re-checked -- the player sat
+       on the cached version for the rest of the session, however long they
+       played. (The Update BUTTON already flipped back correctly, because
+       reflectNet below has listened for 'online' all along; only this
+       silent check was missing one.)
+       So the online test moves inside, and a real 'online' listener retries
+       it. The sessionStorage guard still allows only ONE reload per session,
+       so this cannot loop. */
+    function check(){
+      if (!navigator.onLine) return;
+      try {
+        if (sessionStorage.getItem(ONCE)) return;
+        sessionStorage.setItem(ONCE, '1');
+      } catch (e) { return; }      // no sessionStorage means no loop guard, so do not risk it
+      fetch(location.pathname + '?fresh=' + Date.now(), { cache: 'no-store' })
+        .then(function(r){ return r.ok ? r.text() : null; })
+        .then(function(txt){
+          if (!txt) return;
+          /* Read BUILD_VER, not BETA_VER. This regex wants a QUOTED STRING, and
+             BETA_VER stopped being one in beta-150 — it is derived from BUILD_VER
+             now, which is exactly what stopped the two drifting apart. The match
+             then found nothing, returned early every time, and the silent
+             self-update quietly stopped working: the app would sit on an old
+             version until someone tapped Update. BUILD_VER is the literal, so
+             read that and take its first word, the same way BETA_VER does. */
+          var m = txt.match(/BUILD_VER\s*=\s*'([^']+)'/);
+          if (!m || !m[1]) return;
+          var fresh = m[1].split(' ')[0];
+          if (fresh === window.BETA_VER) return;
+          location.replace(location.pathname + '?v=' + encodeURIComponent(fresh));
+        })
+        .catch(function(){
+          /* The connection dropped again mid-check, or the fetch was blocked.
+             Release the guard so the NEXT time the connection comes back this
+             can genuinely try again -- otherwise one flaky reconnect would
+             spend the session's only attempt and strand the player on the old
+             version exactly as before. */
+          try { sessionStorage.removeItem(ONCE); } catch (e) {}
+        });
+    }
+    check();
+    window.addEventListener('online', check);
   })();
 
   var upBtn = document.getElementById('updateBtn');

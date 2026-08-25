@@ -11,7 +11,7 @@
 // "instant updates on 1 refresh, cache-first for assets, offline fallback"),
 // reused here rather than reinvented.
 
-const CACHE_VERSION = 'mathmatrix-beta-v222';
+const CACHE_VERSION = 'mathmatrix-beta-v223';
 
 const ASSETS = [
   './beta.html',
