@@ -10741,6 +10741,40 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       window.__thayamForceCut = function(side){ thHasCut[side] = true; };
     })();
 
+    (function(){
+      var SIDES_T = ['A', 'B', 'C', 'D'];
+      var thActive = 0, thEnabled = { A: true, B: true, C: true, D: true };
+
+      function nextEnabledIndexThayam(from){
+        for (var k = 1; k <= 4; k++){
+          var idx = ((from - k) % 4 + 4) % 4;
+          if (thEnabled[SIDES_T[idx]]) return idx;
+        }
+        return from;
+      }
+
+      function thayamTurnInit(startingSide){
+        thActive = SIDES_T.indexOf(startingSide);
+      }
+      window.__thayamTurnInit = thayamTurnInit;
+      window.__thayamTurnState = function(){ return { active: SIDES_T[thActive], enabled: Object.assign({}, thEnabled) }; };
+      window.__thayamEndTurn = function(){ thActive = nextEnabledIndexThayam(thActive); };
+      window.__thayamSetEnabled = function(map){ thEnabled = map; };   // Task 6's Choose Player writes here
+
+      window.__thayamGameOver = function(){
+        var bySide = {};
+        window.__thayamPieces().forEach(function(p){
+          if (!bySide[p.side]) bySide[p.side] = { total: 0, finished: 0 };
+          bySide[p.side].total++;
+          if (p.lap === 'finished') bySide[p.side].finished++;
+        });
+        var winner = Object.keys(bySide).find(function(s){ return bySide[s].total > 0 && bySide[s].finished === bySide[s].total; });
+        return winner || null;
+      };
+
+      window.__thayamActiveSide = function(){ return SIDES_T[thActive]; };
+    })();
+
     document.querySelectorAll('.toggleBtn[data-thayam-level]').forEach(function(btn){
       btn.addEventListener('click', function(){
         var cm = document.getElementById('congratsModal');
