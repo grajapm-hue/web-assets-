@@ -72,6 +72,131 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   const st = await ev(`JSON.stringify(window.__thayamState())`).then(JSON.parse);
   ok('board state exposes 25 cells', st.cells.length === 25, String(st.cells.length));
 
+  /* ── Guards for the two ways this board has already broken ──────────────
+     Both were reported from a real phone, by eye, AFTER shipping green tests
+     -- because every assertion above checks STRUCTURE (which cells exist and
+     what they are called) and none checked that the board actually RENDERS
+     as itself. These do.
+
+     1. beta-229: the cells carried a bare `.cell` class, and an unrelated
+        wood-theme rule -- `.cell{ background:#FFFAF0 !important }`, written
+        for Sudoku's own grid -- blanket-overrode every one of them. The X
+        marks, the Mount tint, the gold centre ring and the coloured gate
+        rings all silently vanished while the DOM stayed perfectly correct.
+     2. beta-230: the panel's header used `.top`/`.title`, generic names with
+        no matching CSS anywhere in this file, so the title kept the dark
+        mockup's white and rendered near-invisible on sandalwood.
+
+     A collision cannot be caught by asking "is the class present?" -- the
+     class WAS present both times. It has to be caught by asking what the
+     pixels ended up being. */
+  /* Addressed through data-thayam-cell and the board's own reported state --
+     never through the cell CLASS names. The collision this guards against
+     leaves every class perfectly in place and changes only what gets painted,
+     so a class-based probe can be satisfied by the very markup that is broken;
+     worse, it breaks outright if the classes are ever renamed again, turning
+     a precise paint failure into a crash. The cell index is the stable key. */
+  const paint = await ev(`(function(){
+    var st = window.__thayamState();
+    var safeIdx = Object.keys(st.safe).map(Number);
+    var at = function(i){ return document.querySelector('#thayamGrid [data-thayam-cell="' + i + '"]'); };
+    var plainIdx = st.cells.filter(function(i){ return safeIdx.indexOf(i) === -1 && i !== st.center; })[0];
+    var plain = at(plainIdx), safe = at(safeIdx[0]), mid = at(st.center);
+    var cs = function(el, pseudo){ return getComputedStyle(el, pseudo || null); };
+    var mark = cs(safe, '::before');
+    return JSON.stringify({
+      plainBg: cs(plain).backgroundColor,
+      safeBg:  cs(safe).backgroundColor,
+      midImg:  cs(mid).backgroundImage,
+      markW:   parseFloat(mark.width) || 0,
+      markH:   parseFloat(mark.height) || 0,
+      gateRing: cs(safe).boxShadow
+    });
+  })()`).then(JSON.parse);
+
+  // The wood theme's own Sudoku-grid fill. If a Thayam cell ever computes to
+  // this, a generic-class collision is back.
+  const WOOD_CELL_FILL = 'rgb(255, 250, 240)';
+  ok('Mount cells are not being repainted by another puzzle\'s .cell rule',
+    paint.safeBg !== WOOD_CELL_FILL && paint.plainBg !== WOOD_CELL_FILL,
+    'plain=' + paint.plainBg + ' safe=' + paint.safeBg);
+  ok('a Mount square is visibly tinted apart from an ordinary square',
+    paint.safeBg !== paint.plainBg, paint.safeBg + ' vs ' + paint.plainBg);
+  ok('the Mount X mark actually renders (::before has real size)',
+    paint.markW > 4 && paint.markH > 0, paint.markW + 'x' + paint.markH);
+  ok('the centre keeps its gradient goal ring', /gradient/.test(paint.midImg), paint.midImg.slice(0, 40));
+  ok('a gate cell still carries its owning colour ring', /rgb/.test(paint.gateRing));
+
+  /* Readability of the panel chrome against whatever ground the theme uses.
+     4.5:1 is the WCAG AA floor for normal text; the title measured 1.9:1 when
+     it shipped white onto sandalwood. */
+  const contrast = await ev(`(function(){
+    function lum(c){
+      var p = c.match(/\\d+(\\.\\d+)?/g).slice(0,3).map(function(v){
+        v = v / 255; return v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4);
+      });
+      return 0.2126*p[0] + 0.7152*p[1] + 0.0722*p[2];
+    }
+    function ratio(a, b){ var l1 = lum(a), l2 = lum(b);
+      return (Math.max(l1,l2) + 0.05) / (Math.min(l1,l2) + 0.05); }
+    var ground = getComputedStyle(document.body).backgroundColor;
+    var title = document.querySelector('.thTitle');
+    var say = document.getElementById('thaySay');
+    return JSON.stringify({
+      title: +ratio(getComputedStyle(title).color, ground).toFixed(2),
+      say: +ratio(getComputedStyle(say).color, ground).toFixed(2)
+    });
+  })()`).then(JSON.parse);
+  ok('the panel title is readable on this theme (>= 4.5:1)', contrast.title >= 4.5, contrast.title + ':1');
+  ok('the status line is readable on this theme (>= 4.5:1)', contrast.say >= 4.5, contrast.say + ':1');
+
+  /* Every seat must be reachable. Store B once sat 27px past the right edge
+     of a 390px phone, unscrollable, because the board was sized independently
+     of the row it lives in.
+
+     The viewport is pinned explicitly here rather than trusted from Chrome's
+     --window-size: that flag sizes the WINDOW, and this harness's own inner
+     viewport came out 526px wide -- comfortably wide enough to hide the very
+     overflow this check exists to catch. Measuring at the width the bug was
+     reported at is the whole point, so it is set, not assumed. */
+  for (const vw of [390, 360, 340]){
+    await send('Emulation.setDeviceMetricsOverride', { width: vw, height: 844, deviceScaleFactor: 1, mobile: true });
+    await sleep(160);
+    const f = await ev(`(function(){
+      var seats = Array.prototype.map.call(document.querySelectorAll('.thSeat'), function(s){
+        var b = s.getBoundingClientRect();
+        return { side: s.dataset.side, left: Math.round(b.left), right: Math.round(b.right) };
+      });
+      return JSON.stringify({
+        seats: seats,
+        vw: document.documentElement.clientWidth,
+        board: Math.round(document.getElementById('thayamGrid').getBoundingClientRect().width),
+        pageOverflow: document.body.scrollWidth - document.body.clientWidth
+      });
+    })()`).then(JSON.parse);
+    const off = f.seats.filter(s => s.left < 0 || s.right > f.vw);
+    ok('at ' + vw + 'px every Store seat is fully on screen',
+      off.length === 0, off.length ? JSON.stringify(off) : 'board=' + f.board + ' vw=' + f.vw);
+    ok('at ' + vw + 'px the page never scrolls sideways', f.pageOverflow === 0, String(f.pageOverflow));
+  }
+  await send('Emulation.clearDeviceMetricsOverride', {});
+
+  const fit = await ev(`(function(){
+    var seats = Array.prototype.map.call(document.querySelectorAll('.thSeat'), function(s){
+      var b = s.getBoundingClientRect();
+      return { side: s.dataset.side, left: Math.round(b.left), right: Math.round(b.right) };
+    });
+    return JSON.stringify({
+      seats: seats,
+      vw: document.documentElement.clientWidth,
+      pageOverflow: document.body.scrollWidth - document.body.clientWidth
+    });
+  })()`).then(JSON.parse);
+  const offscreen = fit.seats.filter(s => s.left < 0 || s.right > fit.vw);
+  ok('all four Store seats sit fully inside the viewport',
+    offscreen.length === 0, offscreen.length ? JSON.stringify(offscreen) + ' vw=' + fit.vw : 'vw=' + fit.vw);
+  ok('the page never scrolls sideways', fit.pageOverflow === 0, String(fit.pageOverflow));
+
   ok('no JS errors', errs.length === 0, errs.join(' | '));
   console.log(fail ? `\n${fail} FAILED` : '\nALL GREEN');
 
