@@ -37,7 +37,7 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
 
   await ev(`window.__thayamNewGame(['A','B','C','D'])`);
   const p0 = await ev(`JSON.stringify(window.__thayamPieces())`).then(JSON.parse);
-  ok('16 pieces exist (4 players x 3 seeds)', p0.length === 16, String(p0.length));
+  ok('12 pieces exist (4 players x 3 seeds)', p0.length === 12, String(p0.length));
   ok('every piece starts at home', p0.every(p => p.lap === 'home'));
 
   // A piece cannot leave home on a non-Thayam roll.
@@ -77,8 +77,9 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   // real cell B's own out piece is sitting on, deterministically, not by luck.
   await ev(`window.__thayamNewGame(['A','B'])`);
   await ev(`window.__thayamApplyRoll(0, 0, 1)`);   // A's piece 0 out, onto A's own gate
-  await ev(`window.__thayamApplyRoll(1, 0, 1)`);   // B's piece 0 out, onto B's own gate
-  const capResult = await ev(`JSON.stringify(window.__thayamApplyRoll(0, 0, 4))`).then(JSON.parse);
+  await ev(`window.__thayamApplyRoll(1, 0, 1)`);   // B's piece 0 out, onto B's own gate (still a Mount -- uncapturable there)
+  await ev(`window.__thayamApplyRoll(1, 0, 1)`);   // B steps 1 more cell forward, off its own gate Mount and onto an ordinary, capturable cell
+  const capResult = await ev(`JSON.stringify(window.__thayamApplyRoll(0, 0, 5))`).then(JSON.parse);   // A moves 5 = colourOffset(4) + B's extra step(1), landing on the SAME real cell B now occupies -- off any Mount, so the capture can actually happen
   ok("A's piece captures B's piece", capResult.captured.length === 1 && capResult.captured[0].side === 'B', JSON.stringify(capResult));
   const afterCapture = await ev(`JSON.stringify(window.__thayamPieces())`).then(JSON.parse);
   const bAfter = afterCapture.find(p => p.side === 'B' && p.idx === 0);
@@ -88,7 +89,7 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   // pivots to the inner ring once it goes past the outer ring's last
   // position -- the direct positive contrast to the "capped, not pivoted"
   // assertion above.
-  await ev(`window.__thayamApplyRoll(0, 0, 11)`);   // 4 (already moved) + 11 = 15, the outer ring's last position
+  await ev(`window.__thayamApplyRoll(0, 0, 10)`);   // 5 (already moved) + 10 = 15, the outer ring's last position
   const pBeforePivot = await ev(`JSON.stringify(window.__thayamPieces())`).then(JSON.parse);
   ok("A's piece reaches the outer ring's last position", pBeforePivot.find(p => p.side === 'A' && p.idx === 0).lap === 'outer');
   await ev(`window.__thayamApplyRoll(0, 0, 2)`);
