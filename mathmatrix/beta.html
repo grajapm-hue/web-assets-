@@ -10960,22 +10960,45 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
     (function(){
       var SIDES_T = ['A', 'B', 'C', 'D'];
-      var rings5 = window.__thayamRings(5);
-      function ringLen(lap){ return rings5[lap].length; }
-      var CENTER_T = 2 * 5 + 2;
-      var realCell = window.__thayamRealCell;
-      var SAFE_T = window.__thayamState().safe;
 
-      var thPieces = [];   // { side:'A', idx:0, lap:'home'|'outer'|'inner'|'finished', position:0, lastCell:null }
+      /* ONE ENGINE, TWO BOARDS. Everything that differs between 5x5 and 7x7
+         lives here and nowhere else: how big the board is, how many pieces
+         each player gets, and whether the traditional capture-before-you-turn-
+         inward rule is in force. The 5x5 values are the defaults, so nothing
+         that existed before this had to change to keep working.
+
+         `lap` is now a RING INDEX (0 = outer, 1 = middle, 2 = inner on 7x7)
+         rather than the old 'outer'/'inner' pair, which simply could not
+         express a third ring. That makes advancePiece SHORTER, not longer --
+         the ternary that mapped the two names away is gone. 'home' and
+         'finished' stay as they were, since they are states, not rings. */
+      var CFG = { n: 5, pieces: 3, cutMandate: false };
+      var board = window.__thayamState(CFG.n);
+      function ringLen(lap){ return board.rings[lap].length; }
+      function lastRing(){ return board.rings.length - 1; }
+      function realCell(lap, colourIdx, position){ return window.__thayamRealCell(lap, colourIdx, position, CFG.n); }
+
+      window.__thayamConfigure = function(c){
+        if (c && c.n !== undefined) CFG.n = c.n;
+        if (c && c.pieces !== undefined) CFG.pieces = c.pieces;
+        if (c && c.cutMandate !== undefined) CFG.cutMandate = !!c.cutMandate;
+        board = window.__thayamState(CFG.n);
+        return { n: CFG.n, pieces: CFG.pieces, cutMandate: CFG.cutMandate };
+      };
+      window.__thayamConfig = function(){ return { n: CFG.n, pieces: CFG.pieces, cutMandate: CFG.cutMandate }; };
+
+      var thPieces = [];   // { side:'A', idx:0, lap:'home'|<ringIndex>|'finished', position:0, lastCell:null }
       var thHasCut = {};   // side -> bool, per-game
-      var PIECES_PER_SIDE = 3;
+
+      function onRing(p){ return typeof p.lap === 'number'; }
+      window.__thayamOnRing = onRing;   // "is this piece actually out on the board?" -- asked in several other modules
 
       function thayamNewGame(enabledSides){
         thPieces = [];
         thHasCut = {};
         SIDES_T.forEach(function(s){ thHasCut[s] = false; });
         enabledSides.forEach(function(s){
-          for (var i = 0; i < PIECES_PER_SIDE; i++){
+          for (var i = 0; i < CFG.pieces; i++){
             thPieces.push({ side: s, idx: i, lap: 'home', position: 0, lastCell: null });
           }
         });
@@ -10999,32 +11022,37 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       function advancePiece(piece, steps){
         var side = piece.side, colourIdx = sideIdxOf(side);
         if (piece.lap === 'home'){
-          piece.lap = 'outer'; piece.position = 0;   // the Thayam that brought it out always lands it on its own gate
+          piece.lap = 0; piece.position = 0;   // the Thayam that brought it out always lands it on its own gate
           piece.lastCell = realCell(0, colourIdx, 0);
           return true;
         }
-        var lapIdx = piece.lap === 'outer' ? 0 : 1;
+        var lapIdx = piece.lap;
         var len = ringLen(lapIdx);
-        if (lapIdx === 0 && piece.position === len - 1 && thCutMandate && !thHasCut[side]) return false;   // already at the last standing box -- genuinely stuck, not a no-op success
+        var innermost = lapIdx === lastRing();
+        /* May this piece leave the ring it is on? One capture unlocks EVERY
+           inward turn, not one per ring -- the spec says a capture lets you
+           leave "the outer ring", singular, and making a three-ring board
+           demand a fresh capture at each boundary would compound the very
+           wait that measurement showed is this rule's worst part. */
+        var mayCross = !CFG.cutMandate || thHasCut[side];
+        if (!innermost && piece.position === len - 1 && !mayCross) return false;   // already at the last standing box -- genuinely stuck, not a no-op success
         var newPos = piece.position + steps;
-        if (lapIdx === 1 && newPos === len){   // exact landing on the final inner-ring step means the centre, not a wraparound
-          piece.lap = 'finished'; piece.position = 0; piece.lastCell = CENTER_T;
+        if (innermost && newPos === len){   // exact landing on the final step of the last ring means the centre, not a wraparound
+          piece.lap = 'finished'; piece.position = 0; piece.lastCell = board.center;
           return true;
         }
-        if (lapIdx === 1 && newPos > len) return false;   // overshoot -- centre needs an exact count, this roll can't be used here
-        if (newPos >= len){
-          if (lapIdx === 0 && thCutMandate && !thHasCut[side]){
-            // capped at the boundary -- stays on the outer ring, does not pivot
+        if (innermost && newPos > len) return false;   // overshoot -- centre needs an exact count, this roll can't be used here
+        if (newPos >= len && !innermost){
+          if (!mayCross){
+            // capped at the boundary -- stays on this ring, does not turn inward
             piece.position = len - 1;
-            piece.lastCell = realCell(0, colourIdx, piece.position);
+            piece.lastCell = realCell(lapIdx, colourIdx, piece.position);
             return true;
           }
-          if (lapIdx === 0){   // hasCut is true -- pivot to the inner ring, carrying the excess steps forward
-            piece.lap = 'inner';
-            piece.position = newPos - len;
-            piece.lastCell = realCell(1, colourIdx, piece.position);
-            return true;
-          }
+          piece.lap = lapIdx + 1;   // turn inward, carrying the excess steps onto the next ring
+          piece.position = newPos - len;
+          piece.lastCell = realCell(piece.lap, colourIdx, piece.position);
+          return true;
         }
         piece.position = newPos;
         piece.lastCell = realCell(lapIdx, colourIdx, piece.position);
@@ -11035,11 +11063,11 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
          real cell this piece just landed on, off a Mount. No occupancy map --
          just the pieces list, which is at most a handful long. */
       function captureAt(mover, cell){
-        if (SAFE_T[cell]) return [];   // Mount squares protect everyone standing there
+        if (board.safe[cell]) return [];   // Mount squares protect everyone standing there
         var caught = [];
         thPieces.forEach(function(p){
           if (p === mover || p.side === mover.side) return;
-          if ((p.lap === 'outer' || p.lap === 'inner') && p.lastCell === cell){
+          if (onRing(p) && p.lastCell === cell){
             p.lap = 'home'; p.position = 0; p.lastCell = null;
             caught.push({ side: p.side, idx: p.idx });
           }
@@ -11125,10 +11153,14 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
          This also settles the spec/plan contradiction that was left open: the
          spec's "never trapped, never unable to move" is now true of 5x5, and
          the plan's "forced to pause there's last standing box" stays true of
-         7x7. Each document is right about its own board. */
-      var thCutMandate = false;
-      window.__thayamSetCutMandate = function(on){ thCutMandate = !!on; };
-      window.__thayamCutMandate = function(){ return thCutMandate; };
+         7x7. Each document is right about its own board.
+
+         It lives in CFG with the board's other two differences (size, pieces)
+         rather than as a variable of its own -- one place to look, and no way
+         for the flag and the board to disagree. These two wrappers stay
+         because callers and tests already use them by name. */
+      window.__thayamSetCutMandate = function(on){ CFG.cutMandate = !!on; };
+      window.__thayamCutMandate = function(){ return CFG.cutMandate; };
     })();
 
     (function(){
@@ -11206,7 +11238,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       function renderThayamPieces(){
         document.querySelectorAll('#thayamGrid .thPiece').forEach(function(el){ el.remove(); });
         window.__thayamPieces().forEach(function(p){
-          if (p.lap !== 'outer' && p.lap !== 'inner') return;   // home and finished pieces live in the Store panel, not the grid
+          if (!window.__thayamOnRing(p)) return;   // home and finished pieces live in the Store panel, not the grid
           var cellEl = document.querySelector('#thayamGrid [data-thayam-cell="' + p.lastCell + '"]');
           if (!cellEl) return;
           var dot = document.createElement('div');
@@ -11220,7 +11252,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         SIDES_T.forEach(function(s){
           var side = pieces.filter(function(p){ return p.side === s; });
           var home = side.filter(function(p){ return p.lap === 'home'; }).length;
-          var running = side.filter(function(p){ return p.lap === 'outer' || p.lap === 'inner'; }).length;
+          var running = side.filter(function(p){ return window.__thayamOnRing(p); }).length;
           var won = side.filter(function(p){ return p.lap === 'finished'; }).length;
           var el = document.getElementById('thTally' + s);
           if (el) el.innerHTML = '<span class="thHome" data-thayam-home-side="' + s + '">🏠 ' + home + '</span><span>🏃 ' + running + '</span><span>🏆 ' + won + '</span>';
@@ -11269,7 +11301,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
            only case that gets the fast 2-3 roll guarantee; once they have a
            piece out, later entries wait their ordinary turn like everything
            else. Finished pieces don't count as being on the board. */
-        var opening = !pieces.some(function(p){ return p.lap === 'outer' || p.lap === 'inner'; });
+        var opening = !pieces.some(function(p){ return window.__thayamOnRing(p); });
         if (homePieces.length){
           if (roll.isThayam){
             window.__thayamPityRecord('enter', sideLetter, true);
@@ -11282,8 +11314,15 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           }
         }
 
-        var innerPieces = pieces.filter(function(p){ return p.lap === 'inner'; });
-        var neededForCentre = innerPieces.map(function(p){ return 8 - p.position; }).filter(function(n){ return n > 0 && n <= 6; });
+        /* Only the INNERMOST ring can reach the centre, and how far away that
+           is depends on the board -- 8 cells on 5x5, but 7x7's last ring is
+           its third. Both are read from the board itself rather than written
+           in, so this stays correct when the board changes under it. */
+        var cfgN = window.__thayamConfig().n;
+        var ringsNow = window.__thayamRings(cfgN);
+        var lastLap = ringsNow.length - 1, lastLen = ringsNow[lastLap].length;
+        var innerPieces = pieces.filter(function(p){ return p.lap === lastLap; });
+        var neededForCentre = innerPieces.map(function(p){ return lastLen - p.position; }).filter(function(n){ return n > 0 && n <= 6; });
         if (neededForCentre.length){
           var alreadyExact = neededForCentre.indexOf(roll.total) > -1;
           if (alreadyExact){
@@ -11309,7 +11348,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
            would hand out a cut nobody needed and record a hit against a
            chokepoint that does not exist on this board. */
         var stuckOnOuter = window.__thayamCutMandate() &&
-          pieces.some(function(p){ return p.lap === 'outer' && p.position === window.__thayamRings(5)[0].length - 1; }) && !window.__thayamHasCut(sideLetter);   // I3: genuinely parked at the boundary, not just anywhere on the outer ring
+          pieces.some(function(p){   // I3: genuinely parked at a ring boundary, not just anywhere on a ring
+            return window.__thayamOnRing(p) && p.lap < lastLap && p.position === ringsNow[p.lap].length - 1;
+          }) && !window.__thayamHasCut(sideLetter);
         if (stuckOnOuter){
           if (window.__thayamPityCheck('cut', sideLetter)){
             window.__thayamForceCut(sideLetter);

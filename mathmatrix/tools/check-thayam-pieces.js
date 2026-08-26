@@ -55,19 +55,19 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   const r2 = await ev(`JSON.stringify(window.__thayamApplyRoll(0, 0, 1))`).then(JSON.parse);
   ok('a Thayam (1) brings the piece out', r2.moved === true);
   const p1 = await ev(`JSON.stringify(window.__thayamPieces())`).then(JSON.parse);
-  ok("side A's first piece is now on the outer ring at position 0", p1[0].lap === 'outer' && p1[0].position === 0, JSON.stringify(p1[0]));
+  ok("side A's first piece is now on the outer ring at position 0", p1[0].lap === 0 && p1[0].position === 0, JSON.stringify(p1[0]));
 
   // The cut-mandate: cannot pivot to the inner ring without a capture, even
   // once a piece has gone all the way round the outer ring (16 cells).
   await ev(`window.__thayamApplyRoll(0, 0, 14)`);   // 14 more steps -> position 14, the outer ring's LAST cell (len-1 = 15)... one short of it
   const pNearBoundary = await ev(`JSON.stringify(window.__thayamPieces())`).then(JSON.parse);
   ok('the piece is one cell short of the last standing box, still normal outer-ring movement',
-    pNearBoundary[0].lap === 'outer' && pNearBoundary[0].position === 14, JSON.stringify(pNearBoundary[0]));
+    pNearBoundary[0].lap === 0 && pNearBoundary[0].position === 14, JSON.stringify(pNearBoundary[0]));
 
   const rToBoundary = await ev(`JSON.stringify(window.__thayamApplyRoll(0, 0, 3))`).then(JSON.parse);   // overshoots by 2 -- capped AT the last standing box, not past it
   const p2 = await ev(`JSON.stringify(window.__thayamPieces())`).then(JSON.parse);
   ok('a roll that would overshoot without a capture is capped exactly at the last standing box',
-    rToBoundary.moved === true && p2[0].lap === 'outer' && p2[0].position === 15, JSON.stringify(p2[0]));
+    rToBoundary.moved === true && p2[0].lap === 0 && p2[0].position === 15, JSON.stringify(p2[0]));
 
   // Raja's own words: "forced to pause there's last standing box." A piece
   // already sitting there, with no capture yet, must genuinely refuse every
@@ -75,7 +75,7 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   const r3 = await ev(`JSON.stringify(window.__thayamApplyRoll(0, 0, 2))`).then(JSON.parse);
   const p3 = await ev(`JSON.stringify(window.__thayamPieces())`).then(JSON.parse);
   ok('once genuinely at the last standing box, the piece refuses the roll entirely -- it does not "move" in place',
-    r3.moved === false && p3[0].lap === 'outer' && p3[0].position === 15, JSON.stringify({ result: r3, piece: p3[0] }));
+    r3.moved === false && p3[0].lap === 0 && p3[0].position === 15, JSON.stringify({ result: r3, piece: p3[0] }));
 
   // Capture sends a piece to its OWN home, not the capturer's store. Ring
   // order (post-C1-fix) is A=0, D=1, C=2, B=3 -- NOT SIDES_T's own A,B,C,D
@@ -100,12 +100,12 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   // assertion above.
   await ev(`window.__thayamApplyRoll(0, 0, 2)`);   // 13 (already moved) + 2 = 15, the outer ring's last position
   const pBeforePivot = await ev(`JSON.stringify(window.__thayamPieces())`).then(JSON.parse);
-  ok("A's piece reaches the outer ring's last position", pBeforePivot.find(p => p.side === 'A' && p.idx === 0).lap === 'outer');
+  ok("A's piece reaches the outer ring's last position", pBeforePivot.find(p => p.side === 'A' && p.idx === 0).lap === 0);
   await ev(`window.__thayamApplyRoll(0, 0, 1)`);   // 15 + 1 = 16 = outer ring length -> pivots to inner, position 0
   const pAfterPivot = await ev(`JSON.stringify(window.__thayamPieces())`).then(JSON.parse);
   const aPiece = pAfterPivot.find(p => p.side === 'A' && p.idx === 0);
   ok("with a capture already made, A's piece pivots onto the inner ring instead of staying capped",
-    aPiece.lap === 'inner', JSON.stringify(aPiece));
+    aPiece.lap === 1, JSON.stringify(aPiece));
 
   // Win-lock and centre-entry overshoot refusal have no coverage above (the
   // capture-based scenario never drove a piece all the way to centre). New
@@ -117,17 +117,17 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   await ev(`window.__thayamApplyRoll(0, 0, 1)`);   // A's piece 0 out, onto its own gate (outer, position 0)
   await ev(`window.__thayamApplyRoll(0, 0, 15)`);   // 0 + 15 = 15, the outer ring's last cell
   const pOuterEdge = await ev(`JSON.stringify(window.__thayamPieces())`).then(JSON.parse);
-  ok('piece reaches the outer ring last cell', pOuterEdge[0].lap === 'outer' && pOuterEdge[0].position === 15, JSON.stringify(pOuterEdge[0]));
+  ok('piece reaches the outer ring last cell', pOuterEdge[0].lap === 0 && pOuterEdge[0].position === 15, JSON.stringify(pOuterEdge[0]));
 
   const pivotResult = await ev(`JSON.stringify(window.__thayamApplyRoll(0, 0, 1))`).then(JSON.parse);   // 15 + 1 = 16 = outer ring length -> pivots to inner, position 0
   const pInner = await ev(`JSON.stringify(window.__thayamPieces())`).then(JSON.parse);
-  ok('piece pivots onto the inner ring at position 0', pivotResult.moved === true && pInner[0].lap === 'inner' && pInner[0].position === 0, JSON.stringify(pInner[0]));
+  ok('piece pivots onto the inner ring at position 0', pivotResult.moved === true && pInner[0].lap === 1 && pInner[0].position === 0, JSON.stringify(pInner[0]));
 
   // Inner ring length is 8 -- an overshoot must be refused, not clamped.
   const overshoot = await ev(`JSON.stringify(window.__thayamApplyRoll(0, 0, 9))`).then(JSON.parse);   // 0 + 9 = 9 > 8, overshoots centre
   ok('a roll that would overshoot past centre is refused, not clamped', overshoot.moved === false);
   const pStillInner = await ev(`JSON.stringify(window.__thayamPieces())`).then(JSON.parse);
-  ok('piece is unchanged after the refused overshoot', pStillInner[0].lap === 'inner' && pStillInner[0].position === 0, JSON.stringify(pStillInner[0]));
+  ok('piece is unchanged after the refused overshoot', pStillInner[0].lap === 1 && pStillInner[0].position === 0, JSON.stringify(pStillInner[0]));
 
   // An exact roll of 8 lands exactly on centre -- win-lock.
   const winResult = await ev(`JSON.stringify(window.__thayamApplyRoll(0, 0, 8))`).then(JSON.parse);
@@ -145,22 +145,63 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
      setting -- the 7x7 board depends on this exact flag. */
   await ev(`window.__thayamSetCutMandate(false)`);
   await ev(`window.__thayamNewGame(['A','B'])`);
-  await ev(`window.__thayamSetPieces([{ side:'A', idx:0, lap:'outer', position:15, lastCell: window.__thayamRealCell(0,0,15) }])`);
+  await ev(`window.__thayamSetPieces([{ side:'A', idx:0, lap:0, position:15, lastCell: window.__thayamRealCell(0,0,15) }])`);
   const freeCross = await ev(`JSON.stringify(window.__thayamApplyRoll(0, 0, 1))`).then(JSON.parse);
   const freeLap = await ev(`window.__thayamPieces()[0].lap`);
   ok('5x5 default: a piece may turn inward with no capture at all',
-    freeCross.moved === true && freeLap === 'inner', freeLap + ' ' + JSON.stringify(freeCross));
+    freeCross.moved === true && freeLap === 1, freeLap + ' ' + JSON.stringify(freeCross));
   const noCutNeeded = await ev(`window.__thayamHasCut('A')`);
   ok('5x5 default: it crossed WITHOUT having captured anyone', noCutNeeded === false, String(noCutNeeded));
 
   await ev(`window.__thayamSetCutMandate(true)`);
   await ev(`window.__thayamNewGame(['A','B'])`);
-  await ev(`window.__thayamSetPieces([{ side:'A', idx:0, lap:'outer', position:15, lastCell: window.__thayamRealCell(0,0,15) }])`);
+  await ev(`window.__thayamSetPieces([{ side:'A', idx:0, lap:0, position:15, lastCell: window.__thayamRealCell(0,0,15) }])`);
   const blocked = await ev(`JSON.stringify(window.__thayamApplyRoll(0, 0, 1))`).then(JSON.parse);
   const blockedLap = await ev(`window.__thayamPieces()[0].lap`);
   ok('7x7 setting: the same piece is refused until it has captured',
-    blocked.moved === false && blockedLap === 'outer', blockedLap + ' ' + JSON.stringify(blocked));
+    blocked.moved === false && blockedLap === 0, blockedLap + ' ' + JSON.stringify(blocked));
   await ev(`window.__thayamSetCutMandate(false)`);   // leave the board on its shipped 5x5 default
+
+  /* ── 7x7: THREE rings, five pieces, and the traditional rule ──────────────
+     The engine is the same one; only CFG differs. What genuinely could not
+     be expressed before is a THIRD ring, which is why `lap` became a ring
+     index. These assert the two-ring board's behaviour generalises rather
+     than being special-cased: the same capture that frees a piece from the
+     outer ring also frees it from the middle one -- one capture, every
+     inward turn, as the spec's wording says and as a three-ring board needs
+     if the wait is not to compound. */
+  await ev(`window.__thayamConfigure({ n: 7, pieces: 5, cutMandate: true })`);
+  await ev(`window.__thayamNewGame(['A','B','C','D'])`);
+  const p7 = await ev(`JSON.stringify(window.__thayamPieces())`).then(JSON.parse);
+  ok('7x7 deals 20 pieces (4 players x 5)', p7.length === 20, String(p7.length));
+
+  await ev(`window.__thayamSetPieces([{ side:'A', idx:0, lap:0, position:23, lastCell: window.__thayamRealCell(0,0,23,7) }])`);
+  const blocked7 = await ev(`JSON.stringify(window.__thayamApplyRoll(0, 0, 1))`).then(JSON.parse);
+  ok('7x7: with no capture yet, the outer ring will not let go', blocked7.moved === false, JSON.stringify(blocked7));
+
+  await ev(`window.__thayamForceCut('A')`);
+  await ev(`window.__thayamApplyRoll(0, 0, 1)`);
+  const lapAfterFirstCross = await ev(`window.__thayamPieces()[0].lap`);
+  ok('7x7: one capture lets it turn onto the middle ring', lapAfterFirstCross === 1, String(lapAfterFirstCross));
+
+  // the SAME capture must also carry it off the middle ring -- not a second one
+  await ev(`window.__thayamSetPieces([{ side:'A', idx:0, lap:1, position:15, lastCell: window.__thayamRealCell(1,0,15,7) }])`);
+  await ev(`window.__thayamApplyRoll(0, 0, 1)`);
+  const lapAfterSecondCross = await ev(`window.__thayamPieces()[0].lap`);
+  ok('7x7: that same capture also carries it onto the innermost ring', lapAfterSecondCross === 2, String(lapAfterSecondCross));
+
+  // the innermost ring is 8 cells, and the centre still needs an exact count
+  await ev(`window.__thayamSetPieces([{ side:'A', idx:0, lap:2, position:0, lastCell: window.__thayamRealCell(2,0,0,7) }])`);
+  const over7 = await ev(`JSON.stringify(window.__thayamApplyRoll(0, 0, 9))`).then(JSON.parse);
+  ok('7x7: overshooting the centre is refused, as on 5x5', over7.moved === false, JSON.stringify(over7));
+  const win7 = await ev(`JSON.stringify(window.__thayamApplyRoll(0, 0, 8))`).then(JSON.parse);
+  const finLap = await ev(`window.__thayamPieces()[0].lap`);
+  ok('7x7: an exact roll finishes the piece and wins', win7.won === true && finLap === 'finished', JSON.stringify(win7) + ' ' + finLap);
+
+  await ev(`window.__thayamConfigure({ n: 5, pieces: 3, cutMandate: false })`);   // leave the engine on the shipped 5x5 board
+  const backTo5 = await ev(`JSON.stringify(window.__thayamConfig())`).then(JSON.parse);
+  ok('the engine returns to the shipped 5x5 configuration',
+    backTo5.n === 5 && backTo5.pieces === 3 && backTo5.cutMandate === false, JSON.stringify(backTo5));
 
   ok('no JS errors', errs.length === 0, errs.join(' | '));
   console.log(fail ? `\n${fail} FAILED` : '\nALL GREEN');

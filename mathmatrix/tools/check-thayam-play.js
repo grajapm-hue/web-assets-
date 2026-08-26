@@ -73,8 +73,8 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
     var cCell = window.__thayamRealCell(0, 2, 0);
     var targetCell = window.__thayamRealCell(0, 2, 2);
     pcs.forEach(function(p){
-      if (p.side === 'C' && p.idx === 0){ p.lap = 'outer'; p.position = 0; p.lastCell = cCell; }
-      if (p.side === 'D' && p.idx === 0){ p.lap = 'outer'; p.position = 2; p.lastCell = targetCell; }
+      if (p.side === 'C' && p.idx === 0){ p.lap = 0; p.position = 0; p.lastCell = cCell; }
+      if (p.side === 'D' && p.idx === 0){ p.lap = 0; p.position = 2; p.lastCell = targetCell; }
     });
     window.__thayamSetPieces(pcs);
     window.__thayamTurnInit('C');
@@ -101,8 +101,8 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
     window.__thayamSetCutMandate(true);
     var pcs = window.__thayamPieces();
     pcs.forEach(function(p){
-      if (p.side === 'A' && p.idx === 0){ p.lap = 'outer'; p.position = 5; p.lastCell = window.__thayamRealCell(0, 0, 5); }
-      if (p.side === 'A' && p.idx === 2){ p.lap = 'outer'; p.position = 15; p.lastCell = window.__thayamRealCell(0, 0, 15); }
+      if (p.side === 'A' && p.idx === 0){ p.lap = 0; p.position = 5; p.lastCell = window.__thayamRealCell(0, 0, 5); }
+      if (p.side === 'A' && p.idx === 2){ p.lap = 0; p.position = 15; p.lastCell = window.__thayamRealCell(0, 0, 15); }
     });
     window.__thayamSetPieces(pcs);
     window.__thayamTurnInit('A');
@@ -203,7 +203,7 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
 
   const hasCutSetup = await ev(`(function(){
     var pcs = window.__thayamPieces();
-    pcs.forEach(function(p){ if (p.side === 'A' && p.idx === 0){ p.lap = 'outer'; p.position = 3; p.lastCell = window.__thayamRealCell(0, 0, 3); } });
+    pcs.forEach(function(p){ if (p.side === 'A' && p.idx === 0){ p.lap = 0; p.position = 3; p.lastCell = window.__thayamRealCell(0, 0, 3); } });
     window.__thayamSetPieces(pcs);
     window.__thayamForceCut('A');
     window.__thayamTurnInit('A');
