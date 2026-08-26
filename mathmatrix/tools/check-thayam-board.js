@@ -45,10 +45,13 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   ok('the 5x5 grid rendered 25 cells', (await ev(`document.querySelectorAll('#thayamGrid .cell').length`)) === 25);
 
   const safeCount = await ev(`document.querySelectorAll('#thayamGrid .cell.safe').length`);
-  ok('9 Mount squares (8 coloured + the centre)', safeCount === 9, String(safeCount));
+  ok('8 Mount squares (4 gate cells + 4 inner-ring axis cells)', safeCount === 8, String(safeCount));
 
-  const centre = await ev(`!!document.querySelector('#thayamGrid .cell.center')`);
-  ok('exactly one centre goal cell', centre === true);
+  // The centre is a 9th square nothing can be captured on -- a rules-level
+  // count, not a shared CSS class: the approved mockup renders it plain
+  // (.cell.center only, no .safe crosshatch layered over its turn-indicator).
+  const centerCount = await ev(`document.querySelectorAll('#thayamGrid .cell.center').length`);
+  ok('exactly one centre goal cell', centerCount === 1, String(centerCount));
 
   const st = await ev(`JSON.stringify(window.__thayamState())`).then(JSON.parse);
   ok('board state exposes 25 cells', st.cells.length === 25, String(st.cells.length));

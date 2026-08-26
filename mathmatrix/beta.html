@@ -10519,7 +10519,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         for (var i = 0; i < 25; i++){
           var div = document.createElement('div');
           if (i === CENTER_T){
-            div.className = 'cell center safe';   // the centre is the 9th Mount square (see check-thayam-board.js's own count)
+            div.className = 'cell center';   // no `.safe` here -- the approved mockup renders the centre plain (8 safe cells total, not 9), and .safe would layer crosshatch lines over .thFace/.thLook with no z-index to stop it
             div.innerHTML = '<div class="thFace dir-top"><span class="thLook"></span><span>🐒</span></div>';
           } else {
             div.className = 'cell' + (SAFE_T[i] ? ' safe entry-' + SAFE_T[i] : '');
