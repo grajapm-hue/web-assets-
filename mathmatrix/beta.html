@@ -2429,6 +2429,11 @@ body.thayamMode #thayamPanel{ display:flex !important; flex-direction:column;
   position:relative; z-index:1; }
 .thPiece.sideA{ background:#FF6FA3; } .thPiece.sideB{ background:#4CB9FF; }
 .thPiece.sideC{ background:#F7B32B; } .thPiece.sideD{ background:#3DD68C; }
+/* Tap-to-choose highlight -- marks exactly the pieces (and, when a fresh
+   entry from home is one of the choices, the Store panel's own home count)
+   that will actually respond to a tap right now. */
+.thPiece.active{ box-shadow:0 2px 0 rgba(0,0,0,.35), inset 0 0 0 1.5px rgba(255,255,255,.5), 0 0 0 3px var(--gold); cursor:pointer; }
+.thTally .thHome.active{ box-shadow:0 0 0 2px var(--gold) inset; cursor:pointer; }
 
 /* Turn pointer -- same flexbox spacing fix as the approved mockup (see the
    mockup's own comments on why an emoji-relative absolute offset failed a
@@ -10828,7 +10833,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           var running = side.filter(function(p){ return p.lap === 'outer' || p.lap === 'inner'; }).length;
           var won = side.filter(function(p){ return p.lap === 'finished'; }).length;
           var el = document.getElementById('thTally' + s);
-          if (el) el.innerHTML = '<span>🏠 ' + home + '</span><span>🏃 ' + running + '</span><span>🏆 ' + won + '</span>';
+          if (el) el.innerHTML = '<span class="thHome" data-thayam-home-side="' + s + '">🏠 ' + home + '</span><span>🏃 ' + running + '</span><span>🏆 ' + won + '</span>';
         });
         var look = document.querySelector('#thayamGrid .cell.center .thFace');
         if (look) look.className = 'thFace dir-' + ({ A: 'top', B: 'right', C: 'bottom', D: 'left' })[window.__thayamActiveSide()];
@@ -10917,8 +10922,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         var say = document.getElementById('thaySay');
 
         if (!window.__thayamLegalMoveExists(sideIdx, roll.total)){
-          if (say) say.textContent = sideLetter + ' has no move for ' + roll.total + ' — passing to next player.';
           window.__thayamEndTurn();
+          if (say) say.textContent = sideLetter + ' has no move for ' + roll.total + ' — passing to ' + window.__thayamActiveSide() + '.';
           renderThayamTallies();
           return;
         }
@@ -10944,18 +10949,33 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         } else {
           thPendingRoll = { sideIdx: sideIdx, roll: roll, candidates: candidates.map(function(c){ return c.idx; }) };
           if (say) say.textContent = 'Tap the piece you want to move.';
-          document.querySelectorAll('#thayamGrid .thPiece.side' + sideLetter).forEach(function(el){ el.classList.add('active'); });
+          /* Only mark pieces that are ACTUALLY in the candidate set --
+             marking every on-board piece of this side (regardless of
+             whether it can use this roll) invites a tap that silently does
+             nothing, which reads as broken. */
+          document.querySelectorAll('#thayamGrid .thPiece.side' + sideLetter).forEach(function(el){
+            var idx = parseInt(el.dataset.thayamIdx, 10);
+            if (thPendingRoll.candidates.indexOf(idx) > -1) el.classList.add('active');
+          });
+          /* A home candidate has nothing rendered on the board to tap --
+             the Store panel's own "home" count is the tap target for it. */
+          if (candidates.some(function(c){ return c.lap === 'home'; })){
+            var homeEl = document.querySelector('#thTally' + sideLetter + ' .thHome');
+            if (homeEl) homeEl.classList.add('active');
+          }
         }
       }
       function thayamCommitRoll(sideIdx, pieceIdx, roll){
         var result = window.__thayamApplyRoll(sideIdx, pieceIdx, roll.total);
         var say = document.getElementById('thaySay');
-        if (result.captured.length && say) {
-          var pieces = window.__thayamPieces();
-          result.captured.forEach(function(c){
-            var p = pieces.find(function(pp){ return pp.side === c.side && pp.idx === c.idx; });
-            if (p) flashCapture(p.lastCell);
-          });
+        /* captureAt() (Task 4) already nulls the captured piece's own
+           lastCell as part of the same synchronous capture, so flashing
+           THAT piece's cell would never match anything on the board. Flash
+           where the MOVING piece landed instead -- that's the real cell the
+           capture happened on. */
+        if (result.captured.length) {
+          var mover = window.__thayamPieces().find(function(pp){ return pp.side === SIDES_T[sideIdx] && pp.idx === pieceIdx; });
+          if (mover) flashCapture(mover.lastCell);
         }
         renderThayamPieces();
         renderThayamTallies();
@@ -10989,6 +11009,21 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         var pieceIdx = parseInt(pieceEl.dataset.thayamIdx, 10);
         if (thPendingRoll.candidates.indexOf(pieceIdx) === -1) return;
         thayamCommitRoll(thPendingRoll.sideIdx, pieceIdx, thPendingRoll.roll);
+        thPendingRoll = null;
+        document.querySelectorAll('#thayamGrid .thPiece').forEach(function(el){ el.classList.remove('active'); });
+      });
+      /* A pending home candidate has nothing on the board to tap -- the
+         Store panel's own "🏠 N" count (marked .active above, when it
+         applies) IS the tap target for it. Delegated on the shared table
+         wrapper, same pattern as the board's own delegated listener. */
+      document.querySelector('.thayamTable') && document.querySelector('.thayamTable').addEventListener('click', function(e){
+        var homeEl = e.target.closest('.thHome');
+        if (!homeEl || !thPendingRoll) return;
+        var side = homeEl.dataset.thayamHomeSide;
+        if (side !== SIDES_T[thPendingRoll.sideIdx]) return;
+        var homePiece = window.__thayamPieces().find(function(p){ return p.side === side && p.lap === 'home' && thPendingRoll.candidates.indexOf(p.idx) > -1; });
+        if (!homePiece) return;
+        thayamCommitRoll(thPendingRoll.sideIdx, homePiece.idx, thPendingRoll.roll);
         thPendingRoll = null;
         document.querySelectorAll('#thayamGrid .thPiece').forEach(function(el){ el.classList.remove('active'); });
       });
