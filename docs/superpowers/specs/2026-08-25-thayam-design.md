@@ -23,7 +23,7 @@ Thayam is a traditional Tamil race game for 2–4 players, played with two speci
 ### Taking a turn
 1. Roll the two dice.
 2. To bring a piece out of your home for the first time, you need to roll a **Thayam** exactly (this app's dice are tuned so you're never stuck waiting more than a handful of rolls for one — see the note on softening below).
-3. Certain rolls (a Thayam, or the two highest combinations) give you another roll straight after, and you can freely choose which of your own pieces to move with the points from each roll.
+3. Certain rolls (a Thayam, a 5, a 6, or a 12) give you another roll straight after. Every roll — the first one and each bonus one — is independent: you freely choose which of your own pieces to apply it to, any piece you own, whether it's still waiting at home or already out on the board anywhere. A bonus chain is not locked onto the piece you happened to move first.
 4. Move your piece(s) forward around the board.
 
 ### Capturing
