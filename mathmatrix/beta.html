@@ -2421,9 +2421,20 @@ body.thayamMode #thayamPanel{ display:flex !important; flex-direction:column;
 .thSeat.left .kattai, .thSeat.right .kattai{ width:30px; height:22px; }
 .thSeat.left .rollBtn, .thSeat.right .rollBtn{ width:38px; height:38px; border-radius:50%; padding:0; font-size:16px; }
 
+/* One grid element serves both boards -- the column count comes from the
+   board that is open, so 7x7 needs no second panel, no duplicated seats and
+   no second copy of any of this to drift out of step. */
 #thayamGrid{ grid-column:2; grid-row:2; width:100%; aspect-ratio:1; height:auto; border-radius:14px;
   background:var(--sf); box-shadow:0 4px 0 rgba(0,0,0,.3); border:4px solid rgba(255,255,255,.55); box-sizing:border-box;
   display:grid; grid-template-columns:repeat(5,1fr); grid-template-rows:repeat(5,1fr); gap:2px; padding:6px; }
+#thayamGrid[data-n="7"]{ grid-template-columns:repeat(7,1fr); grid-template-rows:repeat(7,1fr); gap:1.5px; }
+/* 49 cells in the same footprint means smaller everything inside them. */
+#thayamGrid[data-n="7"] .thCell{ border-radius:4px; border-width:1.5px; }
+#thayamGrid[data-n="7"] .thPiece{ width:14px; height:14px; }
+#thayamGrid[data-n="7"] .thCell.thSafe::before, #thayamGrid[data-n="7"] .thCell.thSafe::after{ height:1.8px; }
+#thayamGrid[data-n="7"] .thCell.thCenter{ padding:3px; box-shadow:inset 0 0 0 2.5px var(--gold); }
+#thayamGrid[data-n="7"] .thCell.thCenter .thFace{ font-size:12px; gap:2px; }
+#thayamGrid[data-n="7"] .thLook{ border-top-width:4px; border-bottom-width:4px; border-left-width:7px; }
 #thayamGrid .thCell{ border-radius:6px; background:var(--sf2); position:relative;
   display:flex; align-items:center; justify-content:center; border:2px solid rgba(255,255,255,.42); }
 #thayamGrid .thCell.thSafe{ background:var(--sf3); }
@@ -4694,7 +4705,11 @@ body{ background:#C9A87C !important; }
     <div class="toggleSwitch">
       <button class="toggleBtn lvCard" id="thayamTab" type="button" data-thayam-level="5x5" data-name="🎲 Thayam 5×5" style="color:#a78bfa; border-color:#7c3aed; --c1:#ddd6fe; --c2:#a78bfa;">
         <span class="lvGlyph" aria-hidden="true">🎲</span>
-        <span class="lvText"><b class="lvName">Thayam 5×5</b><span class="lvDiff">2–4 players · one board</span><span class="lvMeta">roll a Thayam to enter, cut an opponent to head for the centre</span></span>
+        <span class="lvText"><b class="lvName">Thayam 5×5</b><span class="lvDiff">2–4 players · the easy board</span><span class="lvMeta">roll a Thayam to enter, then head for the centre — cutting helps but isn't required</span></span>
+      </button>
+      <button class="toggleBtn lvCard" id="thayam7Tab" type="button" data-thayam-level="7x7" data-name="🎲 Thayam 7×7" style="color:#a78bfa; border-color:#7c3aed; --c1:#ddd6fe; --c2:#a78bfa;">
+        <span class="lvGlyph" aria-hidden="true">🎲</span>
+        <span class="lvText"><b class="lvName">Thayam 7×7</b><span class="lvDiff">2–4 players · the full board</span><span class="lvMeta">five pieces each, three rings, and you must cut an opponent before turning inward</span></span>
       </button>
     </div>
   </div>
@@ -10633,9 +10648,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       window.__thayamState = function(N){ return boardOf(N || 5); };
 
       function buildBoard(N, gridId){
-        var grid = document.getElementById(gridId);
+        var grid = document.getElementById(gridId || 'thayamGrid');
         if (!grid) return;
         var b = boardOf(N);
+        grid.dataset.n = N;   // the CSS reads this to lay out 5 columns or 7
         grid.innerHTML = '';
         for (var i = 0; i < b.cells.length; i++){
           var div = document.createElement('div');
@@ -11211,20 +11227,31 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         thForcedRoll = { d0: r.d0, d1: r.d1, total: total, isThayam: total === 1, bonusRoll: total === 1 || total === 5 || total === 6 || total === 12 };
       };
 
-      function thayamKey(){ return 'mm.save.thayam.5x5'; }
+      /* One key per board, so each remembers its own unfinished game and
+         opening the other never eats it. */
+      function thayamKey(){ return 'mm.save.thayam.' + window.__thayamConfig().n + 'x' + window.__thayamConfig().n; }
       function thayamSave(){
         var pieces = window.__thayamPieces();
         var anyOut = pieces.some(function(p){ return p.lap !== 'home'; });
         if (!anyOut){ window.__mmClear(thayamKey()); return; }
         var hasCut = {};   // I2: persist every side's earned cut-mandate flag, not just pieces/turn state
         SIDES_T.forEach(function(s){ hasCut[s] = window.__thayamHasCut(s); });
-        window.__mmSave(thayamKey(), { pieces: pieces, activeSide: window.__thayamActiveSide(), enabled: window.__thayamTurnState().enabled, hasCut: hasCut });
+        window.__mmSave(thayamKey(), { n: window.__thayamConfig().n, pieces: pieces, activeSide: window.__thayamActiveSide(), enabled: window.__thayamTurnState().enabled, hasCut: hasCut });
       }
       function thayamRestore(){
         var sv = window.__mmLoad(thayamKey(), function(o){
           return Array.isArray(o.pieces) && typeof o.activeSide === 'string' && o.enabled;
         });
         if (!sv) return false;
+        /* Saves written before the board could vary have no `n` and are always
+           5x5; and before `lap` became a ring index they used the names
+           'outer'/'inner'. Migrate rather than discard -- somebody may be in
+           the middle of a game when this update reaches them. */
+        if (sv.n && sv.n !== window.__thayamConfig().n) return false;
+        sv.pieces.forEach(function(p){
+          if (p.lap === 'outer') p.lap = 0;
+          else if (p.lap === 'inner') p.lap = 1;
+        });
         window.__thayamSetPieces(sv.pieces);
         window.__thayamSetEnabled(sv.enabled);
         window.__thayamTurnInit(sv.activeSide);
@@ -11464,7 +11491,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
            otherwise dealing a new game would silently undo that choice. */
         var starter = window.__thayamStarter ? window.__thayamStarter() : selected[0];
         window.__thayamTurnInit(selected.indexOf(starter) > -1 ? starter : selected[0]);
-        window.__thayamBuild5x5();
+        window.__thayamBuildBoard(window.__thayamConfig().n, 'thayamGrid');   // whichever board is open, not always the 5x5
         renderThayamPieces();
         renderThayamTallies();
         thayamSave();
@@ -11527,10 +11554,17 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         showSudokuMode(false);
         showPalMode(false);
         showPal4Mode(false);
-        currentSize = 'thayam5x5';
+        /* Both boards share this one panel and one engine -- a second copy of
+           the seats, tally and footer would be the same duplication that let
+           an unrelated stylesheet quietly repaint this board once already.
+           The only thing that changes is the configuration. */
+        var lvl = btn.dataset.thayamLevel;                 // '5x5' or '7x7'
+        var n = lvl === '7x7' ? 7 : 5;
+        window.__thayamConfigure({ n: n, pieces: n === 7 ? 5 : 3, cutMandate: n === 7 });
+        currentSize = 'thayam' + lvl;
         goScreen('scPlay');
         showThayamMode(true);
-        window.__thayamBuild5x5();
+        window.__thayamBuildBoard(n, 'thayamGrid');
         if (!window.__thayamRestore()) {
           // C2: honour the Choose-Player tick-boxes here too, not just via the Choose Player button
           var coldSides = window.__thayamSelectedSides();
@@ -11541,8 +11575,11 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           window.__thayamTurnInit(coldSides[0]);
         }
         window.__thayamRenderAll();
+        var sizeLabel = n + '×' + n;
+        var panelTitle = document.querySelector('.thTitle');
+        if (panelTitle) panelTitle.innerHTML = '🎲 <b>Thayam</b> · ' + sizeLabel;
         var title = document.getElementById('appBarTitle');
-        if (title) title.innerHTML = boxedTitle('🎲 Thayam 5×5');
+        if (title) title.innerHTML = boxedTitle('🎲 Thayam ' + sizeLabel);
       });
     });
 
