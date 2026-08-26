@@ -155,6 +155,16 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   await ev(`document.querySelector('#thayamSelect input[data-side="C"]').click()`);
   await ev(`document.querySelector('#thayamSelect input[data-side="D"]').click()`);
   await ev(`document.getElementById('thayamChoose').click()`);
+  /* New game, deliberately, and this is load-bearing: Choose player used to
+     deal a fresh board, and this block was written when it did. Since it was
+     changed to only CYCLE the starter, the board still carried the three A
+     pieces the previous scenario put out -- so the "dead turn" rolls below
+     were quietly moving real pieces, and if they happened to reach the centre
+     the game ended, blocking every later roll and leaving the save behind.
+     That is what made this file fail roughly one run in three. Dealing here
+     restores the premise the block actually depends on: an empty board, where
+     a 3 truly is unusable. */
+  await ev(`document.getElementById('thayamNew').click()`);
   await sleep(300);
 
   const seenSides = [];
@@ -168,7 +178,7 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
     // which would keep the turn on one side and make this loop non-deterministic.
     // Resetting keeps this block a clean, guaranteed dead-turn auto-pass.
     await ev(`window.__thayamPityReset('enter', '${activeBefore}')`);
-    await ev(`window.__thayamForceNextRoll({ d0: 3, d1: 0 })`);   // total 3 -- no home piece can use it, nothing on board yet either, so every roll is a genuine dead-turn auto-pass
+    await ev(`window.__thayamForceNextRoll({ d0: 3, d1: 0 })`);   // total 3 -- with the board freshly dealt above, no home piece can use it and nothing is out to move, so every roll is a genuine dead-turn auto-pass
     await ev(`document.querySelector('.rollBtn[data-side="${activeBefore}"]').click()`);
     await sleep(150);
   }
@@ -182,6 +192,15 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   //    an in-session __thayamRenderAll() re-entry, an actual CDP Page.reload
   //    -- and confirm hasCut survived where a fresh __thayamNewGame would
   //    otherwise reset it to false.
+  /* Deal first, so this scenario owns its starting state instead of inheriting
+     whatever the four above left behind. Without it the board could already be
+     one move from a win, and a win clears the save and blocks further rolls --
+     so the assertion below would read a save that was never written and fail
+     roughly one run in five, for reasons that have nothing to do with hasCut.
+     A test that depends on its predecessors is a test that reports noise. */
+  await ev(`document.getElementById('thayamNew').click()`);
+  await sleep(250);
+
   const hasCutSetup = await ev(`(function(){
     var pcs = window.__thayamPieces();
     pcs.forEach(function(p){ if (p.side === 'A' && p.idx === 0){ p.lap = 'outer'; p.position = 3; p.lastCell = window.__thayamRealCell(0, 0, 3); } });
@@ -197,7 +216,15 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   await ev(`document.querySelector('.rollBtn[data-side="A"]').click()`);   // a real move, through the real UI, so it goes through the app's own save path
   await sleep(300);
 
-  const savedHasCut = await ev(`JSON.parse(localStorage.getItem('mm.save.thayam.5x5')).hasCut`);
+  /* If this ever regresses, the tell is #thaySay reading "Tap the piece you
+     want to move" instead of "A rolled 2 — moved": that means the forced roll
+     was rewritten into a Thayam, which makes the home pieces eligible too, so
+     the board waits for a tap and never saves. */
+  const moveSay = await ev(`(document.getElementById('thaySay')||{}).textContent`);
+  ok('the forced roll committed a move rather than opening a tap-to-choose prompt',
+    /rolled 2/.test(moveSay || ''), moveSay);
+
+  const savedHasCut = await ev(`JSON.parse(localStorage.getItem('mm.save.thayam.5x5') || '{}').hasCut`);
   ok('the save payload itself carries hasCut:true for A before any reload', !!savedHasCut && savedHasCut.A === true, JSON.stringify(savedHasCut));
 
   await send('Page.enable', {});

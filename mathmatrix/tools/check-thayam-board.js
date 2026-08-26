@@ -72,6 +72,35 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   const st = await ev(`JSON.stringify(window.__thayamState())`).then(JSON.parse);
   ok('board state exposes 25 cells', st.cells.length === 25, String(st.cells.length));
 
+  /* THE SAME FORMULAS MUST PRODUCE BOTH BOARDS.
+     The ring geometry was always generic; the board module used to pin it to
+     5. These assert the generalisation lands on the approved 7x7 mockup's own
+     Mount grid exactly, AND that 5x5 came through it unchanged -- the second
+     half matters more, because a board that already ships is the one with
+     something to lose. */
+  const geom7 = await ev(`(function(){
+    var b = window.__thayamState(7);
+    return JSON.stringify({ n: b.n, cells: b.cells.length, centre: b.center,
+      rings: b.rings.map(function(r){ return r.length; }),
+      safe: Object.keys(b.safe).map(Number).sort(function(a, b2){ return a - b2; }) });
+  })()`).then(JSON.parse);
+  ok('7x7 is 49 cells with rings 24/16/8 and centre 24',
+    geom7.n === 7 && geom7.cells === 49 && geom7.centre === 24 &&
+    JSON.stringify(geom7.rings) === JSON.stringify([24, 16, 8]), JSON.stringify(geom7.rings) + ' centre=' + geom7.centre);
+  ok('7x7 Mount cells match the approved 7x7 mockup exactly',
+    JSON.stringify(geom7.safe) === JSON.stringify([3, 8, 12, 21, 27, 36, 40, 45]), JSON.stringify(geom7.safe));
+
+  const geom5 = await ev(`(function(){
+    var b = window.__thayamState(5);
+    return JSON.stringify({ cells: b.cells.length, centre: b.center,
+      rings: b.rings.map(function(r){ return r.length; }),
+      safe: Object.keys(b.safe).map(Number).sort(function(a, b2){ return a - b2; }) });
+  })()`).then(JSON.parse);
+  ok('5x5 geometry is untouched by the generalisation',
+    geom5.cells === 25 && geom5.centre === 12 &&
+    JSON.stringify(geom5.rings) === JSON.stringify([16, 8]) &&
+    JSON.stringify(geom5.safe) === JSON.stringify([2, 6, 8, 10, 14, 16, 18, 22]), JSON.stringify(geom5));
+
   /* ── Guards for the two ways this board has already broken ──────────────
      Both were reported from a real phone, by eye, AFTER shipping green tests
      -- because every assertion above checks STRUCTURE (which cells exist and
