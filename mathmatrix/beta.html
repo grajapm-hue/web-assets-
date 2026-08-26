@@ -10708,6 +10708,24 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       }
       window.__thayamP = thP;
 
+      /* Remember WHAT was said, not the finished sentence. Raja: "for tamil ok
+         but english mode is retain tamil text not toggling to english" -- the
+         status line was written once, in whatever language was current at the
+         time, and nothing rebuilt it afterwards. The text-node walker cannot
+         rescue it either: these sentences carry live values, so they are not in
+         the lookup table, and a Tamil sentence has no two consecutive latin
+         letters for the walker to even notice. Keeping the key and its values
+         means the line can be re-said in the other language at any time --
+         which is the same reason the Pallanguzhi boards redraw themselves on a
+         language change rather than translating in place. */
+      var thLastSay = null;
+      function thSay(key, v){
+        thLastSay = { key: key, v: v };
+        var el = document.getElementById('thaySay');
+        if (el) el.textContent = thP(key, v);
+      }
+      window.__thayamSay = thSay;
+
       var thStarter = null;   // null = follow the ticks; otherwise an explicit choice
       window.__thayamStarter = function(){
         var sides = window.__thayamSelectedSides();
@@ -10742,13 +10760,19 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         if (window.__thayamRenderAll) window.__thayamRenderAll();
 
         var say = document.getElementById('thaySay');
-        if (say) say.textContent = thP('starts', { a: thStarter });
+        thSay('starts', { a: thStarter });
       });
 
       /* Keep the promise honest when the ticks change: if the chosen starter
          is switched off, fall back and relabel rather than naming a player who
          is no longer in the game. */
-      window.__thayamSyncStarter = syncChooseLabel;
+      /* Everything on this panel that is assembled in JS, re-assembled. The
+         label AND the last thing said -- missing the second is exactly what
+         left an English board talking Tamil. */
+      window.__thayamSyncStarter = function(){
+        syncChooseLabel();
+        if (thLastSay) thSay(thLastSay.key, thLastSay.v);
+      };
 
       var thNewBtn = document.getElementById('thayamNew');
       if (thNewBtn) thNewBtn.addEventListener('click', function(){
@@ -10757,7 +10781,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         var say = document.getElementById('thaySay');
         if (say){
           var sides = window.__thayamSelectedSides();
-          say.textContent = thP('newGame', { n: sides.length, list: sides.join(', '), a: window.__thayamStarter() });
+          thSay('newGame', { n: sides.length, list: sides.join(', '), a: window.__thayamStarter() });
         }
       });
 
@@ -11230,7 +11254,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
         if (!window.__thayamLegalMoveExists(sideIdx, roll.total)){
           window.__thayamEndTurn();
-          if (say) say.textContent = window.__thayamP('noMove', { a: sideLetter, n: roll.total, b: window.__thayamActiveSide() });
+          window.__thayamSay('noMove', { a: sideLetter, n: roll.total, b: window.__thayamActiveSide() });
           renderThayamTallies();
           return;
         }
@@ -11255,7 +11279,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           thayamCommitRoll(sideIdx, candidates[0].idx, roll);
         } else {
           thPendingRoll = { sideIdx: sideIdx, roll: roll, candidates: candidates.map(function(c){ return c.idx; }) };
-          if (say) say.textContent = window.__thayamP('tapPiece');
+          window.__thayamSay('tapPiece');
           /* Only mark pieces that are ACTUALLY in the candidate set --
              marking every on-board piece of this side (regardless of
              whether it can use this roll) invites a tap that silently does
@@ -11290,14 +11314,14 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         var winner = window.__thayamGameOver();
         if (winner){
           thGameWon = true;   // I5: stop the game -- no more rolls once someone has won
-          if (say) say.textContent = window.__thayamP('wins', { a: winner });
+          window.__thayamSay('wins', { a: winner });
           window.__thayamClear();
           return;
         }
         // I4: an ordinary move (no capture, no bonus roll) was previously totally
         // silent -- fill in what capture/win/auto-pass already had
         if (!result.captured.length && !roll.bonusRoll && say){
-          say.textContent = window.__thayamP('moved', { a: SIDES_T[sideIdx], n: roll.total });
+          window.__thayamSay('moved', { a: SIDES_T[sideIdx], n: roll.total });
         }
         if (!roll.bonusRoll) window.__thayamEndTurn();
         renderThayamTallies();
@@ -14423,7 +14447,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-233 (Thayam speaks Tamil now -- the whole board, not just the rules, same as Pallanguzhi. And nobody waits at the start: your first piece is guaranteed out within 2-3 rolls, after which the dice go back to ordinary luck)';
+  var BUILD_VER = 'beta-234 (Thayam language switch now works BOTH ways -- the running commentary was turning Tamil and staying Tamil, because it is a sentence spoken once rather than a label the switch can find)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that

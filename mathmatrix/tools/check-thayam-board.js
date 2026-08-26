@@ -191,6 +191,33 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   await ev(`window.__mmLang('en')`);
   await send('Emulation.clearDeviceMetricsOverride', {});
 
+  /* The language switch has to work BOTH ways, including for the live status
+     line. That line is a sentence assembled when it is spoken, so it is not in
+     the lookup table and the text-node walker cannot restore it -- and a Tamil
+     sentence has no two consecutive latin letters for the walker to even
+     notice. It shipped once translating into Tamil and then staying Tamil
+     forever: Raja, "for tamil ok but english mode is retain tamil text not
+     toggling to english". Driven through the REAL language button, because
+     hanging the refresh off that button alone was itself a bug earlier. */
+  const roundTrip = await ev(`(function(){
+    var say = function(){ return document.getElementById('thaySay').textContent.trim(); };
+    var btn = document.getElementById('thayamLangBtn');
+    window.__mmLang('en');
+    document.getElementById('thayamNew').click();        // produce a real message in English
+    var en1 = say();
+    btn.click();                                          // -> Tamil
+    var ta = say();
+    btn.click();                                          // -> back to English
+    var en2 = say();
+    if (window.__mmLang() !== 'en') window.__mmLang('en');
+    return JSON.stringify({ en1: en1, ta: ta, en2: en2 });
+  })()`).then(JSON.parse);
+  const hasTamil = s => /[஀-௿]/.test(s);
+  ok('the status line is English in English mode', roundTrip.en1.length > 0 && !hasTamil(roundTrip.en1), roundTrip.en1.slice(0, 40));
+  ok('the status line turns Tamil when switched', hasTamil(roundTrip.ta), roundTrip.ta.slice(0, 40));
+  ok('the status line turns BACK to English when switched again',
+    !hasTamil(roundTrip.en2) && roundTrip.en2 === roundTrip.en1, roundTrip.en2.slice(0, 40));
+
   const fit = await ev(`(function(){
     var seats = Array.prototype.map.call(document.querySelectorAll('.thSeat'), function(s){
       var b = s.getBoundingClientRect();
