@@ -322,6 +322,83 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
     /Bonus roll/.test(stuck.afterTap) && !/Tap the piece/.test(stuck.afterTap), stuck.afterTap);
   ok('...and the turn stays with the player who earned the bonus', stuck.stillBsTurn === true);
 
+  /* THE BOARD MUST NEVER JUST SIT THERE.
+     Raja hit the tap-to-choose wait twice and read it as broken dice both
+     times: "same happen, may soft lock... pop alert is better to know why not
+     rotating, and in few seconds the turn should turn to next player... SaNa
+     should splash." So the ask now goes through SaNa's bubble at the top of
+     the screen, it nudges again at 6s, and at 15s it plays the move itself.
+     It PLAYS rather than passes deliberately -- passing would take a legal
+     move, and on a Thayam the bonus roll too, from somebody whose only
+     mistake was thinking. Timers are real, so this block is slow by nature. */
+  const nudge = await ev(`(function(){
+    window.__thayamConfigure({ n: 7, pieces: 5, cutMandate: true });
+    window.__thayamNewGame(['A','B','C','D']);
+    window.__thayamSetEnabled({ A:true, B:true, C:true, D:true });
+    var pcs = window.__thayamPieces();
+    pcs.forEach(function(p){
+      if (p.side === 'C' && p.idx === 0){ p.lap = 0; p.position = 4; p.lastCell = window.__thayamRealCell(0, window.__thayamSideIndex('C'), 4, 7); }
+    });
+    window.__thayamSetPieces(pcs);
+    window.__thayamTurnInit('C');
+    window.__thayamRenderAll();
+    window.__thayamForceNextRoll({ d0: 0, d1: 1 });   // Raja's own dice, a Thayam
+    document.querySelector('.rollBtn[data-side="C"]').click();
+    return JSON.stringify({
+      say: document.getElementById('thaySay').textContent,
+      sana: (document.querySelector('.sanaBub') || {}).textContent || '',
+      sanaFlashed: !!document.querySelector('.sanaBub.flash')
+    });
+  })()`).then(JSON.parse);
+  ok('SaNa herself asks for the tap, not just the small line under the board',
+    /Tap the piece/.test(nudge.sana), nudge.sana);
+  ok('...and her bubble flashes so the ask is noticed', nudge.sanaFlashed === true);
+
+  await sleep(7000);
+  const nudged = await ev(`document.getElementById('thaySay').textContent`);
+  ok('after a few seconds it nudges again rather than waiting silently',
+    /Tap one of the glowing pieces first/.test(nudged), nudged);
+
+  await sleep(9500);
+  const auto = await ev(`(function(){
+    return JSON.stringify({
+      say: document.getElementById('thaySay').textContent,
+      cOut: window.__thayamPieces().filter(function(p){ return p.side === 'C' && typeof p.lap === 'number'; }).length,
+      turn: window.__thayamActiveSide(),
+      noStaleHighlight: !document.querySelector('#thayamGrid .thPiece.active') && !document.querySelector('.thHome.active')
+    });
+  })()`).then(JSON.parse);
+  ok('if nobody ever taps, the board plays the move itself instead of stalling',
+    /Nobody tapped/.test(auto.say) && auto.cOut === 2, JSON.stringify(auto));
+  ok('...and it PLAYS rather than passing, so the Thayam bonus roll is not stolen',
+    auto.turn === 'C', auto.turn);
+  ok('...leaving no stale tap highlight behind', auto.noStaleHighlight === true);
+
+  /* And the timers must not fire behind a player who DID answer. */
+  const tapped = await ev(`(function(){
+    window.__thayamStartNewGame();
+    var pcs = window.__thayamPieces();
+    pcs.forEach(function(p){
+      if (p.side === 'A' && p.idx === 0){ p.lap = 0; p.position = 4; p.lastCell = window.__thayamRealCell(0, window.__thayamSideIndex('A'), 4, 7); }
+    });
+    window.__thayamSetPieces(pcs);
+    window.__thayamTurnInit('A');
+    window.__thayamRenderAll();
+    window.__thayamForceNextRoll({ d0: 1, d1: 0 });
+    document.querySelector('.rollBtn[data-side="A"]').click();
+    document.querySelector('.thHome[data-thayam-home-side="A"]').click();   // answered at once
+    return JSON.stringify({ say: document.getElementById('thaySay').textContent,
+      aOut: window.__thayamPieces().filter(function(p){ return p.side === 'A' && typeof p.lap === 'number'; }).length });
+  })()`).then(JSON.parse);
+  await sleep(16500);
+  const ghost = await ev(`(function(){
+    return JSON.stringify({ say: document.getElementById('thaySay').textContent,
+      aOut: window.__thayamPieces().filter(function(p){ return p.side === 'A' && typeof p.lap === 'number'; }).length });
+  })()`).then(JSON.parse);
+  ok('a player who taps in time is never auto-played over afterwards',
+    !/Nobody tapped/.test(ghost.say) && ghost.aOut === tapped.aOut, JSON.stringify(ghost));
+  await ev(`window.__thayamConfigure({ n: 5, pieces: 3, cutMandate: false })`);
+
   ok('no JS errors', errs.length === 0, errs.join(' | '));
   console.log(fail ? `\n${fail} FAILED` : '\nALL GREEN');
 

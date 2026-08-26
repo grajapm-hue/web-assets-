@@ -10765,7 +10765,11 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         /* And a bonus roll used to leave the "tap a piece" instruction on
            screen, so a tap that HAD worked still looked ignored. */
         bonus:    { en: '{a} rolled {n} — move made. Bonus roll: press Roll again!',
-                    ta: 'வீரர் {a} {n} உருட்டினார் — நகர்ந்தது. கூடுதல் வாய்ப்பு: மீண்டும் உருட்டுங்கள்!' }
+                    ta: 'வீரர் {a} {n} உருட்டினார் — நகர்ந்தது. கூடுதல் வாய்ப்பு: மீண்டும் உருட்டுங்கள்!' },
+        /* The board must never just sit there. If nobody taps, it plays a
+           sensible move itself and says so, rather than waiting forever. */
+        autoPlayed: { en: 'Nobody tapped, so {a}\'s move was played for them. Press Roll to carry on.',
+                      ta: 'யாரும் தட்டவில்லை, எனவே வீரர் {a} இன் நகர்வு தானாகச் செய்யப்பட்டது. தொடர உருட்டுங்கள்.' }
       };
       function thP(key, v){
         var row = TH_TXT[key] || {};
@@ -10786,10 +10790,16 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
          which is the same reason the Pallanguzhi boards redraw themselves on a
          language change rather than translating in place. */
       var thLastSay = null;
+      /* Which messages are worth interrupting SaNa for. A move report every
+         turn would turn her into a ticker nobody reads; these are the ones a
+         player is stuck without. */
+      var SANA_MOOD = { tapFirst: 'oops', tapPiece: 'think', noMove: 'oops', wins: 'party', autoPlayed: 'think' };
       function thSay(key, v){
         thLastSay = { key: key, v: v };
+        var msg = thP(key, v);
         var el = document.getElementById('thaySay');
-        if (el) el.textContent = thP(key, v);
+        if (el) el.textContent = msg;
+        if (SANA_MOOD[key] && window.__sana) window.__sana(msg, SANA_MOOD[key], key === 'wins');
       }
       window.__thayamSay = thSay;
 
@@ -11484,7 +11494,44 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         return roll;
       }
 
-      function thayamOnRoll(sideLetter){
+      /* THE BOARD NEVER JUST SITS THERE.
+       Two nudges and then it plays. The nudge repeats because the first
+       message can arrive while the player is looking at the board rather than
+       at SaNa; the auto-play exists because a board waiting forever on a tap
+       nobody knew about is exactly what Raja hit twice. */
+    var thNudgeTimer = null, thAutoTimer = null;
+    function clearAutoPlay(){
+      if (thNudgeTimer){ clearTimeout(thNudgeTimer); thNudgeTimer = null; }
+      if (thAutoTimer){ clearTimeout(thAutoTimer); thAutoTimer = null; }
+    }
+    window.__thayamClearAutoPlay = clearAutoPlay;
+    function armAutoPlay(sideLetter, candidates){
+      clearAutoPlay();
+      thNudgeTimer = setTimeout(function(){
+        if (thPendingRoll) window.__thayamSay('tapFirst');
+      }, 6000);
+      thAutoTimer = setTimeout(function(){
+        if (!thPendingRoll) return;
+        /* Pick the move a player most often wants on the roll that caused the
+           question: bringing a new piece out if that is one of the choices --
+           the classic play on a Thayam -- and otherwise the piece furthest
+           along, which is the one closest to finishing. */
+        var pend = thPendingRoll, pieces = window.__thayamPieces();
+        var mine = pieces.filter(function(p){ return p.side === sideLetter && pend.candidates.indexOf(p.idx) > -1; });
+        var home = mine.filter(function(p){ return p.lap === 'home'; })[0];
+        var best = home || mine.slice().sort(function(x, y){
+          return (y.lap * 1000 + y.position) - (x.lap * 1000 + x.position);
+        })[0];
+        if (!best) return;
+        thPendingRoll = null;
+        clearAutoPlay();
+        document.querySelectorAll('#thayamGrid .thPiece.active, .thHome.active').forEach(function(el){ el.classList.remove('active'); });
+        thayamCommitRoll(pend.sideIdx, best.idx, pend.roll);
+        window.__thayamSay('autoPlayed', { a: sideLetter });
+      }, 15000);
+    }
+
+    function thayamOnRoll(sideLetter){
         if (thGameWon) return;   // I5: game already decided, no more rolls
         var sideIdx = SIDES_T.indexOf(sideLetter);
         if (window.__thayamActiveSide() !== sideLetter) return;   // not this player's turn
@@ -11529,6 +11576,14 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         } else {
           thPendingRoll = { sideIdx: sideIdx, roll: roll, candidates: candidates.map(function(c){ return c.idx; }) };
           window.__thayamSay('tapPiece');
+          /* Raja asked for the turn to move on by itself "in few seconds" when
+             the board looks stuck. It does now -- but it PLAYS the move rather
+             than passing the turn. Passing would take a legal move away from
+             somebody whose only mistake was thinking, and on a Thayam that
+             also costs them the bonus roll; playing keeps everything they
+             earned and simply unsticks the board. Deliberately unhurried, so
+             a child weighing three pieces is never rushed. */
+          armAutoPlay(sideLetter, candidates);
           /* Only mark pieces that are ACTUALLY in the candidate set --
              marking every on-board piece of this side (regardless of
              whether it can use this roll) invites a tap that silently does
@@ -11583,6 +11638,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       }
       window.__thayamStartNewGame = function(){
         thPendingRoll = null;   // I6: never carry a stale pending roll into a fresh game
+        clearAutoPlay();
         thGameWon = false;   // I5: a fresh game is never already won
         if (window.__thayamPityResetAll) window.__thayamPityResetAll();   // and everyone's luck starts over, rather than inheriting the last game's near-misses
         var selected = window.__thayamSelectedSides();
@@ -11613,7 +11669,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         if (thPendingRoll.candidates.indexOf(pieceIdx) === -1) return;
         thayamCommitRoll(thPendingRoll.sideIdx, pieceIdx, thPendingRoll.roll);
         thPendingRoll = null;
-        document.querySelectorAll('#thayamGrid .thPiece').forEach(function(el){ el.classList.remove('active'); });
+        clearAutoPlay();   // the player answered; nothing left to nudge or auto-play
+        document.querySelectorAll('#thayamGrid .thPiece.active, .thHome.active').forEach(function(el){ el.classList.remove('active'); });
       });
       /* A pending home candidate has nothing on the board to tap -- the
          Store panel's own "🏠 N" count (marked .active above, when it
@@ -11629,13 +11686,15 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         if (!homePiece) return;
         thayamCommitRoll(thPendingRoll.sideIdx, homePiece.idx, thPendingRoll.roll);
         thPendingRoll = null;
-        document.querySelectorAll('#thayamGrid .thPiece').forEach(function(el){ el.classList.remove('active'); });
+        clearAutoPlay();   // the player answered; nothing left to nudge or auto-play
+        document.querySelectorAll('#thayamGrid .thPiece.active, .thHome.active').forEach(function(el){ el.classList.remove('active'); });
       });
 
       window.__thayamRenderAll = function(){
         // I6: reopening the panel (fresh load or a restored save) must never carry
         // a stale pending roll or its leftover .active highlight forward
         thPendingRoll = null;
+        clearAutoPlay();
         document.querySelectorAll('#thayamGrid .thPiece.active, .thHome.active').forEach(function(el){ el.classList.remove('active'); });
         renderThayamPieces();
         renderThayamTallies();
@@ -13210,6 +13269,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     sanaBub = sanaEl.querySelector('.sanaBub');
     sanaSpark = sanaEl.querySelector('.sanaSpark');
   })();
+  /* Thayam talks through SaNa too. Raja, after being stuck twice on a board
+     that was only waiting for a tap: "pop alert is better to know why not
+     rotating... SaNa should splash non-movable alert for it's field." He is
+     right -- the status line under the board is small, below the fold on a
+     phone, and was being read by nobody, while SaNa's bubble sits at the top
+     where the eye already goes and flashes when it changes. */
+  window.__sana = function(msg, mood, sticky){ sana(msg, mood, sticky); };
   function sana(msg, mood, sticky){
     if (!sanaBub) return;
     sanaBub.innerHTML = msg;
@@ -14716,7 +14782,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-239 (Thayam: the Roll button no longer goes quiet. When the board is waiting for you to tap a piece it now says so, a bonus roll announces itself instead of leaving the old instruction up, and the tap-me pieces pulse so they are hard to miss)';
+  var BUILD_VER = 'beta-240 (Thayam never sits stuck: SaNa herself asks you to tap a piece, nudges again after a few seconds, and if nobody taps she plays the move for you — keeping your turn and your bonus roll rather than passing it on)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
