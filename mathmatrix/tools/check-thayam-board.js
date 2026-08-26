@@ -42,16 +42,16 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   await ev(`document.querySelector('.toggleBtn[data-thayam-level]').click()`); await sleep(700);
 
   ok('the Thayam panel is showing', await ev(`document.body.classList.contains('thayamMode')`));
-  ok('the 5x5 grid rendered 25 cells', (await ev(`document.querySelectorAll('#thayamGrid .cell').length`)) === 25);
+  ok('the 5x5 grid rendered 25 cells', (await ev(`document.querySelectorAll('#thayamGrid .thCell').length`)) === 25);
 
-  const safeCount = await ev(`document.querySelectorAll('#thayamGrid .cell.safe').length`);
+  const safeCount = await ev(`document.querySelectorAll('#thayamGrid .thCell.thSafe').length`);
   ok('8 Mount squares (4 gate cells + 4 inner-ring axis cells)', safeCount === 8, String(safeCount));
 
   // C1 + I1 together: not just a count -- the EXACT flat cell each Mount sits
   // on, ground-truthed against the approved mockup's own literal SAFE grid
   // (mathmatrix/tools/_mock-thayam-table.html), independently hand-parsed
   // from its 5x5 markup: A(pink)=2,6 D(green)=10,16 C(yellow)=18,22 B(blue)=8,14.
-  const mountCells = await ev(`Array.from(document.querySelectorAll('#thayamGrid .cell.safe'))
+  const mountCells = await ev(`Array.from(document.querySelectorAll('#thayamGrid .thCell.thSafe'))
     .map(function(el){ return { cell: parseInt(el.dataset.thayamCell, 10), side: el.className.match(/entry-(\\w)/)[1] }; })
     .sort(function(a, b){ return a.cell - b.cell; })`);
   const expectedMounts = [
@@ -65,8 +65,8 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
 
   // The centre is a 9th square nothing can be captured on -- a rules-level
   // count, not a shared CSS class: the approved mockup renders it plain
-  // (.cell.center only, no .safe crosshatch layered over its turn-indicator).
-  const centerCount = await ev(`document.querySelectorAll('#thayamGrid .cell.center').length`);
+  // (.thCenter only, no .thSafe crosshatch layered over its turn-indicator).
+  const centerCount = await ev(`document.querySelectorAll('#thayamGrid .thCell.thCenter').length`);
   ok('exactly one centre goal cell', centerCount === 1, String(centerCount));
 
   const st = await ev(`JSON.stringify(window.__thayamState())`).then(JSON.parse);
