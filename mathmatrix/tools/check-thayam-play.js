@@ -135,6 +135,75 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
     deadTurn.say === 'A has no move for 3 — passing to D.', deadTurn.say);
   ok('...and the turn genuinely passed to D (the real next side in the anti-clockwise order)', deadTurn.active === 'D', deadTurn.active);
 
+  /* --- Final-review-round coverage: C2 (2-player game never routes a turn
+     to an unselected side) and I2 (hasCut survives a REAL page reload, not
+     just an in-session panel close/reopen). Both go through the real UI --
+     real checkboxes, the real Choose Player button, and (for I2) an actual
+     CDP Page.reload, not a simulated state reset. */
+
+  // 4) C2: untick C and D via the real checkboxes, start a real 2-player
+  //    game via the real Choose Player button, and confirm several forced
+  //    dead-turn rolls (no legal move -> auto-pass) only ever cycle A/B.
+  await ev(`document.querySelector('#thayamSelect input[data-side="C"]').click()`);
+  await ev(`document.querySelector('#thayamSelect input[data-side="D"]').click()`);
+  await ev(`document.getElementById('thayamChoose').click()`);
+  await sleep(300);
+
+  const seenSides = [];
+  for (let i = 0; i < 6; i++){
+    const activeBefore = await ev(`window.__thayamActiveSide()`);
+    seenSides.push(activeBefore);
+    // Reset THIS side's 'enter' pity right before rolling -- pityCounters are
+    // a known, separately-deferred minor that NewGame never resets, so a
+    // counter left near its threshold by an earlier scenario in this same
+    // file could otherwise force a stray Thayam here and grant a bonus roll,
+    // which would keep the turn on one side and make this loop non-deterministic.
+    // Resetting keeps this block a clean, guaranteed dead-turn auto-pass.
+    await ev(`window.__thayamPityReset('enter', '${activeBefore}')`);
+    await ev(`window.__thayamForceNextRoll({ d0: 3, d1: 0 })`);   // total 3 -- no home piece can use it, nothing on board yet either, so every roll is a genuine dead-turn auto-pass
+    await ev(`document.querySelector('.rollBtn[data-side="${activeBefore}"]').click()`);
+    await sleep(150);
+  }
+  ok('a real 2-player game (C and D unticked via the real checkboxes) never lands on an unselected side',
+    seenSides.every(s => s === 'A' || s === 'B'), seenSides.join(','));
+  ok('...and both enabled sides actually got a turn (not stuck repeating just one)',
+    seenSides.includes('A') && seenSides.includes('B'), seenSides.join(','));
+
+  // 5) I2: get A into a real hasCut:true state, let a genuine roll (through
+  //    the real Roll button) save it, then reload the page for real -- not
+  //    an in-session __thayamRenderAll() re-entry, an actual CDP Page.reload
+  //    -- and confirm hasCut survived where a fresh __thayamNewGame would
+  //    otherwise reset it to false.
+  const hasCutSetup = await ev(`(function(){
+    var pcs = window.__thayamPieces();
+    pcs.forEach(function(p){ if (p.side === 'A' && p.idx === 0){ p.lap = 'outer'; p.position = 3; p.lastCell = window.__thayamRealCell(0, 0, 3); } });
+    window.__thayamSetPieces(pcs);
+    window.__thayamForceCut('A');
+    window.__thayamTurnInit('A');
+    window.__thayamRenderAll();
+    return window.__thayamHasCut('A');
+  })()`);
+  ok('A is set up with hasCut:true before the reload', hasCutSetup === true, String(hasCutSetup));
+
+  await ev(`window.__thayamForceNextRoll({ d0: 2, d1: 0 })`);
+  await ev(`document.querySelector('.rollBtn[data-side="A"]').click()`);   // a real move, through the real UI, so it goes through the app's own save path
+  await sleep(300);
+
+  const savedHasCut = await ev(`JSON.parse(localStorage.getItem('mm.save.thayam.5x5')).hasCut`);
+  ok('the save payload itself carries hasCut:true for A before any reload', !!savedHasCut && savedHasCut.A === true, JSON.stringify(savedHasCut));
+
+  await send('Page.enable', {});
+  await send('Page.reload', { ignoreCache: false });
+  await sleep(1200);
+
+  await ev(`document.querySelector('.splashPlay').click()`);
+  await sleep(700);
+  await ev(`document.getElementById('tab-scHome').click()`); await sleep(300);
+  await ev(`document.querySelector('.toggleBtn[data-thayam-level]').click()`); await sleep(700);
+
+  const hasCutAfterReload = await ev(`window.__thayamHasCut('A')`);
+  ok("A's hasCut survives a REAL page reload (not just an in-session panel re-entry)", hasCutAfterReload === true, String(hasCutAfterReload));
+
   ok('no JS errors', errs.length === 0, errs.join(' | '));
   console.log(fail ? `\n${fail} FAILED` : '\nALL GREEN');
 

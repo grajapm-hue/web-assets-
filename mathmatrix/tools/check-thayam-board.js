@@ -47,6 +47,22 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   const safeCount = await ev(`document.querySelectorAll('#thayamGrid .cell.safe').length`);
   ok('8 Mount squares (4 gate cells + 4 inner-ring axis cells)', safeCount === 8, String(safeCount));
 
+  // C1 + I1 together: not just a count -- the EXACT flat cell each Mount sits
+  // on, ground-truthed against the approved mockup's own literal SAFE grid
+  // (mathmatrix/tools/_mock-thayam-table.html), independently hand-parsed
+  // from its 5x5 markup: A(pink)=2,6 D(green)=10,16 C(yellow)=18,22 B(blue)=8,14.
+  const mountCells = await ev(`Array.from(document.querySelectorAll('#thayamGrid .cell.safe'))
+    .map(function(el){ return { cell: parseInt(el.dataset.thayamCell, 10), side: el.className.match(/entry-(\\w)/)[1] }; })
+    .sort(function(a, b){ return a.cell - b.cell; })`);
+  const expectedMounts = [
+    { cell: 2, side: 'A' }, { cell: 6, side: 'A' },
+    { cell: 8, side: 'B' }, { cell: 10, side: 'D' },
+    { cell: 14, side: 'B' }, { cell: 16, side: 'D' },
+    { cell: 18, side: 'C' }, { cell: 22, side: 'C' },
+  ];
+  ok('every Mount cell number + owning colour matches the approved mockup exactly',
+    JSON.stringify(mountCells) === JSON.stringify(expectedMounts), JSON.stringify(mountCells));
+
   // The centre is a 9th square nothing can be captured on -- a rules-level
   // count, not a shared CSS class: the approved mockup renders it plain
   // (.cell.center only, no .safe crosshatch layered over its turn-indicator).

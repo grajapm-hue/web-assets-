@@ -4205,6 +4205,7 @@ body{ background:#C9A87C !important; }
 
     <div class="thSeat left sideD" data-side="D">
       <div class="nm" id="thNameD">Store · D</div>
+      <div class="dice"><div class="kattai" id="thDieD0">·</div><div class="kattai" id="thDieD1">·</div></div>
       <div class="thTally" id="thTallyD"><span>🏠 3</span><span>🏃 0</span><span>🏆 0</span></div>
       <button class="rollBtn" data-side="D">🎲</button>
     </div>
@@ -4213,6 +4214,7 @@ body{ background:#C9A87C !important; }
 
     <div class="thSeat right sideB" data-side="B">
       <div class="nm" id="thNameB">Store · B</div>
+      <div class="dice"><div class="kattai" id="thDieB0">·</div><div class="kattai" id="thDieB1">·</div></div>
       <div class="thTally" id="thTallyB"><span>🏠 3</span><span>🏃 0</span><span>🏆 0</span></div>
       <button class="rollBtn" data-side="B">🎲</button>
     </div>
@@ -10494,6 +10496,18 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       }
       window.__thayamRing = thayamRing;
       window.__thayamRings = thayamRings;
+
+      /* C1 fix: the Store SEATS go A=top,B=RIGHT,C=bottom,D=LEFT, but the ring
+         above walks ANTI-CLOCKWISE from top -- so the ring-order colour index
+         is A=0,D=1,C=2,B=3, NOT SIDES_T's own A,B,C,D array order. Every place
+         a colour index feeds realCell/colourOffset/SAFE_T (board geometry)
+         must use THIS mapping; anywhere still iterating sides in plain Store
+         order (turn-state snapshots, tally rendering, etc.) is unaffected and
+         must NOT be switched to this one. Shared here, once, as an export --
+         cross-IIFE fixes only talk through window.__thayam* (see file-top
+         convention), never by reaching into another IIFE's own closure. */
+      var RING_ORDER = ['A', 'D', 'C', 'B'];
+      window.__thayamSideIndex = function(side){ return RING_ORDER.indexOf(side); };
     })();
 
     (function(){
@@ -10512,8 +10526,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
       var SAFE_T = {};   // flat-index -> side that owns this Mount (or 'center')
       for (var s5 = 0; s5 < 4; s5++){
-        SAFE_T[realCell(0, s5, 0)] = SIDES_T[s5];   // each colour's outer-ring gate
-        SAFE_T[realCell(1, s5, 0)] = SIDES_T[s5];   // each colour's inner-ring axis
+        var side5 = SIDES_T[s5], ci5 = window.__thayamSideIndex(side5);   // C1: ring-order index, NOT s5/SIDES_T order
+        SAFE_T[realCell(0, ci5, 0)] = side5;   // each colour's outer-ring gate
+        SAFE_T[realCell(1, ci5, 1)] = side5;   // I1: inner-ring Mount is one step further along the ring than the gate axis -- the ring's corner diagonally inward from this colour's own outer gate, matching the approved mockup
       }
       var CENTER_T = 2 * 5 + 2;   // (2,2), the one cell no ring ever contains
 
@@ -10628,7 +10643,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       window.__thayamNewGame = thayamNewGame;
       window.__thayamPieces = function(){ return thPieces; };
 
-      function sideIdxOf(side){ return SIDES_T.indexOf(side); }
+      function sideIdxOf(side){ return window.__thayamSideIndex(side); }   // C1: ring-order colour index for board geometry, NOT SIDES_T's Store-seat order
 
       /* Moving a piece forward by `steps` along its OWN lap. Refuses to cross
          into the next lap (cut-mandate) unless hasCut is true for that side --
@@ -10799,7 +10814,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         var pieces = window.__thayamPieces();
         var anyOut = pieces.some(function(p){ return p.lap !== 'home'; });
         if (!anyOut){ window.__mmClear(thayamKey()); return; }
-        window.__mmSave(thayamKey(), { pieces: pieces, activeSide: window.__thayamActiveSide(), enabled: window.__thayamTurnState().enabled });
+        var hasCut = {};   // I2: persist every side's earned cut-mandate flag, not just pieces/turn state
+        SIDES_T.forEach(function(s){ hasCut[s] = window.__thayamHasCut(s); });
+        window.__mmSave(thayamKey(), { pieces: pieces, activeSide: window.__thayamActiveSide(), enabled: window.__thayamTurnState().enabled, hasCut: hasCut });
       }
       function thayamRestore(){
         var sv = window.__mmLoad(thayamKey(), function(o){
@@ -10809,6 +10826,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         window.__thayamSetPieces(sv.pieces);
         window.__thayamSetEnabled(sv.enabled);
         window.__thayamTurnInit(sv.activeSide);
+        // I2: restore each side's earned cut-mandate flag -- a fresh __thayamNewGame
+        // already starts every side false, so only the true ones need replaying
+        if (sv.hasCut){ SIDES_T.forEach(function(s){ if (sv.hasCut[s]) window.__thayamForceCut(s); }); }
         return true;
       }
       window.__thayamClear = function(){ window.__mmClear(thayamKey()); };
@@ -10851,6 +10871,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
          If NO piece can use the roll at all, the turn passes immediately with
          no tap required -- the "no legal move" rule from the spec. */
       var thPendingRoll = null;
+      var thGameWon = false;   // I5: true once a winner is declared, so the game genuinely stops instead of silently continuing
 
       /* Applies the pity system to whatever the dice actually rolled, for
          whichever of the three chokepoints is relevant to THIS player right
@@ -10870,6 +10891,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
            capture", not "landed exactly on an opponent". */
       function applyPity(sideLetter, roll){
         var pieces = window.__thayamPieces().filter(function(p){ return p.side === sideLetter; });
+        var pityForced = false;   // I7: at most one chokepoint may force-override roll.total on a given roll -- otherwise a later chokepoint can silently clobber an earlier one's guaranteed hit
 
         var homePieces = pieces.filter(function(p){ return p.lap === 'home'; });
         if (homePieces.length){
@@ -10877,6 +10899,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
             window.__thayamPityRecord('enter', sideLetter, true);
           } else if (window.__thayamPityCheck('enter', sideLetter)){
             roll.d0 = 1; roll.d1 = 0; roll.total = 1; roll.isThayam = true; roll.bonusRoll = true;
+            pityForced = true;
             window.__thayamPityRecord('enter', sideLetter, true);
           } else {
             window.__thayamPityRecord('enter', sideLetter, false);
@@ -10889,17 +10912,23 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           var alreadyExact = neededForCentre.indexOf(roll.total) > -1;
           if (alreadyExact){
             window.__thayamPityRecord('center', sideLetter, true);
+          } else if (pityForced){
+            // I7: 'enter' already forced this roll -- record centre's own natural
+            // miss (so its counter still advances correctly) without letting it
+            // overwrite roll.total and erase enter's guaranteed hit
+            window.__thayamPityRecord('center', sideLetter, false);
           } else if (window.__thayamPityCheck('center', sideLetter)){
             var forcedTotal = neededForCentre[0];
             roll.total = forcedTotal; roll.d0 = Math.min(3, forcedTotal); roll.d1 = forcedTotal - roll.d0;
             roll.isThayam = forcedTotal === 1; roll.bonusRoll = forcedTotal === 1 || forcedTotal === 5 || forcedTotal === 6 || forcedTotal === 12;
+            pityForced = true;
             window.__thayamPityRecord('center', sideLetter, true);
           } else {
             window.__thayamPityRecord('center', sideLetter, false);
           }
         }
 
-        var stuckOnOuter = pieces.some(function(p){ return p.lap === 'outer'; }) && !window.__thayamHasCut(sideLetter);
+        var stuckOnOuter = pieces.some(function(p){ return p.lap === 'outer' && p.position === window.__thayamRings(5)[0].length - 1; }) && !window.__thayamHasCut(sideLetter);   // I3: genuinely parked at the boundary, not just anywhere on the outer ring
         if (stuckOnOuter){
           if (window.__thayamPityCheck('cut', sideLetter)){
             window.__thayamForceCut(sideLetter);
@@ -10913,12 +10942,17 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       }
 
       function thayamOnRoll(sideLetter){
+        if (thGameWon) return;   // I5: game already decided, no more rolls
         var sideIdx = SIDES_T.indexOf(sideLetter);
         if (window.__thayamActiveSide() !== sideLetter) return;   // not this player's turn
         if (thPendingRoll) return;   // a tap-to-choose selection is already waiting; don't discard it under a second roll
         var roll = thForcedRoll || window.__thayamRollDice();
         thForcedRoll = null;
         roll = applyPity(sideLetter, roll);
+        // I4: actually show the roll -- the dice tiles existed but nothing ever wrote to them
+        var die0 = document.getElementById('thDie' + sideLetter + '0'), die1 = document.getElementById('thDie' + sideLetter + '1');
+        if (die0) die0.textContent = roll.d0;
+        if (die1) die1.textContent = roll.d1;
         var say = document.getElementById('thaySay');
 
         if (!window.__thayamLegalMoveExists(sideIdx, roll.total)){
@@ -10982,16 +11016,28 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         thayamSave();
         var winner = window.__thayamGameOver();
         if (winner){
+          thGameWon = true;   // I5: stop the game -- no more rolls once someone has won
           if (say) say.textContent = winner + ' wins!';
           window.__thayamClear();
           return;
+        }
+        // I4: an ordinary move (no capture, no bonus roll) was previously totally
+        // silent -- fill in what capture/win/auto-pass already had
+        if (!result.captured.length && !roll.bonusRoll && say){
+          say.textContent = SIDES_T[sideIdx] + ' rolled ' + roll.total + ' — moved.';
         }
         if (!roll.bonusRoll) window.__thayamEndTurn();
         renderThayamTallies();
       }
       window.__thayamStartNewGame = function(){
-        window.__thayamNewGame(window.__thayamSelectedSides());
-        window.__thayamTurnInit(window.__thayamSelectedSides()[0]);
+        thPendingRoll = null;   // I6: never carry a stale pending roll into a fresh game
+        thGameWon = false;   // I5: a fresh game is never already won
+        var selected = window.__thayamSelectedSides();
+        var enabledMap = { A: false, B: false, C: false, D: false };
+        selected.forEach(function(s){ enabledMap[s] = true; });
+        window.__thayamNewGame(selected);
+        window.__thayamSetEnabled(enabledMap);   // C2: wire the Choose-Player tick-boxes into the turn engine's own enabled map -- these were two separate closures that never talked to each other
+        window.__thayamTurnInit(selected[0]);
         window.__thayamBuild5x5();
         renderThayamPieces();
         renderThayamTallies();
@@ -11002,6 +11048,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         btn.addEventListener('click', function(){ thayamOnRoll(btn.dataset.side); });
       });
       document.getElementById('thayamGrid') && document.getElementById('thayamGrid').addEventListener('click', function(e){
+        if (thGameWon) return;   // I5
         var pieceEl = e.target.closest('.thPiece');
         if (!pieceEl || !thPendingRoll) return;
         var side = Array.from(pieceEl.classList).find(function(c){ return c.indexOf('side') === 0; }).replace('side', '');
@@ -11017,6 +11064,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
          applies) IS the tap target for it. Delegated on the shared table
          wrapper, same pattern as the board's own delegated listener. */
       document.querySelector('.thayamTable') && document.querySelector('.thayamTable').addEventListener('click', function(e){
+        if (thGameWon) return;   // I5
         var homeEl = e.target.closest('.thHome');
         if (!homeEl || !thPendingRoll) return;
         var side = homeEl.dataset.thayamHomeSide;
@@ -11028,7 +11076,14 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         document.querySelectorAll('#thayamGrid .thPiece').forEach(function(el){ el.classList.remove('active'); });
       });
 
-      window.__thayamRenderAll = function(){ renderThayamPieces(); renderThayamTallies(); };
+      window.__thayamRenderAll = function(){
+        // I6: reopening the panel (fresh load or a restored save) must never carry
+        // a stale pending roll or its leftover .active highlight forward
+        thPendingRoll = null;
+        document.querySelectorAll('#thayamGrid .thPiece.active, .thHome.active').forEach(function(el){ el.classList.remove('active'); });
+        renderThayamPieces();
+        renderThayamTallies();
+      };
       window.__thayamRestore = thayamRestore;
     })();
 
@@ -11050,7 +11105,15 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         goScreen('scPlay');
         showThayamMode(true);
         window.__thayamBuild5x5();
-        if (!window.__thayamRestore()) { window.__thayamNewGame(['A','B','C','D']); window.__thayamTurnInit('A'); }
+        if (!window.__thayamRestore()) {
+          // C2: honour the Choose-Player tick-boxes here too, not just via the Choose Player button
+          var coldSides = window.__thayamSelectedSides();
+          var coldEnabled = { A: false, B: false, C: false, D: false };
+          coldSides.forEach(function(s){ coldEnabled[s] = true; });
+          window.__thayamNewGame(coldSides);
+          window.__thayamSetEnabled(coldEnabled);
+          window.__thayamTurnInit(coldSides[0]);
+        }
         window.__thayamRenderAll();
         var title = document.getElementById('appBarTitle');
         if (title) title.innerHTML = boxedTitle('🎲 Thayam 5×5');
