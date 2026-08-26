@@ -2383,33 +2383,46 @@ body.thayamMode .solvedCounter{ display:none !important; }
 #thayamPanel{ width:100%; max-width:560px; margin:0 auto; display:none; }
 body.thayamMode #thayamPanel{ display:flex !important; flex-direction:column;
   flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden;
-  -webkit-overflow-scrolling:touch; padding:6px 10px 10px; box-sizing:border-box; }
+  -webkit-overflow-scrolling:touch; padding:6px 5px 10px; box-sizing:border-box; }
 
 /* Board + seat layout, ported from the approved mockup
    (mathmatrix/tools/_mock-thayam-table.html) verbatim. */
-.thayamTable{ display:grid; grid-template-columns:44px 1fr 44px; grid-template-rows:auto 1fr auto;
-  gap:4px; align-items:center; justify-items:center; }
+/* The two side seats are fixed-width; the board takes exactly what is LEFT.
+   minmax(0,1fr) (not plain 1fr) plus width:100% on the grid itself is what
+   stops the board forcing its own track wider than the row and pushing the
+   right-hand seat off the screen -- which is precisely what a fixed
+   width:min(300px,78vw) on the board did at 390px: 44+300+44+gaps = 396 in a
+   348px row, so Store B sat 27px past the viewport edge with no way to
+   scroll to it. Sizing the board FROM the leftover space cannot overflow at
+   any width, so it needs no per-phone tuning. */
+.thayamTable{ display:grid; grid-template-columns:42px minmax(0,1fr) 42px; grid-template-rows:auto 1fr auto;
+  gap:3px; align-items:center; justify-items:center; }
 .thSeat{ display:flex; flex-direction:column; align-items:center; gap:4px; }
-.thSeat .nm{ font-size:13px; font-weight:900; padding:5px 11px; border-radius:9px; background:var(--sf); white-space:nowrap; }
+.thSeat .nm{ font-size:14px; font-weight:900; padding:5px 11px; border-radius:9px; background:var(--sf); white-space:nowrap; }
 .thSeat.sideA .nm{ color:#FF6FA3; } .thSeat.sideB .nm{ color:#4CB9FF; }
 .thSeat.sideC .nm{ color:#F7B32B; } .thSeat.sideD .nm{ color:#3DD68C; }
 .thSeat .dice{ display:flex; gap:5px; align-items:center; }
-.thSeat .kattai{ width:19px; height:40px; border-radius:6px; background:linear-gradient(160deg,#FFE9B8,#D9A93E);
-  display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:900; color:#5c3d0a;
+.thSeat .kattai{ width:22px; height:44px; border-radius:6px; background:linear-gradient(160deg,#FFE9B8,#D9A93E);
+  display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:900; color:#5c3d0a;
   box-shadow:0 2px 0 rgba(0,0,0,.3); }
 .thSeat .rollBtn{ background:var(--gold); color:#1a1204; border:0; border-radius:999px;
-  font-size:12.5px; font-weight:900; box-shadow:0 2px 0 #a97800; cursor:pointer; touch-action:manipulation; }
+  font-size:13px; font-weight:900; box-shadow:0 2px 0 #a97800; cursor:pointer; touch-action:manipulation; }
 .thSeat.top, .thSeat.bottom{ grid-column:2; flex-direction:column; }
 .thSeat.top .wide, .thSeat.bottom .wide{ display:flex; align-items:center; gap:12px; }
-.thSeat.top .wide .rollBtn, .thSeat.bottom .wide .rollBtn{ padding:10px 20px; font-size:14px; }
+.thSeat.top .wide .rollBtn, .thSeat.bottom .wide .rollBtn{ padding:11px 22px; font-size:15.5px; }
 .thSeat.top{ grid-row:1; } .thSeat.bottom{ grid-row:3; }
-.thSeat.left, .thSeat.right{ grid-row:2; width:44px; }
+.thSeat.left, .thSeat.right{ grid-row:2; width:42px; }
 .thSeat.left{ grid-column:1; } .thSeat.right{ grid-column:3; }
-.thSeat.left .nm, .thSeat.right .nm{ writing-mode:vertical-rl; padding:8px 4px; font-size:11px; }
-.thSeat.left .rollBtn, .thSeat.right .rollBtn{ width:36px; height:36px; border-radius:50%; padding:0; font-size:14px; }
+.thSeat.left .nm, .thSeat.right .nm{ writing-mode:vertical-rl; padding:9px 4px; font-size:12.5px; }
+/* Side seats are only 42px wide, so their two dice must stack rather than sit
+   side by side -- at 22px each plus the gap they would otherwise overflow the
+   seat and clip, the same way the whole right seat used to clip. */
+.thSeat.left .dice, .thSeat.right .dice{ flex-direction:column; gap:4px; }
+.thSeat.left .kattai, .thSeat.right .kattai{ width:30px; height:22px; }
+.thSeat.left .rollBtn, .thSeat.right .rollBtn{ width:38px; height:38px; border-radius:50%; padding:0; font-size:16px; }
 
-#thayamGrid{ grid-column:2; grid-row:2; width:min(300px, 78vw); height:min(300px, 78vw); border-radius:14px;
-  background:var(--sf); box-shadow:0 4px 0 rgba(0,0,0,.3); border:4px solid rgba(255,255,255,.55);
+#thayamGrid{ grid-column:2; grid-row:2; width:100%; aspect-ratio:1; height:auto; border-radius:14px;
+  background:var(--sf); box-shadow:0 4px 0 rgba(0,0,0,.3); border:4px solid rgba(255,255,255,.55); box-sizing:border-box;
   display:grid; grid-template-columns:repeat(5,1fr); grid-template-rows:repeat(5,1fr); gap:2px; padding:6px; }
 #thayamGrid .thCell{ border-radius:6px; background:var(--sf2); position:relative;
   display:flex; align-items:center; justify-content:center; border:2px solid rgba(255,255,255,.42); }
@@ -2448,11 +2461,22 @@ body.thayamMode #thayamPanel{ display:flex !important; flex-direction:column;
 .thFace.dir-bottom .thLook{ transform:rotate(90deg); }
 .thFace.dir-left .thLook{ transform:rotate(180deg); }
 
-.thTally{ display:flex; gap:5px; font-size:11.5px; font-weight:900; }
-.thTally span{ padding:4px 7px; border-radius:9px; background:rgba(0,0,0,.22); border:1.5px solid rgba(255,255,255,.42); white-space:nowrap; }
+.thTally{ display:flex; gap:5px; font-size:13px; font-weight:900; }
+.thTally span{ padding:5px 8px; border-radius:9px; background:rgba(0,0,0,.22); border:1.5px solid rgba(255,255,255,.42); white-space:nowrap; }
 .thSeat.top .thTally, .thSeat.bottom .thTally{ margin-top:3px; }
 .thSeat.left .thTally, .thSeat.right .thTally{ flex-direction:column; align-items:center; gap:3px; margin-top:2px; }
-.thSeat.left .thTally span, .thSeat.right .thTally span{ writing-mode:vertical-rl; padding:5px 3px; }
+.thSeat.left .thTally span, .thSeat.right .thTally span{ writing-mode:vertical-rl; padding:6px 4px; font-size:12px; }
+
+/* The panel's own header. These carry Thayam-specific names rather than the
+   mockup's generic .top/.title, which shipped with NO matching CSS at all --
+   so the round pill stretched full width as a plain block instead of sitting
+   beside the title, and the title kept the mockup's hardcoded white, which is
+   near-invisible on this theme's sandalwood ground. Colours are restated for
+   wood at the bottom of this stylesheet, with every other surface. */
+.thTop{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:4px 4px 2px; }
+.thTitle{ font-size:17px; font-weight:900; }
+#thayamRound{ font-size:13px; font-weight:800; padding:5px 12px; border-radius:999px; white-space:nowrap; }
+#thaySay{ margin:10px 4px 0; font-size:16px; font-weight:700; line-height:1.4; }
 
 /* auto margins rather than justify-content:center — centred flex content that
    grows taller than its scroll container has its TOP clipped and cannot be
@@ -3858,6 +3882,40 @@ body{ background:#C9A87C !important; }
 .gateBounce{ animation:badgePop .32s cubic-bezier(.34,1.56,.64,1); }
 .gateShake{ animation:sanaOops .45s ease; }
 
+/* Thayam, restated for wood.
+
+   This panel was built from a standalone dark mockup and was the one surface
+   that never got its Sandalwood restatement -- so its chrome kept colours
+   picked for a near-black ground and rendered them straight onto sandalwood.
+   Raja: "5x5 thayam text smeared by background". Measured rather than guessed:
+   the title computed to pure #FFFFFF on #C9A87C, about 1.9:1 -- under half the
+   4.5:1 minimum, hence "smeared". Same story for the tally chips, whose
+   rgba(0,0,0,.22) fill turned to murky brown on wood while their text stayed
+   near-white.
+
+   The BOARD itself deliberately stays dark: it is a game board, it reads as
+   its own object against the wood the way a real one does, and Raja confirmed
+   that half already looks right. Only the chrome around it moves to the
+   theme's own dark-text-on-cream convention. */
+.thTitle{ color:#241708; }
+/* Deeper than the #9A3412 used for accents on cream: measured on THIS ground
+   that lighter red only reaches 3.26:1, and the title is 17px -- under the
+   18.66px where the large-text allowance starts. This reads 4.8:1. */
+.thTitle b{ color:#6B2409; }
+/* Likewise the round pill: the theme's own #A9793F chip fill only carries its
+   cream text at 3.57:1, fine for a decorative "coming soon" label and not for
+   something a player reads each round. */
+#thayamRound{ background:#6B4A25; color:#FFF6E7; border:1px solid rgba(94,64,32,.42); }
+#thaySay{ color:#33220F; }
+/* Cream chips with dark text, the same pairing .palSay and the level cards
+   already use -- not the dark-ground fill, which goes muddy here. */
+.thTally{ color:#33220F; }
+.thTally span{ background:#FFF6E7; border-color:rgba(94,64,32,.42); }
+/* The seat name pills keep their dark fill on purpose: the four player colours
+   (pink, cyan, gold, green) were chosen to glow on a dark ground and wash out
+   on cream, so the pill is what keeps them legible -- and it ties each seat to
+   the board it belongs to. */
+
 @media(prefers-reduced-motion:reduce){ *{ animation:none !important; } }
 </style>
 </head>
@@ -4179,9 +4237,9 @@ body{ background:#C9A87C !important; }
 </div>
 
 <div id="thayamPanel">
-  <div class="top" style="padding:4px 4px 0;">
-    <div class="title" style="font-size:16px; font-weight:900; color:#fff;">🎲 <b style="color:var(--gold);">Thayam</b> · 5×5</div>
-    <div id="thayamRound" style="background:var(--sf2); color:var(--bink); font-size:13px; font-weight:800; padding:5px 12px; border-radius:999px; border:1px solid rgba(255,255,255,.12);">Round 1</div>
+  <div class="thTop">
+    <div class="thTitle">🎲 <b>Thayam</b> · 5×5</div>
+    <div id="thayamRound">Round 1</div>
   </div>
 
   <div class="pal4Select" id="thayamSelect">
@@ -4229,7 +4287,7 @@ body{ background:#C9A87C !important; }
     </div>
   </div>
 
-  <div id="thaySay" style="margin:10px 4px 0; font-size:15px; font-weight:700; color:var(--bink);"></div>
+  <div id="thaySay"></div>
 </div>
 
 <div id="rotateHint">📱 Turn your phone sideways for a much bigger board (scroll down to see it all)</div>
@@ -14129,7 +14187,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-229 (Thayam board fix: the Mount squares\' X marks, safe-cell tint, gold centre ring and coloured gate rings had all silently gone missing -- a class-name collision with an unrelated puzzle\'s wood-theme styling, now its own board again -- plus bigger board, dice, and text throughout)';
+  var BUILD_VER = 'beta-230 (Thayam panel readability: the title was white-on-sandalwood and all but invisible, Store B sat 27px off the right edge of the phone, and the round pill stretched across the whole width -- the panel had never been restated for the wood theme. Text and controls bigger again throughout)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
