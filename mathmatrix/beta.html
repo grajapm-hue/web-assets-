@@ -2456,8 +2456,15 @@ body.thayamMode #thayamPanel{ display:flex !important; flex-direction:column;
 /* Tap-to-choose highlight -- marks exactly the pieces (and, when a fresh
    entry from home is one of the choices, the Store panel's own home count)
    that will actually respond to a tap right now. */
-.thPiece.active{ box-shadow:0 2px 0 rgba(0,0,0,.35), inset 0 0 0 1.5px rgba(255,255,255,.5), 0 0 0 3px var(--gold); cursor:pointer; }
-.thTally .thHome.active{ box-shadow:0 0 0 2px var(--gold) inset; cursor:pointer; }
+/* "Tap me." These pulse because a static ring was easy to miss -- especially
+   the home chip on the narrow left/right seats, where it is a small vertical
+   pill. A player who cannot see what to tap presses Roll instead, and a Roll
+   that is being ignored looks exactly like broken dice. */
+.thPiece.active{ box-shadow:0 2px 0 rgba(0,0,0,.35), inset 0 0 0 1.5px rgba(255,255,255,.5), 0 0 0 3px var(--gold); cursor:pointer;
+  animation:thTapPulse 1s ease-in-out infinite; }
+.thTally .thHome.active{ box-shadow:0 0 0 2px var(--gold) inset, 0 0 0 2px var(--gold); cursor:pointer;
+  animation:thTapPulse 1s ease-in-out infinite; }
+@keyframes thTapPulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.12); } }
 
 /* Turn pointer -- same flexbox spacing fix as the approved mockup (see the
    mockup's own comments on why an emoji-relative absolute offset failed a
@@ -10748,7 +10755,17 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         tapPiece: { en: 'Tap the piece you want to move.',
                     ta: 'நகர்த்த வேண்டிய காயைத் தட்டுங்கள்.' },
         wins:     { en: '{a} wins!', ta: 'வீரர் {a} வெற்றி!' },
-        moved:    { en: '{a} rolled {n} — moved.', ta: 'வீரர் {a} {n} உருட்டினார் — நகர்ந்தது.' }
+        moved:    { en: '{a} rolled {n} — moved.', ta: 'வீரர் {a} {n} உருட்டினார் — நகர்ந்தது.' },
+        /* Raja: "after some sequence player B dice not rotating." The dice were
+           fine -- the board was waiting for a tap and the Roll button was
+           silently doing nothing, which is indistinguishable from broken. It
+           says so now. */
+        tapFirst: { en: 'Tap one of the glowing pieces first — then you can roll again.',
+                    ta: 'முதலில் ஒளிரும் காய்களில் ஒன்றைத் தட்டுங்கள் — பிறகு மீண்டும் உருட்டலாம்.' },
+        /* And a bonus roll used to leave the "tap a piece" instruction on
+           screen, so a tap that HAD worked still looked ignored. */
+        bonus:    { en: '{a} rolled {n} — move made. Bonus roll: press Roll again!',
+                    ta: 'வீரர் {a} {n} உருட்டினார் — நகர்ந்தது. கூடுதல் வாய்ப்பு: மீண்டும் உருட்டுங்கள்!' }
       };
       function thP(key, v){
         var row = TH_TXT[key] || {};
@@ -11471,7 +11488,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         if (thGameWon) return;   // I5: game already decided, no more rolls
         var sideIdx = SIDES_T.indexOf(sideLetter);
         if (window.__thayamActiveSide() !== sideLetter) return;   // not this player's turn
-        if (thPendingRoll) return;   // a tap-to-choose selection is already waiting; don't discard it under a second roll
+        /* A tap-to-choose selection is already waiting; don't discard it under
+           a second roll -- but SAY so. Silently ignoring the button is what
+           made this look like the dice had stopped working. */
+        if (thPendingRoll){ window.__thayamSay('tapFirst'); return; }
         var roll = thForcedRoll || window.__thayamRollDice();
         thForcedRoll = null;
         roll = applyPity(sideLetter, roll);
@@ -11549,8 +11569,14 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         }
         // I4: an ordinary move (no capture, no bonus roll) was previously totally
         // silent -- fill in what capture/win/auto-pass already had
-        if (!result.captured.length && !roll.bonusRoll && say){
-          window.__thayamSay('moved', { a: SIDES_T[sideIdx], n: roll.total });
+        if (!result.captured.length && say){
+          /* Every committed move now reports itself. A bonus roll used to fall
+             through silently, which left whatever was on screen before -- most
+             often "Tap the piece you want to move" -- so a tap that HAD worked
+             still read as ignored, and the player pressed Roll again into a
+             board that looked frozen. */
+          if (roll.bonusRoll) window.__thayamSay('bonus', { a: SIDES_T[sideIdx], n: roll.total });
+          else window.__thayamSay('moved', { a: SIDES_T[sideIdx], n: roll.total });
         }
         if (!roll.bonusRoll) window.__thayamEndTurn();
         renderThayamTallies();
@@ -14690,7 +14716,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-238 (both Thayam boards now let you pick 3 or 5 seeds each, so the players decide how long a game runs. Neither board is called easy or hard any more -- they are simply 5×5 and 7×7, and the tiles say what actually differs)';
+  var BUILD_VER = 'beta-239 (Thayam: the Roll button no longer goes quiet. When the board is waiting for you to tap a piece it now says so, a bonus roll announces itself instead of leaving the old instruction up, and the tap-me pieces pulse so they are hard to miss)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that

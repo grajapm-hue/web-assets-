@@ -277,6 +277,51 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   ok('...and the rest of the saved game survives intact',
     migrated.hasCutA === true && migrated.active === 'A', JSON.stringify(migrated));
 
+  /* RAJA'S REPORT: "after some sequence player B dice not rotating."
+     The dice were working. The board was waiting for a tap-to-choose, the
+     Roll button was silently doing nothing, and a bonus roll then left the
+     "tap a piece" instruction on screen -- so a tap that HAD worked still
+     looked ignored. Three ways for a player to conclude the dice are broken,
+     none of them involving the dice. Built on a side seat (B) because that is
+     where he hit it and where the home chip is smallest. */
+  const stuck = await ev(`(function(){
+    window.__thayamConfigure({ n: 7, pieces: 5, cutMandate: true });
+    window.__thayamNewGame(['A','B','C','D']);
+    window.__thayamSetEnabled({ A:true, B:true, C:true, D:true });
+    var pcs = window.__thayamPieces();
+    pcs.forEach(function(p){
+      if (p.side === 'B' && p.idx === 0){ p.lap = 0; p.position = 4; p.lastCell = window.__thayamRealCell(0, window.__thayamSideIndex('B'), 4, 7); }
+    });
+    window.__thayamSetPieces(pcs);
+    window.__thayamTurnInit('B');
+    window.__thayamRenderAll();
+    var out = {};
+    window.__thayamForceNextRoll({ d0: 1, d1: 0 });          // a Thayam: entering AND moving are both legal
+    document.querySelector('.rollBtn[data-side="B"]').click();
+    out.waiting = document.getElementById('thaySay').textContent;
+    out.pieceHighlighted = !!document.querySelector('#thayamGrid .thPiece.sideB.active');
+    out.homeChipHighlighted = !!document.querySelector('.thHome[data-thayam-home-side="B"].active');
+    document.querySelector('.rollBtn[data-side="B"]').click();   // press Roll into the wait
+    out.rollWhilePending = document.getElementById('thaySay').textContent;
+    var outCount = function(){ return window.__thayamPieces().filter(function(p){ return p.side === 'B' && typeof p.lap === 'number'; }).length; };
+    var before = outCount();
+    document.querySelector('.thHome[data-thayam-home-side="B"]').click();
+    out.tapEntered = outCount() === before + 1;
+    out.afterTap = document.getElementById('thaySay').textContent;
+    out.stillBsTurn = window.__thayamActiveSide() === 'B';
+    window.__thayamConfigure({ n: 5, pieces: 3, cutMandate: false });
+    return JSON.stringify(out);
+  })()`).then(JSON.parse);
+
+  ok('a mixed home+board Thayam asks which piece, and marks BOTH choices',
+    /Tap the piece/.test(stuck.waiting) && stuck.pieceHighlighted && stuck.homeChipHighlighted, JSON.stringify(stuck));
+  ok('pressing Roll while it waits SAYS why, instead of silently doing nothing',
+    /Tap one of the glowing pieces first/.test(stuck.rollWhilePending), stuck.rollWhilePending);
+  ok('tapping the home chip on a SIDE seat really enters that piece', stuck.tapEntered === true);
+  ok('a bonus roll reports itself rather than leaving the tap instruction up',
+    /Bonus roll/.test(stuck.afterTap) && !/Tap the piece/.test(stuck.afterTap), stuck.afterTap);
+  ok('...and the turn stays with the player who earned the bonus', stuck.stillBsTurn === true);
+
   ok('no JS errors', errs.length === 0, errs.join(' | '));
   console.log(fail ? `\n${fail} FAILED` : '\nALL GREEN');
 
