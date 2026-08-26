@@ -239,6 +239,44 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   const hasCutAfterReload = await ev(`window.__thayamHasCut('A')`);
   ok("A's hasCut survives a REAL page reload (not just an in-session panel re-entry)", hasCutAfterReload === true, String(hasCutAfterReload));
 
+  /* A GAME SAVED BY THE PREVIOUS BUILD MUST STILL OPEN.
+     `lap` used to be the strings 'outer'/'inner'; it is a ring index now. That
+     change reached players who may have had a game in progress, so restore
+     migrates the old shape instead of discarding it. Written as a real
+     old-format save straight into localStorage -- the only way to prove this
+     is to feed it exactly what the previous build wrote. */
+  const migrated = await ev(`(function(){
+    localStorage.setItem('mm.save.thayam.5x5', JSON.stringify({
+      v: 1,   // __mmSave stamps this; a save without it is rejected outright, so the old build's saves carry it
+      pieces: [
+        { side:'A', idx:0, lap:'outer',    position:4, lastCell: window.__thayamRealCell(0,0,4) },
+        { side:'A', idx:1, lap:'inner',    position:2, lastCell: window.__thayamRealCell(1,0,2) },
+        { side:'A', idx:2, lap:'home',     position:0, lastCell: null },
+        { side:'B', idx:0, lap:'finished', position:0, lastCell: null },
+        { side:'B', idx:1, lap:'home',     position:0, lastCell: null },
+        { side:'B', idx:2, lap:'home',     position:0, lastCell: null }
+      ],
+      activeSide: 'A',
+      enabled: { A:true, B:true, C:false, D:false },
+      hasCut: { A:true, B:false, C:false, D:false }
+    }));
+    var restored = window.__thayamRestore();
+    var pcs = window.__thayamPieces();
+    return JSON.stringify({
+      restored: restored,
+      laps: pcs.map(function(p){ return p.side + p.idx + '=' + p.lap; }).join(' '),
+      hasCutA: window.__thayamHasCut('A'),
+      active: window.__thayamActiveSide()
+    });
+  })()`).then(JSON.parse);
+  ok('a game saved by the PREVIOUS build still loads', migrated.restored === true, JSON.stringify(migrated));
+  ok("...with the old 'outer'/'inner' names translated to ring numbers",
+    /A0=0/.test(migrated.laps) && /A1=1/.test(migrated.laps), migrated.laps);
+  ok("...and 'home' / 'finished' left alone, since they are states and not rings",
+    /A2=home/.test(migrated.laps) && /B0=finished/.test(migrated.laps), migrated.laps);
+  ok('...and the rest of the saved game survives intact',
+    migrated.hasCutA === true && migrated.active === 'A', JSON.stringify(migrated));
+
   ok('no JS errors', errs.length === 0, errs.join(' | '));
   console.log(fail ? `\n${fail} FAILED` : '\nALL GREEN');
 
