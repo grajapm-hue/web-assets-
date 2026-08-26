@@ -35,6 +35,13 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   await ev(`document.querySelector('.splashPlay').click()`);
   await sleep(700);
 
+  /* The cut-mandate ("you may not turn inward until you have captured
+     somebody") is now a per-board setting, OFF for 5x5 and destined to be ON
+     for 7x7. The block below exercises the rule itself, so it switches it on
+     explicitly rather than relying on a default -- and the 5x5 default gets
+     its own check further down. */
+  await ev(`window.__thayamSetCutMandate(true)`);
+
   await ev(`window.__thayamNewGame(['A','B','C','D'])`);
   const p0 = await ev(`JSON.stringify(window.__thayamPieces())`).then(JSON.parse);
   ok('12 pieces exist (4 players x 3 seeds)', p0.length === 12, String(p0.length));
@@ -127,6 +134,33 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   ok('an exact roll onto the centre finishes the piece and reports won:true', winResult.moved === true && winResult.won === true, JSON.stringify(winResult));
   const pFinished = await ev(`JSON.stringify(window.__thayamPieces())`).then(JSON.parse);
   ok('the finished piece has lap "finished"', pFinished[0].lap === 'finished', JSON.stringify(pFinished[0]));
+
+  /* THE 5x5 DEFAULT: free crossing. Raja played the strict rule and found the
+     wait unbearable -- "the forced pause in 5x5 is bit difficult... blank free
+     move box is very less". Measured over 27 games before changing it: a
+     player sat frozen at the boundary 15 rolls on average and 46 at worst,
+     while the rule only shortened games by 7%. So 5x5 lets a piece turn inward
+     with no capture, and 7x7 will keep the traditional rule. Both directions
+     are asserted, because a setting that cannot be switched back is not a
+     setting -- the 7x7 board depends on this exact flag. */
+  await ev(`window.__thayamSetCutMandate(false)`);
+  await ev(`window.__thayamNewGame(['A','B'])`);
+  await ev(`window.__thayamSetPieces([{ side:'A', idx:0, lap:'outer', position:15, lastCell: window.__thayamRealCell(0,0,15) }])`);
+  const freeCross = await ev(`JSON.stringify(window.__thayamApplyRoll(0, 0, 1))`).then(JSON.parse);
+  const freeLap = await ev(`window.__thayamPieces()[0].lap`);
+  ok('5x5 default: a piece may turn inward with no capture at all',
+    freeCross.moved === true && freeLap === 'inner', freeLap + ' ' + JSON.stringify(freeCross));
+  const noCutNeeded = await ev(`window.__thayamHasCut('A')`);
+  ok('5x5 default: it crossed WITHOUT having captured anyone', noCutNeeded === false, String(noCutNeeded));
+
+  await ev(`window.__thayamSetCutMandate(true)`);
+  await ev(`window.__thayamNewGame(['A','B'])`);
+  await ev(`window.__thayamSetPieces([{ side:'A', idx:0, lap:'outer', position:15, lastCell: window.__thayamRealCell(0,0,15) }])`);
+  const blocked = await ev(`JSON.stringify(window.__thayamApplyRoll(0, 0, 1))`).then(JSON.parse);
+  const blockedLap = await ev(`window.__thayamPieces()[0].lap`);
+  ok('7x7 setting: the same piece is refused until it has captured',
+    blocked.moved === false && blockedLap === 'outer', blockedLap + ' ' + JSON.stringify(blocked));
+  await ev(`window.__thayamSetCutMandate(false)`);   // leave the board on its shipped 5x5 default
 
   ok('no JS errors', errs.length === 0, errs.join(' | '));
   console.log(fail ? `\n${fail} FAILED` : '\nALL GREEN');

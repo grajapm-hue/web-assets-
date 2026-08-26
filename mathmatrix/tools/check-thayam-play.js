@@ -91,7 +91,14 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   // 2) A mixed home + on-board roll: both are genuinely tappable, and only
   //    the genuinely eligible on-board piece is highlighted -- not a same-
   //    side piece that is on the board but can't use this roll.
+  /* This case needs a piece that is ON the board but genuinely CANNOT use the
+     roll, and the boundary-stuck piece is the clearest one to build. That only
+     exists while the cut-mandate is in force -- on the shipped 5x5 setting a
+     piece at the boundary simply turns inward, so it would be a legitimate
+     candidate and the highlight would rightly include it. Switch the rule on
+     for this scenario, and back off straight after. */
   const mixedSetup = await ev(`(function(){
+    window.__thayamSetCutMandate(true);
     var pcs = window.__thayamPieces();
     pcs.forEach(function(p){
       if (p.side === 'A' && p.idx === 0){ p.lap = 'outer'; p.position = 5; p.lastCell = window.__thayamRealCell(0, 0, 5); }
@@ -110,6 +117,7 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
     mixedSetup.activeOnBoard.length === 1 && mixedSetup.activeOnBoard[0] === '0', JSON.stringify(mixedSetup.activeOnBoard));
   ok('the home count is ALSO marked as a live tap target, since entering a fresh piece is one of the real choices',
     mixedSetup.homeActive === true, String(mixedSetup.homeActive));
+  await ev(`window.__thayamSetCutMandate(false)`);   // back to the shipped 5x5 setting
 
   const homeTapResult = await ev(`(function(){
     document.querySelector('#thTallyA .thHome').click();

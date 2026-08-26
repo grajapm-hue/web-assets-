@@ -10807,9 +10807,11 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           'இல்லாதவரை — அதை <b>வெட்டிவிடலாம்</b>. அது அவரது வீட்டுக்குத் ' +
           'திரும்பும்.</li>' +
           '</ol>' +
-          '<p><b>முக்கிய விதி:</b> ஒரு எதிராளியை <b>வெட்டும் வரை</b> உங்கள் ' +
-          'காய்கள் வெளி வளையத்தை விட்டு உள்ளே செல்ல முடியாது. அதுவரை அவை ' +
-          'வெளி வளையத்திலேயே சுற்றிக்கொண்டிருக்கும்.</p>' +
+          '<p><b>வெட்டுவது ஏன் நல்லது:</b> இது 5×5 — எளிய பலகை. வெட்டாமலேயே ' +
+          'உங்கள் காய்கள் உள் வளையத்திற்குச் சென்று நடுவை அடையலாம். ஆனாலும் ' +
+          'வெட்டினால் எதிராளியின் காய் வீட்டுக்குத் திரும்பும் — அது அவர்களை ' +
+          'மிகவும் பின்தள்ளும். (பெரிய 7×7 பலகையில் ஒருவரை வெட்டிய பிறகுதான் ' +
+          'உள்ளே செல்ல முடியும் — அது கடினமான பலகை.)</p>' +
           '<p>நடு இலக்கை அடைய <b>சரியான எண்</b> விழ வேண்டும். சில முறை ' +
           'தேவையான எண் விழாமல் போனால், சில உருட்டல்களுக்குப் பிறகு அது ' +
           'உறுதியாகக் கிடைக்கும் — யாரும் அதிக நேரம் காத்திருக்க வேண்டாம்.</p>' +
@@ -10832,10 +10834,12 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           'and you <b>capture</b> it. It goes back to its own home and starts ' +
           'again.</li>' +
           '</ol>' +
-          '<p><b>The rule that sets the pace:</b> your pieces cannot leave the ' +
-          'outer ring and turn inward until you have <b>captured somebody</b>. ' +
-          'Until then they keep going round the outside — and they are not on a ' +
-          'Mount, so anyone can capture them while they wait.</p>' +
+          '<p><b>Why capturing is still worth it:</b> this is the 5×5 — the ' +
+          'easy board. Your pieces may turn inward and head for the middle ' +
+          'whenever they get there, captured or not. But capturing sends an ' +
+          'opponent all the way home, which costs them more than anything else ' +
+          'you can do. (On the bigger 7×7 board you must capture somebody ' +
+          'before you are allowed to turn inward — that is the hard board.)</p>' +
           '<p>Reaching the middle needs an <b>exact</b> roll. If the number you ' +
           'need keeps not coming, the dice will make sure you get it after a few ' +
           'tries — nobody sits waiting too long.</p>' +
@@ -10956,7 +10960,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         }
         var lapIdx = piece.lap === 'outer' ? 0 : 1;
         var len = ringLen(lapIdx);
-        if (lapIdx === 0 && piece.position === len - 1 && !thHasCut[side]) return false;   // already at the last standing box -- genuinely stuck, not a no-op success
+        if (lapIdx === 0 && piece.position === len - 1 && thCutMandate && !thHasCut[side]) return false;   // already at the last standing box -- genuinely stuck, not a no-op success
         var newPos = piece.position + steps;
         if (lapIdx === 1 && newPos === len){   // exact landing on the final inner-ring step means the centre, not a wraparound
           piece.lap = 'finished'; piece.position = 0; piece.lastCell = CENTER_T;
@@ -10964,7 +10968,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         }
         if (lapIdx === 1 && newPos > len) return false;   // overshoot -- centre needs an exact count, this roll can't be used here
         if (newPos >= len){
-          if (lapIdx === 0 && !thHasCut[side]){
+          if (lapIdx === 0 && thCutMandate && !thHasCut[side]){
             // capped at the boundary -- stays on the outer ring, does not pivot
             piece.position = len - 1;
             piece.lastCell = realCell(0, colourIdx, piece.position);
@@ -11050,6 +11054,36 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       window.__thayamSetPieces = function(arr){ thPieces = arr; };
       window.__thayamHasCut = function(side){ return !!thHasCut[side]; };
       window.__thayamForceCut = function(side){ thHasCut[side] = true; };
+
+      /* THE CUT-MANDATE IS A PER-BOARD SETTING, AND 5x5 TURNS IT OFF.
+
+         Measured on the shipped engine over 27 four-player games before
+         deciding: with the rule on, a player sits frozen at the ring boundary
+         for 15 rolls on average and 46 at worst, watching a piece that cannot
+         move. Raja played it and said exactly that -- "the forced pause in 5x5
+         is bit difficult... blank free move box is very less".
+
+         What the same runs also showed, and what changed the reasoning: the
+         rule is NOT what makes the game long. 143 rolls with it against 133
+         without -- seven percent -- and the cut-pity meant all four players
+         earned a cut in every single game, so it never actually deadlocks.
+         The problem is boredom, not length: a 5x5 outer ring offers only 12
+         capturable squares, so cuts are scarce by geometry and a piece can
+         idle for a very long time waiting for one.
+
+         So 5x5 -- the first board a child meets -- lets pieces turn inward
+         freely, and capturing stays worth doing because it still sends an
+         opponent home. The 7x7 board has the room to make hunting a cut a
+         real part of play, and keeps the traditional rule: that is the plan
+         for it, and this flag is how it will be turned back on.
+
+         This also settles the spec/plan contradiction that was left open: the
+         spec's "never trapped, never unable to move" is now true of 5x5, and
+         the plan's "forced to pause there's last standing box" stays true of
+         7x7. Each document is right about its own board. */
+      var thCutMandate = false;
+      window.__thayamSetCutMandate = function(on){ thCutMandate = !!on; };
+      window.__thayamCutMandate = function(){ return thCutMandate; };
     })();
 
     (function(){
@@ -11225,7 +11259,12 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           }
         }
 
-        var stuckOnOuter = pieces.some(function(p){ return p.lap === 'outer' && p.position === window.__thayamRings(5)[0].length - 1; }) && !window.__thayamHasCut(sideLetter);   // I3: genuinely parked at the boundary, not just anywhere on the outer ring
+        /* Only relevant while the cut-mandate is actually in force. With it off
+           (5x5) nothing is ever blocked for want of a capture, so firing this
+           would hand out a cut nobody needed and record a hit against a
+           chokepoint that does not exist on this board. */
+        var stuckOnOuter = window.__thayamCutMandate() &&
+          pieces.some(function(p){ return p.lap === 'outer' && p.position === window.__thayamRings(5)[0].length - 1; }) && !window.__thayamHasCut(sideLetter);   // I3: genuinely parked at the boundary, not just anywhere on the outer ring
         if (stuckOnOuter){
           if (window.__thayamPityCheck('cut', sideLetter)){
             window.__thayamForceCut(sideLetter);
@@ -14447,7 +14486,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-234 (Thayam language switch now works BOTH ways -- the running commentary was turning Tamil and staying Tamil, because it is a sentence spoken once rather than a label the switch can find)';
+  var BUILD_VER = 'beta-235 (Thayam 5x5 is now the easy board: pieces turn inward for the centre without having to capture anyone first. Capturing still sends an opponent home, so it is well worth doing -- the 7x7 board will keep the strict rule)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
