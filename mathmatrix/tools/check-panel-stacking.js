@@ -111,8 +111,23 @@ const PANEL_IDS = ['sudokuPanel', 'slidePanel', 'gatePanel', 'binaryPanel', 'pal
   await checkOnly('then Pallanguzhi 4-player -- nothing stacked underneath', 'pal4Panel');
 
   await ev(`document.getElementById('tab-scHome').click()`); await sleep(200);
-  await ev(`document.querySelector('.toggleBtn[data-thayam-level]').click()`); await sleep(700);
+  await ev(`document.querySelector('.toggleBtn[data-thayam-level="5x5"]').click()`); await sleep(700);
   await checkOnly('then Thayam 5x5 -- nothing stacked underneath', 'thayamPanel');
+
+  /* Both Thayam boards share one panel, so this is not a second panel to check
+     for stacking -- it is a check that switching between the two sizes leaves
+     the panel in a sane single-panel state, and that the 7x7 tile is wired
+     into the same show*Mode discipline as everything else. */
+  await ev(`document.getElementById('tab-scHome').click()`); await sleep(200);
+  await ev(`document.querySelector('.toggleBtn[data-thayam-level="7x7"]').click()`); await sleep(700);
+  await checkOnly('then Thayam 7x7 -- nothing stacked underneath', 'thayamPanel');
+  const sevenCells = await ev(`document.querySelectorAll('#thayamGrid .thCell').length`);
+  ok('...and the 7x7 tile really did build the bigger board', sevenCells === 49, String(sevenCells));
+
+  await ev(`document.getElementById('tab-scHome').click()`); await sleep(200);
+  await ev(`document.querySelector('.toggleBtn[data-thayam-level="5x5"]').click()`); await sleep(700);
+  const backTo25 = await ev(`document.querySelectorAll('#thayamGrid .thCell').length`);
+  ok('...and going back to 5x5 rebuilds the smaller board, not a 7x7 left behind', backTo25 === 25, String(backTo25));
 
   await ev(`document.getElementById('tab-scHome').click()`); await sleep(200);
   await ev(`document.getElementById('slideAzTab').click()`); await sleep(700);

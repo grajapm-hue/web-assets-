@@ -255,11 +255,27 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
      prose to real behaviour, in both languages, so a rule change that leaves
      the text behind fails here instead of on Raja's phone. */
   const rules = await ev(`(function(){
+    window.__thayamConfigure({ n: 5, pieces: 3, cutMandate: false });
     window.__mmLang('en'); var en = window.__thayamHowTo();
     window.__mmLang('ta'); var ta = window.__thayamHowTo();
     window.__mmLang('en');
-    return JSON.stringify({ en: en, ta: ta, mandate: window.__thayamCutMandate() });
+    var mandate = window.__thayamCutMandate();
+    /* And the OTHER board's rules, which describe the opposite rule. A single
+       fixed text would be teaching one of the two boards the reverse of what
+       it actually does, so both are checked. */
+    window.__thayamConfigure({ n: 7, pieces: 5, cutMandate: true });
+    var en7 = window.__thayamHowTo();
+    window.__mmLang('ta'); var ta7 = window.__thayamHowTo();
+    window.__mmLang('en');
+    window.__thayamConfigure({ n: 5, pieces: 3, cutMandate: false });
+    return JSON.stringify({ en: en, ta: ta, mandate: mandate, en7: en7, ta7: ta7 });
   })()`).then(JSON.parse);
+  ok('the 7x7 rules describe the 7x7 board, not the 5x5',
+    /Thayam · 7×7/.test(rules.en7) && /this is the 7×7 — the hard board/.test(rules.en7), rules.en7.slice(0, 40));
+  ok('the 7x7 rules state the capture requirement this board actually enforces',
+    /cannot leave the outer ring/.test(rules.en7) && /three rings/.test(rules.en7));
+  ok('the 7x7 rules mention the 3-or-5 seeds choice', /choose <b>3 or 5<\/b> below/.test(rules.en7));
+  ok('the 7x7 rules are translated too', /கடினமான பலகை/.test(rules.ta7) && /7×7/.test(rules.ta7));
 
   ok('rules are written for the board that shipped (cut-mandate off on 5x5)', rules.mandate === false, String(rules.mandate));
   // The old, now-wrong promise. If the mandate is off, the text must not still claim you are blocked.
