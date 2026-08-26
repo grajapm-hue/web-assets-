@@ -10598,6 +10598,149 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       window.__thayamPityRecord = thayamPityRecord;
     })();
 
+    (function(){
+      var SIDES_T = ['A', 'B', 'C', 'D'];
+      var rings5 = window.__thayamRings(5);
+      function ringLen(lap){ return rings5[lap].length; }
+      var CENTER_T = 2 * 5 + 2;
+      var realCell = window.__thayamRealCell;
+      var SAFE_T = window.__thayamState().safe;
+
+      var thPieces = [];   // { side:'A', idx:0, lap:'home'|'outer'|'inner'|'finished', position:0, lastCell:null }
+      var thHasCut = {};   // side -> bool, per-game
+      var PIECES_PER_SIDE = 3;
+
+      function thayamNewGame(enabledSides){
+        thPieces = [];
+        thHasCut = {};
+        SIDES_T.forEach(function(s){ thHasCut[s] = false; });
+        enabledSides.forEach(function(s){
+          for (var i = 0; i < PIECES_PER_SIDE; i++){
+            thPieces.push({ side: s, idx: i, lap: 'home', position: 0, lastCell: null });
+          }
+        });
+      }
+      window.__thayamNewGame = thayamNewGame;
+      window.__thayamPieces = function(){ return thPieces; };
+
+      function sideIdxOf(side){ return SIDES_T.indexOf(side); }
+
+      /* Moving a piece forward by `steps` along its OWN lap. Refuses to cross
+         into the next lap (cut-mandate) unless hasCut is true for that side --
+         the piece simply stops at the current lap's last position instead,
+         exactly matching Raja's own description: "forced to pause there's
+         last standing box." That word "pause" matters: a piece already
+         sitting AT that last position, still without a capture, has to
+         genuinely refuse every further roll (return false) so the player
+         must spend that roll on a different piece -- not silently
+         "succeed" by landing on the exact same cell it already occupies,
+         which would look like a legal move but move nothing. Refuses to
+         enter the centre on anything but an exact landing. */
+      function advancePiece(piece, steps){
+        var side = piece.side, colourIdx = sideIdxOf(side);
+        if (piece.lap === 'home'){
+          piece.lap = 'outer'; piece.position = 0;   // the Thayam that brought it out always lands it on its own gate
+          piece.lastCell = realCell(0, colourIdx, 0);
+          return true;
+        }
+        var lapIdx = piece.lap === 'outer' ? 0 : 1;
+        var len = ringLen(lapIdx);
+        if (lapIdx === 0 && piece.position === len - 1 && !thHasCut[side]) return false;   // already at the last standing box -- genuinely stuck, not a no-op success
+        var newPos = piece.position + steps;
+        if (lapIdx === 1 && newPos === len){   // exact landing on the final inner-ring step means the centre, not a wraparound
+          piece.lap = 'finished'; piece.position = 0; piece.lastCell = CENTER_T;
+          return true;
+        }
+        if (lapIdx === 1 && newPos > len) return false;   // overshoot -- centre needs an exact count, this roll can't be used here
+        if (newPos >= len){
+          if (lapIdx === 0 && !thHasCut[side]){
+            // capped at the boundary -- stays on the outer ring, does not pivot
+            piece.position = len - 1;
+            piece.lastCell = realCell(0, colourIdx, piece.position);
+            return true;
+          }
+          if (lapIdx === 0){   // hasCut is true -- pivot to the inner ring, carrying the excess steps forward
+            piece.lap = 'inner';
+            piece.position = newPos - len;
+            piece.lastCell = realCell(1, colourIdx, piece.position);
+            return true;
+          }
+        }
+        piece.position = newPos;
+        piece.lastCell = realCell(lapIdx, colourIdx, piece.position);
+        return true;
+      }
+
+      /* Capture: scan every OTHER side's pieces for anyone sitting on the same
+         real cell this piece just landed on, off a Mount. No occupancy map --
+         just the pieces list, which is at most a handful long. */
+      function captureAt(mover, cell){
+        if (SAFE_T[cell]) return [];   // Mount squares protect everyone standing there
+        var caught = [];
+        thPieces.forEach(function(p){
+          if (p === mover || p.side === mover.side) return;
+          if ((p.lap === 'outer' || p.lap === 'inner') && p.lastCell === cell){
+            p.lap = 'home'; p.position = 0; p.lastCell = null;
+            caught.push({ side: p.side, idx: p.idx });
+          }
+        });
+        if (caught.length) thHasCut[mover.side] = true;
+        return caught;
+      }
+
+      function thayamApplyRoll(sideIdx, pieceIdx, rollValue){
+        var side = SIDES_T[sideIdx];
+        var piece = thPieces.find(function(p){ return p.side === side && p.idx === pieceIdx; });
+        if (!piece) return { moved: false, captured: [], won: false };
+        if (piece.lap === 'finished') return { moved: false, captured: [], won: false };
+        if (piece.lap === 'home'){
+          if (rollValue !== 1) return { moved: false, captured: [], won: false };   // only a Thayam brings a piece out
+          advancePiece(piece, 0);
+          var caughtOnEntry = captureAt(piece, piece.lastCell);
+          return { moved: true, captured: caughtOnEntry, won: false };
+        }
+        var lapBefore = piece.lap;
+        var ok2 = advancePiece(piece, rollValue);
+        if (!ok2) return { moved: false, captured: [], won: false };
+        if (piece.lap === 'finished') return { moved: true, captured: [], won: true };
+        var caught = captureAt(piece, piece.lastCell);
+        return { moved: true, captured: caught, won: false };
+      }
+      window.__thayamApplyRoll = thayamApplyRoll;
+
+      /* "Does this player have ANY legal move for this roll" -- the exact
+         check Task 5's auto-pass needs, kept here because it has to use the
+         same advancePiece/lap rules the real move uses, not a re-derived
+         approximation of them. Runs the move on a CLONE, never the real
+         piece, so checking never has a side effect. */
+      function legalMoveExists(sideIdx, rollValue){
+        var side = SIDES_T[sideIdx];
+        return thPieces.some(function(p){
+          if (p.side !== side || p.lap === 'finished') return false;
+          var clone = { side: p.side, idx: p.idx, lap: p.lap, position: p.position, lastCell: p.lastCell };
+          if (clone.lap === 'home') return rollValue === 1;
+          return advancePiece(clone, rollValue);
+        });
+      }
+      window.__thayamLegalMoveExists = legalMoveExists;
+
+      /* Task 6's tap-to-choose UI needs to check "would THIS SPECIFIC piece
+         accept this roll" without applying it -- the same clone-not-mutate
+         contract legalMoveExists already relies on, exposed directly rather
+         than making Task 6 re-derive advancePiece's own rules. */
+      window.__thayamWouldAccept = function(side, pieceIdx, rollValue){
+        var piece = thPieces.find(function(p){ return p.side === side && p.idx === pieceIdx; });
+        if (!piece || piece.lap === 'finished') return false;
+        if (piece.lap === 'home') return rollValue === 1;
+        var clone = { side: piece.side, idx: piece.idx, lap: piece.lap, position: piece.position, lastCell: piece.lastCell };
+        return advancePiece(clone, rollValue);
+      };
+
+      window.__thayamSetPieces = function(arr){ thPieces = arr; };
+      window.__thayamHasCut = function(side){ return !!thHasCut[side]; };
+      window.__thayamForceCut = function(side){ thHasCut[side] = true; };
+    })();
+
     document.querySelectorAll('.toggleBtn[data-thayam-level]').forEach(function(btn){
       btn.addEventListener('click', function(){
         var cm = document.getElementById('congratsModal');
