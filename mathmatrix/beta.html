@@ -10798,8 +10798,12 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           '<p><b>✕ குறியிட்ட கட்டங்கள்</b> பாதுகாப்பான இடங்கள். அங்கு நிற்கும் ' +
           'எந்தக் காயையும் யாரும் வெட்ட முடியாது.</p>' +
           '<ol>' +
-          '<li>உங்கள் முறையில் <b>Roll</b> பொத்தானைத் தட்டுங்கள்.</li>' +
-          '<li>வீட்டிலிருந்து ஒரு காயை வெளியே கொண்டுவர <b>தாயம் (1)</b> வேண்டும்.</li>' +
+          '<li>உங்கள் முறையில் உங்கள் சொந்த <b>உருட்டு</b> பொத்தானைத் ' +
+          'தட்டுங்கள்.</li>' +
+          '<li>வீட்டிலிருந்து ஒரு காயை வெளியே கொண்டுவர <b>தாயம் (1)</b> ' +
+          'வேண்டும். தொடக்கத்தில் யாரும் காத்திருக்க வேண்டாம் — உங்கள் முதல் ' +
+          'காய் வெளியே வரும் வரை <b>2 அல்லது 3 உருட்டலுக்குள்</b> தாயம் ' +
+          'நிச்சயம் கிடைக்கும். அதன் பிறகு அதிர்ஷ்டம்தான்.</li>' +
           '<li>தாயம், 5, 6 அல்லது 12 விழுந்தால் <b>மீண்டும் ஒரு முறை</b> ' +
           'உருட்டலாம். ஒவ்வொரு உருட்டலையும் உங்கள் <b>எந்தக் காய்க்கும்</b> ' +
           'தனியாகப் பயன்படுத்தலாம்.</li>' +
@@ -10816,7 +10820,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           'தேவையான எண் விழாமல் போனால், சில உருட்டல்களுக்குப் பிறகு அது ' +
           'உறுதியாகக் கிடைக்கும் — யாரும் அதிக நேரம் காத்திருக்க வேண்டாம்.</p>' +
           '<p>உங்கள் உருட்டலை எந்தக் காயாலும் பயன்படுத்த முடியாவிட்டால், ' +
-          'முறை <b>தானாகவே</b> அடுத்த வீரருக்குச் செல்லும்.</p>';
+          'முறை <b>தானாகவே</b> அடுத்த வீரருக்குச் செல்லும்.</p>' +
+          '<p><b>யார் தொடங்குவது?</b> <b>வீரரைத் தேர்ந்தெடு</b> பொத்தானைத் ' +
+          'தட்டினால் முதல் முறை அடுத்த வீரருக்கு மாறும் — நீங்கள் விரும்பும் ' +
+          'வீரரின் பெயர் வரும் வரை மீண்டும் தட்டுங்கள்.</p>';
         return '<h3>🎲 Thayam · 5×5 — how to play</h3>' +
           '<p>Everybody has <b>3 pieces</b>. First player to get all of theirs ' +
           'into the middle wins. 2, 3 or 4 players — chosen with the tick ' +
@@ -10826,7 +10833,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           '<ol>' +
           '<li>On your turn, press your own <b>Roll</b> button.</li>' +
           '<li>To bring a piece out of your home you need to roll a ' +
-          '<b>Thayam (1)</b>.</li>' +
+          '<b>Thayam (1)</b>. Nobody is left stuck at the start: until your ' +
+          'first piece is out, a Thayam is guaranteed within <b>2 or 3 ' +
+          'rolls</b>. After that the dice are back to ordinary luck.</li>' +
           '<li>A Thayam, 5, 6 or 12 gives you <b>another roll</b>. Every roll ' +
           'is yours to spend on <b>any piece you own</b> — a bonus roll is not ' +
           'stuck with the piece you just moved.</li>' +
@@ -10844,7 +10853,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           'need keeps not coming, the dice will make sure you get it after a few ' +
           'tries — nobody sits waiting too long.</p>' +
           '<p>If a roll cannot be used by any of your pieces, the turn passes ' +
-          'to the next player <b>on its own</b> — there is nothing to press.</p>';
+          'to the next player <b>on its own</b> — there is nothing to press.</p>' +
+          '<p><b>Who starts?</b> Press <b>Choose player</b> to hand the first ' +
+          'turn to the next player — keep pressing until it names the one you ' +
+          'want.</p>';
       }
       window.__thayamHowTo = thayamHowTo;
 
@@ -14486,7 +14498,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-235 (Thayam 5x5 is now the easy board: pieces turn inward for the centre without having to capture anyone first. Capturing still sends an opponent home, so it is well worth doing -- the 7x7 board will keep the strict rule)';
+  var BUILD_VER = 'beta-236 (How to play now matches the game it describes: the guaranteed opening Thayam and the Choose player button are explained, and the Tamil rules name the Roll button the way the Tamil board labels it)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that

@@ -218,6 +218,32 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   ok('the status line turns BACK to English when switched again',
     !hasTamil(roundTrip.en2) && roundTrip.en2 === roundTrip.en1, roundTrip.en2.slice(0, 40));
 
+  /* HOW TO PLAY MUST DESCRIBE THE GAME THAT ACTUALLY SHIPS.
+     Rules text is the one thing no amount of gameplay testing checks, and it
+     goes stale silently: when 5x5 dropped the cut-mandate, the rules still
+     told players they could not turn inward without capturing, which would
+     have taught a child the opposite of what the board does. These tie the
+     prose to real behaviour, in both languages, so a rule change that leaves
+     the text behind fails here instead of on Raja's phone. */
+  const rules = await ev(`(function(){
+    window.__mmLang('en'); var en = window.__thayamHowTo();
+    window.__mmLang('ta'); var ta = window.__thayamHowTo();
+    window.__mmLang('en');
+    return JSON.stringify({ en: en, ta: ta, mandate: window.__thayamCutMandate() });
+  })()`).then(JSON.parse);
+
+  ok('rules are written for the board that shipped (cut-mandate off on 5x5)', rules.mandate === false, String(rules.mandate));
+  // The old, now-wrong promise. If the mandate is off, the text must not still claim you are blocked.
+  ok('the rules no longer claim a 5x5 piece is blocked from turning inward',
+    !/cannot leave the outer ring/i.test(rules.en));
+  ok('the rules explain that capturing is still worth it on 5x5', /capturing sends an opponent all the way home/i.test(rules.en));
+  ok('the rules promise the opening Thayam (EN)', /2 or 3\s*\n?\s*rolls|2 or 3 rolls/i.test(rules.en.replace(/\s+/g, ' ')));
+  ok('the rules promise the opening Thayam (TA)', /2 அல்லது 3/.test(rules.ta));
+  ok('the rules explain Choose player (EN)', /Choose player/i.test(rules.en));
+  ok('the rules explain Choose player (TA)', /வீரரைத் தேர்ந்தெடு/.test(rules.ta));
+  // The Tamil rules must name the button the player can actually see on the Tamil board.
+  ok('the Tamil rules name the Roll button as it is labelled in Tamil', /உருட்டு/.test(rules.ta));
+
   const fit = await ev(`(function(){
     var seats = Array.prototype.map.call(document.querySelectorAll('.thSeat'), function(s){
       var b = s.getBoundingClientRect();
