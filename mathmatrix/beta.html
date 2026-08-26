@@ -2477,6 +2477,9 @@ body.thayamMode #thayamPanel{ display:flex !important; flex-direction:column;
 .thTitle{ font-size:17px; font-weight:900; }
 #thayamRound{ font-size:13px; font-weight:800; padding:5px 12px; border-radius:999px; white-space:nowrap; }
 #thaySay{ margin:10px 4px 0; font-size:16px; font-weight:700; line-height:1.4; }
+/* Same shape as .pal4Foot -- this row also receives the injected language
+   button, so it has to lay out three children the same way that one does. */
+.thFoot{ display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap; margin-top:10px; }
 
 /* auto margins rather than justify-content:center — centred flex content that
    grows taller than its scroll container has its TOP clipped and cannot be
@@ -4244,7 +4247,7 @@ body{ background:#C9A87C !important; }
 
   <div class="thayamTable" style="margin-top:6px;">
     <div class="thSeat top sideA" data-side="A">
-      <div class="nm" id="thNameA">Store · A</div>
+      <div class="nm" id="thNameA">Player A</div>
       <div class="wide">
         <div class="dice"><div class="kattai" id="thDieA0">·</div><div class="kattai" id="thDieA1">·</div></div>
         <button class="rollBtn" data-side="A">🎲 Roll</button>
@@ -4253,7 +4256,7 @@ body{ background:#C9A87C !important; }
     </div>
 
     <div class="thSeat left sideD" data-side="D">
-      <div class="nm" id="thNameD">Store · D</div>
+      <div class="nm" id="thNameD">Player D</div>
       <div class="dice"><div class="kattai" id="thDieD0">·</div><div class="kattai" id="thDieD1">·</div></div>
       <div class="thTally" id="thTallyD"><span>🏠 3</span><span>🏃 0</span><span>🏆 0</span></div>
       <button class="rollBtn" data-side="D">🎲</button>
@@ -4262,14 +4265,14 @@ body{ background:#C9A87C !important; }
     <div id="thayamGrid"></div>
 
     <div class="thSeat right sideB" data-side="B">
-      <div class="nm" id="thNameB">Store · B</div>
+      <div class="nm" id="thNameB">Player B</div>
       <div class="dice"><div class="kattai" id="thDieB0">·</div><div class="kattai" id="thDieB1">·</div></div>
       <div class="thTally" id="thTallyB"><span>🏠 3</span><span>🏃 0</span><span>🏆 0</span></div>
       <button class="rollBtn" data-side="B">🎲</button>
     </div>
 
     <div class="thSeat bottom sideC" data-side="C">
-      <div class="nm" id="thNameC">Store · C</div>
+      <div class="nm" id="thNameC">Player C</div>
       <div class="wide">
         <div class="dice"><div class="kattai" id="thDieC0">·</div><div class="kattai" id="thDieC1">·</div></div>
         <button class="rollBtn" data-side="C">🎲 Roll</button>
@@ -4293,6 +4296,16 @@ body{ background:#C9A87C !important; }
     <label class="pal4Tick sideD on"><input type="checkbox" checked data-side="D"><span>D</span></label>
   </div>
   <button class="pal4Choose" id="thayamChoose" type="button">👤 Choose player — A starts</button>
+
+  <!-- Same footer set the two Pallanguzhi boards carry, for the same reasons:
+       New game and How to play belong on the screen they affect, and the
+       language button is injected into this row by the language IIFE (see the
+       ['langBtn','pal4LangBtn','thayamLangBtn'] list) rather than hardcoded,
+       so all three boards keep one shared LANG between them. -->
+  <div class="thFoot">
+    <button class="slideBtn" id="thayamNew" type="button">🔄 New game</button>
+    <button class="slideBtn" id="thayamRules" type="button">📖 How to play</button>
+  </div>
 </div>
 
 <div id="rotateHint">📱 Turn your phone sideways for a much bigger board (scroll down to see it all)</div>
@@ -10634,36 +10647,160 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           }
           cb.closest('.pal4Tick').classList.toggle('on', thSelEnabled[s]);
           if (typeof sfx === 'function') try { sfx('card'); } catch(e){}
+          syncEnabled();
           syncChooseLabel();
         });
       });
 
-      /* The label used to be the hardcoded string "A starts" and never moved,
-         so unticking A still promised a start it could not deliver. It now
-         names whoever the ticks actually make first. */
+      /* The ticks ARE the source of truth for who is playing, so they push
+         straight into the turn engine here rather than only when some button
+         happens to deal a new game. That coupling was the original C2 bug --
+         the tick state and the turn engine's own enabled map lived in two
+         closures that never spoke -- and it came back the moment Choose player
+         stopped dealing a new game, because the sync was riding on that button
+         instead of on the thing that actually changed. Caught by
+         check-thayam-play.js's 2-player walk, which landed on D and C after
+         they had been unticked. */
+      function syncEnabled(){
+        if (!window.__thayamSetEnabled) return;
+        var map = { A: false, B: false, C: false, D: false };
+        window.__thayamSelectedSides().forEach(function(s){ map[s] = true; });
+        window.__thayamSetEnabled(map);
+        /* If the side holding the turn was just switched off, hand the turn to
+           whoever now starts, so play never stalls on an empty seat. */
+        if (window.__thayamActiveSide && !map[window.__thayamActiveSide()] && window.__thayamTurnInit){
+          window.__thayamTurnInit(window.__thayamStarter());
+        }
+      }
+
+      /* WHO STARTS. Raja: "choose player still not working, it should allow
+         who any to start game to dice roller" -- and pointed at Pallanguzhi as
+         the reference. Read pal4's own handler: it does NOT deal a new game,
+         it CYCLES the starter (`starter4 = nextEnabledIndex(starter4)`), one
+         enabled player per press, until the one you want is named. Thayam had
+         borrowed the button but not that behaviour: it re-dealt and always
+         handed the first tick the turn, so there was no way to let B or C
+         open. This now cycles the same way, through the ticked players only,
+         in the board's own anti-clockwise order. */
+      var thStarter = null;   // null = follow the ticks; otherwise an explicit choice
+      window.__thayamStarter = function(){
+        var sides = window.__thayamSelectedSides();
+        if (thStarter && sides.indexOf(thStarter) > -1) return thStarter;
+        return sides[0] || 'A';   // a starter who was just unticked falls back to the first still playing
+      };
+
       var chooseBtn = document.getElementById('thayamChoose');
       function syncChooseLabel(){
         if (!chooseBtn) return;
-        var sides = window.__thayamSelectedSides();
-        chooseBtn.textContent = '👤 Choose player — ' + (sides[0] || 'A') + ' starts';
+        chooseBtn.textContent = '👤 Choose player — ' + window.__thayamStarter() + ' starts';
       }
       syncChooseLabel();
 
       if (chooseBtn) chooseBtn.addEventListener('click', function(){
         if (typeof sfx === 'function') try { sfx('card'); } catch(e){}
-        window.__thayamStartNewGame && window.__thayamStartNewGame();   // Task 6 fills this in; guarded so this task alone doesn't throw
-        /* Raja: "choose player is inactive". It was never inactive -- it dealt
-           a correct new game every time. But on an untouched board a new game
-           is identical to the board already showing (same 12 pieces, all home,
-           nothing on the grid), so pressing it changed nothing a player could
-           see and read exactly like a dead button. It now says what it did. */
+        /* Anti-clockwise A -> D -> C -> B, the same order the turns run in, so
+           pressing this walks the seats the way play does rather than in
+           alphabetical order that matches nothing on the board. */
+        var ORDER = ['A', 'D', 'C', 'B'];
+        var playing = window.__thayamSelectedSides();
+        var ring = ORDER.filter(function(s){ return playing.indexOf(s) > -1; });
+        var at = ring.indexOf(window.__thayamStarter());
+        thStarter = ring[(at + 1) % ring.length];
+        syncChooseLabel();
+
+        /* Hand the turn over immediately so the chosen player can just roll --
+           "it should allow who any to start game to dice roller". Only the
+           turn moves; pieces already on the board are left alone, so this is
+           safe to press mid-game (New game is the button that re-deals). */
+        if (window.__thayamTurnInit) window.__thayamTurnInit(thStarter);
+        if (window.__thayamRenderAll) window.__thayamRenderAll();
+
+        var say = document.getElementById('thaySay');
+        if (say) say.textContent = thStarter + ' starts — press ' + thStarter +
+          "'s Roll button. You need a Thayam to bring a piece out.";
+      });
+
+      /* Keep the promise honest when the ticks change: if the chosen starter
+         is switched off, fall back and relabel rather than naming a player who
+         is no longer in the game. */
+      window.__thayamSyncStarter = syncChooseLabel;
+
+      var thNewBtn = document.getElementById('thayamNew');
+      if (thNewBtn) thNewBtn.addEventListener('click', function(){
+        if (typeof sfx === 'function') try { sfx('card'); } catch(e){}
+        window.__thayamStartNewGame && window.__thayamStartNewGame();
         var say = document.getElementById('thaySay');
         if (say){
           var sides = window.__thayamSelectedSides();
-          say.textContent = 'New game — ' + sides.length + ' players (' + sides.join(', ') +
-            '). ' + (window.__thayamActiveSide ? window.__thayamActiveSide() : sides[0]) +
-            ' starts — roll a Thayam to bring a piece out.';
+          say.textContent = 'New game — ' + sides.length + ' players (' + sides.join(', ') + '). ' +
+            window.__thayamStarter() + ' starts — roll a Thayam to bring a piece out.';
         }
+      });
+
+      /* Bilingual, built fresh on each open so it follows whatever the shared
+         language button is currently set to -- the same ta/en branch and the
+         same #logicBox + openLearn('logic') delivery both Pallanguzhi boards
+         use, rather than a second rules mechanism just for this game. */
+      function thayamHowTo(){
+        var ta = !!(window.__palTa && window.__palTa());
+        if (ta) return '<h3>🎲 தாயம் · 5×5 — எப்படி விளையாடுவது</h3>' +
+          '<p>ஒவ்வொரு வீரருக்கும் <b>3 காய்கள்</b>. அனைத்தையும் நடுவில் உள்ள ' +
+          'இலக்கை அடையச் செய்பவர் வெற்றி பெறுவார். 2, 3 அல்லது 4 வீரர்கள் — ' +
+          'கீழே உள்ள tick பெட்டிகளால் தேர்ந்தெடுக்கவும்.</p>' +
+          '<p><b>✕ குறியிட்ட கட்டங்கள்</b> பாதுகாப்பான இடங்கள். அங்கு நிற்கும் ' +
+          'எந்தக் காயையும் யாரும் வெட்ட முடியாது.</p>' +
+          '<ol>' +
+          '<li>உங்கள் முறையில் <b>Roll</b> பொத்தானைத் தட்டுங்கள்.</li>' +
+          '<li>வீட்டிலிருந்து ஒரு காயை வெளியே கொண்டுவர <b>தாயம் (1)</b> வேண்டும்.</li>' +
+          '<li>தாயம், 5, 6 அல்லது 12 விழுந்தால் <b>மீண்டும் ஒரு முறை</b> ' +
+          'உருட்டலாம். ஒவ்வொரு உருட்டலையும் உங்கள் <b>எந்தக் காய்க்கும்</b> ' +
+          'தனியாகப் பயன்படுத்தலாம்.</li>' +
+          '<li>எதிராளியின் காய் மீது வந்து இறங்கினால் — அது ✕ கட்டத்தில் ' +
+          'இல்லாதவரை — அதை <b>வெட்டிவிடலாம்</b>. அது அவரது வீட்டுக்குத் ' +
+          'திரும்பும்.</li>' +
+          '</ol>' +
+          '<p><b>முக்கிய விதி:</b> ஒரு எதிராளியை <b>வெட்டும் வரை</b> உங்கள் ' +
+          'காய்கள் வெளி வளையத்தை விட்டு உள்ளே செல்ல முடியாது. அதுவரை அவை ' +
+          'வெளி வளையத்திலேயே சுற்றிக்கொண்டிருக்கும்.</p>' +
+          '<p>நடு இலக்கை அடைய <b>சரியான எண்</b> விழ வேண்டும். சில முறை ' +
+          'தேவையான எண் விழாமல் போனால், சில உருட்டல்களுக்குப் பிறகு அது ' +
+          'உறுதியாகக் கிடைக்கும் — யாரும் அதிக நேரம் காத்திருக்க வேண்டாம்.</p>' +
+          '<p>உங்கள் உருட்டலை எந்தக் காயாலும் பயன்படுத்த முடியாவிட்டால், ' +
+          'முறை <b>தானாகவே</b> அடுத்த வீரருக்குச் செல்லும்.</p>';
+        return '<h3>🎲 Thayam · 5×5 — how to play</h3>' +
+          '<p>Everybody has <b>3 pieces</b>. First player to get all of theirs ' +
+          'into the middle wins. 2, 3 or 4 players — chosen with the tick ' +
+          'boxes below the board.</p>' +
+          '<p>The squares marked <b>✕</b> are Mounts — safe places. A piece ' +
+          'standing on one can never be captured, no matter whose turn it is.</p>' +
+          '<ol>' +
+          '<li>On your turn, press your own <b>Roll</b> button.</li>' +
+          '<li>To bring a piece out of your home you need to roll a ' +
+          '<b>Thayam (1)</b>.</li>' +
+          '<li>A Thayam, 5, 6 or 12 gives you <b>another roll</b>. Every roll ' +
+          'is yours to spend on <b>any piece you own</b> — a bonus roll is not ' +
+          'stuck with the piece you just moved.</li>' +
+          '<li>Land on an opponent\'s piece — anywhere that is not a ✕ Mount — ' +
+          'and you <b>capture</b> it. It goes back to its own home and starts ' +
+          'again.</li>' +
+          '</ol>' +
+          '<p><b>The rule that sets the pace:</b> your pieces cannot leave the ' +
+          'outer ring and turn inward until you have <b>captured somebody</b>. ' +
+          'Until then they keep going round the outside — and they are not on a ' +
+          'Mount, so anyone can capture them while they wait.</p>' +
+          '<p>Reaching the middle needs an <b>exact</b> roll. If the number you ' +
+          'need keeps not coming, the dice will make sure you get it after a few ' +
+          'tries — nobody sits waiting too long.</p>' +
+          '<p>If a roll cannot be used by any of your pieces, the turn passes ' +
+          'to the next player <b>on its own</b> — there is nothing to press.</p>';
+      }
+      window.__thayamHowTo = thayamHowTo;
+
+      var thRulesBtn = document.getElementById('thayamRules');
+      if (thRulesBtn) thRulesBtn.addEventListener('click', function(){
+        var lb = document.getElementById('logicBox');
+        if (lb) lb.innerHTML = thayamHowTo();   // fresh in whichever language is current
+        if (typeof openLearn === 'function') openLearn('logic', false);
       });
     })();
 
@@ -11123,7 +11260,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         selected.forEach(function(s){ enabledMap[s] = true; });
         window.__thayamNewGame(selected);
         window.__thayamSetEnabled(enabledMap);   // C2: wire the Choose-Player tick-boxes into the turn engine's own enabled map -- these were two separate closures that never talked to each other
-        window.__thayamTurnInit(selected[0]);
+        /* Honour whoever Choose player last picked, not just the first tick --
+           otherwise dealing a new game would silently undo that choice. */
+        var starter = window.__thayamStarter ? window.__thayamStarter() : selected[0];
+        window.__thayamTurnInit(selected.indexOf(starter) > -1 ? starter : selected[0]);
         window.__thayamBuild5x5();
         renderThayamPieces();
         renderThayamTallies();
@@ -12475,7 +12615,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
   function refreshLangBtn(){
     var label = LANG === 'ta' ? '🌐 தமிழ்' : '🌐 English';
-    ['langBtn', 'pal4LangBtn'].forEach(function(id){
+    ['langBtn', 'pal4LangBtn', 'thayamLangBtn'].forEach(function(id){
       var b = document.getElementById(id);
       if (b) b.textContent = label;
     });
@@ -12503,7 +12643,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
        promise the app does not keep — so it sits with New Game and How To
        Play, on the screens it actually affects. One button per board, same
        shared LANG underneath, so toggling either one keeps both in step. */
-    [['langBtn', '.palFoot'], ['pal4LangBtn', '.pal4Foot']].forEach(function(pair){
+    [['langBtn', '.palFoot'], ['pal4LangBtn', '.pal4Foot'], ['thayamLangBtn', '.thFoot']].forEach(function(pair){
       var row = document.querySelector(pair[1]);
       if (!row) return;
       var b = document.createElement('button');
@@ -14215,7 +14355,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-231 (Thayam setup: player A\'s dice no longer open showing a leftover 1-0, Choose player now says what it did and names who really starts, and the players tick row moved below the board so the game table comes first)';
+  var BUILD_VER = 'beta-232 (Thayam now carries the same tabs as Pallanguzhi: New game, a bilingual How to play, and the shared Tamil/English button. Choose player cycles through the players so anyone can open the game, and the seats read Player A-D instead of Store)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
