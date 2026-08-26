@@ -98,6 +98,34 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   ok("with a capture already made, A's piece pivots onto the inner ring instead of staying capped",
     aPiece.lap === 'inner', JSON.stringify(aPiece));
 
+  // Win-lock and centre-entry overshoot refusal have no coverage above (the
+  // capture-based scenario never drove a piece all the way to centre). New
+  // isolated game, single side -- __thayamForceCut bypasses the cut-mandate
+  // directly so this block tests centre entry specifically, not the
+  // cut-mandate (already covered above).
+  await ev(`window.__thayamNewGame(['A'])`);
+  await ev(`window.__thayamForceCut('A')`);
+  await ev(`window.__thayamApplyRoll(0, 0, 1)`);   // A's piece 0 out, onto its own gate (outer, position 0)
+  await ev(`window.__thayamApplyRoll(0, 0, 15)`);   // 0 + 15 = 15, the outer ring's last cell
+  const pOuterEdge = await ev(`JSON.stringify(window.__thayamPieces())`).then(JSON.parse);
+  ok('piece reaches the outer ring last cell', pOuterEdge[0].lap === 'outer' && pOuterEdge[0].position === 15, JSON.stringify(pOuterEdge[0]));
+
+  const pivotResult = await ev(`JSON.stringify(window.__thayamApplyRoll(0, 0, 1))`).then(JSON.parse);   // 15 + 1 = 16 = outer ring length -> pivots to inner, position 0
+  const pInner = await ev(`JSON.stringify(window.__thayamPieces())`).then(JSON.parse);
+  ok('piece pivots onto the inner ring at position 0', pivotResult.moved === true && pInner[0].lap === 'inner' && pInner[0].position === 0, JSON.stringify(pInner[0]));
+
+  // Inner ring length is 8 -- an overshoot must be refused, not clamped.
+  const overshoot = await ev(`JSON.stringify(window.__thayamApplyRoll(0, 0, 9))`).then(JSON.parse);   // 0 + 9 = 9 > 8, overshoots centre
+  ok('a roll that would overshoot past centre is refused, not clamped', overshoot.moved === false);
+  const pStillInner = await ev(`JSON.stringify(window.__thayamPieces())`).then(JSON.parse);
+  ok('piece is unchanged after the refused overshoot', pStillInner[0].lap === 'inner' && pStillInner[0].position === 0, JSON.stringify(pStillInner[0]));
+
+  // An exact roll of 8 lands exactly on centre -- win-lock.
+  const winResult = await ev(`JSON.stringify(window.__thayamApplyRoll(0, 0, 8))`).then(JSON.parse);
+  ok('an exact roll onto the centre finishes the piece and reports won:true', winResult.moved === true && winResult.won === true, JSON.stringify(winResult));
+  const pFinished = await ev(`JSON.stringify(window.__thayamPieces())`).then(JSON.parse);
+  ok('the finished piece has lap "finished"', pFinished[0].lap === 'finished', JSON.stringify(pFinished[0]));
+
   ok('no JS errors', errs.length === 0, errs.join(' | '));
   console.log(fail ? `\n${fail} FAILED` : '\nALL GREEN');
 
