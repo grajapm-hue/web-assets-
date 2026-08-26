@@ -10561,6 +10561,43 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       });
     })();
 
+    (function(){
+      function thayamRollDice(){
+        var d0 = Math.floor(Math.random() * 4), d1 = Math.floor(Math.random() * 4);
+        var total = d0 + d1;
+        if (d0 === 0 && d1 === 0) total = 12;   // both blank is a 12, not a 0
+        var isThayam = total === 1;
+        var bonusRoll = total === 1 || total === 5 || total === 6 || total === 12;
+        return { d0: d0, d1: d1, total: total, isThayam: isThayam, bonusRoll: bonusRoll };
+      }
+      window.__thayamRollDice = thayamRollDice;
+
+      /* PITY SYSTEM -- one counter per (chokepoint, player). Raja: "every 5 to
+         10 twist down will get sure thayam." A random threshold per player
+         per chokepoint (picked fresh each time the counter resets) means the
+         exact moment it fires is not predictable from watching a few rounds,
+         while still guaranteeing it lands inside the promised window. */
+      var pityCounters = {};   // key: kind+'|'+playerId -> { misses, threshold }
+      function pityKey(kind, playerId){ return kind + '|' + playerId; }
+      function thayamPityReset(kind, playerId){
+        pityCounters[pityKey(kind, playerId)] = { misses: 0, threshold: 5 + Math.floor(Math.random() * 6) };   // 5..10 inclusive
+      }
+      function thayamPityCheck(kind, playerId){
+        var c = pityCounters[pityKey(kind, playerId)];
+        if (!c) { thayamPityReset(kind, playerId); c = pityCounters[pityKey(kind, playerId)]; }
+        return c.misses + 1 >= c.threshold;   // this roll, if it's also a natural miss, would be forced instead
+      }
+      function thayamPityRecord(kind, playerId, hit){
+        if (hit){ thayamPityReset(kind, playerId); return; }   // a natural hit resets the counter, same as a forced one
+        var c = pityCounters[pityKey(kind, playerId)];
+        if (!c) { thayamPityReset(kind, playerId); c = pityCounters[pityKey(kind, playerId)]; }
+        c.misses++;
+      }
+      window.__thayamPityReset = thayamPityReset;
+      window.__thayamPityCheck = thayamPityCheck;
+      window.__thayamPityRecord = thayamPityRecord;
+    })();
+
     document.querySelectorAll('.toggleBtn[data-thayam-level]').forEach(function(btn){
       btn.addEventListener('click', function(){
         var cm = document.getElementById('congratsModal');
