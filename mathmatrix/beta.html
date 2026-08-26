@@ -4304,10 +4304,10 @@ body{ background:#C9A87C !important; }
        for either 3 seeds or 5 seeds reserve in per game." So every rule stays
        and the LENGTH becomes the players' choice rather than a number I picked
        for them. 7x7 only -- the 5x5 is validated at three and is not disturbed. -->
-  <div class="pal4Select" id="thayamSeeds" style="display:none;">
+  <div class="pal4Select" id="thayamSeeds">
     <span class="pal4SelectLabel">Seeds each:</span>
-    <label class="pal4Tick sideA"><input type="radio" name="thSeeds" value="3"><span>3</span></label>
-    <label class="pal4Tick sideA on"><input type="radio" name="thSeeds" value="5" checked><span>5</span></label>
+    <label class="pal4Tick sideA on"><input type="radio" name="thSeeds" value="3" checked><span>3</span></label>
+    <label class="pal4Tick sideA"><input type="radio" name="thSeeds" value="5"><span>5</span></label>
   </div>
 
   <div class="pal4Select" id="thayamSelect">
@@ -4716,11 +4716,11 @@ body{ background:#C9A87C !important; }
     <div class="toggleSwitch">
       <button class="toggleBtn lvCard" id="thayamTab" type="button" data-thayam-level="5x5" data-name="🎲 Thayam 5×5" style="color:#a78bfa; border-color:#7c3aed; --c1:#ddd6fe; --c2:#a78bfa;">
         <span class="lvGlyph" aria-hidden="true">🎲</span>
-        <span class="lvText"><b class="lvName">Thayam 5×5</b><span class="lvDiff">2–4 players · the easy board</span><span class="lvMeta">roll a Thayam to enter, then head for the centre — cutting helps but isn't required</span></span>
+        <span class="lvText"><b class="lvName">Thayam 5×5</b><span class="lvDiff">2–4 players · two rings</span><span class="lvMeta">roll a Thayam to enter, then head for the centre — cutting helps but isn't required</span></span>
       </button>
       <button class="toggleBtn lvCard" id="thayam7Tab" type="button" data-thayam-level="7x7" data-name="🎲 Thayam 7×7" style="color:#a78bfa; border-color:#7c3aed; --c1:#ddd6fe; --c2:#a78bfa;">
         <span class="lvGlyph" aria-hidden="true">🎲</span>
-        <span class="lvText"><b class="lvName">Thayam 7×7</b><span class="lvDiff">2–4 players · the full board</span><span class="lvMeta">five pieces each, three rings, and you must cut an opponent before turning inward</span></span>
+        <span class="lvText"><b class="lvName">Thayam 7×7</b><span class="lvDiff">2–4 players · three rings</span><span class="lvMeta">you must cut an opponent before any piece may turn inward</span></span>
       </button>
     </div>
   </div>
@@ -10824,28 +10824,43 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         if (thLastSay) thSay(thLastSay.key, thLastSay.v);
       };
 
-      /* How many seeds each player races on the 7x7. Five is the traditional
-         count and stays the default; three is there because five measured at
-         464 rolls a game, and a board nobody finishes teaches nobody anything.
-         Changing it deals a fresh board -- there is no sane way to add or
-         remove seeds from a game already in progress. */
-      var thSeedCount = 5;
-      window.__thayamSeedCount = function(){ return thSeedCount; };
+      /* How many seeds each player races. Raja: "add 3 or 5 seeds choice in
+         5x5 too, and player decide -- if long run 5 seeds, else 3 seeds, in
+         both puzzles." So the length of a game is the players' call on either
+         board, and neither board is labelled easy or hard: what differs
+         between them is the size and the capture rule, which the tiles and
+         the rules now simply state instead of judging.
+
+         Each board keeps its OWN choice, so neither validated default is
+         disturbed -- 5x5 opens at three as it always has, 7x7 at the
+         traditional five -- and the chooser always shows the board you are
+         actually looking at. Changing it deals a fresh board: there is no
+         sane way to add or remove seeds from a game already in progress. */
+      var thSeedsFor = { 5: 3, 7: 5 };
+      window.__thayamSeedCount = function(n){ return thSeedsFor[n || window.__thayamConfig().n]; };
+      function syncSeedRow(){
+        var n = window.__thayamConfig().n;
+        document.querySelectorAll('#thayamSeeds input[name=thSeeds]').forEach(function(rb){
+          var on = parseInt(rb.value, 10) === thSeedsFor[n];
+          rb.checked = on;
+          var pill = rb.closest('.pal4Tick');
+          if (pill) pill.classList.toggle('on', on);
+        });
+      }
+      window.__thayamSyncSeedRow = syncSeedRow;
+
       document.querySelectorAll('#thayamSeeds input[name=thSeeds]').forEach(function(rb){
         rb.addEventListener('change', function(){
           if (!rb.checked) return;
-          thSeedCount = parseInt(rb.value, 10);
-          document.querySelectorAll('#thayamSeeds .pal4Tick').forEach(function(t){
-            t.classList.toggle('on', t.contains(rb));
-          });
+          var n = window.__thayamConfig().n;
+          thSeedsFor[n] = parseInt(rb.value, 10);
+          syncSeedRow();
           if (typeof sfx === 'function') try { sfx('card'); } catch(e){}
-          if (window.__thayamConfig().n === 7){
-            window.__thayamConfigure({ pieces: thSeedCount });
-            window.__thayamStartNewGame();
-            thSay('newGame', { n: window.__thayamSelectedSides().length,
-                               list: window.__thayamSelectedSides().join(', '),
-                               a: window.__thayamStarter() });
-          }
+          window.__thayamConfigure({ pieces: thSeedsFor[n] });
+          window.__thayamStartNewGame();
+          thSay('newGame', { n: window.__thayamSelectedSides().length,
+                             list: window.__thayamSelectedSides().join(', '),
+                             a: window.__thayamStarter() });
         });
       });
 
@@ -10875,7 +10890,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         var sizeLabel = cfg.n + '×' + cfg.n;
         if (ta) return '<h3>🎲 தாயம் · ' + sizeLabel + ' — எப்படி விளையாடுவது</h3>' +
           '<p>ஒவ்வொரு வீரருக்கும் <b>' + cfg.pieces + ' காய்கள்</b>' +
-          (big ? ' (கீழே <b>3 அல்லது 5</b> என்று தேர்ந்தெடுக்கலாம் — 3 என்றால் ஆட்டம் விரைவாக முடியும்)' : '') +
+          ' (கீழே <b>3 அல்லது 5</b> என்று தேர்ந்தெடுக்கலாம் — 3 என்றால் ஆட்டம் விரைவாக முடியும், 5 என்றால் நீண்ட ஆட்டம்)' +
           '. அனைத்தையும் நடுவில் உள்ள ' +
           'இலக்கை அடையச் செய்பவர் வெற்றி பெறுவார். 2, 3 அல்லது 4 வீரர்கள் — ' +
           'கீழே உள்ள tick பெட்டிகளால் தேர்ந்தெடுக்கவும்.</p>' +
@@ -10896,17 +10911,17 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           'திரும்பும்.</li>' +
           '</ol>' +
           (big
-            ? '<p><b>முக்கிய விதி:</b> இது 7×7 — கடினமான பலகை. ஒரு எதிராளியை ' +
+            ? '<p><b>முக்கிய விதி:</b> இந்தப் பலகையில் ஒரு எதிராளியை ' +
               '<b>வெட்டும் வரை</b> உங்கள் காய்கள் வெளி வளையத்தை விட்டு உள்ளே ' +
               'செல்ல முடியாது. ஒரு முறை வெட்டினால் போதும் — அதன் பிறகு எல்லா ' +
-              'வளையங்களுக்குள்ளும் செல்லலாம். இந்தப் பலகையில் <b>மூன்று ' +
-              'வளையங்கள்</b> உள்ளன. (சிறிய 5×5 பலகையில் வெட்டாமலேயே உள்ளே ' +
+              'வளையங்களுக்குள்ளும் செல்லலாம். இங்கு நடுவை அடைய <b>மூன்று ' +
+              'வளையங்கள்</b> கடக்க வேண்டும். (5×5 பலகையில் வெட்டாமலேயே உள்ளே ' +
               'செல்லலாம்.)</p>'
-            : '<p><b>வெட்டுவது ஏன் நல்லது:</b> இது 5×5 — எளிய பலகை. வெட்டாமலேயே ' +
+            : '<p><b>வெட்டுவது ஏன் நல்லது:</b> இந்தப் பலகையில் வெட்டாமலேயே ' +
               'உங்கள் காய்கள் உள் வளையத்திற்குச் சென்று நடுவை அடையலாம். ஆனாலும் ' +
               'வெட்டினால் எதிராளியின் காய் வீட்டுக்குத் திரும்பும் — அது அவர்களை ' +
-              'மிகவும் பின்தள்ளும். (பெரிய 7×7 பலகையில் ஒருவரை வெட்டிய பிறகுதான் ' +
-              'உள்ளே செல்ல முடியும் — அது கடினமான பலகை.)</p>') +
+              'மிகவும் பின்தள்ளும். (7×7 பலகையில் ஒருவரை வெட்டிய பிறகுதான் ' +
+              'உள்ளே செல்ல முடியும்.)</p>') +
           '<p>நடு இலக்கை அடைய <b>சரியான எண்</b> விழ வேண்டும். சில முறை ' +
           'தேவையான எண் விழாமல் போனால், சில உருட்டல்களுக்குப் பிறகு அது ' +
           'உறுதியாகக் கிடைக்கும் — யாரும் அதிக நேரம் காத்திருக்க வேண்டாம்.</p>' +
@@ -10917,7 +10932,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           'வீரரின் பெயர் வரும் வரை மீண்டும் தட்டுங்கள்.</p>';
         return '<h3>🎲 Thayam · ' + sizeLabel + ' — how to play</h3>' +
           '<p>Everybody has <b>' + cfg.pieces + ' pieces</b>' +
-          (big ? ' (choose <b>3 or 5</b> below — 3 makes for a shorter game)' : '') +
+          ' (choose <b>3 or 5</b> below — 3 for a shorter game, 5 for a long one)' +
           '. First player to get all of theirs ' +
           'into the middle wins. 2, 3 or 4 players — chosen with the tick ' +
           'boxes below the board.</p>' +
@@ -10937,19 +10952,19 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           'again.</li>' +
           '</ol>' +
           (big
-            ? '<p><b>The rule that sets the pace:</b> this is the 7×7 — the ' +
-              'hard board. Your pieces cannot leave the outer ring and turn ' +
-              'inward until you have <b>captured somebody</b>. One capture is ' +
-              'enough: after that every ring is open to you. There are ' +
-              '<b>three rings</b> here to cross before the middle, and while ' +
-              'you are waiting you are out in the open where anyone can take ' +
-              'you. (On the smaller 5×5 you may turn inward freely.)</p>'
-            : '<p><b>Why capturing is still worth it:</b> this is the 5×5 — the ' +
-              'easy board. Your pieces may turn inward and head for the middle ' +
-              'whenever they get there, captured or not. But capturing sends an ' +
+            ? '<p><b>The rule that sets the pace:</b> on this board your pieces ' +
+              'cannot leave the outer ring and turn inward until you have ' +
+              '<b>captured somebody</b>. One capture is enough — after that ' +
+              'every ring is open to you. There are <b>three rings</b> to cross ' +
+              'before the middle, and while you are waiting you are out in the ' +
+              'open where anyone can take you. (On the 5×5 you may turn inward ' +
+              'freely.)</p>'
+            : '<p><b>Why capturing is still worth it:</b> on this board your ' +
+              'pieces may turn inward and head for the middle whenever they ' +
+              'reach the boundary, captured or not. But capturing sends an ' +
               'opponent all the way home, which costs them more than anything else ' +
-              'you can do. (On the bigger 7×7 board you must capture somebody ' +
-              'before you are allowed to turn inward — that is the hard board.)</p>') +
+              'you can do. (On the 7×7 you must capture somebody before you are ' +
+              'allowed to turn inward at all.)</p>') +
           '<p>Reaching the middle needs an <b>exact</b> roll. If the number you ' +
           'need keeps not coming, the dice will make sure you get it after a few ' +
           'tries — nobody sits waiting too long.</p>' +
@@ -11622,11 +11637,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
            The only thing that changes is the configuration. */
         var lvl = btn.dataset.thayamLevel;                 // '5x5' or '7x7'
         var n = lvl === '7x7' ? 7 : 5;
-        var seeds = n === 7 ? (window.__thayamSeedCount ? window.__thayamSeedCount() : 5) : 3;
+        var seeds = window.__thayamSeedCount ? window.__thayamSeedCount(n) : (n === 7 ? 5 : 3);
         window.__thayamConfigure({ n: n, pieces: seeds, cutMandate: n === 7 });
-        // the seeds chooser is a 7x7 control; the 5x5 is validated at three
-        var seedRow = document.getElementById('thayamSeeds');
-        if (seedRow) seedRow.style.display = (n === 7 ? '' : 'none');
+        // both boards offer the choice, and the row shows this board's own setting
+        if (window.__thayamSyncSeedRow) window.__thayamSyncSeedRow();
         currentSize = 'thayam' + lvl;
         goScreen('scPlay');
         showThayamMode(true);
@@ -14676,7 +14690,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-237 (new board: Thayam 7×7 -- three rings, and the traditional rule that you must cut an opponent before you may turn inward. Pick 3 or 5 seeds each: 5 is the full game, 3 finishes in about half the time)';
+  var BUILD_VER = 'beta-238 (both Thayam boards now let you pick 3 or 5 seeds each, so the players decide how long a game runs. Neither board is called easy or hard any more -- they are simply 5×5 and 7×7, and the tiles say what actually differs)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that

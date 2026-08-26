@@ -271,11 +271,18 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
     return JSON.stringify({ en: en, ta: ta, mandate: mandate, en7: en7, ta7: ta7 });
   })()`).then(JSON.parse);
   ok('the 7x7 rules describe the 7x7 board, not the 5x5',
-    /Thayam · 7×7/.test(rules.en7) && /this is the 7×7 — the hard board/.test(rules.en7), rules.en7.slice(0, 40));
+    /Thayam · 7×7/.test(rules.en7), rules.en7.slice(0, 40));
   ok('the 7x7 rules state the capture requirement this board actually enforces',
     /cannot leave the outer ring/.test(rules.en7) && /three rings/.test(rules.en7));
-  ok('the 7x7 rules mention the 3-or-5 seeds choice', /choose <b>3 or 5<\/b> below/.test(rules.en7));
-  ok('the 7x7 rules are translated too', /கடினமான பலகை/.test(rules.ta7) && /7×7/.test(rules.ta7));
+  ok('the 7x7 rules are translated too', /மூன்று/.test(rules.ta7) && /7×7/.test(rules.ta7));
+  /* Both boards offer the seeds choice, so both must say so. */
+  ok('both boards mention the 3-or-5 seeds choice',
+    /choose <b>3 or 5<\/b> below/.test(rules.en7) && /choose <b>3 or 5<\/b> below/.test(rules.en));
+  /* Raja: "don't point easy or hard, just tag 5x5 and 7x7" -- once either
+     board can be short or long, calling one of them easy is a judgement the
+     app has no business making, and it stops being true anyway. */
+  ok('neither board is labelled easy or hard anywhere in the rules',
+    !/easy board|hard board/i.test(rules.en) && !/easy board|hard board/i.test(rules.en7));
 
   ok('rules are written for the board that shipped (cut-mandate off on 5x5)', rules.mandate === false, String(rules.mandate));
   // The old, now-wrong promise. If the mandate is off, the text must not still claim you are blocked.
