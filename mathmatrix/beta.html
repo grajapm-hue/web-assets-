@@ -10775,6 +10775,228 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       window.__thayamActiveSide = function(){ return SIDES_T[thActive]; };
     })();
 
+    (function(){
+      var SIDES_T = ['A', 'B', 'C', 'D'];
+      var thForcedRoll = null;
+      /* test-only escape hatch, same shape as forcing a Thayam via pity --
+         callers hand in just { d0, d1 }, so total/isThayam/bonusRoll are
+         derived here with the exact same formula thayamRollDice() uses
+         (that function lives in a different, earlier IIFE and takes no
+         arguments, so it can't be reused directly for a forced pair). */
+      window.__thayamForceNextRoll = function(r){
+        var total = r.d0 + r.d1;
+        if (r.d0 === 0 && r.d1 === 0) total = 12;
+        thForcedRoll = { d0: r.d0, d1: r.d1, total: total, isThayam: total === 1, bonusRoll: total === 1 || total === 5 || total === 6 || total === 12 };
+      };
+
+      function thayamKey(){ return 'mm.save.thayam.5x5'; }
+      function thayamSave(){
+        var pieces = window.__thayamPieces();
+        var anyOut = pieces.some(function(p){ return p.lap !== 'home'; });
+        if (!anyOut){ window.__mmClear(thayamKey()); return; }
+        window.__mmSave(thayamKey(), { pieces: pieces, activeSide: window.__thayamActiveSide(), enabled: window.__thayamTurnState().enabled });
+      }
+      function thayamRestore(){
+        var sv = window.__mmLoad(thayamKey(), function(o){
+          return Array.isArray(o.pieces) && typeof o.activeSide === 'string' && o.enabled;
+        });
+        if (!sv) return false;
+        window.__thayamSetPieces(sv.pieces);
+        window.__thayamSetEnabled(sv.enabled);
+        window.__thayamTurnInit(sv.activeSide);
+        return true;
+      }
+      window.__thayamClear = function(){ window.__mmClear(thayamKey()); };
+
+      function renderThayamPieces(){
+        document.querySelectorAll('#thayamGrid .thPiece').forEach(function(el){ el.remove(); });
+        window.__thayamPieces().forEach(function(p){
+          if (p.lap !== 'outer' && p.lap !== 'inner') return;   // home and finished pieces live in the Store panel, not the grid
+          var cellEl = document.querySelector('#thayamGrid [data-thayam-cell="' + p.lastCell + '"]');
+          if (!cellEl) return;
+          var dot = document.createElement('div');
+          dot.className = 'thPiece side' + p.side;
+          dot.dataset.thayamIdx = p.idx;   // own-side pieces can share a cell (e.g. two entered at the same gate) -- an idx on the dot itself resolves the exact piece tapped instead of guessing from side+cell
+          cellEl.appendChild(dot);
+        });
+      }
+      function renderThayamTallies(){
+        var pieces = window.__thayamPieces();
+        SIDES_T.forEach(function(s){
+          var side = pieces.filter(function(p){ return p.side === s; });
+          var home = side.filter(function(p){ return p.lap === 'home'; }).length;
+          var running = side.filter(function(p){ return p.lap === 'outer' || p.lap === 'inner'; }).length;
+          var won = side.filter(function(p){ return p.lap === 'finished'; }).length;
+          var el = document.getElementById('thTally' + s);
+          if (el) el.innerHTML = '<span>🏠 ' + home + '</span><span>🏃 ' + running + '</span><span>🏆 ' + won + '</span>';
+        });
+        var look = document.querySelector('#thayamGrid .cell.center .thFace');
+        if (look) look.className = 'thFace dir-' + ({ A: 'top', B: 'right', C: 'bottom', D: 'left' })[window.__thayamActiveSide()];
+      }
+      function flashCapture(cell){
+        var cellEl = document.querySelector('#thayamGrid [data-thayam-cell="' + cell + '"]');
+        if (!cellEl) return;
+        var x = document.createElement('div');
+        x.textContent = '✕'; x.style.cssText = 'position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#ff3b3b; font-size:20px; font-weight:900; pointer-events:none;';
+        cellEl.appendChild(x);
+        setTimeout(function(){ x.remove(); }, 500);
+      }
+
+      /* One roll -> auto-pass check -> apply to whichever piece the player taps.
+         If NO piece can use the roll at all, the turn passes immediately with
+         no tap required -- the "no legal move" rule from the spec. */
+      var thPendingRoll = null;
+
+      /* Applies the pity system to whatever the dice actually rolled, for
+         whichever of the three chokepoints is relevant to THIS player right
+         now. A chokepoint's counter is only touched when it's actually
+         relevant this turn (Raja's "5 to 10" promise is about rolls that
+         could have helped and didn't, not every roll ever made) --
+         irrelevant chokepoints are left alone entirely.
+
+         'enter': relevant when the player has a piece still at home.
+         'center': relevant when a piece is on the inner ring close enough
+           that SOME roll value would land it exactly on the centre.
+         'cut': relevant when the player hasn't captured anyone yet and has
+           at least one piece parked on the outer ring, unable to pivot in.
+           There's no dice VALUE that represents "make a capture happen", so
+           this one's forced hit is a direct unlock instead of a re-rolled
+           total -- the rule it satisfies is "no longer stuck for lack of a
+           capture", not "landed exactly on an opponent". */
+      function applyPity(sideLetter, roll){
+        var pieces = window.__thayamPieces().filter(function(p){ return p.side === sideLetter; });
+
+        var homePieces = pieces.filter(function(p){ return p.lap === 'home'; });
+        if (homePieces.length){
+          if (roll.isThayam){
+            window.__thayamPityRecord('enter', sideLetter, true);
+          } else if (window.__thayamPityCheck('enter', sideLetter)){
+            roll.d0 = 1; roll.d1 = 0; roll.total = 1; roll.isThayam = true; roll.bonusRoll = true;
+            window.__thayamPityRecord('enter', sideLetter, true);
+          } else {
+            window.__thayamPityRecord('enter', sideLetter, false);
+          }
+        }
+
+        var innerPieces = pieces.filter(function(p){ return p.lap === 'inner'; });
+        var neededForCentre = innerPieces.map(function(p){ return 8 - p.position; }).filter(function(n){ return n > 0 && n <= 6; });
+        if (neededForCentre.length){
+          var alreadyExact = neededForCentre.indexOf(roll.total) > -1;
+          if (alreadyExact){
+            window.__thayamPityRecord('center', sideLetter, true);
+          } else if (window.__thayamPityCheck('center', sideLetter)){
+            var forcedTotal = neededForCentre[0];
+            roll.total = forcedTotal; roll.d0 = Math.min(3, forcedTotal); roll.d1 = forcedTotal - roll.d0;
+            roll.isThayam = forcedTotal === 1; roll.bonusRoll = forcedTotal === 1 || forcedTotal === 5 || forcedTotal === 6 || forcedTotal === 12;
+            window.__thayamPityRecord('center', sideLetter, true);
+          } else {
+            window.__thayamPityRecord('center', sideLetter, false);
+          }
+        }
+
+        var stuckOnOuter = pieces.some(function(p){ return p.lap === 'outer'; }) && !window.__thayamHasCut(sideLetter);
+        if (stuckOnOuter){
+          if (window.__thayamPityCheck('cut', sideLetter)){
+            window.__thayamForceCut(sideLetter);
+            window.__thayamPityRecord('cut', sideLetter, true);
+          } else {
+            window.__thayamPityRecord('cut', sideLetter, false);
+          }
+        }
+
+        return roll;
+      }
+
+      function thayamOnRoll(sideLetter){
+        var sideIdx = SIDES_T.indexOf(sideLetter);
+        if (window.__thayamActiveSide() !== sideLetter) return;   // not this player's turn
+        if (thPendingRoll) return;   // a tap-to-choose selection is already waiting; don't discard it under a second roll
+        var roll = thForcedRoll || window.__thayamRollDice();
+        thForcedRoll = null;
+        roll = applyPity(sideLetter, roll);
+        var say = document.getElementById('thaySay');
+
+        if (!window.__thayamLegalMoveExists(sideIdx, roll.total)){
+          if (say) say.textContent = sideLetter + ' has no move for ' + roll.total + ' — passing to next player.';
+          window.__thayamEndTurn();
+          renderThayamTallies();
+          return;
+        }
+
+        var candidates = window.__thayamPieces()
+          .filter(function(p){ return p.side === sideLetter && p.lap !== 'finished'; })
+          .filter(function(p){ return window.__thayamWouldAccept(sideLetter, p.idx, roll.total); });
+
+        /* Home pieces are fungible -- entering piece #0 vs #1 vs #2 produces
+           the identical resulting board state (both just appear at the
+           side's own gate), and there's nothing rendered on the board yet
+           to tap between them. Collapse every home candidate down to one
+           representative so a Thayam at the start of a game auto-enters
+           instead of demanding a choice among pieces that aren't on screen. */
+        var homeCandidates = candidates.filter(function(p){ return p.lap === 'home'; });
+        if (homeCandidates.length > 1){
+          var otherCandidates = candidates.filter(function(p){ return p.lap !== 'home'; });
+          candidates = [homeCandidates[0]].concat(otherCandidates);
+        }
+
+        if (candidates.length === 1){
+          thayamCommitRoll(sideIdx, candidates[0].idx, roll);
+        } else {
+          thPendingRoll = { sideIdx: sideIdx, roll: roll, candidates: candidates.map(function(c){ return c.idx; }) };
+          if (say) say.textContent = 'Tap the piece you want to move.';
+          document.querySelectorAll('#thayamGrid .thPiece.side' + sideLetter).forEach(function(el){ el.classList.add('active'); });
+        }
+      }
+      function thayamCommitRoll(sideIdx, pieceIdx, roll){
+        var result = window.__thayamApplyRoll(sideIdx, pieceIdx, roll.total);
+        var say = document.getElementById('thaySay');
+        if (result.captured.length && say) {
+          var pieces = window.__thayamPieces();
+          result.captured.forEach(function(c){
+            var p = pieces.find(function(pp){ return pp.side === c.side && pp.idx === c.idx; });
+            if (p) flashCapture(p.lastCell);
+          });
+        }
+        renderThayamPieces();
+        renderThayamTallies();
+        thayamSave();
+        var winner = window.__thayamGameOver();
+        if (winner){
+          if (say) say.textContent = winner + ' wins!';
+          window.__thayamClear();
+          return;
+        }
+        if (!roll.bonusRoll) window.__thayamEndTurn();
+        renderThayamTallies();
+      }
+      window.__thayamStartNewGame = function(){
+        window.__thayamNewGame(window.__thayamSelectedSides());
+        window.__thayamTurnInit(window.__thayamSelectedSides()[0]);
+        window.__thayamBuild5x5();
+        renderThayamPieces();
+        renderThayamTallies();
+        thayamSave();
+      };
+
+      document.querySelectorAll('.rollBtn[data-side]').forEach(function(btn){
+        btn.addEventListener('click', function(){ thayamOnRoll(btn.dataset.side); });
+      });
+      document.getElementById('thayamGrid') && document.getElementById('thayamGrid').addEventListener('click', function(e){
+        var pieceEl = e.target.closest('.thPiece');
+        if (!pieceEl || !thPendingRoll) return;
+        var side = Array.from(pieceEl.classList).find(function(c){ return c.indexOf('side') === 0; }).replace('side', '');
+        if (side !== SIDES_T[thPendingRoll.sideIdx]) return;
+        var pieceIdx = parseInt(pieceEl.dataset.thayamIdx, 10);
+        if (thPendingRoll.candidates.indexOf(pieceIdx) === -1) return;
+        thayamCommitRoll(thPendingRoll.sideIdx, pieceIdx, thPendingRoll.roll);
+        thPendingRoll = null;
+        document.querySelectorAll('#thayamGrid .thPiece').forEach(function(el){ el.classList.remove('active'); });
+      });
+
+      window.__thayamRenderAll = function(){ renderThayamPieces(); renderThayamTallies(); };
+      window.__thayamRestore = thayamRestore;
+    })();
+
     document.querySelectorAll('.toggleBtn[data-thayam-level]').forEach(function(btn){
       btn.addEventListener('click', function(){
         var cm = document.getElementById('congratsModal');
@@ -10793,6 +11015,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         goScreen('scPlay');
         showThayamMode(true);
         window.__thayamBuild5x5();
+        if (!window.__thayamRestore()) { window.__thayamNewGame(['A','B','C','D']); window.__thayamTurnInit('A'); }
+        window.__thayamRenderAll();
         var title = document.getElementById('appBarTitle');
         if (title) title.innerHTML = boxedTitle('🎲 Thayam 5×5');
       });
