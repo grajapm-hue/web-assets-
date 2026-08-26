@@ -23,7 +23,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 let fail = 0;
 const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !== undefined ? '  -> ' + x : '')); if (!c) fail++; };
 
-const PANEL_IDS = ['sudokuPanel', 'slidePanel', 'gatePanel', 'binaryPanel', 'palPanel', 'pal4Panel'];
+const PANEL_IDS = ['sudokuPanel', 'slidePanel', 'gatePanel', 'binaryPanel', 'palPanel', 'pal4Panel', 'thayamPanel'];
 
 (async () => {
   const tmp = path.join(__dirname, '_diagstackprof');
@@ -109,6 +109,10 @@ const PANEL_IDS = ['sudokuPanel', 'slidePanel', 'gatePanel', 'binaryPanel', 'pal
   await ev(`document.getElementById('tab-scHome').click()`); await sleep(200);
   await ev(`document.getElementById('pal4Tab').click()`); await sleep(700);
   await checkOnly('then Pallanguzhi 4-player -- nothing stacked underneath', 'pal4Panel');
+
+  await ev(`document.getElementById('tab-scHome').click()`); await sleep(200);
+  await ev(`document.querySelector('.toggleBtn[data-thayam-level]').click()`); await sleep(700);
+  await checkOnly('then Thayam 5x5 -- nothing stacked underneath', 'thayamPanel');
 
   await ev(`document.getElementById('tab-scHome').click()`); await sleep(200);
   await ev(`document.getElementById('slideAzTab').click()`); await sleep(700);
