@@ -40,6 +40,9 @@ Thayam is a traditional Tamil race game for 2–4 players, played with two speci
 - Once a piece reaches the centre, it's done — it moves off the board into your own Store as a finished piece.
 - First player to get every one of their pieces into the centre wins.
 
+### When there's genuinely nothing to play
+Sometimes a roll simply can't be used by any of your pieces — all of them are already finished, or still waiting on a Thayam, or the one piece left needs an exact number this roll didn't give. When that happens, the turn passes to the next player automatically, with a short message naming who's up — there's no Skip button to tap. Working out "do I actually have a move?" is real arithmetic across every piece you own, and asking a child to do that themselves, correctly, before they're even allowed to pass, would undo the whole point of softening the harder parts of this game. (Gate Logic elsewhere in this app has its own Skip button, but that's a *voluntary* skip with a real choice behind it — this is a forced dead turn, not a choice, so it isn't reused here.)
+
 ### Keeping the game moving (the one place this app softens the real rules)
 The real game's dice can be genuinely unlucky — going many rolls without the exact number you need is part of the traditional game, but it can turn into a long, frustrating wait, especially for a child playing with family. This app keeps every rule exactly as it is, but tunes the dice so nobody is stuck too long at any of the three points where the real game can stall:
 - rolling the Thayam needed to leave home,
@@ -64,6 +67,9 @@ The "can't pivot inward without a capture" rule falls straight out of this: adva
 
 ### 3. Locking a piece in as won
 **Approach**: once a piece reaches the centre, it's marked `finished` and **moves off the board entirely into that player's own Store panel** — the same panel already built for pieces waiting to start, now doing double duty as a trophy tray. Stacking up to 20 finished pieces from 4 different colours into one small board cell would be unreadable on a phone; moving them into each player's own space keeps it legible. This is where the "🏆 Win" count in each Store's three-way tally comes from.
+
+### No legal move
+After every roll, check whether any of the current player's pieces can actually use it (a home piece needs the roll to be exactly a Thayam; an on-board piece just needs to not overshoot centre). If none can, auto-pass the turn with a short flash naming the next player — no Skip button, since this is a forced dead turn rather than a voluntary choice. Cheap to check, for the same reason capture-scanning is cheap: at most a handful of pieces per player.
 
 ### Everything else, in short
 - **Dice + pity system**: a per-player counter of "rolls since the last natural hit" at each of the three chokepoints; once it crosses a random threshold between 5 and 10, the next roll is forced to be the one they need.
