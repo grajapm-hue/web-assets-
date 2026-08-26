@@ -10292,6 +10292,48 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       window.__pal4ClearSave = function(){ try { localStorage.removeItem(PAL4_SAVE_KEY); } catch(e){} };
     })();
 
+    (function(){
+      /* THAYAM RING GEOMETRY.
+
+         Generates each board size's ring levels from plain geometry instead
+         of hand-typed cell arrays -- proven correct once here (see
+         tools/_diag-thayam-ring.js during planning) rather than trusted by
+         eye. `k` is how many cells in from the board's own edge: k=0 is the
+         outermost ring, k=1 is one step in, and so on. Walking direction is
+         ANTI-CLOCKWISE starting from each ring's own top-middle-ish cell --
+         confirmed against Raja's reference images (top-mid moving LEFT
+         first, down the left side, along the bottom, up the right), the
+         same direction already fixed for Pallanguzhi 4-player's own ring.
+
+         Every colour's own gate sits at colourIndex * (ringLength / 4) on
+         ring 0, and the SAME spacing holds one ring further in -- proven in
+         the diagnostic, not assumed -- so a piece's real board cell needs no
+         per-colour lookup table, just this one formula. */
+      function thayamRing(N, k){
+        var lo = k, hi = N - 1 - k;
+        if (lo > hi) return [];
+        if (lo === hi) return [[lo, lo]];
+        var midCol = Math.floor((lo + hi) / 2);
+        var cells = [];
+        for (var c = midCol; c >= lo; c--) cells.push([lo, c]);
+        for (var r = lo + 1; r <= hi; r++) cells.push([r, lo]);
+        for (var c2 = lo + 1; c2 <= hi; c2++) cells.push([hi, c2]);
+        for (var r2 = hi - 1; r2 >= lo; r2--) cells.push([r2, hi]);
+        for (var c3 = hi - 1; c3 > midCol; c3--) cells.push([lo, c3]);
+        return cells;
+      }
+      /* All ring levels for one board size, outermost first, stopping once a
+         ring would be empty or collapse to the centre cell itself (which is
+         the goal square, handled separately -- never part of a ring). */
+      function thayamRings(N){
+        var out = [];
+        for (var k = 0; k * 2 < N - 1; k++) out.push(thayamRing(N, k));
+        return out;
+      }
+      window.__thayamRing = thayamRing;
+      window.__thayamRings = thayamRings;
+    })();
+
     /* The actual "slide up / close / phone off" checkpoint for both boards'
        save-to-resume. visibilitychange fires reliably on Android/iOS the
        moment the app is backgrounded -- before the OS can ever kill the
