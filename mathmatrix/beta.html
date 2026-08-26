@@ -4242,20 +4242,11 @@ body{ background:#C9A87C !important; }
     <div id="thayamRound">Round 1</div>
   </div>
 
-  <div class="pal4Select" id="thayamSelect">
-    <span class="pal4SelectLabel">Players:</span>
-    <label class="pal4Tick sideA on"><input type="checkbox" checked data-side="A"><span>A</span></label>
-    <label class="pal4Tick sideB on"><input type="checkbox" checked data-side="B"><span>B</span></label>
-    <label class="pal4Tick sideC on"><input type="checkbox" checked data-side="C"><span>C</span></label>
-    <label class="pal4Tick sideD on"><input type="checkbox" checked data-side="D"><span>D</span></label>
-  </div>
-  <button class="pal4Choose" id="thayamChoose" type="button">👤 Choose player — A starts</button>
-
   <div class="thayamTable" style="margin-top:6px;">
     <div class="thSeat top sideA" data-side="A">
       <div class="nm" id="thNameA">Store · A</div>
       <div class="wide">
-        <div class="dice"><div class="kattai" id="thDieA0">1</div><div class="kattai" id="thDieA1">0</div></div>
+        <div class="dice"><div class="kattai" id="thDieA0">·</div><div class="kattai" id="thDieA1">·</div></div>
         <button class="rollBtn" data-side="A">🎲 Roll</button>
       </div>
       <div class="thTally" id="thTallyA"><span>🏠 3</span><span>🏃 0</span><span>🏆 0</span></div>
@@ -4288,6 +4279,20 @@ body{ background:#C9A87C !important; }
   </div>
 
   <div id="thaySay"></div>
+
+  <!-- Raja: "player choose tick untick row should be under game table".
+       Setting up who is playing happens once, before the first roll; the board
+       and the turn message are what a player looks at for the rest of the
+       game, so the setup controls sit below both rather than pushing the board
+       down the screen on every turn. -->
+  <div class="pal4Select" id="thayamSelect">
+    <span class="pal4SelectLabel">Players:</span>
+    <label class="pal4Tick sideA on"><input type="checkbox" checked data-side="A"><span>A</span></label>
+    <label class="pal4Tick sideB on"><input type="checkbox" checked data-side="B"><span>B</span></label>
+    <label class="pal4Tick sideC on"><input type="checkbox" checked data-side="C"><span>C</span></label>
+    <label class="pal4Tick sideD on"><input type="checkbox" checked data-side="D"><span>D</span></label>
+  </div>
+  <button class="pal4Choose" id="thayamChoose" type="button">👤 Choose player — A starts</button>
 </div>
 
 <div id="rotateHint">📱 Turn your phone sideways for a much bigger board (scroll down to see it all)</div>
@@ -10629,13 +10634,36 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           }
           cb.closest('.pal4Tick').classList.toggle('on', thSelEnabled[s]);
           if (typeof sfx === 'function') try { sfx('card'); } catch(e){}
+          syncChooseLabel();
         });
       });
 
+      /* The label used to be the hardcoded string "A starts" and never moved,
+         so unticking A still promised a start it could not deliver. It now
+         names whoever the ticks actually make first. */
       var chooseBtn = document.getElementById('thayamChoose');
+      function syncChooseLabel(){
+        if (!chooseBtn) return;
+        var sides = window.__thayamSelectedSides();
+        chooseBtn.textContent = '👤 Choose player — ' + (sides[0] || 'A') + ' starts';
+      }
+      syncChooseLabel();
+
       if (chooseBtn) chooseBtn.addEventListener('click', function(){
         if (typeof sfx === 'function') try { sfx('card'); } catch(e){}
         window.__thayamStartNewGame && window.__thayamStartNewGame();   // Task 6 fills this in; guarded so this task alone doesn't throw
+        /* Raja: "choose player is inactive". It was never inactive -- it dealt
+           a correct new game every time. But on an untouched board a new game
+           is identical to the board already showing (same 12 pieces, all home,
+           nothing on the grid), so pressing it changed nothing a player could
+           see and read exactly like a dead button. It now says what it did. */
+        var say = document.getElementById('thaySay');
+        if (say){
+          var sides = window.__thayamSelectedSides();
+          say.textContent = 'New game — ' + sides.length + ' players (' + sides.join(', ') +
+            '). ' + (window.__thayamActiveSide ? window.__thayamActiveSide() : sides[0]) +
+            ' starts — roll a Thayam to bring a piece out.';
+        }
       });
     })();
 
@@ -14187,7 +14215,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-230 (Thayam panel readability: the title was white-on-sandalwood and all but invisible, Store B sat 27px off the right edge of the phone, and the round pill stretched across the whole width -- the panel had never been restated for the wood theme. Text and controls bigger again throughout)';
+  var BUILD_VER = 'beta-231 (Thayam setup: player A\'s dice no longer open showing a leftover 1-0, Choose player now says what it did and names who really starts, and the players tick row moved below the board so the game table comes first)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
