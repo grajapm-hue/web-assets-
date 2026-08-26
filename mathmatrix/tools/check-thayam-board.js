@@ -159,6 +159,14 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
      viewport came out 526px wide -- comfortably wide enough to hide the very
      overflow this check exists to catch. Measuring at the width the bug was
      reported at is the whole point, so it is set, not assumed. */
+  /* Both languages. The stylesheet's own applyLang comment records why this
+     matters: Tamil runs longer than English, this layout sizes itself by
+     measuring its contents, and a translated board that overflows is exactly
+     how the app lost a chip 11px off-screen once before. Thayam is translated
+     now, so its fit has to be proven in Tamil, not just in English. */
+  for (const lang of ['en', 'ta']){
+  await ev(`window.__mmLang('${lang}')`);
+  await sleep(120);
   for (const vw of [390, 360, 340]){
     await send('Emulation.setDeviceMetricsOverride', { width: vw, height: 844, deviceScaleFactor: 1, mobile: true });
     await sleep(160);
@@ -175,10 +183,12 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
       });
     })()`).then(JSON.parse);
     const off = f.seats.filter(s => s.left < 0 || s.right > f.vw);
-    ok('at ' + vw + 'px every Store seat is fully on screen',
+    ok('[' + lang + '] at ' + vw + 'px every Store seat is fully on screen',
       off.length === 0, off.length ? JSON.stringify(off) : 'board=' + f.board + ' vw=' + f.vw);
-    ok('at ' + vw + 'px the page never scrolls sideways', f.pageOverflow === 0, String(f.pageOverflow));
+    ok('[' + lang + '] at ' + vw + 'px the page never scrolls sideways', f.pageOverflow === 0, String(f.pageOverflow));
   }
+  }
+  await ev(`window.__mmLang('en')`);
   await send('Emulation.clearDeviceMetricsOverride', {});
 
   const fit = await ev(`(function(){

@@ -10682,6 +10682,32 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
          handed the first tick the turn, so there was no way to let B or C
          open. This now cycles the same way, through the ticked players only,
          in the board's own anti-clockwise order. */
+      /* Thayam's own spoken sentences. Same shape as the Pallanguzhi boards'
+         P()/PAL_TXT lookup -- a sentence with live values in it cannot be
+         swapped by the text-node walker, because the walker matches whole
+         nodes and these are assembled at the moment they are said. */
+      var TH_TXT = {
+        choose:   { en: '👤 Choose player — {a} starts',
+                    ta: '👤 வீரரைத் தேர்ந்தெடு — வீரர் {a} தொடங்குகிறார்' },
+        starts:   { en: "{a} starts — press {a}'s Roll button. You need a Thayam to bring a piece out.",
+                    ta: 'வீரர் {a} தொடங்குகிறார் — {a} இன் உருட்டு பொத்தானைத் தட்டுங்கள். ஒரு காயை வெளியே கொண்டுவர தாயம் வேண்டும்.' },
+        newGame:  { en: 'New game — {n} players ({list}). {a} starts — roll a Thayam to bring a piece out.',
+                    ta: 'புதிய ஆட்டம் — {n} வீரர்கள் ({list}). வீரர் {a} தொடங்குகிறார் — ஒரு காயை வெளியே கொண்டுவர தாயம் உருட்டுங்கள்.' },
+        noMove:   { en: '{a} has no move for {n} — passing to {b}.',
+                    ta: 'வீரர் {a}க்கு {n} எண்ணுக்கு நகர்த்த வழி இல்லை — வீரர் {b}க்கு முறை செல்கிறது.' },
+        tapPiece: { en: 'Tap the piece you want to move.',
+                    ta: 'நகர்த்த வேண்டிய காயைத் தட்டுங்கள்.' },
+        wins:     { en: '{a} wins!', ta: 'வீரர் {a} வெற்றி!' },
+        moved:    { en: '{a} rolled {n} — moved.', ta: 'வீரர் {a} {n} உருட்டினார் — நகர்ந்தது.' }
+      };
+      function thP(key, v){
+        var row = TH_TXT[key] || {};
+        var ta = !!(window.__palTa && window.__palTa());
+        var t = (ta && row.ta) ? row.ta : (row.en || '');
+        return t.replace(/\{(\w+)\}/g, function(_, k){ return (v && v[k] !== undefined) ? v[k] : ''; });
+      }
+      window.__thayamP = thP;
+
       var thStarter = null;   // null = follow the ticks; otherwise an explicit choice
       window.__thayamStarter = function(){
         var sides = window.__thayamSelectedSides();
@@ -10692,7 +10718,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       var chooseBtn = document.getElementById('thayamChoose');
       function syncChooseLabel(){
         if (!chooseBtn) return;
-        chooseBtn.textContent = '👤 Choose player — ' + window.__thayamStarter() + ' starts';
+        chooseBtn.textContent = thP('choose', { a: window.__thayamStarter() });
       }
       syncChooseLabel();
 
@@ -10716,8 +10742,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         if (window.__thayamRenderAll) window.__thayamRenderAll();
 
         var say = document.getElementById('thaySay');
-        if (say) say.textContent = thStarter + ' starts — press ' + thStarter +
-          "'s Roll button. You need a Thayam to bring a piece out.";
+        if (say) say.textContent = thP('starts', { a: thStarter });
       });
 
       /* Keep the promise honest when the ticks change: if the chosen starter
@@ -10732,8 +10757,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         var say = document.getElementById('thaySay');
         if (say){
           var sides = window.__thayamSelectedSides();
-          say.textContent = 'New game — ' + sides.length + ' players (' + sides.join(', ') + '). ' +
-            window.__thayamStarter() + ' starts — roll a Thayam to bring a piece out.';
+          say.textContent = thP('newGame', { n: sides.length, list: sides.join(', '), a: window.__thayamStarter() });
         }
       });
 
@@ -10822,12 +10846,32 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
          while still guaranteeing it lands inside the promised window. */
       var pityCounters = {};   // key: kind+'|'+playerId -> { misses, threshold }
       function pityKey(kind, playerId){ return kind + '|' + playerId; }
-      function thayamPityReset(kind, playerId){
-        pityCounters[pityKey(kind, playerId)] = { misses: 0, threshold: 5 + Math.floor(Math.random() * 6) };   // 5..10 inclusive
+
+      /* OPENING WINDOW. Raja: "to avoid frustrate to player at initial round,
+         thayam be provided to all player within 2 to 3 rounds, and it will
+         decide fate for further thayam later by auto shuffle like luck and
+         fate."
+         Waiting on a Thayam is bearable once you already have a piece on the
+         board and something to watch; it is miserable when you have nothing
+         out and everyone else is moving. So the FIRST entry is guaranteed in
+         2-3 rolls, and every chokepoint after that -- including later entries
+         from home -- keeps the ordinary 5-10 window, so luck still decides
+         the rest of the game. `opening` is passed in by the caller, which is
+         the only place that knows whether this player has anything out yet. */
+      function pityWindow(opening){
+        return opening ? 2 + Math.floor(Math.random() * 2)      // 2..3 inclusive
+                       : 5 + Math.floor(Math.random() * 6);     // 5..10 inclusive
       }
-      function thayamPityCheck(kind, playerId){
+      function thayamPityReset(kind, playerId, opening){
+        pityCounters[pityKey(kind, playerId)] = { misses: 0, threshold: pityWindow(opening) };
+      }
+      function thayamPityCheck(kind, playerId, opening){
         var c = pityCounters[pityKey(kind, playerId)];
-        if (!c) { thayamPityReset(kind, playerId); c = pityCounters[pityKey(kind, playerId)]; }
+        if (!c) { thayamPityReset(kind, playerId, opening); c = pityCounters[pityKey(kind, playerId)]; }
+        /* An opening counter that was created before the player's situation
+           was known must not keep a 5-10 threshold once we know they are
+           still stuck at home -- otherwise the promise silently lapses. */
+        if (opening && c.threshold > 3) c.threshold = pityWindow(true);
         return c.misses + 1 >= c.threshold;   // this roll, if it's also a natural miss, would be forced instead
       }
       function thayamPityRecord(kind, playerId, hit){
@@ -11117,10 +11161,16 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         var pityForced = false;   // I7: at most one chokepoint may force-override roll.total on a given roll -- otherwise a later chokepoint can silently clobber an earlier one's guaranteed hit
 
         var homePieces = pieces.filter(function(p){ return p.lap === 'home'; });
+        /* "Opening" means this player has NOTHING on the board yet -- still
+           waiting to get started while others are already moving. That is the
+           only case that gets the fast 2-3 roll guarantee; once they have a
+           piece out, later entries wait their ordinary turn like everything
+           else. Finished pieces don't count as being on the board. */
+        var opening = !pieces.some(function(p){ return p.lap === 'outer' || p.lap === 'inner'; });
         if (homePieces.length){
           if (roll.isThayam){
             window.__thayamPityRecord('enter', sideLetter, true);
-          } else if (window.__thayamPityCheck('enter', sideLetter)){
+          } else if (window.__thayamPityCheck('enter', sideLetter, opening)){
             roll.d0 = 1; roll.d1 = 0; roll.total = 1; roll.isThayam = true; roll.bonusRoll = true;
             pityForced = true;
             window.__thayamPityRecord('enter', sideLetter, true);
@@ -11180,7 +11230,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
         if (!window.__thayamLegalMoveExists(sideIdx, roll.total)){
           window.__thayamEndTurn();
-          if (say) say.textContent = sideLetter + ' has no move for ' + roll.total + ' — passing to ' + window.__thayamActiveSide() + '.';
+          if (say) say.textContent = window.__thayamP('noMove', { a: sideLetter, n: roll.total, b: window.__thayamActiveSide() });
           renderThayamTallies();
           return;
         }
@@ -11205,7 +11255,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           thayamCommitRoll(sideIdx, candidates[0].idx, roll);
         } else {
           thPendingRoll = { sideIdx: sideIdx, roll: roll, candidates: candidates.map(function(c){ return c.idx; }) };
-          if (say) say.textContent = 'Tap the piece you want to move.';
+          if (say) say.textContent = window.__thayamP('tapPiece');
           /* Only mark pieces that are ACTUALLY in the candidate set --
              marking every on-board piece of this side (regardless of
              whether it can use this roll) invites a tap that silently does
@@ -11240,14 +11290,14 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         var winner = window.__thayamGameOver();
         if (winner){
           thGameWon = true;   // I5: stop the game -- no more rolls once someone has won
-          if (say) say.textContent = winner + ' wins!';
+          if (say) say.textContent = window.__thayamP('wins', { a: winner });
           window.__thayamClear();
           return;
         }
         // I4: an ordinary move (no capture, no bonus roll) was previously totally
         // silent -- fill in what capture/win/auto-pass already had
         if (!result.captured.length && !roll.bonusRoll && say){
-          say.textContent = SIDES_T[sideIdx] + ' rolled ' + roll.total + ' — moved.';
+          say.textContent = window.__thayamP('moved', { a: SIDES_T[sideIdx], n: roll.total });
         }
         if (!roll.bonusRoll) window.__thayamEndTurn();
         renderThayamTallies();
@@ -12568,7 +12618,11 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     'Player A':'வீரர் A', 'Player B':'வீரர் B', 'Player C':'வீரர் C', 'Player D':'வீரர் D',
     'Players:':'வீரர்கள்:',
     'Sample layout — the rules are still being worked out. Choose Player just previews who SaNa is watching.':
-      'மாதிரி அமைப்பு — விளையாட்டு விதிகள் இன்னும் வடிவமைக்கப்பட்டு வருகின்றன. வீரரைத் தேர்ந்தெடு என்பது SaNa யாரைக் கவனிக்கிறார் என்பதை மட்டும் காட்டும்.'
+      'மாதிரி அமைப்பு — விளையாட்டு விதிகள் இன்னும் வடிவமைக்கப்பட்டு வருகின்றன. வீரரைத் தேர்ந்தெடு என்பது SaNa யாரைக் கவனிக்கிறார் என்பதை மட்டும் காட்டும்.',
+    /* Thayam's own furniture. Player A-D, Players:, New game and How to play
+       are already above and are shared -- the same English string means the
+       same thing on all three boards, so it is translated once. */
+    'Thayam':'தாயம்', 'Round 1':'சுற்று 1', '🎲 Roll':'🎲 உருட்டு'
   };
 
   /* Swap the text in place, remembering the English so the switch works both
@@ -12609,6 +12663,20 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
        and nothing else in the app is touched. */
     applyLangToRoot(document.getElementById('palPanel'));
     applyLangToRoot(document.getElementById('pal4Panel'));
+    /* Thayam joins them for the same reason, not as a third exception: it is a
+       Tamil game whose vocabulary is already Tamil -- thayam itself, the kaai,
+       the mount. Raja, seeing only the rules translated: "different tamil
+       translation is in how to play script only not in UI screen like 4P
+       Pallanguzhi." Same family, same treatment. Still nothing outside these
+       three boards, for the layout reasons above. */
+    applyLangToRoot(document.getElementById('thayamPanel'));
+    /* Thayam's Choose-player label is assembled in JS, so the text walker
+       cannot match it -- it has to be rebuilt through the lookup. Doing it
+       here rather than in toggleLang() means every path that changes the
+       language gets it, including __mmLang() used by the checks; wiring it to
+       the button alone left the board Tamil around a button still reading
+       "Choose player — A starts". */
+    if (window.__thayamSyncStarter) window.__thayamSyncStarter();
     document.documentElement.setAttribute('lang', LANG === 'ta' ? 'ta' : 'en');
     document.body.classList.toggle('langTa', LANG === 'ta');
   }
@@ -14355,7 +14423,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-232 (Thayam now carries the same tabs as Pallanguzhi: New game, a bilingual How to play, and the shared Tamil/English button. Choose player cycles through the players so anyone can open the game, and the seats read Player A-D instead of Store)';
+  var BUILD_VER = 'beta-233 (Thayam speaks Tamil now -- the whole board, not just the rules, same as Pallanguzhi. And nobody waits at the start: your first piece is guaranteed out within 2-3 rolls, after which the dice go back to ordinary luck)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
