@@ -1466,7 +1466,7 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
 .navBack{ width:46px !important; height:46px !important; border-radius:13px !important; font-size:19px !important; }
 .appBarChip{ font-size:11.5px !important; padding:5px 10px !important; }
 /* 46px, not 40: the bar has 10px more to give now (see .appBar above), so
-   the ← 💡 ⋯ group grows with it instead of staying pinned to the old
+   the ← 💡 🔊 group grows with it instead of staying pinned to the old
    46px-bar / 40px-button ceiling. */
 .barBtn{ width:46px !important; height:46px !important; border-radius:13px !important; font-size:17px !important; }
 /* Logic and Watch carry a word under the glyph. Same height as the plain
@@ -1870,7 +1870,7 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
    carries four buttons, and "Guess My Number · Junior" needs every pixel the
    title can get before the ellipsis bites. */
 /* Cream, not brown. It was #8A5E31 — the exact colour of the Logic, Watch and
-   ⋯ buttons, on a bar that is itself a brown wash, so Raja saw one brown on
+   Sound buttons, on a bar that is itself a brown wash, so Raja saw one brown on
    another. A pale tile with a brown edge belongs to the puzzle-card family
    instead, and separates from both.
    Kept tight on purpose: the bar is 360px on his phone and already carries
@@ -13706,7 +13706,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     park('offline', '#offlineBox');
     park('logic', '#logicBox');
     // the sound/music pair wrapped to two lines on a 320px phone and ate 84px of
-    // board space; the real buttons now live in the ⋯ settings sheet and still work
+    // board space; the real buttons now live in the 🔊 Sound sheet and still work
     var sb = document.getElementById('soundBtn');
     if (sb && sb.parentElement){
       (SHEET_NODES['settings'] = SHEET_NODES['settings'] || []).push(sb.parentElement);
