@@ -354,7 +354,7 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
     await ev(`window.__pal4ClearSave && window.__pal4ClearSave()`);   // force fresh -- see beta-217 comment above
     await ev(`document.getElementById('pal4Tab').click()`); await sleep(500);
     const row = await ev(`(function(){
-      var tops = Array.from(document.querySelectorAll('.pal4Tick')).map(function(c){ return Math.round(c.getBoundingClientRect().top); });
+      var tops = Array.from(document.querySelectorAll('#pal4Select .pal4Tick')).map(function(c){ return Math.round(c.getBoundingClientRect().top); });
       return JSON.stringify({ singleRow: new Set(tops).size === 1, tops: tops }); })()`).then(JSON.parse);
     ok('at ' + w + 'px, all four tick boxes stay on one line', row.singleRow, JSON.stringify(row.tops));
   }

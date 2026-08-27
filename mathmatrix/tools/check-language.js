@@ -335,8 +335,13 @@ const TAMIL = /[\u0B80-\u0BFF]/;
     await ev(`document.getElementById('tab-scHome').click()`); await sleep(150);
     await ev(`window.__pal4ClearSave && window.__pal4ClearSave()`);   // force fresh -- see beta-217 comment above
     await ev(`document.getElementById('pal4Tab').click()`); await sleep(500);
+    /* Scoped to #pal4Select on purpose. Thayam reuses .pal4Tick for its own
+       Players and Seeds rows, and an unscoped query also collected those --
+       hidden, so they report top:0, so "all on one line" was false and this
+       assertion failed for five builds while Pallanguzhi's row was perfectly
+       fine. A test about THIS row must measure only this row. */
     const row = await ev(`(function(){
-      var tops = Array.from(document.querySelectorAll('.pal4Tick')).map(function(c){ return Math.round(c.getBoundingClientRect().top); });
+      var tops = Array.from(document.querySelectorAll('#pal4Select .pal4Tick')).map(function(c){ return Math.round(c.getBoundingClientRect().top); });
       return JSON.stringify({ singleRow: new Set(tops).size === 1, tops: tops }); })()`).then(JSON.parse);
     ok('in Tamil at ' + w + 'px, all four tick boxes stay on one line', row.singleRow, JSON.stringify(row.tops));
   }

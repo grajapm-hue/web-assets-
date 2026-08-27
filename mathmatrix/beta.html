@@ -9989,9 +9989,16 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
            back to all four sides enabled, Player A up first, so opening
            this board fresh from Home always starts from the same place the
            2-player one does. */
+        /* Every .pal4Tick lookup in this module is scoped to #pal4Select on
+           purpose. Thayam reuses the same .pal4Tick.sideA-D classes for its
+           own Players row, so a bare querySelector('.pal4Tick.sideA input')
+           finds Pallanguzhi's box only because this panel happens to sit
+           first in the document -- reorder the panels and Pallanguzhi would
+           silently be ticking Thayam's checkboxes. Scope it, don't rely on
+           document order. */
         SIDES.forEach(function(s){
           enabled[s] = true;
-          var cb = document.querySelector('.pal4Tick.side' + s + ' input');
+          var cb = document.querySelector('#pal4Select .pal4Tick.side' + s + ' input');
           if (cb) cb.checked = true;
         });
         active = 0; starter4 = 0;
@@ -10279,7 +10286,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
             card.classList.toggle('active', isActive);
             card.classList.toggle('off', !isOn);
           }
-          var tick = document.querySelector('.pal4Tick.side' + s);
+          var tick = document.querySelector('#pal4Select .pal4Tick.side' + s);
           if (tick) tick.classList.toggle('on', isOn);
           var storeNumEl = document.querySelector('#pal4Card' + s + ' .pal4CardStoreNum');
           /* Raja: an unticked player should show no reserve at all, not a
@@ -10544,7 +10551,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       function restorePal4Game(sv){
         SIDES.forEach(function(s, i){
           enabled[s] = !!sv.enabled[s];
-          var cb = document.querySelector('.pal4Tick.side' + s + ' input');
+          var cb = document.querySelector('#pal4Select .pal4Tick.side' + s + ' input');
           if (cb) cb.checked = enabled[s];
         });
         cups4 = sv.cups.slice(); store4 = sv.store.slice();
@@ -14820,7 +14827,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-242 (Thayam dice: the number you rolled stays on screen so you can read it — even when it gave you no move and the turn passed on — and clears when the next player rolls, so only ever one seat shows dice)';
+  var BUILD_VER = 'beta-243 (Pallanguzhi 4-player now finds its own tick boxes by name, not by luck: Thayam reuses the same class, so every lookup is scoped to its own panel)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
