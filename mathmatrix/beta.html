@@ -865,6 +865,34 @@ window.onerror = function(msg, src, line, col, err){
      Each puzzle owns a colour: --accent / --accent2 are re-read from the
      chosen level button, so the whole app changes personality per puzzle. */
   :root{ --accent:#60a5fa; --accent2:#3b82f6; }
+
+  /* ── THE NOTCH ────────────────────────────────────────────────────────────
+     Raja, on an iPhone: "top center occupied area hides our app tab message
+     that area."
+
+     This page is served viewport-fit=cover, which deliberately draws UNDER the
+     notch and the rounded corners, and .appShell fills the whole 100dvh. Every
+     safe-area allowance in this file was env(safe-area-inset-BOTTOM) -- there
+     was no top, left or right anywhere -- so on every iPhone since the X the
+     Dynamic Island sits on top of the app bar, over the title and the Logic /
+     Watch / Sound buttons, and in landscape the notch takes the same bite out
+     of one side.
+
+     It is the identical fault the tab bar had at the other end of the screen,
+     with the identical reason it went unseen: Android SHRINKS the viewport for
+     its system bars, so nothing ever looked wrong on the device this is built
+     against, while iOS OVERLAYS them.
+
+     Held in variables rather than written inline at each site for two reasons:
+     every bar reads the same value, and a test can set them to a real iPhone's
+     insets and measure that the bars genuinely move -- env() itself cannot be
+     faked from a headless browser, so a rule written directly against env()
+     is a rule nothing can check. */
+  :root{
+    --safeTop:   env(safe-area-inset-top, 0px);
+    --safeLeft:  env(safe-area-inset-left, 0px);
+    --safeRight: env(safe-area-inset-right, 0px);
+  }
   body{ padding:0 !important; display:block !important; }
   /* No min-height here on purpose. Raja, Brave on Android: "scrolling is
      locked unable to scroll" -- the real .appShell sizing rule further down
@@ -1452,7 +1480,19 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
    About) freed the room to grow the bar itself instead of just cramming
    bigger icons into the old 46px, which is the ceiling the buttons below
    were previously capped against. */
-.appBar{ flex:none; height:56px; padding:0 11px !important; position:static !important;
+/* min-height, not height, so the bar can actually GROW by the notch inset the
+   way the tab bar grows by the home-indicator one. Where there is no inset the
+   variables resolve to 0px and this is the same 56px bar it has always been.
+   The side insets are what landscape needs: there the notch eats into one edge,
+   which is where the title and the Logic/Watch/Sound buttons live. */
+/* calc, not a bare 56px: box-sizing is border-box here, so a bare min-height
+   would let the notch padding eat the bar's OWN height and squeeze the 46px
+   buttons into whatever was left (measured: 47px, one pixel of slack). Adding
+   the inset keeps the full 56px of bar BELOW the notch, which is what the
+   number was ever meant to mean. */
+.appBar{ flex:none; min-height:calc(56px + var(--safeTop)); height:auto !important;
+  padding:var(--safeTop) calc(11px + var(--safeRight)) 0 calc(11px + var(--safeLeft)) !important;
+  position:static !important;
   display:flex; align-items:center; gap:8px;
   background:rgba(0,0,0,.26) !important; border-bottom:1px solid rgba(255,255,255,.09) !important; }
 .appBarTitle{ font-size:16.5px !important; font-weight:900 !important; line-height:1.15; }
@@ -1504,8 +1544,11 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
    min-height rather than height, so the bar can actually grow by the inset;
    where there is no inset env() resolves to 0 and this is the same 52px bar it
    was. Every board that sizes itself from this bar's top edge adapts for free. */
+/* The bottom allowance was already here; the SIDE ones were not, and in
+   landscape the notch takes its bite out of an edge rather than the top -- so
+   the first and last tab were the ones sitting under it. */
 .tabBar{ position:static !important; flex:none; min-height:52px; height:auto;
-  padding:3px 7px calc(3px + env(safe-area-inset-bottom)) !important;
+  padding:3px calc(7px + var(--safeRight)) calc(3px + env(safe-area-inset-bottom)) calc(7px + var(--safeLeft)) !important;
   background:rgba(0,0,0,.32) !important; border-top:1px solid rgba(255,255,255,.1) !important; }
 /* Every tab is a filled pill now, not a bare label. The active one is a shade
    lighter with the gold text it already had, so which screen you are on still
@@ -15072,7 +15115,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-249 (apps installed before the version string changed shape could never update themselves again — the page now carries a beacon their old updater can still read)';
+  var BUILD_VER = 'beta-250 (the iPhone notch no longer sits on top of the app bar — the top and side safe areas were never allowed for, only the bottom)';
   /* ── BEACON FOR APPS INSTALLED LONG AGO ─────────────────────────────────
      Raja's iPhone sat on v139 and would not come forward, however many times
      he tapped Online Update.
@@ -15097,7 +15140,7 @@ if (navigator.storage && navigator.storage.persist) {
      rejects). check-update-beacon.js keeps it equal to BUILD_VER, because a
      beacon that goes stale strands people exactly as thoroughly as no beacon.
 
-     window.BETA_VER = 'beta-249'
+     window.BETA_VER = 'beta-250'
      ───────────────────────────────────────────────────────────────────── */
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
