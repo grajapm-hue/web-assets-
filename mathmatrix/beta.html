@@ -11399,14 +11399,22 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
            turn can change by: an ordinary move, a bonus chain ending, a dead
            turn passing itself, the auto-play, New game and a restored save. */
         var active = window.__thayamActiveSide();
-        /* The dice on screen belong to one roll. They stay while that player
-           is still taking their turn -- a Thayam earns a bonus roll, and it
-           would be strange for the numbers to vanish mid-turn -- and blank the
-           moment the turn leaves them. Tracking the OWNER rather than just
-           blanking non-active seats also clears the subtler case: a player
-           whose turn comes round again should not still be looking at the roll
-           from their previous one. */
-        if (thDiceOwner !== active) thDiceOwner = null;
+        /* EXACTLY ONE SEAT SHOWS DICE: whoever rolled last, until somebody
+           else rolls.
+
+           Two of Raja's reports pull in opposite directions and this is the
+           rule that satisfies both. He first saw three seats holding numbers
+           from finished turns -- false invitations to move. Then, once they
+           cleared on hand-over, he saw the opposite problem: "roller dice out
+           not shows number when no thayam, but should show any number." A dead
+           turn passes immediately, so the number that failed you vanished
+           before you could read it, while the message underneath still talked
+           about it.
+
+           Keeping the LAST ROLL on screen fixes both: you always see what you
+           rolled, including the roll that gave you nothing, and no seat can
+           show a number that is not the live one, because there is only ever
+           one. It clears when the next player rolls, and on a fresh deal. */
         SIDES_T.forEach(function(s){
           if (s === thDiceOwner) return;
           ['0', '1'].forEach(function(d){
@@ -14812,7 +14820,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-241 (Thayam dice belong to one turn now: your numbers stay while you play, including a bonus roll, and clear the moment the turn moves on — so no seat is left showing a roll that is already finished)';
+  var BUILD_VER = 'beta-242 (Thayam dice: the number you rolled stays on screen so you can read it — even when it gave you no move and the turn passed on — and clears when the next player rolls, so only ever one seat shows dice)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that

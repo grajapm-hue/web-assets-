@@ -399,14 +399,16 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
     !/Nobody tapped/.test(ghost.say) && ghost.aOut === tapped.aOut, JSON.stringify(ghost));
   await ev(`window.__thayamConfigure({ n: 5, pieces: 3, cutMandate: false })`);
 
-  /* DICE BELONG TO ONE TURN.
-     Raja: "dice out stays even coming next round -- can turn dice roller
-     blank after twist it and seeds shift places and play turn to next one."
-     A die showing a number reads as "this is your roll, now move", so seats
-     holding numbers from finished turns are false invitations -- the same
-     confusion as the frozen-looking board, wearing a different hat. Both
-     halves matter: they must CLEAR when the turn leaves, and they must still
-     SHOW while that player is mid-turn, or the numbers would be useless. */
+  /* EXACTLY ONE SEAT SHOWS DICE: whoever rolled last.
+     Two reports pulled opposite ways here, and this rule is what satisfies
+     both -- so both are asserted together, because fixing either one alone
+     re-breaks the other.
+       "dice out stays even coming next round" -- three seats were holding
+       numbers from finished turns, each reading as "this is your roll".
+       "roller dice out not shows number when no thayam, but should show any
+       number" -- once they cleared on hand-over, a dead turn passed so fast
+       that the number which failed you vanished before you could read it,
+       while the message underneath was still discussing it. */
   const diceLife = await ev(`(function(){
     var read = function(){ return ['A','B','C','D'].map(function(s){
       return s + ':' + document.getElementById('thDie' + s + '0').textContent + document.getElementById('thDie' + s + '1').textContent;
@@ -422,22 +424,55 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
     document.querySelector('.rollBtn[data-side="A"]').click();
     out.midTurn = read();
     out.turnStillA = window.__thayamActiveSide() === 'A';
-    // an ordinary roll hands over, and the numbers must go with it
+    // an ordinary roll hands the turn over -- but A's numbers must REMAIN, so
+    // a player can always read what they rolled, even on a turn that passed
     window.__thayamForceNextRoll({ d0: 2, d1: 1 });
     document.querySelector('.rollBtn[data-side="A"]').click();
     out.afterHandover = read();
     out.turnLeftA = window.__thayamActiveSide() !== 'A';
+    // ...until the next player rolls, at which point the board carries THEIR roll
+    var next = window.__thayamActiveSide();
+    window.__thayamForceNextRoll({ d0: 3, d1: 0 });
+    document.querySelector('.rollBtn[data-side="' + next + '"]').click();
+    out.next = next;
+    out.afterNextRolls = read();
     window.__thayamConfigure({ n: 5, pieces: 3, cutMandate: false });
     return JSON.stringify(out);
   })()`).then(JSON.parse);
 
   ok('a fresh board shows no dice at all', /A:·· B:·· C:·· D:··/.test(diceLife.fresh), diceLife.fresh);
-  ok('the player rolling still sees their own dice mid-turn',
-    /A:10/.test(diceLife.midTurn) && diceLife.turnStillA, diceLife.midTurn);
+  ok('the player rolling sees their own dice', /A:10/.test(diceLife.midTurn) && diceLife.turnStillA, diceLife.midTurn);
   ok('...and nobody else is showing numbers at the same time',
     /B:·· C:·· D:··/.test(diceLife.midTurn), diceLife.midTurn);
-  ok('dice clear the moment the turn moves on, so no seat holds a stale roll',
-    /A:·· B:·· C:·· D:··/.test(diceLife.afterHandover) && diceLife.turnLeftA, diceLife.afterHandover);
+  ok('the roll STAYS readable after the turn passes -- you can see what you rolled',
+    /A:21/.test(diceLife.afterHandover) && diceLife.turnLeftA, diceLife.afterHandover);
+  ok('...and clears only once the next player rolls, so exactly one seat ever shows dice',
+    /A:··/.test(diceLife.afterNextRolls) &&
+    (diceLife.afterNextRolls.match(/[A-D]:[0-9][0-9]/g) || []).length === 1, diceLife.afterNextRolls);
+
+  /* Raja's own case was a DEAD turn, which passes through a different branch
+     from an ordinary move -- it ends the turn before saying anything. That is
+     the one where the number vanishing hurts most: the message says "no move
+     for 3" while the dice that produced the 3 are already blank. */
+  const deadTurnDice = await ev(`(function(){
+    window.__thayamConfigure({ n: 7, pieces: 5, cutMandate: true });
+    window.__thayamNewGame(['A','B','C','D']);
+    window.__thayamSetEnabled({ A:true, B:true, C:true, D:true });
+    window.__thayamTurnInit('A');
+    window.__thayamRenderAll();
+    window.__thayamPityReset('enter', 'A');
+    window.__thayamForceNextRoll({ d0: 2, d1: 1 });   // a 3: nothing is out and only a Thayam leaves home
+    document.querySelector('.rollBtn[data-side="A"]').click();
+    var r = { say: document.getElementById('thaySay').textContent,
+              dice: document.getElementById('thDieA0').textContent + document.getElementById('thDieA1').textContent,
+              turn: window.__thayamActiveSide() };
+    window.__thayamConfigure({ n: 5, pieces: 3, cutMandate: false });
+    return JSON.stringify(r);
+  })()`).then(JSON.parse);
+  ok('a dead turn still leaves the failing roll on screen to be read',
+    deadTurnDice.dice === '21', deadTurnDice.dice + ' / ' + deadTurnDice.say);
+  ok('...even though that turn has already passed to the next player',
+    deadTurnDice.turn !== 'A', deadTurnDice.turn);
 
   ok('no JS errors', errs.length === 0, errs.join(' | '));
   console.log(fail ? `\n${fail} FAILED` : '\nALL GREEN');
