@@ -3937,6 +3937,69 @@ body{ background:#C9A87C !important; }
    on cream, so the pill is what keeps them legible -- and it ties each seat to
    the board it belongs to. */
 
+/* ══ THE WIN NO LONGER HIDES THE WIN ══════════════════════════════════════
+   Raja: "the appreciation pop fully hide the results to observe... remove
+   full screen pop, instead just pop applause in some seconds and it should
+   disappear, and win result should stay until player decides whether to go
+   next."
+
+   He is describing two separate things, and only one of them was already
+   right. The applause itself -- celebrate()'s confetti and flash -- is
+   transient and cleans itself up in about a second. The problem was the
+   panel: .congratsModal is inset:0 with rgba(0,0,0,.9) over it, so the grid
+   the child just solved sat behind a 90%-black wash, unreadable at the exact
+   moment they most want to look at it. You finish the puzzle and the reward
+   for finishing is that your work gets covered up.
+
+   So the panel becomes a bottom sheet with no scrim at all. The board stays
+   lit and legible above it, the numbers can be checked, and the panel waits
+   as long as the player wants -- the auto-advance that used to yank the
+   board away after four seconds is gone too (see showCongrats).
+
+   pointer-events is the quiet half of this: the container spans nothing it
+   does not draw, so taps meant for the board reach the board instead of
+   being swallowed by an invisible full-screen sheet. */
+#congratsModal{
+  position:absolute !important;
+  inset:auto 0 0 0 !important;          /* bottom sheet, not a full-screen cover */
+  background:transparent !important;    /* the 90% black wash is the whole complaint */
+  z-index:90 !important;
+  display:none;
+  justify-content:flex-end !important;
+  pointer-events:none !important;
+  animation:none !important;            /* fadeIn was fading a black screen in */
+}
+#congratsModal .congratsBox{
+  pointer-events:auto;
+  width:100% !important; max-width:none !important;
+  border-radius:24px 24px 0 0 !important;
+  padding:12px 14px calc(12px + env(safe-area-inset-bottom)) !important;
+  max-height:52vh; overflow-y:auto; -webkit-overflow-scrolling:touch;
+  box-shadow:0 -10px 30px rgba(0,0,0,.42) !important;
+  animation:winSheetUp .42s var(--spring) !important;
+}
+@keyframes winSheetUp{ from{ transform:translateY(102%) } to{ transform:none } }
+/* Compacted to earn the board its space back. Nothing is removed -- the
+   monkey, the stars, the stats and the sticker all still land, just without
+   the generous desktop padding that pushed this to 533px of a 844px phone. */
+#congratsModal .winSaNa{ width:44px !important; height:44px !important; font-size:24px !important;
+  margin:0 auto 4px !important; }
+#congratsModal .winStars i{ font-size:25px !important; }
+#congratsModal .winStars{ margin-bottom:2px !important; }
+#congratsModal .winTitle{ font-size:18px !important; }
+#congratsModal .winLine{ font-size:11.5px !important; }
+#congratsModal .winStats{ margin:8px 0 0 !important; }
+#congratsModal .winStat{ padding:6px 4px !important; }
+#congratsModal .winStat b{ font-size:15px !important; }
+#congratsModal .winSticker{ margin-top:7px !important; padding:7px 10px !important; }
+#congratsModal .winSticker .s{ width:32px !important; height:32px !important; font-size:18px !important; }
+/* Side by side: "Try a different number" wrapped to two lines stacked, which
+   alone cost about 70px of board. */
+#congratsModal .winBtns{ display:flex; gap:8px; margin-top:10px; }
+#congratsModal .winBtns > *{ flex:1; margin:0 !important; width:auto !important; }
+#nextBtn{ padding:11px 10px !important; font-size:14px !important; margin-bottom:0 !important; }
+#chooseLaterBtn{ padding:11px 10px !important; font-size:13px !important; }
+
 @media(prefers-reduced-motion:reduce){ *{ animation:none !important; } }
 </style>
 </head>
@@ -4827,9 +4890,12 @@ body{ background:#C9A87C !important; }
     <h2>🎉👏</h2>
     <p id="congratsText">Congratulations! Ready for 4×4?</p>
     <p id="congratsCountdown" style="font-size:14px; color:#fde68a; margin:-10px 0 14px; font-weight:700; letter-spacing:.5px;"></p>
-    <button class="congratsBtn" id="nextBtn" style="margin-bottom:12px;">Let's Go! →</button>
-    <br>
-    <button id="chooseLaterBtn" style="background:transparent; border:2px solid rgba(255,255,255,0.35); border-radius:10px; padding:10px 20px; font-size:15px; font-weight:700; color:rgba(255,255,255,0.8); cursor:pointer; display:block; margin:0 auto; width:100%;">📋 Choose from list below ▼</button>
+    <!-- One row, not stacked: as a bottom sheet every vertical pixel here is a
+         pixel of solved board the child cannot see. -->
+    <div class="winBtns">
+      <button class="congratsBtn" id="nextBtn" style="margin-bottom:12px;">Let's Go! →</button>
+      <button id="chooseLaterBtn" style="background:transparent; border:2px solid rgba(255,255,255,0.35); border-radius:10px; padding:10px 20px; font-size:15px; font-weight:700; color:rgba(255,255,255,0.8); cursor:pointer; display:block; margin:0 auto; width:100%;">📋 Choose from list below ▼</button>
+    </div>
   </div>
 </div>
 
@@ -6593,17 +6659,18 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // Clear any previous running timer
     if (_congratsAutoTimer){ clearInterval(_congratsAutoTimer); _congratsAutoTimer = null; }
 
-    var secs = 4;
-    function updateCount(){ countEl.textContent = 'Auto-advancing in ' + secs + '…'; }
-    updateCount();
+    /* No auto-advance. Raja: "win result should stay until player decides
+       whether to go next." It used to count down from 4 and then rebuild the
+       board on its own -- so on a mastery win the child had four seconds to
+       read their stars, their time and their new sticker before the screen
+       replaced itself with the next puzzle. Nobody asked it to leave.
 
-    _congratsAutoTimer = setInterval(function(){
-      secs--;
-      if (secs <= 0){
-        clearInterval(_congratsAutoTimer); _congratsAutoTimer = null;
-        doAdvance(goTo);
-      } else { updateCount(); }
-    }, 1000);
+       The countdown element stays in the markup and is simply left blank: it
+       is cleared and cancelled from seven other places (difficulty buttons,
+       tab switches, the puzzle list), and quietly emptying it here keeps all
+       of those honest instead of leaving them pointing at something gone.
+       "Let's Go! →" is still one tap away for whoever does want the next one. */
+    countEl.textContent = '';
 
     function doAdvance(size){
       modal.style.display = 'none';
@@ -14846,7 +14913,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-244 (the settings button is a speaker now, not three dots — and it shows whether sound is ON or OFF right on the front page)';
+  var BUILD_VER = 'beta-245 (winning no longer hides your work: the applause panel is a bottom sheet, the solved board stays readable above it, and nothing auto-advances — you decide when to move on)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
