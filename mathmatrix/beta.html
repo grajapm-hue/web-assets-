@@ -3665,6 +3665,56 @@ body{ background:#C9A87C !important; }
   color:#0F5132 !important; background:rgba(17,107,68,.14) !important;
   border-color:rgba(17,107,68,.55) !important;
   box-shadow:inset 0 0 0 1.5px rgba(17,107,68,.45) !important; }
+
+/* ── THE RESULT RING ──────────────────────────────────────────────────────
+   Raja: "the outer cell scoring should be straight square instead of curved
+   edge -- it will give more impact and differentiation between the inner
+   table and the outer result cells", and then "my wish is orange with
+   straight square".
+
+   Two real defects go with the taste, both measured rather than argued:
+
+   1. These line totals were 2.2:1 against the sandalwood ground -- less than
+      half the 4.5 floor -- which is why they read smeared rather than dim.
+      Filled orange with near-black text they are 8.9:1.
+
+   2. The rule directly above lumps partial, full AND win into one green tint,
+      so a badge could not say which of the three it was. That is the whole
+      job of a badge. The FILL carries the state now: orange means this line
+      is not finished, green means it is.
+
+   Square corners are the second signal, and the reason they matter: the inner
+   cells keep their rounded corners, so the playing area and the results ring
+   separate by SHAPE as well as colour -- it still reads for a child who cannot
+   tell the two hues apart.
+
+   Specificity is deliberate and fragile. The lumped rule above is written
+   four-classes-deep on purpose (its own comment explains why), so these have
+   to match that weight and sit after it. .corner rules go one class deeper
+   again, because .badge.corner outranks .badge and would otherwise keep its
+   own fill. check-badge-ring.js measures every state at every board size
+   rather than trusting that. */
+.boardContainer .board .badge,
+.boardContainer .board .badge.partial,
+.boardContainer .board .badge.corner{
+  background:#F0A500 !important; color:#2B0512 !important;
+  border-color:rgba(0,0,0,.34) !important;
+  border-radius:0 !important;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.30) !important; }
+.boardContainer .board .badge.corner{
+  box-shadow:inset 0 0 0 2px rgba(0,0,0,.42) !important; }
+/* Finished lines go green -- the one colour a child reads as "done" without
+   being told, and it keeps orange meaning only "not yet". White text on it,
+   Raja's call after seeing it on the phone: pure white is both what he wanted
+   and slightly the better number, 5.3:1 against the mint's 5.0. */
+.boardContainer .board .badge.full,
+.boardContainer .board .badge.win,
+.boardContainer .board .badge.corner.full,
+.boardContainer .board .badge.corner.win{
+  background:#127A45 !important; color:#FFFFFF !important;
+  border-color:rgba(0,0,0,.34) !important;
+  border-radius:0 !important;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.30) !important; }
 .targetPill{ background:#5E3D1C !important; color:#FFF6E7 !important; }
 .targetPill *{ color:inherit !important; }
 /* white on the mid green was 3.2:1 — a deeper green takes it past 7 */
@@ -15115,7 +15165,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-250 (the iPhone notch no longer sits on top of the app bar — the top and side safe areas were never allowed for, only the bottom)';
+  var BUILD_VER = 'beta-251 (the line totals around every grid are square orange tiles now — they were 2.2:1 against the wood, and a finished line turns green so the ring finally says which lines are done)';
   /* ── BEACON FOR APPS INSTALLED LONG AGO ─────────────────────────────────
      Raja's iPhone sat on v139 and would not come forward, however many times
      he tapped Online Update.
@@ -15140,7 +15190,7 @@ if (navigator.storage && navigator.storage.persist) {
      rejects). check-update-beacon.js keeps it equal to BUILD_VER, because a
      beacon that goes stale strands people exactly as thoroughly as no beacon.
 
-     window.BETA_VER = 'beta-250'
+     window.BETA_VER = 'beta-251'
      ───────────────────────────────────────────────────────────────────── */
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
