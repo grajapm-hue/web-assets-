@@ -6894,21 +6894,35 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       sfx('unlock');
     });
 
+    /* Split out of the click listener so the SPLASH copy can call it too.
+       The splash cancels the click event outright (its touchstart calls
+       preventDefault so a tap anywhere dismisses it), so a button sitting on
+       the splash can never rely on 'click' arriving -- it has to invoke the
+       install itself, from inside the live touch gesture.
+
+       Returns what it did, because the caller needs to know: prompt() puts a
+       native dialog on screen and the splash should stay put behind it, but
+       the fallback opens a SHEET, and .sheet is z-index 80 under .splash's
+       200 -- so that path needs the splash out of the way first. */
+    function doInstall(b, onNoPrompt){
+      if (soundOn) ensureAudio();
+      if (deferred){
+        deferred.prompt();
+        deferred.userChoice.then(function(res){
+          if (res && res.outcome === 'accepted'){ b.textContent = '✅ Installing…'; }
+          deferred = null;
+        }).catch(function(){});
+        return 'prompted';
+      }
+      // No install API (iPhone/iPad, or already dismissed): the full
+      // per-platform instructions, same sheet Home's offline chip opens.
+      if (onNoPrompt) onNoPrompt(); else openSheet('offline', '📲 Play offline');
+      return 'howto';
+    }
+    window.__pwaInstallNow = doInstall;
+
     function wireInstallClick(b){
-      b.addEventListener('click', function(){
-        if (soundOn) ensureAudio();
-        if (deferred){
-          deferred.prompt();
-          deferred.userChoice.then(function(res){
-            if (res && res.outcome === 'accepted'){ b.textContent = '✅ Installing…'; }
-            deferred = null;
-          }).catch(function(){});
-          return;
-        }
-        // No install API (iPhone/iPad, or already dismissed): the full
-        // per-platform instructions, same sheet Home's offline chip opens.
-        openSheet('offline', '📲 Play offline');
-      });
+      b.addEventListener('click', function(){ doInstall(b); });
     }
     iBtns.forEach(wireInstallClick);
 
@@ -14797,6 +14811,45 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     s.addEventListener('click', function(){ dismiss(true); });
     s.addEventListener('touchstart', function(e){ e.preventDefault(); dismiss(true); }, { passive:false });
 
+    /* Raja: "open page install app is shows ok but when try to install by
+       press the tab not doing installation process, instead going puzzle
+       listing page."
+
+       Exactly what the splash's own touchstart above does to it. That handler
+       calls preventDefault() so a tap anywhere starts the game -- and
+       preventDefault on touchstart CANCELS THE CLICK ENTIRELY on a touch
+       device. So on a phone the install button's click listener never ran at
+       all: the tap only ever reached the splash, which dismissed itself and
+       left him on the puzzle list. About already had this exact treatment for
+       this exact reason; Install was added later and never got it.
+
+       It could not be caught from a desktop: a synthetic .click() fires no
+       touch events, so the click listener runs and everything looks fine.
+       check-install-button.js now dispatches a real touch sequence.
+
+       The install is fired from inside the gesture, not after a timeout --
+       prompt() needs the live user activation, and a setTimeout like About's
+       would throw it away. Only the no-prompt path dismisses first, because
+       its sheet would otherwise open underneath this screen. */
+    var ins = s.querySelector('#splashInstall');
+    if (ins){
+      var lastInstallTap = 0;
+      var onInstallTap = function(e){
+        e.stopPropagation(); e.preventDefault();
+        var now = new Date().getTime();
+        if (now - lastInstallTap < 600) return;   // touchstart already handled this tap
+        lastInstallTap = now;
+        if (typeof window.__pwaInstallNow !== 'function'){ dismiss(true); return; }
+        window.__pwaInstallNow(ins, function(){
+          dismiss(true);
+          setTimeout(function(){ try { openSheet('offline', '📲 Play offline'); } catch(err){} }, 420);
+        });
+      };
+      ['click', 'touchstart'].forEach(function(evt){
+        ins.addEventListener(evt, onInstallTap, { passive:false });
+      });
+    }
+
     /* About must not read as "start the game". It stops the tap reaching the
        splash, closes the splash itself, then opens the sheet — the sheet lives
        below the splash in the stack, so opening it underneath would put the
@@ -15019,7 +15072,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-247 (the Install App button looked disabled because its text was painted a colour meant for a different button — every install button now picks text that actually reads on its own background)';
+  var BUILD_VER = 'beta-248 (tapping Install App on the opening screen now really installs — on a phone the tap was being eaten by the splash before the button ever saw it)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that

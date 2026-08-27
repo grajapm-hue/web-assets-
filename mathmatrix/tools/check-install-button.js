@@ -115,12 +115,71 @@ const CONTRAST_FN = `
   ok('every button now offers the install', can.every(b => b.missing || /Install App/.test(b.text)),
      can.map(b => b.text).join(' | '));
 
-  /* And it must still DO something. The fallback opens the offline sheet,
-     which sits at z-index 80 under the splash's 200 -- so the splash has to
-     get out of the way, or the tap looks dead. */
-  await ev(`(function(){ var b=document.getElementById('splashInstall');
-    b.style.background=''; b.style.color=''; })()`);   // back to stylesheet defaults
-  await sleep(100);
+  /* THE TAP MUST ACTUALLY DO SOMETHING -- and it has to be a REAL TOUCH.
+
+     Raja: "install app shows ok but when try to install by press the tab, not
+     doing installation process, instead going puzzle listing page." The splash
+     dismisses on touchstart with preventDefault(), which CANCELS THE CLICK on
+     a touch device, so the install button's click listener never ran at all.
+
+     A synthetic .click() fires no touch events, runs the click listener, and
+     reports everything working -- which is exactly what this file did while
+     the bug was live on his phone. Input.dispatchTouchEvent goes through the
+     browser's real touch pipeline, preventDefault and all. */
+  const tapSplashInstall = async () => {
+    const box = await ev(`(function(){ var b=document.getElementById('splashInstall');
+      if (!b) return null; var r=b.getBoundingClientRect();
+      return JSON.stringify({ x: Math.round(r.left+r.width/2), y: Math.round(r.top+r.height/2) }); })()`);
+    if (!box) return false;
+    const p = JSON.parse(box);
+    await send('Input.dispatchTouchEvent', { type: 'touchStart',
+      touchPoints: [{ x: p.x, y: p.y }] });
+    await sleep(60);
+    await send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    return true;
+  };
+
+  // record whether the app's own install path was entered
+  await ev(`(function(){
+    window.__testInstallCalls = 0;
+    var real = window.__pwaInstallNow;
+    window.__pwaInstallNow = function(){ window.__testInstallCalls++; return real.apply(this, arguments); };
+  })()`);
+
+  const state = () => ev(`(function(){
+    var sp = document.querySelector('.splash');
+    var sh = document.querySelector('.sheet');
+    return JSON.stringify({
+      installCalls: window.__testInstallCalls,
+      splashGone: !sp || getComputedStyle(sp).display === 'none' || sp.className.indexOf('out') > -1,
+      sheetOpen: !!(sh && /\\bon\\b/.test(sh.className))
+    }); })()`).then(JSON.parse);
+
+  /* TAP 1 -- an install IS on offer (the synthetic event above). The button
+     must reach the install path, and the splash must STAY: prompt() puts a
+     native dialog on top, and yanking the screen out from under it is what
+     made this look like "it just went to the puzzle list". */
+  const tapped = await tapSplashInstall();
+  ok('the splash Install button could be located to tap', tapped === true);
+  await sleep(1200);
+  const first = await state();
+  ok('a real TOUCH on Install runs the install path (not just a mouse click)',
+     first.installCalls >= 1, JSON.stringify(first));
+  ok('when an install is offered it prompts and does NOT dump you on the puzzle list',
+     first.sheetOpen === false && first.splashGone === false, JSON.stringify(first));
+
+  /* TAP 2 -- the fake prompt resolved "dismissed", so the app cleared its
+     deferred event and there is no install API left. Now the how-to sheet
+     must open AND be reachable, which means the splash had to get out of the
+     way first (.sheet is z-index 80 under .splash's 200). */
+  await sleep(600);
+  await tapSplashInstall();
+  await sleep(1400);
+  const second = await state();
+  ok('with no install API it opens the how-to sheet instead', second.sheetOpen === true,
+     JSON.stringify(second));
+  ok('and the splash steps aside so that sheet is actually visible',
+     second.splashGone === true, JSON.stringify(second));
 
   ws.close(); ch.kill(); await sleep(300);
   try { fs.rmSync(tmp, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 }); } catch(e){}
