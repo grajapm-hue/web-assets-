@@ -399,6 +399,46 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
     !/Nobody tapped/.test(ghost.say) && ghost.aOut === tapped.aOut, JSON.stringify(ghost));
   await ev(`window.__thayamConfigure({ n: 5, pieces: 3, cutMandate: false })`);
 
+  /* DICE BELONG TO ONE TURN.
+     Raja: "dice out stays even coming next round -- can turn dice roller
+     blank after twist it and seeds shift places and play turn to next one."
+     A die showing a number reads as "this is your roll, now move", so seats
+     holding numbers from finished turns are false invitations -- the same
+     confusion as the frozen-looking board, wearing a different hat. Both
+     halves matter: they must CLEAR when the turn leaves, and they must still
+     SHOW while that player is mid-turn, or the numbers would be useless. */
+  const diceLife = await ev(`(function(){
+    var read = function(){ return ['A','B','C','D'].map(function(s){
+      return s + ':' + document.getElementById('thDie' + s + '0').textContent + document.getElementById('thDie' + s + '1').textContent;
+    }).join(' '); };
+    window.__thayamConfigure({ n: 7, pieces: 5, cutMandate: true });
+    window.__thayamNewGame(['A','B','C','D']);
+    window.__thayamSetEnabled({ A:true, B:true, C:true, D:true });
+    window.__thayamTurnInit('A');
+    window.__thayamRenderAll();
+    var out = { fresh: read() };
+    // a Thayam keeps the turn (bonus roll), so A must still see its dice
+    window.__thayamForceNextRoll({ d0: 1, d1: 0 });
+    document.querySelector('.rollBtn[data-side="A"]').click();
+    out.midTurn = read();
+    out.turnStillA = window.__thayamActiveSide() === 'A';
+    // an ordinary roll hands over, and the numbers must go with it
+    window.__thayamForceNextRoll({ d0: 2, d1: 1 });
+    document.querySelector('.rollBtn[data-side="A"]').click();
+    out.afterHandover = read();
+    out.turnLeftA = window.__thayamActiveSide() !== 'A';
+    window.__thayamConfigure({ n: 5, pieces: 3, cutMandate: false });
+    return JSON.stringify(out);
+  })()`).then(JSON.parse);
+
+  ok('a fresh board shows no dice at all', /A:·· B:·· C:·· D:··/.test(diceLife.fresh), diceLife.fresh);
+  ok('the player rolling still sees their own dice mid-turn',
+    /A:10/.test(diceLife.midTurn) && diceLife.turnStillA, diceLife.midTurn);
+  ok('...and nobody else is showing numbers at the same time',
+    /B:·· C:·· D:··/.test(diceLife.midTurn), diceLife.midTurn);
+  ok('dice clear the moment the turn moves on, so no seat holds a stale roll',
+    /A:·· B:·· C:·· D:··/.test(diceLife.afterHandover) && diceLife.turnLeftA, diceLife.afterHandover);
+
   ok('no JS errors', errs.length === 0, errs.join(' | '));
   console.log(fail ? `\n${fail} FAILED` : '\nALL GREEN');
 

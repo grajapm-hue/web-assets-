@@ -11388,8 +11388,34 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           var el = document.getElementById('thTally' + s);
           if (el) el.innerHTML = '<span class="thHome" data-thayam-home-side="' + s + '">🏠 ' + home + '</span><span>🏃 ' + running + '</span><span>🏆 ' + won + '</span>';
         });
+        /* Only the player whose turn it is shows dice. Raja: "dice out stays
+           even coming next round -- can turn dice roller blank after twist it
+           and seeds shift places and play turn to next one." He is right: a
+           die showing a number reads as "this is your roll, now move", so
+           three seats holding stale numbers from finished turns is three
+           false invitations at once -- and it is the same confusion that made
+           a waiting board look like broken dice earlier.
+           Blanking here rather than at each hand-over covers every route the
+           turn can change by: an ordinary move, a bonus chain ending, a dead
+           turn passing itself, the auto-play, New game and a restored save. */
+        var active = window.__thayamActiveSide();
+        /* The dice on screen belong to one roll. They stay while that player
+           is still taking their turn -- a Thayam earns a bonus roll, and it
+           would be strange for the numbers to vanish mid-turn -- and blank the
+           moment the turn leaves them. Tracking the OWNER rather than just
+           blanking non-active seats also clears the subtler case: a player
+           whose turn comes round again should not still be looking at the roll
+           from their previous one. */
+        if (thDiceOwner !== active) thDiceOwner = null;
+        SIDES_T.forEach(function(s){
+          if (s === thDiceOwner) return;
+          ['0', '1'].forEach(function(d){
+            var die = document.getElementById('thDie' + s + d);
+            if (die) die.textContent = '·';
+          });
+        });
         var look = document.querySelector('#thayamGrid .thCell.thCenter .thFace');
-        if (look) look.className = 'thFace dir-' + ({ A: 'top', B: 'right', C: 'bottom', D: 'left' })[window.__thayamActiveSide()];
+        if (look) look.className = 'thFace dir-' + ({ A: 'top', B: 'right', C: 'bottom', D: 'left' })[active];
       }
       function flashCapture(cell){
         var cellEl = document.querySelector('#thayamGrid [data-thayam-cell="' + cell + '"]');
@@ -11404,6 +11430,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
          If NO piece can use the roll at all, the turn passes immediately with
          no tap required -- the "no legal move" rule from the spec. */
       var thPendingRoll = null;
+      var thDiceOwner = null;   // whose roll the dice currently on screen belong to
       var thGameWon = false;   // I5: true once a winner is declared, so the game genuinely stops instead of silently continuing
 
       /* Applies the pity system to whatever the dice actually rolled, for
@@ -11546,6 +11573,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         var die0 = document.getElementById('thDie' + sideLetter + '0'), die1 = document.getElementById('thDie' + sideLetter + '1');
         if (die0) die0.textContent = roll.d0;
         if (die1) die1.textContent = roll.d1;
+        thDiceOwner = sideLetter;   // these dice belong to THIS roll, and blank once the turn leaves
         var say = document.getElementById('thaySay');
 
         if (!window.__thayamLegalMoveExists(sideIdx, roll.total)){
@@ -11639,6 +11667,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       window.__thayamStartNewGame = function(){
         thPendingRoll = null;   // I6: never carry a stale pending roll into a fresh game
         clearAutoPlay();
+        thDiceOwner = null;   // a fresh deal has no roll behind it, so no seat may still be showing one
         thGameWon = false;   // I5: a fresh game is never already won
         if (window.__thayamPityResetAll) window.__thayamPityResetAll();   // and everyone's luck starts over, rather than inheriting the last game's near-misses
         var selected = window.__thayamSelectedSides();
@@ -11695,6 +11724,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         // a stale pending roll or its leftover .active highlight forward
         thPendingRoll = null;
         clearAutoPlay();
+        thDiceOwner = null;   // reopening the panel, or restoring a save, starts with no roll on the table
         document.querySelectorAll('#thayamGrid .thPiece.active, .thHome.active').forEach(function(el){ el.classList.remove('active'); });
         renderThayamPieces();
         renderThayamTallies();
@@ -14782,7 +14812,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-240 (Thayam never sits stuck: SaNa herself asks you to tap a piece, nudges again after a few seconds, and if nobody taps she plays the move for you — keeping your turn and your bonus roll rather than passing it on)';
+  var BUILD_VER = 'beta-241 (Thayam dice belong to one turn now: your numbers stay while you play, including a bonus roll, and clear the moment the turn moves on — so no seat is left showing a roll that is already finished)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
