@@ -5285,10 +5285,24 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
   function refreshSoundBtn(){
     var b = document.getElementById('soundBtn');
-    if (!b) return;
-    b.textContent = soundOn ? '🔊 Sound: ON' : '🔇 Sound: OFF';
-    b.style.borderColor = soundOn ? '#f59e0b' : '#666';
-    b.style.color = soundOn ? '#fbbf24' : '#888';
+    if (b) {
+      b.textContent = soundOn ? '🔊 Sound: ON' : '🔇 Sound: OFF';
+      b.style.borderColor = soundOn ? '#f59e0b' : '#666';
+      b.style.color = soundOn ? '#fbbf24' : '#888';
+    }
+    /* Raja: the bar button that opens these settings used to be a bare "⋯",
+       which says nothing about what is behind it -- and everything behind it
+       is sound. It is a speaker now, and the speaker shows the CURRENT state:
+       muted on the front page reads as muted, without opening anything. Same
+       null-guard shape as above because this button is built later, in
+       barButtons(), than the first call to this function. */
+    var m = document.getElementById('barMore');
+    if (m) {
+      m.innerHTML = '<i>' + (soundOn ? '🔊' : '🔇') + '</i><span>Sound</span>';
+      m.setAttribute('aria-label', soundOn
+        ? 'Sound is on — open sound and music settings'
+        : 'Sound is off — open sound and music settings');
+    }
   }
   // Mobile audio unlock: a real touch/click/key wakes the AudioContext. Typing a
   // number only fires an 'input' event, which may NOT count as user-activation on
@@ -14035,15 +14049,20 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       setTimeout(function(){ var w = document.getElementById('watchBtn'); if (w) w.click(); }, 260);
     });
 
+    /* barWord, like Logic and Watch above, for the same reason given there:
+       a glyph alone does not name itself. refreshSoundBtn() fills in the
+       speaker and the label, so the icon and the real sound state can never
+       drift apart -- it is the one function every sound toggle already
+       routes through. */
     var b = document.createElement('button');
-    b.className = 'barBtn'; b.id = 'barMore'; b.type = 'button';
-    b.textContent = '⋯'; b.setAttribute('aria-label', 'Quick settings');
+    b.className = 'barBtn barWord'; b.id = 'barMore'; b.type = 'button';
     bar.appendChild(b);
+    refreshSoundBtn();
     b.addEventListener('click', function(){
       /* Raja: the build banner here was "not relevant" — Quick settings is
          Sound/Music, and the version already shows at the bottom of the
          puzzle table and in About, so this was a third, out-of-place copy. */
-      openSheet('settings', '⚙️ Quick settings', '<p>Tap a button below to change it.</p>');
+      openSheet('settings', '🔊 Sound & Music', '<p>Tap a button below to change it.</p>');
       openSheetExtra('<p>🔊 <b>Sound</b> is the master switch — turning it off silences the music too, ' +
         'for night play.</p><p>🎵 <b>Music</b> is the monkey tune; it ducks while you type.</p>' +
         '<p>🎧 <b>Spatial stereo</b> puts each sound where it happens on the board. Use earphones.</p>');
@@ -14827,7 +14846,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-243 (Pallanguzhi 4-player now finds its own tick boxes by name, not by luck: Thayam reuses the same class, so every lookup is scoped to its own panel)';
+  var BUILD_VER = 'beta-244 (the settings button is a speaker now, not three dots — and it shows whether sound is ON or OFF right on the front page)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
