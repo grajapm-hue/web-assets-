@@ -1,0 +1,12 @@
+This repository is plain static files. Nothing here is a Jekyll site: no
+_config.yml, no front matter, no Liquid, no templates to render. Serve it
+as-is.
+
+Added after two Pages builds failed instantly (duration 0, "Page build
+failed") on commits whose file lists were almost identical to a commit that
+had built fine forty minutes earlier -- so the failure was in Jekyll, not in
+anything being published. The live repo (kidsmathsmatrixpuzzle.github.io) has
+carried this file all along, which is why it has never shown the same fault.
+
+It also removes 35-55 seconds from every deploy, since Pages stops scanning
+and rendering a site that was never a Jekyll site.
