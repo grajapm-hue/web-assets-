@@ -4,7 +4,7 @@ const { spawn, execSync } = require('child_process');
 const fs = require('fs'); const path = require('path');
 const CHROME = 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 const PORT = 9961;
-const FILE = 'file:///' + path.join(__dirname, '..', 'beta.html').replace(/\\/g, '/');
+const FILE = 'file:///' + path.join(__dirname, '..', process.env.MM_TARGET || 'beta.html').replace(/\\/g, '/');
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const LEVELS = ['3x3', '4x4', '5x5', '6x6', '8x8', '10x10', '3cube', 'triangle', 'ramanujan', 'binary', 'binary2'];
 let fail = 0;

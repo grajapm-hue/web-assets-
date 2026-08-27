@@ -21,7 +21,7 @@ const { spawn, execSync } = require('child_process');
 const fs = require('fs'); const path = require('path');
 const PORT = 9985;
 const ROOT = path.join(__dirname, '..');
-const FILE = 'file:///' + path.join(ROOT, 'beta.html').split(path.sep).join('/');
+const FILE = 'file:///' + path.join(ROOT, process.env.MM_TARGET || 'beta.html').split(path.sep).join('/');
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 let fail = 0;
 const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !== undefined ? '  -> ' + x : '')); if (!c) fail++; };

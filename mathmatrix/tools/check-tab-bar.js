@@ -12,7 +12,7 @@ const { spawn, execSync } = require('child_process');
 const fs = require('fs'); const path = require('path');
 const PORT = 9987;
 const ROOT = path.join(__dirname, '..');
-const FILE = 'file:///' + path.join(ROOT, 'beta.html').split(path.sep).join('/');
+const FILE = 'file:///' + path.join(ROOT, process.env.MM_TARGET || 'beta.html').split(path.sep).join('/');
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 let fail = 0;
 const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !== undefined ? '  -> ' + x : '')); if (!c) fail++; };
@@ -20,7 +20,7 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
 (async () => {
   /* Source guard first: the units are the whole fix, and a later edit tidying
      "duplicate" height declarations would silently undo it. */
-  const src = fs.readFileSync(path.join(ROOT, 'beta.html'), 'utf8');
+  const src = fs.readFileSync(path.join(ROOT, process.env.MM_TARGET || 'beta.html'), 'utf8');
   /* .appShell is styled by THREE rules — a positioning one, a flex one, and the
      one that sets its height. Taking the first match read the positioning rule
      and reported the fix missing while it was sitting there in the third. Find

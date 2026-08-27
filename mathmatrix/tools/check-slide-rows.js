@@ -7,7 +7,7 @@ const { spawn, execSync } = require('child_process');
 const fs = require('fs'); const path = require('path');
 const CHROME = 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 const PORT = 9977;
-const FILE = 'file:///' + path.join(__dirname, '..', 'beta.html').split(path.sep).join('/');
+const FILE = 'file:///' + path.join(__dirname, '..', process.env.MM_TARGET || 'beta.html').split(path.sep).join('/');
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 let fail = 0;
 const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !== undefined ? '  -> ' + x : '')); if (!c) fail++; };
@@ -109,7 +109,7 @@ function expectedRows(cells, cfg){
      is applied to the shipped file on disk and compared with what the loaded
      page reports — same claim, and the regex is the fragile part, not the
      fetch.) */
-  const src = fs.readFileSync(path.join(__dirname, '..', 'beta.html'), 'utf8');
+  const src = fs.readFileSync(path.join(__dirname, '..', process.env.MM_TARGET || 'beta.html'), 'utf8');
   const liveRe = (src.match(/var m = txt\.match\((\/[^;]+\/)\);/) || [])[1];
   const found = (src.match(/BUILD_VER\s*=\s*'([^']+)'/) || [])[1];
   const running = await ev(`window.BETA_VER`);

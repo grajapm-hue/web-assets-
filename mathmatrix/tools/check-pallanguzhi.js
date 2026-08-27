@@ -15,7 +15,7 @@ const { spawn, execSync } = require('child_process');
 const fs = require('fs'); const path = require('path');
 const PORT = 9994;
 const ROOT = path.join(__dirname, '..');
-const FILE = 'file:///' + path.join(ROOT, 'beta.html').split(path.sep).join('/');
+const FILE = 'file:///' + path.join(ROOT, process.env.MM_TARGET || 'beta.html').split(path.sep).join('/');
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const TOTAL = 70;                       // 14 cups x 5 seeds
 let fail = 0;
