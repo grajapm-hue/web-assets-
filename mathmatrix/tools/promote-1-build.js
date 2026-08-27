@@ -41,6 +41,23 @@ sub("any bare 'beta-sw.js' left", /'beta-sw\.js'/g, "'sw.js'", 0);
 sub('BUILD_VER -> ' + NEW_VER, /var BUILD_VER = '[^']+';/,
   "var BUILD_VER = '" + NEW_VER + "';", 1);
 
+/* 3b. The beacon that lets apps installed before the version string changed
+   shape still see that something newer exists. It has to carry THIS build's
+   number or it strands people just as thoroughly as no beacon at all. */
+sub('update beacon -> ' + NEW_VER, /window\.BETA_VER = '[^']+'/,
+  "window.BETA_VER = '" + NEW_VER + "'", 1);
+
+/* 3c. Which caches "Online Update" empties. Live's caches are named
+   mathmatrix-v148; beta's are mathmatrix-beta-v248, and each build must only
+   ever clear its OWN namespace so the two can coexist on one device. This
+   substitution did not exist, so every live build shipped a button that hunted
+   for 'mathmatrix-beta-' caches -- which never exist on live -- and therefore
+   emptied nothing at all. It still unregistered the worker and reloaded, which
+   is why it looked like it worked; the stale page kept being served from the
+   cache it had just declined to touch. */
+sub("Update clears 'mathmatrix-beta-' -> 'mathmatrix-'",
+  /k\.indexOf\('mathmatrix-beta-'\) === 0/g, "k.indexOf('mathmatrix-') === 0", 1);
+
 /* 4. Comments that describe beta's arrangement. Left alone they would state the
    opposite of what this file does — the next person reading index.html would be
    told its worker is narrowly scoped to a page that is not this one. */

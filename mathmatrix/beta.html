@@ -15072,7 +15072,33 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-248 (tapping Install App on the opening screen now really installs — on a phone the tap was being eaten by the splash before the button ever saw it)';
+  var BUILD_VER = 'beta-249 (apps installed before the version string changed shape could never update themselves again — the page now carries a beacon their old updater can still read)';
+  /* ── BEACON FOR APPS INSTALLED LONG AGO ─────────────────────────────────
+     Raja's iPhone sat on v139 and would not come forward, however many times
+     he tapped Online Update.
+
+     Every build ships its own copy of the updater, and the one in v139 looks
+     for the version by grepping the page it fetches for a QUOTED literal:
+
+         txt.match(/window\.BETA_VER\s*=\s*'([^']+)'/)
+
+     That literal stopped existing. BETA_VER is derived from BUILD_VER now
+     (rightly -- two version numbers that must agree eventually disagree, and
+     that is its own scar a few lines below). So an old install fetches the
+     newest page, finds no match, returns early, and concludes there is
+     nothing newer. Silently. For ever. It is not his phone and not iOS: every
+     install older than that change is stranded the same way, and the only
+     escape is to delete the app and add it again.
+
+     A new build cannot fix an old build's code -- but it can still speak its
+     language. The line below is never executed; it exists to be READ by those
+     old updaters, and it is the only thing in this file their regex can match
+     (the real assignment reads `= BUILD_VER.split...`, which their pattern
+     rejects). check-update-beacon.js keeps it equal to BUILD_VER, because a
+     beacon that goes stale strands people exactly as thoroughly as no beacon.
+
+     window.BETA_VER = 'beta-249'
+     ───────────────────────────────────────────────────────────────────── */
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
