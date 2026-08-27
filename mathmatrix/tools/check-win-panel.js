@@ -136,7 +136,61 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   ok('no "Auto-advancing in..." countdown is shown',
      (await ev(`(document.getElementById('congratsCountdown')||{}).textContent||''`)) === '');
 
-  /* The player's own decision still works. */
+  /* "Pick another puzzle" must actually reach the puzzle list. Raja found it
+     doing nothing: openApplause() set the button's LABEL and never its
+     handler, so on an ordinary win -- the common case -- it was wired to
+     nothing at all, and the player sat on the finished board. Asserting the
+     handler EXISTS as well as the navigation, because a missing handler is
+     the exact shape of the original defect. */
+  const wired = await ev(`typeof document.getElementById('chooseLaterBtn').onclick === 'function'`);
+  ok('"Pick another puzzle" has a click handler on an ordinary win', wired === true);
+
+  await ev(`document.getElementById('chooseLaterBtn').click()`);
+  await sleep(900);
+  const nav = await ev(`(function(){
+    var on = document.querySelector('.screen.on');
+    var m = document.getElementById('congratsModal');
+    return JSON.stringify({ screen: on ? on.getAttribute('data-screen') : null,
+      panelHidden: getComputedStyle(m).display === 'none' });
+  })()`).then(JSON.parse);
+  ok('it lands on the puzzle list, not the finished board', nav.screen === 'scHome', nav.screen);
+  ok('and it closes the win panel on the way', nav.panelHidden === true);
+
+  /* The other button still works too, on a fresh win. Re-read the answer:
+     picking the level again builds a NEW puzzle, so the previous solution
+     does not fit it. */
+  await ev(`(function(){ var b=document.querySelector('.toggleBtn[data-size="3x3"]'); if(b) b.click(); })()`);
+  await sleep(800);
+  /* Picking the level you just finished must deal a NEW puzzle. It used to
+     hand back the solved grid -- every answer still filled in -- because the
+     handler skips initBoard() when the size has not changed, a rule that
+     exists to protect an UNFINISHED attempt and does not apply to a finished
+     one. (check-puzzle-resume.js guards the other half: unfinished boards
+     must still survive going away and coming back.) */
+  const fresh = await ev(`JSON.stringify(Array.from(document.querySelectorAll('#board .cell')).map(function(i){ return i.value; }))`);
+  ok('picking the level again after a win deals a FRESH board',
+     JSON.parse(fresh).every(function(v){ return v === ''; }), fresh);
+
+  await ev(`document.getElementById('peekBtn').click()`);
+  await sleep(400);
+  const sol2 = await ev(`JSON.stringify(Array.from(document.querySelectorAll('#board .cell')).map(function(i){ return i.value; }))`);
+  await sleep(3600);
+  await ev(`(function(){
+    var sol = ${sol2};
+    var cs = document.querySelectorAll('#board .cell');
+    for (var i = 0; i < cs.length; i++){
+      cs[i].focus(); cs[i].value = sol[i];
+      cs[i].dispatchEvent(new Event('input', { bubbles:true }));
+    }
+  })()`);
+  let again = false;
+  for (let i = 0; i < 12; i++){
+    await sleep(700);
+    again = await ev(`(function(){ var m=document.getElementById('congratsModal');
+      return getComputedStyle(m).display !== 'none'; })()`);
+    if (again) break;
+  }
+  ok('winning again re-opens the panel', again === true);
   await ev(`document.getElementById('nextBtn').click()`);
   await sleep(700);
   const closed = await ev(`(function(){ var m=document.getElementById('congratsModal');

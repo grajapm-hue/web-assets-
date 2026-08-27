@@ -5551,7 +5551,18 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       showPalMode(false);                                  // back to the grids
       showPal4Mode(false);                                // back to the grids
       showThayamMode(false);                               // back to the grids
-      if (newSize !== currentSize) {
+      /* `|| solvedFlag` is the second half of "Pick another puzzle". Tapping
+         the level you are already on deliberately does NOT rebuild, so that
+         an unfinished attempt survives going away and coming back -- Raja's
+         "if go and come, existing trial should stay", and still true below.
+
+         But a SOLVED board has no trial left to protect. Without this you
+         won on 3x3, tapped Pick another puzzle, chose 3x3 from the list, and
+         got your own finished grid handed back: every answer still filled
+         in, solvedFlag still set, so no new puzzle and no win could fire
+         again. You asked for another puzzle and got the one you had just
+         finished. Solved means done, so a fresh one starts. */
+      if (newSize !== currentSize || solvedFlag) {
         currentSize = newSize;
         initBoard();
         applyTheme(); // Apply colors and diagonal guide
@@ -6688,15 +6699,22 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       doAdvance(goTo);
     };
 
-    // Choose from list — close modal, scroll to difficulty bar
+    /* "Pick another puzzle" goes to the puzzle list. It used to close the
+       panel and scroll to .difficultyBar -- which lives on the Home screen,
+       not the board screen you are standing on -- so it scrolled nothing,
+       navigated nowhere, and left you on the same finished board. Raja:
+       "pick another puzzle... retain current puzzle win table, not going to
+       main page puzzle list."
+
+       The Home tab is the route, not a hand-rolled goScreen call: it is the
+       same button the tab bar uses, so this lands exactly where 🏠 Puzzles
+       lands, sound and history included, and cannot drift from it. */
     chooseBtn.onclick = function(){
       clearInterval(_congratsAutoTimer); _congratsAutoTimer = null;
       modal.style.display = 'none';
       countEl.textContent = '';
-      setTimeout(function(){
-        var bar = document.querySelector('.difficultyBar');
-        if (bar) bar.scrollIntoView({ behavior:'smooth', block:'center' });
-      }, 100);
+      var home = document.getElementById('tab-scHome');
+      if (home) home.click();
     };
   }
   
@@ -14831,7 +14849,20 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         var c = document.getElementById('clearBtn'); if (c) c.click();
       };
     }
-    if (later) later.textContent = '📋 Pick another puzzle ▼';
+    /* This is the path Raja hit -- an ordinary win, the common one. It set
+       the button's LABEL and stopped there, never its handler, so on any
+       normal solve "Pick another puzzle" was a button wired to nothing. It
+       only ever appeared to work if a mastery win earlier in the same session
+       had left showCongrats's handler behind on the shared element.
+       Relabelling a control without rebinding it is the whole bug. */
+    if (later){
+      later.textContent = '📋 Pick another puzzle ▼';
+      later.onclick = function(){
+        modal.style.display = 'none';
+        var home = document.getElementById('tab-scHome');
+        if (home) home.click();
+      };
+    }
   }
 
   var _win = win;
@@ -14913,7 +14944,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-245 (winning no longer hides your work: the applause panel is a bottom sheet, the solved board stays readable above it, and nothing auto-advances — you decide when to move on)';
+  var BUILD_VER = 'beta-246 (Pick another puzzle now actually opens the puzzle list — it was a button wired to nothing — and picking the level you just finished deals a fresh board instead of handing back the solved one)';
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
      anyone who looked that the update had not arrived. Two version numbers that
