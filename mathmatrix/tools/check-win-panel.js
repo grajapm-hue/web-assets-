@@ -233,6 +233,65 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
     return getComputedStyle(m).display === 'none'; })()`);
   ok('the player can dismiss it themselves', closed === true);
 
+  /* Raja, after the duplicate row was removed on 3x3: "same this too need to
+     test all puzzles thoroughly", with 5x5 photographed.
+
+     He is right to distrust one board. The panel is built by a single
+     board-independent function, so ONE board passing is genuinely suggestive
+     -- but that was also true of the badge ring, and the badge ring was broken
+     on a board I had not tested. Suggestive is not tested. Win on other
+     boards, including Multiply, whose totals are products and whose win path
+     is the one he actually photographed failing. */
+  for (const size of ['5x5','6x6','3cube']){
+    await ev(`document.getElementById('tab-scHome').click()`);
+    await sleep(300);
+    await ev(`(function(){ var b=document.querySelector('.toggleBtn[data-size="${size}"]'); if(b) b.click(); })()`);
+    await sleep(900);
+    await ev(`document.getElementById('peekBtn').click()`);
+    await sleep(450);
+    const s = await ev(`JSON.stringify(Array.from(document.querySelectorAll('#board .cell')).map(function(i){ return i.value; }))`);
+    await sleep(3600);
+    await ev(`(function(){
+      var sol = ${s}, cs = document.querySelectorAll('#board .cell');
+      for (var i=0;i<cs.length;i++){
+        if (cs[i].readOnly || cs[i].disabled) continue;
+        cs[i].focus(); cs[i].value = sol[i];
+        cs[i].dispatchEvent(new Event('input', { bubbles:true }));
+      }
+      document.activeElement && document.activeElement.blur();
+    })()`);
+    let up = false;
+    for (let i=0;i<12 && !up;i++){
+      await sleep(700);
+      up = await ev(`(function(){ var m=document.getElementById('congratsModal');
+        return !!m && getComputedStyle(m).display !== 'none'; })()`);
+    }
+    const tag = size.padEnd(6);
+    ok(tag + 'solving it opens the win panel', up === true);
+    if (!up) continue;
+
+    const d = await ev(`(function(){
+      var m = document.getElementById('congratsModal');
+      var c = document.getElementById('solvedCounter');
+      var panel = (m.textContent||'').replace(/\\s+/g,' ').trim();
+      var g = (((c && c.textContent)||'').match(/(\\d+)\\s*\\/\\s*(\\d+)/));
+      return JSON.stringify({
+        repeatsProgress: /master this level/i.test(panel),
+        stickerRows: m.querySelectorAll('.winSticker').length,
+        notMastered: g ? (+g[1]) < (+g[2]) : null,
+        panel: panel.slice(0,110)
+      });
+    })()`).then(JSON.parse);
+    ok(tag + 'the panel does not repeat the counter\'s sentence',
+       d.repeatsProgress === false, d.panel);
+    if (d.notMastered === true)
+      ok(tag + 'and shows no sticker row before the level is mastered',
+         d.stickerRows === 0, d.stickerRows + ' rows');
+
+    await ev(`(function(){ var b=document.getElementById('nextBtn'); if(b) b.click(); })()`);
+    await sleep(600);
+  }
+
   ok('no JS errors', errs.length === 0, errs.join(' | '));
 
   ws.close(); ch.kill(); await sleep(300);

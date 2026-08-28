@@ -144,49 +144,75 @@ const HELPERS = `
      added up to, so the board congratulated a wrong answer. The cause was that
      'full' means FILLED, not CORRECT, and beta-251 gave 'full' the green fill.
 
-     Fill a 3x3 correctly, then swap two cells. The lines through them now add
-     to the wrong totals while the rest still agree -- so the app still infers
-     the right target, and the broken lines are genuinely wrong rather than
-     merely unknown. Then: none of them may be green. */
-  await ev(`(function(){ var b=document.querySelector('.toggleBtn[data-size="3x3"]'); if(b) b.click(); })()`);
-  await sleep(900);
-  await ev(`document.getElementById('peekBtn').click()`);
-  await sleep(400);
-  const sol3 = await ev(`JSON.stringify(Array.from(document.querySelectorAll('#board .cell')).map(function(i){ return i.value; }))`);
-  await sleep(3600);
-  await ev(`(function(){
-    var sol = ${sol3}, cs = document.querySelectorAll('#board .cell');
-    var t = sol[0]; sol[0] = sol[4]; sol[4] = t;      // break two lines on purpose
-    for (var i=0;i<cs.length;i++){
-      cs[i].focus(); cs[i].value = sol[i];
-      cs[i].dispatchEvent(new Event('input', { bubbles:true }));
-    }
-    document.activeElement && document.activeElement.blur();
-  })()`);
-  await sleep(900);
+     Then, when it was fixed: "6x6 ok, 3 multiply not set well ... it look
+     should verify entire puzzle deeply". He was right to distrust a spot
+     check. The first version of this test covered ONE board, and the four
+     boards above it are whichever four I happened to pick -- Multiply was
+     never tested at all, and Multiply is the board where a mistake is most
+     likely, because its lines MULTIPLY. A guard that checks one board tells
+     you about one board.
 
-  const judged = await ev(`(function(){
-    var tv = document.getElementById('targetVal');
-    var target = tv ? parseInt(tv.textContent, 10) : NaN;
-    var green = 0, red = 0, greenWrong = 0, bad = [];
-    document.querySelectorAll('#board .badge').forEach(function(b){
-      var v = parseInt(b.textContent, 10);
-      if (isNaN(v)) return;
-      var bg = getComputedStyle(b).backgroundColor;
-      var isGreen = /18, 122, 69/.test(bg), isRed = /179, 38, 30/.test(bg);
-      if (isGreen) green++;
-      if (isRed) red++;
-      if (isGreen && !isNaN(target) && v !== target){ greenWrong++; bad.push(v + ' green vs target ' + target); }
-    });
-    return JSON.stringify({ target:target, green:green, red:red,
-      greenWrong:greenWrong, bad:bad.slice(0,3) });
-  })()`).then(JSON.parse);
+     So: every board a child can type a wrong line into. Fill it correctly,
+     then swap two squares that share no line. The lines through them now come
+     out wrong while the rest still agree -- so the app still infers the right
+     target and those lines are genuinely wrong, not merely unknown. Then no
+     wrong line may be green, on any board.
 
-  ok('the app works the target out from the lines that agree',
-     !isNaN(judged.target), 'target ' + judged.target);
-  ok('NO finished-but-wrong line is shown green', judged.greenWrong === 0, JSON.stringify(judged));
-  ok('a finished-but-wrong line is shown red instead', judged.red >= 1,
-     judged.red + ' red, ' + judged.green + ' green');
+     Ramanujan and the two binary boards are deliberately absent: they write
+     the rest of the square for you from the top row, so a finished-but-wrong
+     line cannot be produced by typing. Asserting a state where it cannot occur
+     is a test that fails for the wrong reason and says nothing. */
+  const JUDGED = ['3x3','4x4','5x5','6x6','8x8','10x10','3cube'];
+  let sawWrong = false;
+  for (const size of JUDGED){
+    await ev(`(function(){ var b=document.querySelector('.toggleBtn[data-size="${size}"]'); if(b) b.click(); })()`);
+    await sleep(1100);
+    await ev(`document.getElementById('peekBtn').click()`);
+    await sleep(500);
+    const sol = await ev(`JSON.stringify(Array.from(document.querySelectorAll('#board .cell')).map(function(i){ return i.value; }))`);
+    await sleep(3600);
+    await ev(`(function(){
+      var sol = ${sol}, cs = document.querySelectorAll('#board .cell');
+      /* 0 and half+1 never share a row, column or diagonal on these boards */
+      var a = 0, b = Math.floor(cs.length/2) + 1;
+      var t = sol[a]; sol[a] = sol[b]; sol[b] = t;
+      for (var i=0;i<cs.length;i++){
+        if (cs[i].readOnly || cs[i].disabled) continue;
+        cs[i].focus(); cs[i].value = sol[i];
+        cs[i].dispatchEvent(new Event('input', { bubbles:true }));
+      }
+      document.activeElement && document.activeElement.blur();
+    })()`);
+    await sleep(1000);
+
+    const j = await ev(`(function(){
+      var tv = document.getElementById('targetVal');
+      var target = tv ? parseInt(tv.textContent, 10) : NaN;
+      var green = 0, red = 0, greenWrong = 0, bad = [];
+      document.querySelectorAll('#board .badge').forEach(function(b){
+        var v = parseInt(b.textContent, 10);
+        if (isNaN(v)) return;
+        var bg = getComputedStyle(b).backgroundColor;
+        var isGreen = /18, 122, 69/.test(bg), isRed = /179, 38, 30/.test(bg);
+        if (isGreen) green++;
+        if (isRed) red++;
+        if (isGreen && !isNaN(target) && v !== target){
+          greenWrong++; if (bad.length < 2) bad.push(v + ' green vs target ' + target); }
+      });
+      return JSON.stringify({ target:target, green:green, red:red,
+        greenWrong:greenWrong, bad:bad });
+    })()`).then(JSON.parse);
+
+    const tag = size.padEnd(8);
+    ok(tag + 'works its target out from the lines that agree', !isNaN(j.target),
+       'target ' + j.target);
+    ok(tag + 'shows NO finished-but-wrong line in green', j.greenWrong === 0,
+       j.greenWrong ? j.bad.join(', ') : j.green + ' green, ' + j.red + ' red');
+    ok(tag + 'shows a finished-but-wrong line in red instead', j.red >= 1,
+       j.red + ' red, ' + j.green + ' green');
+    if (j.red >= 1) sawWrong = true;
+  }
+  ok('the wrong-line state was genuinely reachable on these boards', sawWrong);
 
   /* Raja's other two: the duplicate line is gone from the applause panel, and
      the counter beside the target no longer melts into the background. */
