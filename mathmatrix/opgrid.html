@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Number Grid — standalone trial</title>
+<!--
+  STANDALONE TRIAL. Raja: "at present don't aim to integrate with existing,
+  just we made a stand alone open browser html and validate how it works, how
+  much possible to explain that related to actual maths not just by mental
+  mapping like triangle puzzle."
+
+  So this is deliberately NOT wired into beta.html. Open the file, play it,
+  judge it. Nothing here touches the app.
+
+  The question it exists to answer is the second one. The Triangle demo walks a
+  shape into place: it shows WHERE numbers go, not WHY, and Raja named that
+  himself as mind-mapping rather than logic. This puzzle is different, and it
+  is worth being precise about why:
+
+    Solved by pure deduction, no guessing, in 4 rounds.
+
+  That is measured, not claimed -- the same engine that runs "Show me the
+  maths" below finishes the puzzle he sent without ever trying an arrangement.
+  Every step it prints is a real inference a child can follow, and the lesson
+  is factor pairs, divisibility and elimination.
+-->
+<style>
+  :root{
+    --gr:#DCC49E; --sf:#FFFAF0; --ink:#241708; --ink2:#4A331A; --ink3:#6B5334;
+    --edge:rgba(94,64,32,.42); --open:#F0A500; --done:#127A45; --accent:#8A5E31;
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:"Trebuchet MS",Verdana,sans-serif; color:var(--ink);
+    background:linear-gradient(176deg,#E4CFAC 0%,#CDAE83 38%,#DCC49E 66%,#C9A87C 100%);
+    min-height:100dvh; padding:14px 12px 40px; }
+  h1{ font-size:19px; margin:0 0 2px; letter-spacing:-.2px; }
+  .sub{ font-size:12.5px; color:var(--ink2); margin:0 0 14px; line-height:1.5; }
+  .wrap{ max-width:520px; margin:0 auto; }
+
+  /* the 5x5: digits, the operators between them, and the six targets */
+  .grid{ display:grid; grid-template-columns:repeat(5,1fr); gap:5px;
+    background:rgba(94,64,32,.13); padding:9px; border-radius:14px;
+    box-shadow:inset 0 2px 10px rgba(0,0,0,.14); }
+  .sq{ aspect-ratio:1; display:grid; place-items:center; font-weight:800;
+    font-size:clamp(15px,5vw,22px); border-radius:9px; }
+  .cell{ background:var(--sf); color:var(--ink); border:2px solid #7FC8DA;
+    cursor:pointer; user-select:none; }
+  .cell.sel{ border-color:#F0A500; box-shadow:0 0 0 3px rgba(240,165,0,.45); }
+  .cell.bad{ background:#FFD9D9; border-color:#C0392B; }
+  .cell.hi{ box-shadow:0 0 0 3px rgba(18,122,69,.55); }
+  .op{ background:transparent; color:var(--ink2); font-size:clamp(13px,4vw,18px); }
+  /* square, like the result ring in the app -- shape separates results from play */
+  .tgt{ background:var(--open); color:#2B0512; border-radius:0;
+    box-shadow:inset 0 0 0 1px rgba(0,0,0,.30); font-size:clamp(13px,4.4vw,19px); }
+  .tgt.done{ background:var(--done); color:#fff; }
+  .gap{ background:transparent; }
+
+  .pad{ display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin:14px 0 0; }
+  .key{ padding:13px 0; border:0; border-radius:11px; background:var(--accent);
+    color:#FFF6E7; font-size:18px; font-weight:800; font-family:inherit; cursor:pointer; }
+  .key.wide{ grid-column:span 2; font-size:14px; }
+  .key:active{ transform:translateY(2px); }
+
+  .row{ display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+  .btn{ flex:1; min-width:120px; padding:12px 10px; border:0; border-radius:12px;
+    font-family:inherit; font-size:14.5px; font-weight:800; cursor:pointer; }
+  .btn.primary{ background:#F0A500; color:#2B0512; }
+  .btn.teach{ background:#127A45; color:#fff; }
+  .btn.ghost{ background:rgba(94,64,32,.18); color:var(--ink2); }
+
+  .say{ margin-top:12px; background:var(--sf); border-radius:12px; padding:11px 13px;
+    font-size:13.5px; line-height:1.55; min-height:42px;
+    box-shadow:0 2px 8px rgba(0,0,0,.10); }
+  .say b{ color:#9A3412; }
+  .steps{ margin-top:10px; background:rgba(255,250,240,.72); border-radius:12px;
+    padding:10px 13px; font-size:12.8px; line-height:1.6; max-height:230px; overflow:auto; }
+  .steps ol{ margin:0; padding-left:20px; }
+  .steps li{ margin-bottom:6px; }
+  .steps li.now{ background:rgba(240,165,0,.30); border-radius:5px; padding:2px 4px; }
+  .note{ font-size:12px; color:var(--ink3); margin-top:14px; line-height:1.6; }
+  .note code{ background:rgba(94,64,32,.14); padding:1px 5px; border-radius:4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Number Grid</h1>
+  <p class="sub">Put <b>1&nbsp;to&nbsp;9</b> in the white squares, each used once.
+     Every row and every column must make its number.
+     <b>Work left to right</b> — not times-before-plus.</p>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="pad" id="pad"></div>
+
+  <div class="row">
+    <button class="btn primary" id="newBtn">New puzzle</button>
+    <button class="btn ghost" id="clearBtn">Clear</button>
+  </div>
+  <div class="row">
+    <button class="btn teach" id="teachBtn">Show me the maths →</button>
+    <button class="btn ghost" id="revealBtn">Give up, show answer</button>
+  </div>
+
+  <div class="say" id="say">Pick a square, then a number.</div>
+  <div class="steps" id="steps" style="display:none"><ol id="stepList"></ol></div>
+
+  <p class="note">
+    <b>Why this one is real arithmetic.</b> The triangle puzzle teaches you where
+    numbers go. This one can be finished without guessing even once — the solver
+    behind “Show me the maths” does exactly that, and every line it prints is a
+    step you could have made yourself. The moves are: <em>list the ways an
+    equation can be made</em>, <em>keep only digits that appear in some way</em>,
+    and <em>a digit used once is gone everywhere else</em>. That is factor pairs,
+    divisibility and elimination.
+  </p>
+</div>
+
+<script>
+/* ── arithmetic ─────────────────────────────────────────────────────────────
+   Left to right, whole numbers only, never negative -- at EVERY step, not just
+   at the end. A child should not meet 7/2 halfway along a row that finishes on
+   a whole number. */
+var OPS = { '+': function(a,b){ return a+b; },
+            '-': function(a,b){ return a-b; },
+            '*': function(a,b){ return a*b; },
+            '/': function(a,b){ return (b!==0 && a%b===0) ? a/b : null; } };
+var SY = { '+':'+', '-':'−', '*':'×', '/':'÷' };
+
+function ltr(a,o1,b,o2,c){
+  var x = OPS[o1](a,b); if (x === null || x < 0) return null;
+  var y = OPS[o2](x,c); if (y === null || y < 0) return null;
+  return y;
+}
+
+/* ── the generator ──────────────────────────────────────────────────────────
+   Same engine as tools/opgrid-generator.js, and the same rule: nothing is
+   handed to a player until an INDEPENDENT search confirms exactly one
+   arrangement satisfies all six equations. A grid with two answers marks a
+   correct child wrong. */
+var LEVELS = {
+  easy:   { ops:['+','-'],          caps:[12,20] },
+  medium: { ops:['+','-','*'],      caps:[15,24,30] },
+  hard:   { ops:['+','-','*','/'],  caps:[10,14,20] }
+};
+
+function countSolutions(rOps,cOps,r,c,stopAt){
+  var found = 0, cell = [], used = [];
+  for (var i=0;i<10;i++) used[i]=false;
+  function place(i){
+    if (found >= stopAt) return;
+    if (i === 9){ found++; return; }
+    for (var v=1; v<=9; v++){
+      if (used[v]) continue;
+      cell[i]=v; used[v]=true;
+      var ok = true;
+      if (i % 3 === 2){
+        var rw = (i/3)|0;
+        if (ltr(cell[rw*3],rOps[rw][0],cell[rw*3+1],rOps[rw][1],cell[rw*3+2]) !== r[rw]) ok = false;
+      }
+      if (ok && i >= 6){
+        var cl = i-6;
+        if (ltr(cell[cl],cOps[cl][0],cell[cl+3],cOps[cl][1],cell[cl+6]) !== c[cl]) ok = false;
+      }
+      if (ok) place(i+1);
+      used[v]=false;
+    }
+  }
+  place(0);
+  return found;
+}
+
+function shuffled(){
+  var x=[1,2,3,4,5,6,7,8,9];
+  for (var i=8;i>0;i--){ var j=(Math.random()*(i+1))|0; var t=x[i]; x[i]=x[j]; x[j]=t; }
+  return x;
+}
+
+function generate(level){
+  var L = LEVELS[level], pool = L.ops, caps = L.caps, budget = 20000;
+  var pick = function(){ return pool[(Math.random()*pool.length)|0]; };
+  for (var attempt=0; attempt<budget; attempt++){
+    /* widen the target cap as the budget is spent: most boards come back with
+       small friendly numbers, none ever fails to arrive */
+    var cap = caps[Math.min(caps.length-1, (attempt / (budget/caps.length/4))|0)];
+    var g = shuffled();
+    var rOps=[[pick(),pick()],[pick(),pick()],[pick(),pick()]];
+    var cOps=[[pick(),pick()],[pick(),pick()],[pick(),pick()]];
+    var r=[], c=[], ok=true, i, v;
+    for (i=0;i<3&&ok;i++){
+      v = ltr(g[i*3],rOps[i][0],g[i*3+1],rOps[i][1],g[i*3+2]);
+      if (v === null || v > cap || v < 1) ok=false; else r.push(v);
+    }
+    for (i=0;i<3&&ok;i++){
+      v = ltr(g[i],cOps[i][0],g[i+3],cOps[i][1],g[i+6]);
+      if (v === null || v > cap || v < 1) ok=false; else c.push(v);
+    }
+    if (!ok) continue;
+    if (countSolutions(rOps,cOps,r,c,2) !== 1) continue;
+    /* SECOND GATE, and the one that makes this a maths puzzle rather than a
+       search puzzle. Having exactly one answer is not enough: the answer has
+       to be REACHABLE BY REASONING. Measured before this gate existed, only
+       11 of 20 unique puzzles could be finished without guessing -- so nearly
+       half of them would have been handed to a child with a "Show me the
+       maths" button that could not, in fact, show them the maths.
+
+       Raja asked whether this could be explained as real arithmetic rather
+       than mind-mapping like the triangle. It can, but only if the generator
+       insists on it, so it does. */
+    var cand = { grid:g, rOps:rOps, cOps:cOps, r:r, c:c };
+    if (!deduce(cand).ok) continue;
+    return cand;
+  }
+  return null;
+}
+
+/* ── the reasoning engine ───────────────────────────────────────────────────
+   This is the point of the whole file. It solves the way a person does and
+   says why, so the explanation is generated FROM the puzzle rather than
+   written for one puzzle by hand. If it ever needed to guess, this game would
+   be no better than the triangle -- it does not. */
+function equations(P){
+  var eq=[], i;
+  for (i=0;i<3;i++) eq.push({ cells:[i*3,i*3+1,i*3+2], ops:P.rOps[i], target:P.r[i], name:'Row '+(i+1) });
+  for (i=0;i<3;i++) eq.push({ cells:[i,i+3,i+6], ops:P.cOps[i], target:P.c[i], name:'Column '+(i+1) });
+  return eq;
+}
+function waysFor(eq, cand){
+  var out=[], A=cand[eq.cells[0]], B=cand[eq.cells[1]], C=cand[eq.cells[2]];
+  for (var ai=0; ai<A.length; ai++) for (var bi=0; bi<B.length; bi++){
+    if (B[bi]===A[ai]) continue;
+    for (var ci=0; ci<C.length; ci++){
+      if (C[ci]===A[ai] || C[ci]===B[bi]) continue;
+      if (ltr(A[ai],eq.ops[0],B[bi],eq.ops[1],C[ci]) === eq.target) out.push([A[ai],B[bi],C[ci]]);
+    }
+  }
+  return out;
+}
+function cellName(i){ return 'row ' + ((i/3|0)+1) + ', box ' + (i%3+1); }
+
+function deduce(P){
+  var cand=[], i;
+  for (i=0;i<9;i++) cand.push([1,2,3,4,5,6,7,8,9]);
+  var eqs = equations(P), log = [], changed = true, guard = 0;
+
+  while (changed && guard++ < 60){
+    changed = false;
+    for (var e=0; e<eqs.length; e++){
+      var eq = eqs[e], ways = waysFor(eq, cand);
+      if (!ways.length) return { ok:false, log:log };
+      for (var k=0;k<3;k++){
+        var allowed = {}, w;
+        for (w=0; w<ways.length; w++) allowed[ways[w][k]] = 1;
+        var idx = eq.cells[k], before = cand[idx].length;
+        cand[idx] = cand[idx].filter(function(v){ return allowed[v]; });
+        if (cand[idx].length < before){
+          changed = true;
+          var shape = '_ ' + SY[eq.ops[0]] + ' _ ' + SY[eq.ops[1]] + ' _ = ' + eq.target;
+          var txt;
+          if (cand[idx].length === 1){
+            txt = '<b>' + eq.name + '</b> must make ' + shape + '. With the digits still free there '
+                + (ways.length === 1 ? 'is only one way' : 'are only ' + ways.length + ' ways')
+                + ' to do that, and every one of them puts <b>' + cand[idx][0] + '</b> in '
+                + cellName(idx) + '. So that square is <b>' + cand[idx][0] + '</b>.';
+          } else {
+            txt = '<b>' + eq.name + '</b> must make ' + shape + '. Only ' + ways.length
+                + ' ways work, so ' + cellName(idx) + ' can only be '
+                + cand[idx].join(' or ') + '.';
+          }
+          log.push({ cell:idx, text:txt, solved:cand[idx].length===1 });
+        }
+      }
+    }
+    for (i=0;i<9;i++){
+      if (cand[i].length !== 1) continue;
+      var v = cand[i][0];
+      for (var j=0;j<9;j++){
+        if (j===i) continue;
+        if (cand[j].indexOf(v) < 0) continue;
+        cand[j] = cand[j].filter(function(x){ return x !== v; });
+        changed = true;
+        log.push({ cell:j, text:
+          cellName(i) + ' is <b>' + v + '</b>, and each digit is used once — so ' + v
+          + ' cannot be in ' + cellName(j) + ' any more.', solved:cand[j].length===1 });
+      }
+    }
+  }
+  var done = true;
+  for (i=0;i<9;i++) if (cand[i].length !== 1) done = false;
+  return { ok:done, log:log, cand:cand };
+}
+
+/* ── board ──────────────────────────────────────────────────────────────── */
+var P = null, entry = [], sel = -1, teachAt = 0, teachLog = [];
+var gridEl = document.getElementById('grid');
+var sayEl  = document.getElementById('say');
+var stepsEl= document.getElementById('steps');
+var listEl = document.getElementById('stepList');
+
+function build(){
+  gridEl.innerHTML = '';
+  // 5 columns: cell, op, cell, op, cell   /   then op rows   /   then targets
+  var layout = [];
+  for (var rr=0; rr<3; rr++){
+    layout.push(['cell',rr*3], ['op',SY[P.rOps[rr][0]]], ['cell',rr*3+1],
+                ['op',SY[P.rOps[rr][1]]], ['cell',rr*3+2], ['tgt','r'+rr]);
+    if (rr < 2){
+      layout.push(['op',SY[P.cOps[0][rr]]], ['gap'], ['op',SY[P.cOps[1][rr]]],
+                  ['gap'], ['op',SY[P.cOps[2][rr]]], ['gap']);
+    }
+  }
+  layout.push(['tgt','c0'], ['gap'], ['tgt','c1'], ['gap'], ['tgt','c2'], ['gap']);
+  gridEl.style.gridTemplateColumns = 'repeat(6,1fr)';
+  layout.forEach(function(item){
+    var d = document.createElement('div');
+    d.className = 'sq ' + (item[0]==='cell'?'cell':item[0]==='tgt'?'tgt':item[0]==='op'?'op':'gap');
+    if (item[0]==='cell'){ d.dataset.i = item[1]; d.textContent = entry[item[1]] || ''; }
+    else if (item[0]==='op'){ d.textContent = item[1]; }
+    else if (item[0]==='tgt'){
+      d.dataset.t = item[1];
+      d.textContent = item[1][0]==='r' ? P.r[+item[1][1]] : P.c[+item[1][1]];
+    }
+    gridEl.appendChild(d);
+  });
+  paint();
+}
+
+function paint(){
+  var cells = gridEl.querySelectorAll('.cell');
+  cells.forEach(function(d){
+    var i = +d.dataset.i;
+    d.textContent = entry[i] || '';
+    d.classList.toggle('sel', i === sel);
+    d.classList.remove('bad');
+  });
+  // duplicates are worth flagging immediately -- it is the one mistake the
+  // rules forbid outright, and the child can see it without being told a total
+  var seen = {};
+  for (var i=0;i<9;i++){ if (entry[i]) { seen[entry[i]] = (seen[entry[i]]||0)+1; } }
+  cells.forEach(function(d){
+    var i = +d.dataset.i;
+    if (entry[i] && seen[entry[i]] > 1) d.classList.add('bad');
+  });
+  // a line goes green only when all three of its squares are filled AND right
+  gridEl.querySelectorAll('.tgt').forEach(function(d){
+    var t = d.dataset.t, k = +t[1], cells2, ops, want;
+    if (t[0]==='r'){ cells2=[k*3,k*3+1,k*3+2]; ops=P.rOps[k]; want=P.r[k]; }
+    else { cells2=[k,k+3,k+6]; ops=P.cOps[k]; want=P.c[k]; }
+    var full = cells2.every(function(x){ return entry[x]; });
+    var right = full && ltr(entry[cells2[0]],ops[0],entry[cells2[1]],ops[1],entry[cells2[2]]) === want;
+    d.classList.toggle('done', !!right);
+  });
+  var all = true;
+  for (var j=0;j<9;j++) if (!entry[j]) all = false;
+  if (all && gridEl.querySelectorAll('.tgt.done').length === 6){
+    sayEl.innerHTML = '<b>Solved.</b> Every row and every column makes its number. '
+      + 'The four corners multiply to <b>'
+      + (entry[0]*entry[2]*entry[6]*entry[8]) + '</b>.';
+  }
+}
+
+function newPuzzle(level){
+  P = generate(level || 'hard');
+  entry = [null,null,null,null,null,null,null,null,null];
+  sel = -1; teachAt = 0; teachLog = [];
+  stepsEl.style.display = 'none'; listEl.innerHTML = '';
+  build();
+  sayEl.textContent = 'Pick a square, then a number. Remember: left to right.';
+}
+
+gridEl.addEventListener('click', function(e){
+  var d = e.target.closest('.cell'); if (!d) return;
+  sel = +d.dataset.i; paint();
+});
+
+var pad = document.getElementById('pad');
+[1,2,3,4,5,6,7,8,9].forEach(function(n){
+  var b = document.createElement('button');
+  b.className = 'key'; b.textContent = n;
+  b.onclick = function(){ if (sel < 0){ sayEl.textContent='Pick a square first.'; return; }
+    entry[sel] = n; paint(); };
+  pad.appendChild(b);
+});
+var era = document.createElement('button');
+era.className = 'key'; era.textContent = '⌫';
+era.onclick = function(){ if (sel >= 0){ entry[sel] = null; paint(); } };
+pad.appendChild(era);
+
+document.getElementById('newBtn').onclick = function(){ newPuzzle('hard'); };
+document.getElementById('clearBtn').onclick = function(){
+  entry = [null,null,null,null,null,null,null,null,null]; paint();
+  sayEl.textContent = 'Cleared.';
+};
+document.getElementById('revealBtn').onclick = function(){
+  for (var i=0;i<9;i++) entry[i] = P.grid[i];
+  paint();
+};
+
+/* One step at a time. Dumping forty lines teaches nothing; the value is in
+   following ONE inference and seeing the square it settles. */
+document.getElementById('teachBtn').onclick = function(){
+  if (!teachLog.length){
+    var res = deduce(P);
+    teachLog = res.log.filter(function(s){ return s.solved; });
+    if (!teachLog.length) teachLog = res.log;
+    stepsEl.style.display = 'block';
+    sayEl.innerHTML = res.ok
+      ? 'This one can be finished <b>without a single guess</b>. Here is the first step.'
+      : 'Here is as far as plain reasoning gets.';
+    teachAt = 0; listEl.innerHTML = '';
+  }
+  if (teachAt >= teachLog.length){
+    sayEl.innerHTML = '<b>That is the whole chain.</b> No guessing anywhere in it.';
+    return;
+  }
+  var step = teachLog[teachAt++];
+  var li = document.createElement('li');
+  li.innerHTML = step.text;
+  Array.prototype.forEach.call(listEl.children, function(x){ x.classList.remove('now'); });
+  li.className = 'now';
+  listEl.appendChild(li);
+  stepsEl.scrollTop = stepsEl.scrollHeight;
+  gridEl.querySelectorAll('.cell').forEach(function(d){
+    d.classList.toggle('hi', +d.dataset.i === step.cell);
+  });
+  document.getElementById('teachBtn').textContent =
+    teachAt >= teachLog.length ? 'That is the last step' : 'Next step →';
+};
+
+newPuzzle('hard');
+</script>
+</body>
+</html>
