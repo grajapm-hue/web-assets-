@@ -125,6 +125,42 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
   ok('the solved numbers are actually on screen to check',
      reach.vals.split(',').filter(Boolean).length >= 6, reach.vals);
 
+  /* Raja: "the applause pop's indigo tab says the same as the tab next to
+     Target at the top -- suggest remove this tab."
+
+     The removed branch printed progressLine(), which READS #solvedCounter and
+     rephrases it -- so the panel's most prominent row repeated a sentence the
+     child had just read on the board behind it, and made the panel taller,
+     which is what hid the board in the first place.
+
+     Assert the duplication is gone rather than that one element is absent: an
+     element check would pass the moment someone re-added the same sentence in
+     a different wrapper. */
+  const dup = await ev(`(function(){
+    var m = document.getElementById('congratsModal');
+    var counter = document.getElementById('solvedCounter');
+    var panel = (m.textContent || '').replace(/\\s+/g, ' ').trim();
+    return JSON.stringify({
+      panel: panel.slice(0, 150),
+      counter: ((counter && counter.textContent) || '').replace(/\\s+/g, ' ').trim(),
+      repeatsProgress: /master this level/i.test(panel),
+      stickerRows: m.querySelectorAll('.winSticker').length,
+      /* n/m off the counter: n < m means this level is not mastered yet, which
+         is the only case Raja asked to strip. Read it rather than assume it --
+         a mastered win SHOULD still show its sticker. */
+      notMastered: (function(){
+        var g = (((counter && counter.textContent) || '').match(/(\\d+)\\s*\\/\\s*(\\d+)/));
+        return g ? (+g[1]) < (+g[2]) : null;
+      })()
+    });
+  })()`).then(JSON.parse);
+  ok('the counter beside the target is the one saying it', !!dup.counter, dup.counter);
+  ok('the win panel does NOT repeat that same sentence', dup.repeatsProgress === false,
+     dup.panel);
+  if (dup.notMastered === true)
+    ok('and carries no sticker row on a level that is not mastered yet',
+       dup.stickerRows === 0, dup.stickerRows + ' rows');
+
   /* Nothing may move on a timer. The old build rebuilt the board after 4s. */
   const before = await ev(`JSON.stringify(Array.from(document.querySelectorAll('#board .cell')).map(function(i){ return i.value; }))`);
   await sleep(9000);

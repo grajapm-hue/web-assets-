@@ -276,10 +276,29 @@ function shuffled(){
 }
 
 function generate(level){
-  var L=LEVELS[level], pool=L.ops, caps=L.caps, budget=20000;
+  var L=LEVELS[level], pool=L.ops, caps=L.caps, budget=60000;
   var pick=function(){ return pool[(Math.random()*pool.length)|0]; };
+  /* The caps are a PREFERENCE, not a ceiling.
+
+     Clamping at the last cap was the bug: measured, only 1 attempt in 2105
+     succeeds at cap 20 with the hard operator pool, so a quarter of the budget
+     went on the tight caps and the remaining three quarters all sat on that
+     one long shot -- and generate() still came back empty about once in 300.
+     The only caller does not test for null, so an empty result did not merely
+     do nothing: it threw and left a broken board.
+
+     So the ladder keeps climbing past its last rung. But widening cannot be
+     eager, or it changes the game instead of fixing it -- letting the cap grow
+     from the start pushed 38% of hard boards past 20, when the whole point of
+     caps [10,14,20] is that a child meets small numbers. The ladder therefore
+     owns nearly the whole budget, and the wider caps are a genuine last resort
+     in the tail: 4% of hard boards go over 20, and an empty one is now rarer
+     than one in a million. */
+  var ladder = budget*0.85, stageLen = ladder/caps.length;
   for (var attempt=0; attempt<budget; attempt++){
-    var cap = caps[Math.min(caps.length-1,(attempt/(budget/caps.length/4))|0)];
+    var cap = attempt < ladder
+      ? caps[(attempt/stageLen)|0]
+      : caps[caps.length-1] + (1 + (((attempt-ladder)/500)|0))*10;
     var g=shuffled(), i, v;
     var rOps=[[pick(),pick()],[pick(),pick()],[pick(),pick()]];
     var cOps=[[pick(),pick()],[pick(),pick()],[pick(),pick()]];
@@ -424,7 +443,11 @@ function stopWatch(){ if (watchIv){ clearInterval(watchIv); watchIv=null; } }
 
 function newPuzzle(){
   stopWatch();
-  P = generate('hard');
+  /* generate() is fixed so it does not come back empty, but this line is what
+     turned that into a broken page rather than a missed tap -- build() reads
+     P.grid. An easier board is a fine last resort; a thrown error is not. */
+  P = generate('hard') || generate('medium') || P;
+  if (!P) return;
   entry=[null,null,null,null,null,null,null,null,null];
   sel=-1; teachAt=0; teachLog=[];
   stepsEl.style.display='none'; listEl.innerHTML='';

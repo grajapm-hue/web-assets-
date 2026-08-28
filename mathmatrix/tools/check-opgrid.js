@@ -4,7 +4,7 @@ const { spawn, execSync } = require('child_process');
 const fs = require('fs'); const path = require('path');
 const PORT = 9887;
 const ROOT = path.join(__dirname, '..');
-const FILE = 'file:///' + path.join(ROOT, 'opgrid.html').split(path.sep).join('/');
+const FILE = 'file:///' + path.join(ROOT, process.env.MM_TARGET || 'opgrid.html').split(path.sep).join('/');
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 let fail = 0;
 const ok = (n,c,x) => { console.log((c?'  PASS  ':'  FAIL  ')+n+(x!==undefined?'  -> '+x:'')); if(!c) fail++; };
@@ -83,6 +83,34 @@ const ok = (n,c,x) => { console.log((c?'  PASS  ':'  FAIL  ')+n+(x!==undefined?'
   })()`).then(JSON.parse);
   ok('every requested puzzle was actually produced', many.made === many.n,
      many.made + '/' + many.n + '  in ' + many.ms + 'ms');
+  /* 30 is enough to judge QUALITY but far too few to judge RARITY. The
+     generator used to come back empty about once in 300 -- and 30 samples had
+     only a 9% chance of ever showing it, which is exactly how it survived. An
+     empty result is not a missed tap either: newPuzzle() reads P.grid, so it
+     threw and left a broken board.
+
+     Emptiness is cheap to test in bulk (about 4ms a puzzle), so test it in
+     bulk: 1200 draws see a 1-in-300 fault 98% of the time. */
+  const bulk = await ev(`(function(){
+    var N=1200, empty=0, over=0, worst=0, t0=Date.now();
+    for (var i=0;i<N;i++){
+      var t=performance.now(), q=generate('hard'), d=performance.now()-t;
+      if (d>worst) worst=d;
+      if (!q){ empty++; continue; }
+      if (Math.max.apply(null, q.r.concat(q.c)) > 20) over++;
+    }
+    return JSON.stringify({ n:N, empty:empty, over:over,
+      worst:Math.round(worst), ms:Date.now()-t0 });
+  })()`).then(JSON.parse);
+  ok('the generator NEVER comes back empty', bulk.empty === 0,
+     bulk.empty + '/' + bulk.n + ' empty  (' + bulk.ms + 'ms)');
+  /* The fix that stops it coming back empty is a cap that keeps widening, and
+     an over-eager version of it pushed 38% of boards past 20 -- fixing the
+     crash by quietly making the sums harder. Pin the character too. */
+  ok('and the numbers stay child-sized -- widening is a last resort',
+     bulk.over / bulk.n < 0.05,
+     (100*bulk.over/bulk.n).toFixed(1) + '% of targets over 20');
+  ok('a new puzzle still arrives instantly', bulk.worst < 250, 'slowest ' + bulk.worst + 'ms');
   ok('each has exactly one answer', many.uniq === many.made, many.uniq + '/' + many.made);
   ok('each yields to reasoning without guessing', many.reasoned === many.made,
      many.reasoned + '/' + many.made);

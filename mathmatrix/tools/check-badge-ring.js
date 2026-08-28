@@ -139,6 +139,66 @@ const HELPERS = `
   ok('an unfinished line was seen on at least one board', sawOpen);
   ok('a finished line was seen on at least one board', sawDone);
 
+  /* ---- THE ONE THAT MATTERS ----
+     Raja, on the live board: a finished line was turning green whatever it
+     added up to, so the board congratulated a wrong answer. The cause was that
+     'full' means FILLED, not CORRECT, and beta-251 gave 'full' the green fill.
+
+     Fill a 3x3 correctly, then swap two cells. The lines through them now add
+     to the wrong totals while the rest still agree -- so the app still infers
+     the right target, and the broken lines are genuinely wrong rather than
+     merely unknown. Then: none of them may be green. */
+  await ev(`(function(){ var b=document.querySelector('.toggleBtn[data-size="3x3"]'); if(b) b.click(); })()`);
+  await sleep(900);
+  await ev(`document.getElementById('peekBtn').click()`);
+  await sleep(400);
+  const sol3 = await ev(`JSON.stringify(Array.from(document.querySelectorAll('#board .cell')).map(function(i){ return i.value; }))`);
+  await sleep(3600);
+  await ev(`(function(){
+    var sol = ${sol3}, cs = document.querySelectorAll('#board .cell');
+    var t = sol[0]; sol[0] = sol[4]; sol[4] = t;      // break two lines on purpose
+    for (var i=0;i<cs.length;i++){
+      cs[i].focus(); cs[i].value = sol[i];
+      cs[i].dispatchEvent(new Event('input', { bubbles:true }));
+    }
+    document.activeElement && document.activeElement.blur();
+  })()`);
+  await sleep(900);
+
+  const judged = await ev(`(function(){
+    var tv = document.getElementById('targetVal');
+    var target = tv ? parseInt(tv.textContent, 10) : NaN;
+    var green = 0, red = 0, greenWrong = 0, bad = [];
+    document.querySelectorAll('#board .badge').forEach(function(b){
+      var v = parseInt(b.textContent, 10);
+      if (isNaN(v)) return;
+      var bg = getComputedStyle(b).backgroundColor;
+      var isGreen = /18, 122, 69/.test(bg), isRed = /179, 38, 30/.test(bg);
+      if (isGreen) green++;
+      if (isRed) red++;
+      if (isGreen && !isNaN(target) && v !== target){ greenWrong++; bad.push(v + ' green vs target ' + target); }
+    });
+    return JSON.stringify({ target:target, green:green, red:red,
+      greenWrong:greenWrong, bad:bad.slice(0,3) });
+  })()`).then(JSON.parse);
+
+  ok('the app works the target out from the lines that agree',
+     !isNaN(judged.target), 'target ' + judged.target);
+  ok('NO finished-but-wrong line is shown green', judged.greenWrong === 0, JSON.stringify(judged));
+  ok('a finished-but-wrong line is shown red instead', judged.red >= 1,
+     judged.red + ' red, ' + judged.green + ' green');
+
+  /* Raja's other two: the duplicate line is gone from the applause panel, and
+     the counter beside the target no longer melts into the background. */
+  const counter = await ev(`(function(){
+    var c = document.querySelector('.solvedCounter');
+    if (!c) return '{}';
+    var s = getComputedStyle(c);
+    return JSON.stringify({ bg:s.backgroundColor, color:s.color });
+  })()`).then(JSON.parse);
+  ok('the counter beside the target is orange, not the background again',
+     /240, 165, 0/.test(counter.bg || ''), JSON.stringify(counter));
+
   ok('no JS errors', errs.length === 0, errs.join(' | '));
   ws.close(); ch.kill(); await sleep(300);
   try { fs.rmSync(tmp, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 }); } catch(e){}

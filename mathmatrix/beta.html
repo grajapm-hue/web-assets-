@@ -3694,8 +3694,13 @@ body{ background:#C9A87C !important; }
    again, because .badge.corner outranks .badge and would otherwise keep its
    own fill. check-badge-ring.js measures every state at every board size
    rather than trusting that. */
+/* .full is listed here on purpose. It means "all three squares are filled",
+   NOT "correct" -- and the older rule above hands it a green tint at four
+   classes deep, so leaving it out would quietly restore the very bug Raja
+   found. Until the target is known a finished line is still just orange. */
 .boardContainer .board .badge,
 .boardContainer .board .badge.partial,
+.boardContainer .board .badge.full,
 .boardContainer .board .badge.corner{
   background:#F0A500 !important; color:#2B0512 !important;
   border-color:rgba(0,0,0,.34) !important;
@@ -3703,13 +3708,27 @@ body{ background:#C9A87C !important; }
   box-shadow:inset 0 0 0 1px rgba(0,0,0,.30) !important; }
 .boardContainer .board .badge.corner{
   box-shadow:inset 0 0 0 2px rgba(0,0,0,.42) !important; }
-/* Finished lines go green -- the one colour a child reads as "done" without
-   being told, and it keeps orange meaning only "not yet". White text on it,
-   Raja's call after seeing it on the phone: pure white is both what he wanted
-   and slightly the better number, 5.3:1 against the mint's 5.0. */
-.boardContainer .board .badge.full,
+/* A line that is finished and WRONG. Raja found this on the live board: a
+   finished row was turning green whatever it added up to, so the board was
+   congratulating a wrong answer. Red is the only colour that reads as "not
+   that" without a word of explanation, and it is already what a duplicate
+   digit uses, so a child meets it in one meaning only. */
+.boardContainer .board .badge.wrong,
+.boardContainer .board .badge.corner.wrong{
+  background:#B3261E !important; color:#FFFFFF !important;
+  border-color:rgba(0,0,0,.34) !important;
+  border-radius:0 !important;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.30) !important; }
+
+/* Finished AND correct goes green -- the one colour a child reads as "done"
+   without being told. White text on it, Raja's call after seeing it on the
+   phone: pure white is both what he wanted and slightly the better number,
+   5.4:1 against the mint's 5.0.
+
+   .full stays here too, for the window before the target is known: the app
+   infers the target from two agreeing lines, so until then a finished line
+   cannot be called right or wrong and keeps the neutral fill. */
 .boardContainer .board .badge.win,
-.boardContainer .board .badge.corner.full,
 .boardContainer .board .badge.corner.win{
   background:#127A45 !important; color:#FFFFFF !important;
   border-color:rgba(0,0,0,.34) !important;
@@ -3719,7 +3738,21 @@ body{ background:#C9A87C !important; }
 .targetPill *{ color:inherit !important; }
 /* white on the mid green was 3.2:1 — a deeper green takes it past 7 */
 .targetPill.solved{ background:#116B44 !important; color:#FFFFFF !important; }
-.solvedCounter{ background:rgba(94,64,32,.16) !important; color:#4A331A !important; }
+/* Raja: "the text next to the target tab is not much visible — the tab
+   background colour and the main screen colour are near similar. Suggest
+   change to orange."
+
+   Exactly what it was: rgba(94,64,32,.16) is the sandalwood ground with a
+   sixteen-percent brown wash over it, so the tab was very nearly the screen it
+   sat on. It had no edge, and a panel with no edge is not a panel.
+
+   Orange, and the SAME orange as the result ring around the board, so the two
+   things a player watches while solving -- the line totals and how close they
+   are to mastering the level -- speak with one colour instead of two. Dark
+   text on it measures 8.9:1, the same pairing the ring already uses. */
+.solvedCounter{ background:#F0A500 !important; color:#2B0512 !important;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.28) !important; }
+.solvedCounter b, .solvedCounter span{ color:#2B0512 !important; }
 
 /* keypad */
 .kp{ background:#8A5E31 !important; color:#FFF6E7 !important; }
@@ -6285,7 +6318,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   function setBadge(key, text, cls){
     badges[key].forEach(function(b){
       b.textContent = text;
-      b.classList.remove('partial','full','win','word','peektone');
+      b.classList.remove('partial','full','win','word','peektone','wrong');
       if (cls) b.classList.add(cls);
     });
   }
@@ -6444,7 +6477,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     fitCells();   // keep digit sizes fitted on every change
 
     // Badge updates
-    var completeSums = [];
+    var completeSums = [], completeLines = [];
     puzzle.lines.forEach(function(k){
       var vals = lineVals(k);
       var filled = vals.filter(function(x){ return x !== null; });
@@ -6456,16 +6489,18 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       } else {
         setBadge(k, sum, peeking ? 'peektone' : 'full');
         completeSums.push(sum);
+        completeLines.push({ k: k, sum: sum });
       }
     });
 
     // Target pill — EVIDENCE-BASED and uniform for every size: the target appears
     // (orange) only once TWO or more complete lines/diagonals agree on the same
     // value; until then it stays '?'. All lines matching → green (handled in win()).
+    var candidate = null;
     if (!solvedFlag) {
       var counts = {};
       completeSums.forEach(function(s){ counts[s] = (counts[s] || 0) + 1; });
-      var candidate = null, best = 1;
+      var best = 1;
       for (var key in counts){ if (counts[key] >= 2 && counts[key] > best){ best = counts[key]; candidate = +key; } }
       if (candidate !== null){
         targetVal.textContent = candidate;
@@ -6474,6 +6509,31 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         targetPill.classList.remove('preview');
         targetVal.textContent = '?';
       }
+    }
+
+    /* Raja, on the live board: "green fill happens in target total monitor with
+       the wrong number — should be red scoring. Here when the line is finished
+       it turns green by itself."
+
+       He is right, and it is my doing. The pass above marks a line 'full' the
+       moment its three squares are FILLED, which says nothing about whether it
+       is correct -- and beta-251 gave 'full' the green fill. So a finished row
+       adding to 20 against a target of 15 was congratulating a child for a
+       wrong answer. Before that change every state shared one green tint, which
+       was uninformative; this was worse, because it actively claimed something
+       untrue.
+
+       A line can only be judged once the target is known, and this app infers
+       the target rather than being told it -- it appears when two complete
+       lines agree. So there are genuinely three states, not two:
+         complete and matching        -> green
+         complete and NOT matching    -> red
+         complete, target not yet known -> left as it was, because nothing can
+                                           honestly be said about it yet. */
+    if (!peeking && !solvedFlag && candidate !== null){
+      completeLines.forEach(function(L){
+        setBadge(L.k, L.sum, L.sum === candidate ? 'win' : 'wrong');
+      });
     }
     
     // Win check
@@ -14978,15 +15038,6 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     try { return JSON.parse(localStorage.getItem('mmStickers') || '[]'); } catch(e){ return []; }
   }
   // the achievement line the app already tracks, said plainly
-  function progressLine(){
-    var el = document.getElementById('solvedCounter');
-    var raw = el ? el.textContent : '';
-    var m = raw.match(/(\d+)\s*\/\s*(\d+)/);
-    if (!m) return 'Solve one more to master this level';
-    var need = Math.max(0, (+m[2]) - (+m[1]));
-    return need > 0 ? ('Solve ' + need + ' more to master this level')
-                    : 'This level is mastered';
-  }
   function earnSticker(size){
     var s = stickerStore();
     if (s.indexOf(size) < 0){ s.push(size); try { localStorage.setItem('mmStickers', JSON.stringify(s)); } catch(e){} }
@@ -15026,14 +15077,25 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         '<div class="winStat"><b>' + time + '</b><span>Time</span></div>' +
         '<div class="winStat w"><b>' + lines + '/' + lines + '</b><span>Lines</span></div>' +
       '</div>' +
+      /* Raja: "the applause pop's indigo tab says the same as the tab next to
+         Target at the top — suggest remove this tab."
+
+         He is right, and only for the not-yet-mastered case. That branch
+         printed progressLine(), which is the SAME sentence the counter beside
+         the target pill is already showing on the board behind it -- so the
+         panel spent its most prominent row repeating something the child had
+         just read. Saying it twice does not make it twice as true; it only
+         makes the panel taller, which is what pushed the board out of sight in
+         the first place.
+
+         The MASTERED branch stays. That one is not a repeat -- it names the
+         sticker just earned and how many of the set that makes, which appears
+         nowhere else. */
       (mastered
         ? '<div class="winSticker"><span class="s">' + icon + '</span>' +
             '<span><b>' + name + '</b><span>sticker ' + total + ' of ' +
             Object.keys(STICKERS).length + ' collected</span></span></div>'
-        // the "one more, with a different total" guidance used to live in a
-        // hidden element; it belongs here where the child is actually looking
-        : '<div class="winSticker"><span class="s">🎯</span><span><b>' + progressLine() +
-            '</b><span>a different total earns the sticker</span></span></div>');
+        : '');
     box.insertBefore(el, box.firstChild);
 
     sana(stars === 3 ? '<b>Three stars!</b> No hints at all. 🐒'
@@ -15165,7 +15227,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-251 (the line totals around every grid are square orange tiles now — they were 2.2:1 against the wood, and a finished line turns green so the ring finally says which lines are done)';
+  var BUILD_VER = 'beta-252 (a finished line only turns green when it actually matches the target — a wrong total goes red; and the duplicate line is gone from the applause panel)';
   /* ── BEACON FOR APPS INSTALLED LONG AGO ─────────────────────────────────
      Raja's iPhone sat on v139 and would not come forward, however many times
      he tapped Online Update.
@@ -15190,7 +15252,7 @@ if (navigator.storage && navigator.storage.persist) {
      rejects). check-update-beacon.js keeps it equal to BUILD_VER, because a
      beacon that goes stale strands people exactly as thoroughly as no beacon.
 
-     window.BETA_VER = 'beta-251'
+     window.BETA_VER = 'beta-252'
      ───────────────────────────────────────────────────────────────────── */
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
