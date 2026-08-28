@@ -214,6 +214,73 @@ const HELPERS = `
   }
   ok('the wrong-line state was genuinely reachable on these boards', sawWrong);
 
+  /* ---- THE DIAGONALS, BY NAME ----
+     Raja: "straight ok -- orange, green, [red] if error -- but diagonal not."
+
+     The sweep above counted reds and I inferred the diagonals were among them.
+     Inference is not a check, and it is the same shortcut that let Multiply
+     go untested. So force each of the three states on the diagonals
+     specifically and assert the CORNER badges, which are the two diagonals'
+     own ends.
+
+     The centre square is the lever: on an odd board it lies on both diagonals
+     and on nothing else but its own row and column. Empty it and the diagonals
+     are unfinished; spoil it and they are wrong.
+
+     The third case is the one Raja actually photographed -- a wrong number at
+     the bottom-middle, which is on NO diagonal. There the diagonals must stay
+     green, because they really are still correct. That case is worth pinning
+     precisely because it looks like a bug and is not: a line the mistake does
+     not touch should keep saying so, which is what makes the ring useful for
+     finding the mistake. */
+  for (const size of ['3x3','5x5','3cube']){
+    for (const mode of ['empty','wrong','off-diagonal']){
+      await ev(`document.getElementById('tab-scHome').click()`);
+      await sleep(300);
+      await ev(`document.querySelector('.toggleBtn[data-size="${size}"]').click()`);
+      await sleep(1000);
+      await ev(`document.getElementById('peekBtn').click()`);
+      await sleep(500);
+      const sol = await ev(`JSON.stringify(Array.from(document.querySelectorAll('#board .cell')).map(function(i){ return i.value; }))`);
+      await sleep(3600);
+      await ev(`(function(){
+        var sol = ${sol}, cs = document.querySelectorAll('#board .cell');
+        var n = Math.round(Math.sqrt(cs.length)), mid = Math.floor(n/2);
+        var centre = mid*n + mid, offDiag = (n-1)*n + mid, mode = '${mode}';
+        for (var i=0;i<cs.length;i++){
+          if (cs[i].readOnly || cs[i].disabled) continue;
+          var v = sol[i];
+          if (mode === 'empty'        && i === centre)  v = '';
+          if (mode === 'wrong'        && i === centre)  v = '99';
+          if (mode === 'off-diagonal' && i === offDiag) v = '99';
+          cs[i].focus(); cs[i].value = v;
+          cs[i].dispatchEvent(new Event('input', { bubbles:true }));
+        }
+        document.activeElement && document.activeElement.blur();
+      })()`);
+      await sleep(1000);
+
+      const d = await ev(`(function(){
+        var out = [];
+        document.querySelectorAll('#board .badge.corner').forEach(function(b){
+          var bg = getComputedStyle(b).backgroundColor;
+          out.push(/18, 122, 69/.test(bg) ? 'green'
+                 : /179, 38, 30/.test(bg) ? 'red'
+                 : /240, 165, 0/.test(bg) ? 'orange' : bg);
+        });
+        return JSON.stringify(out);
+      })()`).then(JSON.parse);
+
+      const want = mode === 'empty' ? 'orange' : mode === 'wrong' ? 'red' : 'green';
+      const why  = mode === 'empty' ? 'unfinished diagonals are orange'
+                 : mode === 'wrong' ? 'wrong diagonals go red'
+                 : 'diagonals a mistake does not touch stay green';
+      ok((size + ' ' + mode).padEnd(20) + why,
+         d.length > 0 && d.every(c => c === want),
+         d.join(',') + '  (wanted all ' + want + ')');
+    }
+  }
+
   /* Raja's other two: the duplicate line is gone from the applause panel, and
      the counter beside the target no longer melts into the background. */
   const counter = await ev(`(function(){
