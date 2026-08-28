@@ -43,7 +43,7 @@ const ok = (n,c,x) => { console.log((c?'  PASS  ':'  FAIL  ')+n+(x!==undefined?'
      (await ev(`countSolutions(P.rOps,P.cOps,P.r,P.c,3)`)) === 1);
 
   // solve it the way the Reveal button does, and every line must go green
-  await ev(`document.getElementById('revealBtn').click()`);
+  await ev(`(function(){ for (var i=0;i<9;i++) entry[i]=P.grid[i]; paint(); })()`);
   await sleep(400);
   const green = await ev(`document.querySelectorAll('.tgt.done').length`);
   ok('with the answer in place all six lines go green', green === 6, green + '/6');
@@ -60,7 +60,7 @@ const ok = (n,c,x) => { console.log((c?'  PASS  ':'  FAIL  ')+n+(x!==undefined?'
   // teaching walks one step at a time and highlights the square it settles
   await ev(`document.getElementById('clearBtn').click()`);
   await sleep(200);
-  await ev(`document.getElementById('teachBtn').click()`);
+  await ev(`document.getElementById('stepBtn').click()`);
   await sleep(500);
   ok('the first taught step is shown', (await ev(`document.querySelectorAll('#stepList li').length`)) === 1);
   ok('and it highlights the square it is about',
@@ -86,6 +86,58 @@ const ok = (n,c,x) => { console.log((c?'  PASS  ':'  FAIL  ')+n+(x!==undefined?'
   ok('each has exactly one answer', many.uniq === many.made, many.uniq + '/' + many.made);
   ok('each yields to reasoning without guessing', many.reasoned === many.made,
      many.reasoned + '/' + many.made);
+
+  /* ---- the three beginner doors Raja asked for, in BOTH languages ----
+     "for a beginner apply demo watch, show logic cheat sheet like 5x5, method
+     to be explained step by step, in both Tamil and English guidance."
+
+     The trap worth guarding is the one the app already fell into once: Tamil
+     that exists in the how-to-play but not in the UI. Here the reasoning is
+     GENERATED, so it is not enough for the buttons to switch -- the argument
+     itself has to come out in Tamil. */
+  const TAMIL = /[஀-௿]/;
+
+  await ev(`document.getElementById('logicBtn').click()`);
+  await sleep(400);
+  const sheetEn = await ev(`document.getElementById('sheet').textContent`);
+  ok('Method sheet opens with a step-by-step method', /Step 1/.test(sheetEn), sheetEn.slice(0,58));
+  ok('it spells out left-to-right, the rule that trips people', /left to right/i.test(sheetEn));
+
+  await ev(`document.getElementById('taBtn').click()`);
+  await sleep(400);
+  const sheetTa = await ev(`document.getElementById('sheet').textContent`);
+  ok('the Method sheet is really Tamil, not English inside a Tamil page',
+     TAMIL.test(sheetTa) && !/Step 1/.test(sheetTa), sheetTa.slice(0,40));
+  const uiTa = await ev(`document.getElementById('sub').textContent + ' | ' + document.getElementById('newBtn').textContent`);
+  ok('the board furniture switches too', TAMIL.test(uiTa), uiTa.slice(0,50));
+
+  await ev(`document.getElementById('stepBtn').click()`);
+  await sleep(500);
+  const stepTa = await ev(`document.querySelector('#stepList li').textContent`);
+  ok('the GENERATED reasoning is in Tamil as well', TAMIL.test(stepTa), stepTa.slice(0,56));
+
+  await ev(`document.getElementById('enBtn').click()`);
+  await sleep(300);
+  await ev(`document.getElementById('stepBtn').click()`);
+  await sleep(400);
+  const stepEn = await ev(`document.querySelector('#stepList li').textContent`);
+  ok('and switches back to English cleanly', !TAMIL.test(stepEn), stepEn.slice(0,56));
+
+  /* WATCH must give the reason BEFORE it fills -- the point is the argument,
+     not seeing squares appear. */
+  await ev(`document.getElementById('watchBtn').click()`);
+  await sleep(600);
+  const early = await ev(`(function(){ var n=0; for (var i=0;i<9;i++) if (entry[i]) n++;
+    return n + '|' + document.querySelectorAll('#stepList li').length; })()`);
+  ok('Watch shows the reason before filling anything', early.split('|')[0] === '0', early);
+  await sleep(6500);
+  const later = await ev(`(function(){ var n=0; for (var i=0;i<9;i++) if (entry[i]) n++;
+    return n + '|' + document.querySelectorAll('#stepList li').length; })()`);
+  ok('Watch then fills squares as its reasons land',
+     parseInt(later.split('|')[0], 10) >= 1, later);
+  await ev(`document.getElementById('clearBtn').click()`);
+  await sleep(250);
+  ok('touching the board stops the demo', (await ev(`watchIv === null`)) === true);
 
   ok('no JS errors', errs.length === 0, errs.join(' | '));
   const shot = await send('Page.captureScreenshot',{format:'png'});

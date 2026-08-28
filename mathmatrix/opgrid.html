@@ -6,125 +6,126 @@
 <title>Number Grid — standalone trial</title>
 <!--
   STANDALONE TRIAL. Raja: "at present don't aim to integrate with existing,
-  just we made a stand alone open browser html and validate how it works, how
-  much possible to explain that related to actual maths not just by mental
-  mapping like triangle puzzle."
+  just we made a stand alone open browser html and validate how it works."
+  Nothing here touches beta.html. Open the file, play it, judge it.
 
-  So this is deliberately NOT wired into beta.html. Open the file, play it,
-  judge it. Nothing here touches the app.
+  Then: "for a beginner apply demo watch, show logic cheat sheet like 5x5,
+  method to be explained step by step, in both Tamil and English guidance."
 
-  The question it exists to answer is the second one. The Triangle demo walks a
-  shape into place: it shows WHERE numbers go, not WHY, and Raja named that
-  himself as mind-mapping rather than logic. This puzzle is different, and it
-  is worth being precise about why:
+  So it carries the same three doors the app gives a beginner -- LOGIC (the
+  method, written out), WATCH (see it solved), and the board itself -- and
+  every word of all three exists in both languages.
 
-    Solved by pure deduction, no guessing, in 4 rounds.
-
-  That is measured, not claimed -- the same engine that runs "Show me the
-  maths" below finishes the puzzle he sent without ever trying an arrangement.
-  Every step it prints is a real inference a child can follow, and the lesson
-  is factor pairs, divisibility and elimination.
+  What makes this puzzle worth teaching at all, and the reason it is not the
+  triangle: it can be finished WITHOUT GUESSING. The engine below solves by
+  reasoning and narrates each inference, and no puzzle is ever handed to a
+  player unless that engine can finish it. So WATCH here is not a shape being
+  copied into place -- it is an argument, one step at a time.
 -->
 <style>
   :root{
     --gr:#DCC49E; --sf:#FFFAF0; --ink:#241708; --ink2:#4A331A; --ink3:#6B5334;
-    --edge:rgba(94,64,32,.42); --open:#F0A500; --done:#127A45; --accent:#8A5E31;
+    --open:#F0A500; --done:#127A45; --accent:#8A5E31;
   }
   *{ box-sizing:border-box; }
   body{ margin:0; font-family:"Trebuchet MS",Verdana,sans-serif; color:var(--ink);
     background:linear-gradient(176deg,#E4CFAC 0%,#CDAE83 38%,#DCC49E 66%,#C9A87C 100%);
-    min-height:100dvh; padding:14px 12px 40px; }
-  h1{ font-size:19px; margin:0 0 2px; letter-spacing:-.2px; }
-  .sub{ font-size:12.5px; color:var(--ink2); margin:0 0 14px; line-height:1.5; }
+    min-height:100dvh; padding:12px 12px 40px; }
   .wrap{ max-width:520px; margin:0 auto; }
+  .top{ display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+  h1{ font-size:19px; margin:0; flex:1; letter-spacing:-.2px; }
+  .lang{ display:flex; gap:0; border-radius:999px; overflow:hidden; box-shadow:inset 0 0 0 2px rgba(94,64,32,.42); }
+  .lang button{ border:0; background:transparent; font-family:inherit; font-weight:800;
+    font-size:12.5px; padding:7px 12px; cursor:pointer; color:var(--ink2); }
+  .lang button.on{ background:var(--accent); color:#FFF6E7; }
+  .sub{ font-size:12.5px; color:var(--ink2); margin:0 0 12px; line-height:1.55; }
 
-  /* the 5x5: digits, the operators between them, and the six targets */
-  .grid{ display:grid; grid-template-columns:repeat(5,1fr); gap:5px;
+  .grid{ display:grid; grid-template-columns:repeat(6,1fr); gap:5px;
     background:rgba(94,64,32,.13); padding:9px; border-radius:14px;
     box-shadow:inset 0 2px 10px rgba(0,0,0,.14); }
   .sq{ aspect-ratio:1; display:grid; place-items:center; font-weight:800;
     font-size:clamp(15px,5vw,22px); border-radius:9px; }
   .cell{ background:var(--sf); color:var(--ink); border:2px solid #7FC8DA;
-    cursor:pointer; user-select:none; }
+    cursor:pointer; user-select:none; transition:box-shadow .2s, background .2s; }
   .cell.sel{ border-color:#F0A500; box-shadow:0 0 0 3px rgba(240,165,0,.45); }
   .cell.bad{ background:#FFD9D9; border-color:#C0392B; }
-  .cell.hi{ box-shadow:0 0 0 3px rgba(18,122,69,.55); }
+  .cell.hi{ box-shadow:0 0 0 4px rgba(18,122,69,.65); background:#E6F7EE; }
   .op{ background:transparent; color:var(--ink2); font-size:clamp(13px,4vw,18px); }
-  /* square, like the result ring in the app -- shape separates results from play */
+  /* square, like the result ring in the app: shape separates results from play */
   .tgt{ background:var(--open); color:#2B0512; border-radius:0;
     box-shadow:inset 0 0 0 1px rgba(0,0,0,.30); font-size:clamp(13px,4.4vw,19px); }
   .tgt.done{ background:var(--done); color:#fff; }
   .gap{ background:transparent; }
 
-  .pad{ display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin:14px 0 0; }
+  .pad{ display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin:12px 0 0; }
   .key{ padding:13px 0; border:0; border-radius:11px; background:var(--accent);
     color:#FFF6E7; font-size:18px; font-weight:800; font-family:inherit; cursor:pointer; }
-  .key.wide{ grid-column:span 2; font-size:14px; }
   .key:active{ transform:translateY(2px); }
 
-  .row{ display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
-  .btn{ flex:1; min-width:120px; padding:12px 10px; border:0; border-radius:12px;
-    font-family:inherit; font-size:14.5px; font-weight:800; cursor:pointer; }
+  .row{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+  .btn{ flex:1; min-width:104px; padding:12px 8px; border:0; border-radius:12px;
+    font-family:inherit; font-size:14px; font-weight:800; cursor:pointer; }
   .btn.primary{ background:#F0A500; color:#2B0512; }
   .btn.teach{ background:#127A45; color:#fff; }
+  .btn.watch{ background:#7A1FA2; color:#fff; }
   .btn.ghost{ background:rgba(94,64,32,.18); color:var(--ink2); }
 
-  .say{ margin-top:12px; background:var(--sf); border-radius:12px; padding:11px 13px;
-    font-size:13.5px; line-height:1.55; min-height:42px;
-    box-shadow:0 2px 8px rgba(0,0,0,.10); }
+  .say{ margin-top:11px; background:var(--sf); border-radius:12px; padding:11px 13px;
+    font-size:13.5px; line-height:1.6; min-height:44px; box-shadow:0 2px 8px rgba(0,0,0,.10); }
   .say b{ color:#9A3412; }
-  .steps{ margin-top:10px; background:rgba(255,250,240,.72); border-radius:12px;
-    padding:10px 13px; font-size:12.8px; line-height:1.6; max-height:230px; overflow:auto; }
+  .steps{ margin-top:9px; background:rgba(255,250,240,.72); border-radius:12px;
+    padding:10px 13px; font-size:12.8px; line-height:1.6; max-height:210px; overflow:auto; }
   .steps ol{ margin:0; padding-left:20px; }
   .steps li{ margin-bottom:6px; }
   .steps li.now{ background:rgba(240,165,0,.30); border-radius:5px; padding:2px 4px; }
-  .note{ font-size:12px; color:var(--ink3); margin-top:14px; line-height:1.6; }
-  .note code{ background:rgba(94,64,32,.14); padding:1px 5px; border-radius:4px; }
+
+  /* the method sheet, in the app's own step-box shape */
+  .sheet{ margin-top:12px; display:none; }
+  .sheet.on{ display:block; }
+  .sheet h3{ font-size:15.5px; margin:12px 0 6px; color:#5B21B6; }
+  .box{ background:#F3E4C9; color:#33220F; padding:11px 13px; border-radius:8px;
+    margin:8px 0; font-size:13px; line-height:1.65; border-left:4px solid #00bcd4; }
+  .box.m{ border-left-color:#ffb300; }
+  .box.r{ border-left-color:#4caf50; font-family:ui-monospace,Consolas,monospace; }
+  .box b{ color:#9A3412; }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>Number Grid</h1>
-  <p class="sub">Put <b>1&nbsp;to&nbsp;9</b> in the white squares, each used once.
-     Every row and every column must make its number.
-     <b>Work left to right</b> — not times-before-plus.</p>
+  <div class="top">
+    <h1 id="ttl">Number Grid</h1>
+    <div class="lang">
+      <button id="enBtn" class="on">EN</button><button id="taBtn">தமிழ்</button>
+    </div>
+  </div>
+  <p class="sub" id="sub"></p>
 
   <div class="grid" id="grid"></div>
-
   <div class="pad" id="pad"></div>
 
   <div class="row">
-    <button class="btn primary" id="newBtn">New puzzle</button>
-    <button class="btn ghost" id="clearBtn">Clear</button>
+    <button class="btn primary" id="newBtn"></button>
+    <button class="btn ghost" id="clearBtn"></button>
   </div>
   <div class="row">
-    <button class="btn teach" id="teachBtn">Show me the maths →</button>
-    <button class="btn ghost" id="revealBtn">Give up, show answer</button>
+    <button class="btn teach" id="logicBtn"></button>
+    <button class="btn watch" id="watchBtn"></button>
+    <button class="btn ghost" id="stepBtn"></button>
   </div>
 
-  <div class="say" id="say">Pick a square, then a number.</div>
+  <div class="say" id="say"></div>
   <div class="steps" id="steps" style="display:none"><ol id="stepList"></ol></div>
-
-  <p class="note">
-    <b>Why this one is real arithmetic.</b> The triangle puzzle teaches you where
-    numbers go. This one can be finished without guessing even once — the solver
-    behind “Show me the maths” does exactly that, and every line it prints is a
-    step you could have made yourself. The moves are: <em>list the ways an
-    equation can be made</em>, <em>keep only digits that appear in some way</em>,
-    and <em>a digit used once is gone everywhere else</em>. That is factor pairs,
-    divisibility and elimination.
-  </p>
+  <div class="sheet" id="sheet"></div>
 </div>
 
 <script>
 /* ── arithmetic ─────────────────────────────────────────────────────────────
-   Left to right, whole numbers only, never negative -- at EVERY step, not just
-   at the end. A child should not meet 7/2 halfway along a row that finishes on
-   a whole number. */
-var OPS = { '+': function(a,b){ return a+b; },
-            '-': function(a,b){ return a-b; },
-            '*': function(a,b){ return a*b; },
-            '/': function(a,b){ return (b!==0 && a%b===0) ? a/b : null; } };
+   Left to right, whole and positive at EVERY step -- not merely at the end. A
+   child should never meet 7/2 halfway along a row that finishes on a whole
+   number. */
+var OPS = { '+':function(a,b){return a+b;}, '-':function(a,b){return a-b;},
+            '*':function(a,b){return a*b;},
+            '/':function(a,b){ return (b!==0 && a%b===0) ? a/b : null; } };
 var SY = { '+':'+', '-':'−', '*':'×', '/':'÷' };
 
 function ltr(a,o1,b,o2,c){
@@ -133,35 +134,133 @@ function ltr(a,o1,b,o2,c){
   return y;
 }
 
-/* ── the generator ──────────────────────────────────────────────────────────
-   Same engine as tools/opgrid-generator.js, and the same rule: nothing is
-   handed to a player until an INDEPENDENT search confirms exactly one
-   arrangement satisfies all six equations. A grid with two answers marks a
-   correct child wrong. */
+/* ── words ──────────────────────────────────────────────────────────────────
+   Both languages sit side by side so neither can quietly fall behind the
+   other -- the trap the app hit when Tamil existed only in the how-to-play and
+   not in the UI. The generated reasoning is templated, not translated after
+   the fact, so a Tamil player gets Tamil arguments and not English ones with
+   Tamil furniture around them. */
+var LANG = 'en';
+var T = {
+  title:   { en:'Number Grid', ta:'எண் கட்டம்' },
+  sub:     { en:'Put <b>1 to 9</b> in the white squares, each used once. Every row and every column must make its number. <b>Work left to right</b> — not times-before-plus.',
+             ta:'வெள்ளைக் கட்டங்களில் <b>1 முதல் 9</b> வரை, ஒவ்வொன்றும் ஒரு முறை மட்டும். ஒவ்வொரு வரிசையும் ஒவ்வொரு நெடுவரிசையும் அதன் எண்ணை உருவாக்க வேண்டும். <b>இடமிருந்து வலமாகக்</b> கணக்கிடுங்கள் — பெருக்கலை முதலில் அல்ல.' },
+  newP:    { en:'New puzzle', ta:'புதிய புதிர்' },
+  clear:   { en:'Clear', ta:'அழி' },
+  logic:   { en:'💡 Method', ta:'💡 முறை' },
+  watch:   { en:'▶ Watch', ta:'▶ பார்' },
+  step:    { en:'Next step →', ta:'அடுத்த படி →' },
+  pickSq:  { en:'Pick a square, then a number. Remember: left to right.',
+             ta:'ஒரு கட்டத்தைத் தட்டி, பிறகு ஓர் எண்ணைத் தட்டுங்கள். நினைவில்: இடமிருந்து வலமாக.' },
+  pickFirst:{ en:'Pick a square first.', ta:'முதலில் ஒரு கட்டத்தைத் தட்டுங்கள்.' },
+  cleared: { en:'Cleared.', ta:'அழிக்கப்பட்டது.' },
+  solved:  { en:'<b>Solved.</b> Every row and every column makes its number. The four corners multiply to <b>{n}</b>.',
+             ta:'<b>தீர்ந்தது.</b> ஒவ்வொரு வரிசையும் நெடுவரிசையும் அதன் எண்ணை உருவாக்குகிறது. நான்கு மூலைகளின் பெருக்கல் <b>{n}</b>.' },
+  noGuess: { en:'This one can be finished <b>without a single guess</b>. Here is the first step.',
+             ta:'இதை <b>ஒரு ஊகம் கூட இல்லாமல்</b> முடிக்க முடியும். இதோ முதல் படி.' },
+  chainEnd:{ en:'<b>That is the whole chain.</b> No guessing anywhere in it.',
+             ta:'<b>இதுவே முழுத் தொடர்.</b> இதில் எங்கும் ஊகம் இல்லை.' },
+  lastStep:{ en:'That is the last step', ta:'இதுவே கடைசிப் படி' },
+  watching:{ en:'Watching — each square is filled only after the reason for it.',
+             ta:'பார்க்கிறோம் — ஒவ்வொரு கட்டமும் அதற்கான காரணத்திற்குப் பிறகே நிரப்பப்படுகிறது.' },
+  row:     { en:'Row', ta:'வரிசை' },
+  col:     { en:'Column', ta:'நெடுவரிசை' },
+  cellAt:  { en:'row {r}, box {c}', ta:'வரிசை {r}, கட்டம் {c}' },
+  onlyOne: { en:'<b>{name}</b> must make {shape}. With the digits still free there {ways}, and every one of them puts <b>{v}</b> in {cell}. So that square is <b>{v}</b>.',
+             ta:'<b>{name}</b> {shape} ஆக வர வேண்டும். மீதமுள்ள எண்களில் {ways}; ஒவ்வொன்றிலும் {cell} இல் <b>{v}</b> வருகிறது. எனவே அந்தக் கட்டம் <b>{v}</b>.' },
+  onlyWay: { en:'is only one way', ta:'ஒரே ஒரு வழி மட்டுமே உள்ளது' },
+  nWays:   { en:'are only {n} ways', ta:'{n} வழிகள் மட்டுமே உள்ளன' },
+  narrow:  { en:'<b>{name}</b> must make {shape}. Only {n} ways work, so {cell} can only be {list}.',
+             ta:'<b>{name}</b> {shape} ஆக வர வேண்டும். {n} வழிகள் மட்டுமே பொருந்தும், எனவே {cell} இல் {list} மட்டுமே வர முடியும்.' },
+  usedOnce:{ en:'{a} is <b>{v}</b>, and each digit is used once — so {v} cannot be in {b} any more.',
+             ta:'{a} என்பது <b>{v}</b>; ஒவ்வொரு எண்ணும் ஒரு முறை மட்டுமே — எனவே {b} இல் இனி {v} வர முடியாது.' },
+  or:      { en:' or ', ta:' அல்லது ' }
+};
+function t(k, vars){
+  var s = T[k][LANG];
+  if (vars) for (var p in vars) s = s.split('{'+p+'}').join(vars[p]);
+  return s;
+}
+
+/* the method sheet -- the same shape the app's 5x5 sheet uses: a "what is
+   really going on" box, then a "do it yourself" box, then a worked example */
+function sheetHTML(){
+  if (LANG === 'ta') return ''
+    + '<h3>🧠 உள்ளே என்ன நடக்கிறது</h3>'
+    + '<div class="box"><b>ஒவ்வொரு கட்டமும் இரண்டு கணக்குகளுக்கு உரியது.</b><br><br>'
+    + 'ஒரு கட்டம் அதன் <b>வரிசைக்கும்</b> அதன் <b>நெடுவரிசைக்கும்</b> சேர்ந்து பொருந்த வேண்டும். '
+    + 'அதனால்தான் ஒரு வரிசையை மட்டும் தனியாகத் தீர்க்க முடியாது — அதுவே இந்தப் புதிரின் சூட்சுமம்.<br><br>'
+    + '<b>எப்போதும் இடமிருந்து வலமாக.</b> <b>8 − 4 × 2</b> என்பது (8−4)×2 = <b>8</b>; 8−(4×2)=0 அல்ல.<br><br>'
+    + '<b>ஒவ்வொரு படியும் முழு எண்.</b> நடுவில் பின்னம் வந்தால் அந்த முயற்சி தவறு.</div>'
+    + '<h3>🪜 நீங்களே செய்யும் முறை</h3>'
+    + '<div class="box m"><b>படி 1 — வகுத்தலில் தொடங்குங்கள்.</b><br>'
+    + '<b>÷</b> உள்ள கணக்கு மிகக் குறைவான வழிகளையே அனுமதிக்கும். '
+    + '<b>_ × _ ÷ _ = 3</b> என்றால், முதல் இரண்டின் பெருக்கல் மூன்றாவதைப் போல் சரியாக 3 மடங்காக இருக்க வேண்டும்.<br><br>'
+    + '<b>படி 2 — வழிகளை எண்ணுங்கள்.</b><br>'
+    + 'ஒவ்வொரு கணக்குக்கும், மீதமுள்ள எண்களில் அதை உருவாக்கும் <b>எல்லா வழிகளையும்</b> பட்டியலிடுங்கள். '
+    + 'ஒன்றோ இரண்டோ வழி மட்டுமே உள்ள கணக்கு தான் தங்கம் — அதை முதலில் செய்யுங்கள்.<br><br>'
+    + '<b>படி 3 — பொருந்தாதவற்றை நீக்குங்கள்.</b><br>'
+    + 'எந்த வழியிலும் வராத எண் அந்தக் கட்டத்தில் வர முடியாது. அதை நீக்குங்கள்.<br><br>'
+    + '<b>படி 4 — ஓர் எண், ஓர் இடம்.</b><br>'
+    + 'ஒரு கட்டம் உறுதியானால், அந்த எண் மற்ற எட்டு கட்டங்களிலிருந்தும் நீங்கும்.<br><br>'
+    + '<b>படி 5 — மீண்டும் செய்யுங்கள்.</b><br>'
+    + 'ஒவ்வொரு உறுதியான கட்டமும் அடுத்த கணக்கை எளிதாக்கும்.</div>'
+    + '<h3>📋 எடுத்துக்காட்டு</h3>'
+    + '<div class="box r">5 + 7 − 6 = 6<br>8 − 4 × 2 = 8<br>9 × 1 ÷ 3 = 3<br>=&nbsp;&nbsp;&nbsp;=&nbsp;&nbsp;&nbsp;=<br>4&nbsp;&nbsp;&nbsp;3&nbsp;&nbsp;&nbsp;4<br><br>'
+    + 'நெடுவரிசை 2: <b>_ − _ × _ = 3</b>. மீதமுள்ளவற்றில் 4 வழிகளே; அனைத்திலும் கீழ்க் கட்டம் <b>1</b>. அங்கிருந்து தொடங்குங்கள்.</div>';
+
+  return ''
+    + '<h3>🧠 What is really going on</h3>'
+    + '<div class="box"><b>Every square belongs to two sums.</b><br><br>'
+    + 'A square has to fit its <b>row</b> and its <b>column</b> at the same time. '
+    + 'That is why you cannot solve one row on its own — and it is the whole trick of the puzzle.<br><br>'
+    + '<b>Always left to right.</b> <b>8 − 4 × 2</b> means (8−4)×2 = <b>8</b>, not 8−(4×2)=0.<br><br>'
+    + '<b>Every step stays whole.</b> If a fraction appears halfway, that attempt is wrong.</div>'
+    + '<h3>🪜 Do it yourself</h3>'
+    + '<div class="box m"><b>Step 1 — start where there is a divide.</b><br>'
+    + 'A sum with <b>÷</b> allows the fewest possibilities. '
+    + '<b>_ × _ ÷ _ = 3</b> means the first two multiplied must be exactly 3 times the third.<br><br>'
+    + '<b>Step 2 — count the ways.</b><br>'
+    + 'For each sum, list <b>every way</b> it can be made from the digits still free. '
+    + 'A sum with only one or two ways is gold — do that one first.<br><br>'
+    + '<b>Step 3 — cross out what cannot fit.</b><br>'
+    + 'A digit that appears in none of the ways cannot go in that square. Remove it.<br><br>'
+    + '<b>Step 4 — one digit, one place.</b><br>'
+    + 'Once a square is settled, that digit is gone from the other eight.<br><br>'
+    + '<b>Step 5 — go round again.</b><br>'
+    + 'Every settled square makes the next sum easier.</div>'
+    + '<h3>📋 Worked example</h3>'
+    + '<div class="box r">5 + 7 − 6 = 6<br>8 − 4 × 2 = 8<br>9 × 1 ÷ 3 = 3<br>=&nbsp;&nbsp;&nbsp;=&nbsp;&nbsp;&nbsp;=<br>4&nbsp;&nbsp;&nbsp;3&nbsp;&nbsp;&nbsp;4<br><br>'
+    + 'Column 2 is <b>_ − _ × _ = 3</b>. Only 4 ways work with what is left, and all of them put <b>1</b> in the bottom box. Start there.</div>';
+}
+
+/* ── generator ──────────────────────────────────────────────────────────────
+   Two gates, and both matter. Exactly one answer, checked by an INDEPENDENT
+   search that knows nothing about how the grid was built -- a puzzle with two
+   answers marks a correct child wrong. And reachable by REASONING: measured
+   before that second gate existed, only 11 of 20 unique puzzles could be
+   finished without guessing, so nearly half would have arrived behind a
+   Method button that could not actually show the method. */
 var LEVELS = {
-  easy:   { ops:['+','-'],          caps:[12,20] },
-  medium: { ops:['+','-','*'],      caps:[15,24,30] },
-  hard:   { ops:['+','-','*','/'],  caps:[10,14,20] }
+  easy:   { ops:['+','-'],         caps:[12,20] },
+  medium: { ops:['+','-','*'],     caps:[15,24,30] },
+  hard:   { ops:['+','-','*','/'], caps:[10,14,20] }
 };
 
 function countSolutions(rOps,cOps,r,c,stopAt){
-  var found = 0, cell = [], used = [];
-  for (var i=0;i<10;i++) used[i]=false;
+  var found=0, cell=[], used=[], i;
+  for (i=0;i<10;i++) used[i]=false;
   function place(i){
     if (found >= stopAt) return;
     if (i === 9){ found++; return; }
     for (var v=1; v<=9; v++){
       if (used[v]) continue;
       cell[i]=v; used[v]=true;
-      var ok = true;
-      if (i % 3 === 2){
-        var rw = (i/3)|0;
-        if (ltr(cell[rw*3],rOps[rw][0],cell[rw*3+1],rOps[rw][1],cell[rw*3+2]) !== r[rw]) ok = false;
-      }
-      if (ok && i >= 6){
-        var cl = i-6;
-        if (ltr(cell[cl],cOps[cl][0],cell[cl+3],cOps[cl][1],cell[cl+6]) !== c[cl]) ok = false;
-      }
+      var ok=true;
+      if (i%3===2){ var rw=(i/3)|0;
+        if (ltr(cell[rw*3],rOps[rw][0],cell[rw*3+1],rOps[rw][1],cell[rw*3+2])!==r[rw]) ok=false; }
+      if (ok && i>=6){ var cl=i-6;
+        if (ltr(cell[cl],cOps[cl][0],cell[cl+3],cOps[cl][1],cell[cl+6])!==c[cl]) ok=false; }
       if (ok) place(i+1);
       used[v]=false;
     }
@@ -172,42 +271,26 @@ function countSolutions(rOps,cOps,r,c,stopAt){
 
 function shuffled(){
   var x=[1,2,3,4,5,6,7,8,9];
-  for (var i=8;i>0;i--){ var j=(Math.random()*(i+1))|0; var t=x[i]; x[i]=x[j]; x[j]=t; }
+  for (var i=8;i>0;i--){ var j=(Math.random()*(i+1))|0, t=x[i]; x[i]=x[j]; x[j]=t; }
   return x;
 }
 
 function generate(level){
-  var L = LEVELS[level], pool = L.ops, caps = L.caps, budget = 20000;
-  var pick = function(){ return pool[(Math.random()*pool.length)|0]; };
+  var L=LEVELS[level], pool=L.ops, caps=L.caps, budget=20000;
+  var pick=function(){ return pool[(Math.random()*pool.length)|0]; };
   for (var attempt=0; attempt<budget; attempt++){
-    /* widen the target cap as the budget is spent: most boards come back with
-       small friendly numbers, none ever fails to arrive */
-    var cap = caps[Math.min(caps.length-1, (attempt / (budget/caps.length/4))|0)];
-    var g = shuffled();
+    var cap = caps[Math.min(caps.length-1,(attempt/(budget/caps.length/4))|0)];
+    var g=shuffled(), i, v;
     var rOps=[[pick(),pick()],[pick(),pick()],[pick(),pick()]];
     var cOps=[[pick(),pick()],[pick(),pick()],[pick(),pick()]];
-    var r=[], c=[], ok=true, i, v;
-    for (i=0;i<3&&ok;i++){
-      v = ltr(g[i*3],rOps[i][0],g[i*3+1],rOps[i][1],g[i*3+2]);
-      if (v === null || v > cap || v < 1) ok=false; else r.push(v);
-    }
-    for (i=0;i<3&&ok;i++){
-      v = ltr(g[i],cOps[i][0],g[i+3],cOps[i][1],g[i+6]);
-      if (v === null || v > cap || v < 1) ok=false; else c.push(v);
-    }
+    var r=[], c=[], ok=true;
+    for (i=0;i<3&&ok;i++){ v=ltr(g[i*3],rOps[i][0],g[i*3+1],rOps[i][1],g[i*3+2]);
+      if (v===null||v>cap||v<1) ok=false; else r.push(v); }
+    for (i=0;i<3&&ok;i++){ v=ltr(g[i],cOps[i][0],g[i+3],cOps[i][1],g[i+6]);
+      if (v===null||v>cap||v<1) ok=false; else c.push(v); }
     if (!ok) continue;
-    if (countSolutions(rOps,cOps,r,c,2) !== 1) continue;
-    /* SECOND GATE, and the one that makes this a maths puzzle rather than a
-       search puzzle. Having exactly one answer is not enough: the answer has
-       to be REACHABLE BY REASONING. Measured before this gate existed, only
-       11 of 20 unique puzzles could be finished without guessing -- so nearly
-       half of them would have been handed to a child with a "Show me the
-       maths" button that could not, in fact, show them the maths.
-
-       Raja asked whether this could be explained as real arithmetic rather
-       than mind-mapping like the triangle. It can, but only if the generator
-       insists on it, so it does. */
-    var cand = { grid:g, rOps:rOps, cOps:cOps, r:r, c:c };
+    if (countSolutions(rOps,cOps,r,c,2)!==1) continue;
+    var cand={ grid:g, rOps:rOps, cOps:cOps, r:r, c:c };
     if (!deduce(cand).ok) continue;
     return cand;
   }
@@ -215,219 +298,242 @@ function generate(level){
 }
 
 /* ── the reasoning engine ───────────────────────────────────────────────────
-   This is the point of the whole file. It solves the way a person does and
-   says why, so the explanation is generated FROM the puzzle rather than
-   written for one puzzle by hand. If it ever needed to guess, this game would
-   be no better than the triangle -- it does not. */
+   Solves the way a person does, and says why. This is the difference between
+   this puzzle and the triangle: the triangle demo shows WHERE a number goes,
+   this shows the argument that puts it there. */
 function equations(P){
   var eq=[], i;
-  for (i=0;i<3;i++) eq.push({ cells:[i*3,i*3+1,i*3+2], ops:P.rOps[i], target:P.r[i], name:'Row '+(i+1) });
-  for (i=0;i<3;i++) eq.push({ cells:[i,i+3,i+6], ops:P.cOps[i], target:P.c[i], name:'Column '+(i+1) });
+  for (i=0;i<3;i++) eq.push({ cells:[i*3,i*3+1,i*3+2], ops:P.rOps[i], target:P.r[i], kind:'row', n:i+1 });
+  for (i=0;i<3;i++) eq.push({ cells:[i,i+3,i+6], ops:P.cOps[i], target:P.c[i], kind:'col', n:i+1 });
   return eq;
 }
-function waysFor(eq, cand){
+function waysFor(eq,cand){
   var out=[], A=cand[eq.cells[0]], B=cand[eq.cells[1]], C=cand[eq.cells[2]];
-  for (var ai=0; ai<A.length; ai++) for (var bi=0; bi<B.length; bi++){
-    if (B[bi]===A[ai]) continue;
-    for (var ci=0; ci<C.length; ci++){
-      if (C[ci]===A[ai] || C[ci]===B[bi]) continue;
-      if (ltr(A[ai],eq.ops[0],B[bi],eq.ops[1],C[ci]) === eq.target) out.push([A[ai],B[bi],C[ci]]);
+  for (var a=0;a<A.length;a++) for (var b=0;b<B.length;b++){
+    if (B[b]===A[a]) continue;
+    for (var c=0;c<C.length;c++){
+      if (C[c]===A[a]||C[c]===B[b]) continue;
+      if (ltr(A[a],eq.ops[0],B[b],eq.ops[1],C[c])===eq.target) out.push([A[a],B[b],C[c]]);
     }
   }
   return out;
 }
-function cellName(i){ return 'row ' + ((i/3|0)+1) + ', box ' + (i%3+1); }
+function eqName(eq){ return t(eq.kind==='row'?'row':'col') + ' ' + eq.n; }
+function cellName(i){ return t('cellAt', { r:((i/3|0)+1), c:(i%3+1) }); }
+function shapeOf(eq){ return '_ '+SY[eq.ops[0]]+' _ '+SY[eq.ops[1]]+' _ = '+eq.target; }
 
 function deduce(P){
   var cand=[], i;
   for (i=0;i<9;i++) cand.push([1,2,3,4,5,6,7,8,9]);
-  var eqs = equations(P), log = [], changed = true, guard = 0;
-
+  var eqs=equations(P), log=[], changed=true, guard=0;
   while (changed && guard++ < 60){
-    changed = false;
-    for (var e=0; e<eqs.length; e++){
-      var eq = eqs[e], ways = waysFor(eq, cand);
+    changed=false;
+    for (var e=0;e<eqs.length;e++){
+      var eq=eqs[e], ways=waysFor(eq,cand);
       if (!ways.length) return { ok:false, log:log };
       for (var k=0;k<3;k++){
-        var allowed = {}, w;
-        for (w=0; w<ways.length; w++) allowed[ways[w][k]] = 1;
-        var idx = eq.cells[k], before = cand[idx].length;
-        cand[idx] = cand[idx].filter(function(v){ return allowed[v]; });
+        var allowed={}, w;
+        for (w=0;w<ways.length;w++) allowed[ways[w][k]]=1;
+        var idx=eq.cells[k], before=cand[idx].length;
+        cand[idx]=cand[idx].filter(function(v){ return allowed[v]; });
         if (cand[idx].length < before){
-          changed = true;
-          var shape = '_ ' + SY[eq.ops[0]] + ' _ ' + SY[eq.ops[1]] + ' _ = ' + eq.target;
+          changed=true;
           var txt;
-          if (cand[idx].length === 1){
-            txt = '<b>' + eq.name + '</b> must make ' + shape + '. With the digits still free there '
-                + (ways.length === 1 ? 'is only one way' : 'are only ' + ways.length + ' ways')
-                + ' to do that, and every one of them puts <b>' + cand[idx][0] + '</b> in '
-                + cellName(idx) + '. So that square is <b>' + cand[idx][0] + '</b>.';
+          if (cand[idx].length===1){
+            txt = t('onlyOne', { name:eqName(eq), shape:shapeOf(eq),
+              ways: ways.length===1 ? t('onlyWay') : t('nWays',{n:ways.length}),
+              v:cand[idx][0], cell:cellName(idx) });
           } else {
-            txt = '<b>' + eq.name + '</b> must make ' + shape + '. Only ' + ways.length
-                + ' ways work, so ' + cellName(idx) + ' can only be '
-                + cand[idx].join(' or ') + '.';
+            txt = t('narrow', { name:eqName(eq), shape:shapeOf(eq), n:ways.length,
+              cell:cellName(idx), list:cand[idx].join(t('or')) });
           }
-          log.push({ cell:idx, text:txt, solved:cand[idx].length===1 });
+          log.push({ cell:idx, text:txt, solved:cand[idx].length===1,
+                     value:cand[idx].length===1?cand[idx][0]:null });
         }
       }
     }
     for (i=0;i<9;i++){
-      if (cand[i].length !== 1) continue;
-      var v = cand[i][0];
+      if (cand[i].length!==1) continue;
+      var v=cand[i][0];
       for (var j=0;j<9;j++){
-        if (j===i) continue;
-        if (cand[j].indexOf(v) < 0) continue;
-        cand[j] = cand[j].filter(function(x){ return x !== v; });
-        changed = true;
-        log.push({ cell:j, text:
-          cellName(i) + ' is <b>' + v + '</b>, and each digit is used once — so ' + v
-          + ' cannot be in ' + cellName(j) + ' any more.', solved:cand[j].length===1 });
+        if (j===i || cand[j].indexOf(v)<0) continue;
+        cand[j]=cand[j].filter(function(x){ return x!==v; });
+        changed=true;
+        log.push({ cell:j, text:t('usedOnce',{ a:cellName(i), v:v, b:cellName(j) }),
+                   solved:cand[j].length===1,
+                   value:cand[j].length===1?cand[j][0]:null });
       }
     }
   }
-  var done = true;
-  for (i=0;i<9;i++) if (cand[i].length !== 1) done = false;
+  var done=true;
+  for (i=0;i<9;i++) if (cand[i].length!==1) done=false;
   return { ok:done, log:log, cand:cand };
 }
 
 /* ── board ──────────────────────────────────────────────────────────────── */
-var P = null, entry = [], sel = -1, teachAt = 0, teachLog = [];
-var gridEl = document.getElementById('grid');
-var sayEl  = document.getElementById('say');
-var stepsEl= document.getElementById('steps');
-var listEl = document.getElementById('stepList');
+var P=null, entry=[], sel=-1, teachAt=0, teachLog=[], watchIv=null;
+var gridEl=document.getElementById('grid'), sayEl=document.getElementById('say'),
+    stepsEl=document.getElementById('steps'), listEl=document.getElementById('stepList'),
+    sheetEl=document.getElementById('sheet');
 
 function build(){
-  gridEl.innerHTML = '';
-  // 5 columns: cell, op, cell, op, cell   /   then op rows   /   then targets
-  var layout = [];
-  for (var rr=0; rr<3; rr++){
-    layout.push(['cell',rr*3], ['op',SY[P.rOps[rr][0]]], ['cell',rr*3+1],
-                ['op',SY[P.rOps[rr][1]]], ['cell',rr*3+2], ['tgt','r'+rr]);
-    if (rr < 2){
-      layout.push(['op',SY[P.cOps[0][rr]]], ['gap'], ['op',SY[P.cOps[1][rr]]],
-                  ['gap'], ['op',SY[P.cOps[2][rr]]], ['gap']);
-    }
+  gridEl.innerHTML='';
+  var lay=[], rr;
+  for (rr=0; rr<3; rr++){
+    lay.push(['cell',rr*3],['op',SY[P.rOps[rr][0]]],['cell',rr*3+1],
+             ['op',SY[P.rOps[rr][1]]],['cell',rr*3+2],['tgt','r'+rr]);
+    if (rr<2) lay.push(['op',SY[P.cOps[0][rr]]],['gap'],['op',SY[P.cOps[1][rr]]],
+                       ['gap'],['op',SY[P.cOps[2][rr]]],['gap']);
   }
-  layout.push(['tgt','c0'], ['gap'], ['tgt','c1'], ['gap'], ['tgt','c2'], ['gap']);
-  gridEl.style.gridTemplateColumns = 'repeat(6,1fr)';
-  layout.forEach(function(item){
-    var d = document.createElement('div');
-    d.className = 'sq ' + (item[0]==='cell'?'cell':item[0]==='tgt'?'tgt':item[0]==='op'?'op':'gap');
-    if (item[0]==='cell'){ d.dataset.i = item[1]; d.textContent = entry[item[1]] || ''; }
-    else if (item[0]==='op'){ d.textContent = item[1]; }
-    else if (item[0]==='tgt'){
-      d.dataset.t = item[1];
-      d.textContent = item[1][0]==='r' ? P.r[+item[1][1]] : P.c[+item[1][1]];
-    }
+  lay.push(['tgt','c0'],['gap'],['tgt','c1'],['gap'],['tgt','c2'],['gap']);
+  lay.forEach(function(it){
+    var d=document.createElement('div');
+    d.className='sq '+(it[0]==='cell'?'cell':it[0]==='tgt'?'tgt':it[0]==='op'?'op':'gap');
+    if (it[0]==='cell'){ d.dataset.i=it[1]; }
+    else if (it[0]==='op'){ d.textContent=it[1]; }
+    else if (it[0]==='tgt'){ d.dataset.t=it[1];
+      d.textContent = it[1][0]==='r' ? P.r[+it[1][1]] : P.c[+it[1][1]]; }
     gridEl.appendChild(d);
   });
   paint();
 }
 
 function paint(){
-  var cells = gridEl.querySelectorAll('.cell');
+  var cells=gridEl.querySelectorAll('.cell'), seen={}, i;
+  for (i=0;i<9;i++) if (entry[i]) seen[entry[i]]=(seen[entry[i]]||0)+1;
   cells.forEach(function(d){
-    var i = +d.dataset.i;
+    var i=+d.dataset.i;
     d.textContent = entry[i] || '';
-    d.classList.toggle('sel', i === sel);
-    d.classList.remove('bad');
+    d.classList.toggle('sel', i===sel);
+    d.classList.toggle('bad', !!(entry[i] && seen[entry[i]]>1));
   });
-  // duplicates are worth flagging immediately -- it is the one mistake the
-  // rules forbid outright, and the child can see it without being told a total
-  var seen = {};
-  for (var i=0;i<9;i++){ if (entry[i]) { seen[entry[i]] = (seen[entry[i]]||0)+1; } }
-  cells.forEach(function(d){
-    var i = +d.dataset.i;
-    if (entry[i] && seen[entry[i]] > 1) d.classList.add('bad');
-  });
-  // a line goes green only when all three of its squares are filled AND right
   gridEl.querySelectorAll('.tgt').forEach(function(d){
-    var t = d.dataset.t, k = +t[1], cells2, ops, want;
-    if (t[0]==='r'){ cells2=[k*3,k*3+1,k*3+2]; ops=P.rOps[k]; want=P.r[k]; }
-    else { cells2=[k,k+3,k+6]; ops=P.cOps[k]; want=P.c[k]; }
-    var full = cells2.every(function(x){ return entry[x]; });
-    var right = full && ltr(entry[cells2[0]],ops[0],entry[cells2[1]],ops[1],entry[cells2[2]]) === want;
-    d.classList.toggle('done', !!right);
+    var tt=d.dataset.t, k=+tt[1], cs, ops, want;
+    if (tt[0]==='r'){ cs=[k*3,k*3+1,k*3+2]; ops=P.rOps[k]; want=P.r[k]; }
+    else { cs=[k,k+3,k+6]; ops=P.cOps[k]; want=P.c[k]; }
+    var full = cs.every(function(x){ return entry[x]; });
+    d.classList.toggle('done', !!(full && ltr(entry[cs[0]],ops[0],entry[cs[1]],ops[1],entry[cs[2]])===want));
   });
-  var all = true;
-  for (var j=0;j<9;j++) if (!entry[j]) all = false;
-  if (all && gridEl.querySelectorAll('.tgt.done').length === 6){
-    sayEl.innerHTML = '<b>Solved.</b> Every row and every column makes its number. '
-      + 'The four corners multiply to <b>'
-      + (entry[0]*entry[2]*entry[6]*entry[8]) + '</b>.';
-  }
+  var all=true;
+  for (i=0;i<9;i++) if (!entry[i]) all=false;
+  if (all && gridEl.querySelectorAll('.tgt.done').length===6)
+    sayEl.innerHTML = t('solved', { n: entry[0]*entry[2]*entry[6]*entry[8] });
 }
 
-function newPuzzle(level){
-  P = generate(level || 'hard');
-  entry = [null,null,null,null,null,null,null,null,null];
-  sel = -1; teachAt = 0; teachLog = [];
-  stepsEl.style.display = 'none'; listEl.innerHTML = '';
+function stopWatch(){ if (watchIv){ clearInterval(watchIv); watchIv=null; } }
+
+function newPuzzle(){
+  stopWatch();
+  P = generate('hard');
+  entry=[null,null,null,null,null,null,null,null,null];
+  sel=-1; teachAt=0; teachLog=[];
+  stepsEl.style.display='none'; listEl.innerHTML='';
   build();
-  sayEl.textContent = 'Pick a square, then a number. Remember: left to right.';
+  sayEl.textContent = t('pickSq');
+}
+
+function applyLang(){
+  document.getElementById('ttl').textContent = t('title');
+  document.getElementById('sub').innerHTML = t('sub');
+  document.getElementById('newBtn').textContent = t('newP');
+  document.getElementById('clearBtn').textContent = t('clear');
+  document.getElementById('logicBtn').textContent = t('logic');
+  document.getElementById('watchBtn').textContent = t('watch');
+  document.getElementById('stepBtn').textContent = t('step');
+  document.getElementById('enBtn').classList.toggle('on', LANG==='en');
+  document.getElementById('taBtn').classList.toggle('on', LANG==='ta');
+  document.documentElement.lang = LANG;
+  if (sheetEl.classList.contains('on')) sheetEl.innerHTML = sheetHTML();
+  /* the reasoning is regenerated, not translated -- a half-switched
+     explanation is worse than an untranslated one */
+  teachLog=[]; teachAt=0; listEl.innerHTML=''; stepsEl.style.display='none';
+  sayEl.textContent = t('pickSq');
 }
 
 gridEl.addEventListener('click', function(e){
-  var d = e.target.closest('.cell'); if (!d) return;
-  sel = +d.dataset.i; paint();
+  var d=e.target.closest('.cell'); if (!d) return;
+  stopWatch(); sel=+d.dataset.i; paint();
 });
 
-var pad = document.getElementById('pad');
+var pad=document.getElementById('pad');
 [1,2,3,4,5,6,7,8,9].forEach(function(n){
-  var b = document.createElement('button');
-  b.className = 'key'; b.textContent = n;
-  b.onclick = function(){ if (sel < 0){ sayEl.textContent='Pick a square first.'; return; }
-    entry[sel] = n; paint(); };
+  var b=document.createElement('button');
+  b.className='key'; b.textContent=n;
+  b.onclick=function(){ stopWatch();
+    if (sel<0){ sayEl.textContent=t('pickFirst'); return; }
+    entry[sel]=n; paint(); };
   pad.appendChild(b);
 });
-var era = document.createElement('button');
-era.className = 'key'; era.textContent = '⌫';
-era.onclick = function(){ if (sel >= 0){ entry[sel] = null; paint(); } };
+var era=document.createElement('button');
+era.className='key'; era.textContent='⌫';
+era.onclick=function(){ stopWatch(); if (sel>=0){ entry[sel]=null; paint(); } };
 pad.appendChild(era);
 
-document.getElementById('newBtn').onclick = function(){ newPuzzle('hard'); };
-document.getElementById('clearBtn').onclick = function(){
-  entry = [null,null,null,null,null,null,null,null,null]; paint();
-  sayEl.textContent = 'Cleared.';
+document.getElementById('newBtn').onclick=newPuzzle;
+document.getElementById('clearBtn').onclick=function(){
+  stopWatch(); entry=[null,null,null,null,null,null,null,null,null];
+  paint(); sayEl.textContent=t('cleared');
 };
-document.getElementById('revealBtn').onclick = function(){
-  for (var i=0;i<9;i++) entry[i] = P.grid[i];
-  paint();
+document.getElementById('logicBtn').onclick=function(){
+  var on = sheetEl.classList.toggle('on');
+  if (on){ sheetEl.innerHTML = sheetHTML(); sheetEl.scrollIntoView({behavior:'smooth',block:'nearest'}); }
 };
+document.getElementById('enBtn').onclick=function(){ LANG='en'; applyLang(); };
+document.getElementById('taBtn').onclick=function(){ LANG='ta'; applyLang(); };
 
-/* One step at a time. Dumping forty lines teaches nothing; the value is in
-   following ONE inference and seeing the square it settles. */
-document.getElementById('teachBtn').onclick = function(){
-  if (!teachLog.length){
-    var res = deduce(P);
-    teachLog = res.log.filter(function(s){ return s.solved; });
-    if (!teachLog.length) teachLog = res.log;
-    stepsEl.style.display = 'block';
-    sayEl.innerHTML = res.ok
-      ? 'This one can be finished <b>without a single guess</b>. Here is the first step.'
-      : 'Here is as far as plain reasoning gets.';
-    teachAt = 0; listEl.innerHTML = '';
-  }
+function ensureLog(){
+  if (teachLog.length) return true;
+  var res = deduce(P);
+  teachLog = res.log.filter(function(s){ return s.solved; });
+  if (!teachLog.length) teachLog = res.log;
+  stepsEl.style.display='block';
+  sayEl.innerHTML = t('noGuess');
+  teachAt=0; listEl.innerHTML='';
+  return res.ok;
+}
+
+function showStep(){
   if (teachAt >= teachLog.length){
-    sayEl.innerHTML = '<b>That is the whole chain.</b> No guessing anywhere in it.';
-    return;
+    sayEl.innerHTML = t('chainEnd');
+    document.getElementById('stepBtn').textContent = t('lastStep');
+    stopWatch();
+    return false;
   }
-  var step = teachLog[teachAt++];
-  var li = document.createElement('li');
-  li.innerHTML = step.text;
+  var s = teachLog[teachAt++];
+  var li=document.createElement('li'); li.innerHTML=s.text;
   Array.prototype.forEach.call(listEl.children, function(x){ x.classList.remove('now'); });
-  li.className = 'now';
-  listEl.appendChild(li);
+  li.className='now'; listEl.appendChild(li);
   stepsEl.scrollTop = stepsEl.scrollHeight;
   gridEl.querySelectorAll('.cell').forEach(function(d){
-    d.classList.toggle('hi', +d.dataset.i === step.cell);
+    d.classList.toggle('hi', +d.dataset.i === s.cell);
   });
-  document.getElementById('teachBtn').textContent =
-    teachAt >= teachLog.length ? 'That is the last step' : 'Next step →';
+  return true;
+}
+
+/* Step-by-step, by hand */
+document.getElementById('stepBtn').onclick=function(){
+  stopWatch(); ensureLog(); showStep();
 };
 
-newPuzzle('hard');
+/* WATCH — the same chain, played for you. Deliberately fills the square only
+   AFTER its reason is on screen: the point is the argument, not the filling. */
+document.getElementById('watchBtn').onclick=function(){
+  stopWatch();
+  entry=[null,null,null,null,null,null,null,null,null];
+  teachLog=[]; teachAt=0; paint();
+  ensureLog();
+  sayEl.innerHTML = t('watching');
+  watchIv = setInterval(function(){
+    var s = teachLog[teachAt];
+    if (!showStep()) return;
+    if (s && s.value != null){
+      setTimeout(function(){ entry[s.cell] = s.value; paint(); }, 700);
+    }
+  }, 1900);
+};
+
+applyLang();
+newPuzzle();
 </script>
 </body>
 </html>
