@@ -403,6 +403,20 @@ function deal(){
   }, 20);
 }
 document.getElementById('dealBtn').addEventListener('click', deal);
+
+/* Raja: "the number selection at the bottom changes only after pressing Deal,
+   not when the numbers at the top are changed."
+
+   Right, and it is worse than a lag: the picker said 2-10 while the pad still
+   offered 1-9 from the board before it, so the page was showing two different
+   answers to "which nine numbers is this?" at the same time.
+
+   Dealing straight away is the honest fix rather than only refreshing the pad.
+   The numbers ARE the puzzle here -- a board built from 1-9 cannot be played
+   with a 2-10 pad -- so changing them has to replace the board, not decorate
+   it. Now the picker, the grid and the pad can never disagree. */
+startSel.addEventListener('change', deal);
+document.getElementById('opsSel').addEventListener('change', deal);
 document.getElementById('clearBtn').addEventListener('click', function(){
   if (!P) return; entry = [null,null,null,null,null,null,null,null,null]; paint(); markUsed();
   sayEl.textContent = 'Cleared.';
