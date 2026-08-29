@@ -197,6 +197,7 @@ function countAnswers(grid, L, cap){
       return JSON.stringify({
         shaded: after.filter(function(c){ return c.classList.contains('peer'); }).length,
         shadedGivens: after.filter(function(c){ return c.classList.contains('peer') && c.classList.contains('given'); }).length,
+        givens: after.map(function(c, i){ return c.classList.contains('given') ? i : -1; }).filter(function(i){ return i >= 0; }),
         pickShaded: after[0].classList.contains('peer')
       }); })()`);
     const P2 = JSON.parse(probe);
@@ -208,8 +209,15 @@ function countAnswers(grid, L, cap){
     seen.delete(0);
     ok(key + ': picking a square shades every square it can see', P2.shaded === seen.size,
       P2.shaded + ' shaded, ' + seen.size + ' expected');
-    ok(key + ': the shading includes squares that already hold a number',
-      P2.shadedGivens > 0, P2.shadedGivens + ' given squares shaded');
+    /* This used to demand that at least one shaded square was a given, which
+       is only true if the deal happens to put a given where cell 0 can see it
+       -- on some boards it does not, and the guard failed for no reason. The
+       property worth holding is that shading never SKIPS a given: every seen
+       square is shaded whether it holds a number or not. */
+    const seenGivens = P2.givens.filter(i => seen.has(i)).length;
+    ok(key + ': shading never skips a square just because it already holds a number',
+      P2.shadedGivens === seenGivens,
+      P2.shadedGivens + ' of ' + seenGivens + ' visible givens shaded');
     ok(key + ': the picked square itself is not shaded', P2.pickShaded === false);
     if (key === 'medium') await shot('sudoku-shading.png');
   }
@@ -395,9 +403,56 @@ function countAnswers(grid, L, cap){
     })();
     return g;
   })(boardB, LEVELS.medium);
-  // fill only the top-left box
-  const boxIdx = [];
-  for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) boxIdx.push(r * 9 + c);
+  /* The rule the board actually follows, installed once so both checks below
+     can ask it: a square is green exactly when at least one of the three units
+     it belongs to -- its row, its column, its box -- is completely and
+     correctly filled. Comparing against the stored answer rather than merely
+     "nine non-empty squares", because a full-but-wrong line is not finished. */
+  await ev(`window.__sudAudit = function(){
+    var answer = ${JSON.stringify(ansB)};
+    var cells = Array.from(document.querySelectorAll('#sudBoard [data-sud]'));
+    var val = cells.map(function(c){ return (c.textContent || '').trim(); });
+    function done(idx){ return idx.every(function(i){ return val[i] === String(answer[i]); }); }
+    function unitsOf(i){
+      var r = Math.floor(i/9), c = i%9, br = Math.floor(r/3)*3, bc = Math.floor(c/3)*3;
+      var row = [], col = [], box = [], k, a, b;
+      for (k=0;k<9;k++){ row.push(r*9+k); col.push(k*9+c); }
+      for (a=0;a<3;a++) for (b=0;b<3;b++) box.push((br+a)*9 + bc + b);
+      return [row, col, box];
+    }
+    var wrong = 0, green = 0, examples = [];
+    cells.forEach(function(c, i){
+      var isGreen = c.classList.contains('done');
+      var should = unitsOf(i).some(done);
+      if (isGreen) green++;
+      if (isGreen !== should){
+        wrong++;
+        if (examples.length < 3)
+          examples.push('square ' + i + (isGreen ? ' is green with no finished line'
+                                                 : ' is not green though its line is finished'));
+      }
+    });
+    return { green: green, wrong: wrong, examples: examples };
+  }; 'ok'`);
+
+  /* Fill ONE box. Not always the top-left one: on some deals every square in
+     it is a given, and then there is nothing for the erase step below to rub
+     out -- which showed up as a failure ("the box was entirely given") when
+     the truth was that this box could not exercise the check. Pick the first
+     box that has a square the player would actually fill, so the coverage is
+     the same on every deal instead of depending on the shuffle. */
+  const boxIdx = await ev(`(function(){
+    var cells = Array.from(document.querySelectorAll('#sudBoard [data-sud]'));
+    for (var br = 0; br < 9; br += 3) for (var bc = 0; bc < 9; bc += 3){
+      var idx = [];
+      for (var a = 0; a < 3; a++) for (var b = 0; b < 3; b++) idx.push((br+a)*9 + bc + b);
+      if (idx.some(function(i){ return !cells[i].classList.contains('given'); }))
+        return JSON.stringify(idx);
+    }
+    return JSON.stringify([]);
+  })()`).then(JSON.parse);
+  ok('there is a box with at least one square left to fill', boxIdx.length === 9,
+     boxIdx.length ? 'box starting at square ' + boxIdx[0] : 'every box was fully given');
   const boxRes = await ev(`(function(){
     var answer = ${JSON.stringify(ansB)}, box = ${JSON.stringify(boxIdx)};
     for (var b = 0; b < box.length; b++){
@@ -410,14 +465,22 @@ function countAnswers(grid, L, cap){
     }
     var after = Array.from(document.querySelectorAll('#sudBoard [data-sud]'));
     var greenInBox = box.filter(function(i){ return after[i].classList.contains('done'); }).length;
-    var greenOutside = after.filter(function(c, i){
-      return box.indexOf(i) < 0 && c.classList.contains('done'); }).length;
-    return JSON.stringify({ greenInBox: greenInBox, greenOutside: greenOutside }); })()`);
+    return JSON.stringify({ greenInBox: greenInBox, audit: window.__sudAudit() }); })()`);
   const BX = JSON.parse(boxRes);
   ok('finishing a 3×3 box turns all nine of its numbers green',
     BX.greenInBox === 9, BX.greenInBox + ' of 9 green');
-  ok('and only that box — the unfinished ones stay as they were',
-    BX.greenOutside === 0, BX.greenOutside + ' green squares outside it');
+  /* This used to demand that NOTHING outside the box was green, and failed on
+     about two runs in five -- on the base commit too, so it was never today's
+     change. The assertion was simply wrong: filling the top-left box can
+     finish a row or a column as well, and those squares are then green for a
+     perfectly good reason. A guard that fails 40% of the time trains you to
+     ignore the suite, which is worse than not having it.
+
+     So assert the rule the app actually follows, which holds for every puzzle
+     it can deal: a square is green exactly when it belongs to a completed row,
+     column or box. */
+  ok('every green square belongs to a finished row, column or box — and every other one does not',
+    BX.audit.wrong === 0, BX.audit.wrong ? BX.audit.examples.join(' | ') : BX.audit.green + ' green, all explained');
   await shot('sudoku-box-done.png');
 
   // breaking it must take the green back
@@ -427,14 +490,38 @@ function countAnswers(grid, L, cap){
     var mine = box.filter(function(i){ return !cells[i].classList.contains('given'); });
     if (!mine.length) return JSON.stringify({ error: 'the box was entirely given' });
     document.querySelectorAll('#sudBoard [data-sud]')[mine[0]].click();
-    document.querySelector('#sudPad [data-sudkey="0"]').click();
     var after = Array.from(document.querySelectorAll('#sudBoard [data-sud]'));
-    return JSON.stringify({ stillGreen: box.filter(function(i){
-      return after[i].classList.contains('done'); }).length }); })()`);
-  const BR = JSON.parse(broke);
-  ok('erasing one number takes the green back off the whole box',
-    BR.error ? false : BR.stillGreen === 0,
-    BR.error || BR.stillGreen + ' still green');
+    return JSON.stringify({ picked: mine[0] }); })()`);
+  /* Selecting a square and pressing erase were fired back to back inside one
+     evaluate. The board settles its selection asynchronously, so now and then
+     the erase landed before the square was actually current and nothing was
+     rubbed out -- reported as "9 of 9 still green", which reads like a product
+     bug and was a race in this file. Two steps, with a beat between them. */
+  await sleep(220);
+  const picked = JSON.parse(broke);
+  const brokeRes = await ev(`(function(){
+    var box = ${JSON.stringify(boxIdx)};
+    var pick = ${JSON.stringify(picked.picked)};
+    var k = document.querySelector('#sudPad [data-sudkey="0"]');
+    if (!k) return JSON.stringify({ error: 'no erase key on the pad' });
+    k.click();
+    var after = Array.from(document.querySelectorAll('#sudBoard [data-sud]'));
+    return JSON.stringify({
+      cleared: (after[pick].textContent || '').trim() === '',
+      stillGreenInBox: box.filter(function(i){ return after[i].classList.contains('done'); }).length,
+      audit: window.__sudAudit() }); })()`);
+  const BR = Object.assign(JSON.parse(broke), JSON.parse(brokeRes));
+  /* Same correction. Erasing one square un-greens the BOX, but a square in it
+     may still sit in a finished row or column and stay green quite correctly --
+     which is why "3 still green" kept being reported as a defect. */
+  ok('the erase key really empties the square', BR.error ? false : BR.cleared === true,
+    BR.error || 'square ' + BR.picked + ' cleared: ' + BR.cleared);
+  ok('erasing a number takes the green off the box',
+    BR.error ? false : BR.stillGreenInBox < 9,
+    BR.error || BR.stillGreenInBox + ' of 9 still green');
+  ok('and what stays green is exactly what still sits in a finished line',
+    BR.error ? false : BR.audit.wrong === 0,
+    BR.error || (BR.audit.wrong ? BR.audit.examples.join(' | ') : BR.audit.green + ' green, all explained'));
 
   /* THE CASE THAT CONFUSED RAJA TWICE, now the defining one.
      sudoku.com marks a number red when it differs from the stored answer, even
