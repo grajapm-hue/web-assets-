@@ -47,7 +47,7 @@ let fail = 0;
 const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !== undefined ? '  -> ' + x : '')); if (!c) fail++; };
 
 const BOARDS = ['3x3', '4x4', '5x5', '6x6', '3cube'];
-const ALSO   = ['8x8', '10x10', 'ramanujan', 'grid1', 'grid3'];
+const ALSO   = ['8x8', '10x10', 'ramanujan', 'grid'];
 
 (async () => {
   fs.mkdirSync(SHOTS, { recursive: true });

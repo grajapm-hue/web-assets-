@@ -90,8 +90,8 @@ const PANEL_IDS = ['sudokuPanel', 'slidePanel', 'gatePanel', 'binaryPanel', 'pal
   await checkOnly('then Guess My Number Junior -- nothing stacked underneath', 'binaryPanel');
 
   await ev(`document.getElementById('tab-scHome').click()`); await sleep(200);
-  await ev(`document.querySelector('.toggleBtn[data-size="grid1"]').click()`); await sleep(700);
-  await checkOnly('then Triangle Magic -- no special panel left showing', null);
+  await ev(`document.querySelector('.toggleBtn[data-size="grid"]').click()`); await sleep(700);
+  await checkOnly('then Fill In The Blank -- no special panel left showing', null);
 
   await ev(`document.getElementById('tab-scHome').click()`); await sleep(200);
   await ev(`document.querySelector('.toggleBtn[data-size="3cube"]').click()`); await sleep(700);

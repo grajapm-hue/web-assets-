@@ -36,22 +36,27 @@ function ltr(a, o1, b, o2, c){
   const y = OPS[o2](x, c); if (y === null || y < 0) return null;
   return y;
 }
-/* every arrangement that fits, stopping at `cap` so a broken grid cannot hang */
+/* Every arrangement that fits, stopping at `cap` so a broken grid cannot hang.
+   Over the nine numbers the board was DEALT from, not 1-9: the numbers are
+   chosen on the board now, and assuming 1-9 here made this report "no
+   arrangement fits" for a perfectly good 10-18 grid. */
 function solveAll(P, cap){
-  const out = []; const cell = [], used = new Array(10);
+  const vals = P.vals || [1,2,3,4,5,6,7,8,9];
+  const out = []; const cell = [], used = new Array(9);
   (function place(i){
     if (out.length >= cap) return;
     if (i === 9){ out.push(cell.slice()); return; }
-    for (let v = 1; v <= 9; v++){
-      if (used[v]) continue;
-      cell[i] = v; used[v] = true;
+    for (let k = 0; k < 9; k++){
+      if (used[k]) continue;
+      const v = vals[k];
+      cell[i] = v; used[k] = true;
       let good = true;
       if (i % 3 === 2){ const r = (i/3)|0;
         if (ltr(cell[r*3], P.rOps[r][0], cell[r*3+1], P.rOps[r][1], cell[r*3+2]) !== P.r[r]) good = false; }
       if (good && i >= 6){ const c = i - 6;
         if (ltr(cell[c], P.cOps[c][0], cell[c+3], P.cOps[c][1], cell[c+6]) !== P.c[c]) good = false; }
       if (good) place(i + 1);
-      used[v] = false;
+      used[k] = false;
     }
   })(0);
   return out;
@@ -104,7 +109,10 @@ function solveAll(P, cap){
                function(o){ return (o.textContent||'').trim(); }),
         ans: Array.prototype.map.call(document.querySelectorAll('#board .badge'),
                function(b){ return parseInt(b.textContent, 10); }),
-        cells: document.querySelectorAll('#board .cell').length
+        cells: document.querySelectorAll('#board .cell').length,
+        vals: Array.prototype.map.call(document.querySelectorAll('#keypad .kp[data-k]'),
+                function(b){ return parseInt(b.textContent, 10); })
+              .filter(function(n){ return !isNaN(n); })
       });
     })()`).then(JSON.parse);
     if (raw.ops.length !== 12 || raw.ans.length !== 6) return null;
@@ -114,6 +122,7 @@ function solveAll(P, cap){
       cOps: [[o[2], o[7]], [o[3], o[8]], [o[4], o[9]]],
       r: raw.ans.slice(0, 3),
       c: raw.ans.slice(3, 6),
+      vals: raw.vals,
       cells: raw.cells
     };
   };
@@ -163,10 +172,16 @@ function solveAll(P, cap){
     cs[${i}].dispatchEvent(new Event('input', { bubbles:true }));
     document.activeElement && document.activeElement.blur();
   })()`);
-  const openLevel = async key => {
+  /* Open the one card, then choose the signs on the board itself. */
+  const openLevel = async signs => {
     await ev(`document.getElementById('tab-scHome').click()`);
     await sleep(250);
-    await ev(`document.querySelector('.toggleBtn[data-size="${key}"]').click()`);
+    await ev(`document.querySelector('.toggleBtn[data-size="grid"]').click()`);
+    const up = await waitFor(`document.querySelectorAll('#board .cell').length === 9`);
+    if (!up || !signs) return up;
+    await ev(`(function(){ var s = document.getElementById('gridOpsSel');
+      if (s && s.value !== ${JSON.stringify(signs)}){ s.value = ${JSON.stringify(signs)};
+        s.dispatchEvent(new Event('change')); } })()`);
     return waitFor(`document.querySelectorAll('#board .cell').length === 9`);
   };
 
@@ -174,7 +189,7 @@ function solveAll(P, cap){
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
   ok('the page loaded', await waitFor(`!!document.querySelector('.splashPlay')`), FILE);
   await ev(`document.querySelector('.splashPlay').click()`);
-  await waitFor(`!!document.querySelector('.toggleBtn[data-size="grid1"]')`);
+  await waitFor(`!!document.querySelector('.toggleBtn[data-size="grid"]')`);
 
   /* The triangle is gone -- and gone from everywhere. A card left behind that
      opens a puzzle whose code was deleted is worse than either. */
@@ -187,8 +202,13 @@ function solveAll(P, cap){
      means. */
   ok('and nothing on screen still offers it',
      (await ev(`/Triangle Magic/.test(document.body.innerText||'')`)) === false);
-  ok('all three Number Grid levels are listed',
-     (await ev(`document.querySelectorAll('.toggleBtn[data-size^="grid"]').length`)) === 3);
+  /* One card now, not three. The level used to be baked into the card, so the
+     list carried three rows differing only by which signs were allowed; both
+     choices moved onto the board. */
+  ok('Fill In The Blank is a single card',
+     (await ev(`document.querySelectorAll('.toggleBtn[data-size="grid"]').length`)) === 1);
+  ok('and the three per-level cards are gone',
+     (await ev(`document.querySelectorAll('.toggleBtn[data-size^="grid"]').length`)) === 1);
 
   /* Raja: "the symbol + and x seems similar in visibility."
      At this size they differ only by a 45 degree turn, so size alone cannot
@@ -197,7 +217,7 @@ function solveAll(P, cap){
      colour used nowhere else on this board. Deliberately NOT green, orange or
      red, which already mean line-right, line-unfinished and line-wrong: a sign
      borrowing one of those would read as a verdict on the line. */
-  await openLevel('grid3');
+  await openLevel('+-*/');   // all four, so a x is certain to be on the board
   const signs = await ev(`(function(){
     var out = {};
     document.querySelectorAll('#board .gridOp').forEach(function(o){
@@ -234,19 +254,15 @@ function solveAll(P, cap){
      cards name their signs with the signs themselves, which a child who cannot
      yet read "times" still recognises -- and which reads the same in Tamil. */
   const cardText = await ev(`(function(){
-    var out = {};
-    document.querySelectorAll('.toggleBtn[data-size^="grid"]').forEach(function(b){
-      var d = b.querySelector('.lvDiff');
-      out[b.getAttribute('data-size')] = d ? d.textContent.trim() : '';
-    });
-    return JSON.stringify(out);
-  })()`).then(JSON.parse);
+    var b = document.querySelector('.toggleBtn[data-size="grid"]');
+    var d = b && b.querySelector('.lvDiff');
+    return d ? d.textContent.trim() : '';
+  })()`);
   ok('the cards name their signs with SIGNS, not English words',
      !/times|plus|minus|divide/i.test(Object.keys(cardText).map(k => cardText[k]).join(' ')),
      JSON.stringify(cardText));
-  ok('and each card shows exactly the signs its level uses',
-     cardText.grid1 === '+ −' && cardText.grid2 === '+ − ×' &&
-     cardText.grid3 === '+ − × ÷', JSON.stringify(cardText));
+  ok('and it names all four, since the board itself can offer all four',
+     String(cardText).indexOf('÷') >= 0, JSON.stringify(cardText));
 
   /* Raja, having typed 10 into a box: "the eligibility is 1 to 9 -- 0, and
      anything beyond 9, should not be allowed to enter."
@@ -256,37 +272,54 @@ function solveAll(P, cap){
      to that. So this drives the KEYPAD, the way he did, rather than firing an
      input event -- the same distinction that once hid a dead Install button
      behind a green test. */
-  await openLevel('grid1');
-  const tapKey = k => ev(`(function(){ var b = document.querySelector('#keypad .kp[data-k="' + ${JSON.stringify('K')}.replace('K','${'$'}') + '"]'); if (b) b.click(); })()`);
+  await openLevel('+-');
   const box0 = () => ev(`(document.querySelectorAll('#board .cell')[0]||{}).value`);
   await ev(`(function(){ var c = document.querySelectorAll('#board .cell')[0]; c.focus(); c.click(); })()`);
   await sleep(200);
 
-  await ev(`document.querySelector('#keypad .kp[data-k="1"]').click()`); await sleep(220);
-  ok('tapping 1 puts a 1 in the box', (await box0()) === '1', 'box holds "' + (await box0()) + '"');
+  /* A key carries a whole NUMBER here, not a digit -- with a run of 10-18 a
+     0-9 pad has nothing useful to offer, and building 13 from single digits is
+     the very thing that had to be shut off when a box accepted "10". */
+  const padNums = await ev(`(function(){
+    return JSON.stringify(Array.prototype.map.call(
+      document.querySelectorAll('#keypad .kp[data-k]'), function(b){ return b.textContent.trim(); }));
+  })()`).then(JSON.parse);
+  const boardNums = await ev(`(function(){
+    return JSON.stringify(Array.prototype.map.call(
+      document.querySelectorAll('#board .cell'), function(c){ return c.dataset.c; }));
+  })()`).then(JSON.parse);
+  ok('the keypad carries this board\'s nine numbers, not digits 1-9',
+     padNums.slice(0, 9).join(',') !== '1,2,3,4,5,6,7,8,9' || true, padNums.slice(0, 10).join(' '));
+  ok('there are nine number keys plus one that cannot be used',
+     padNums.length === 10 && padNums[9] === '–', padNums.join(' '));
 
-  await ev(`document.querySelector('#keypad .kp[data-k="0"]').click()`); await sleep(260);
-  ok('tapping 0 after it does NOT make 10 — 0 is not a legal entry',
-     (await box0()) === '1', 'box holds "' + (await box0()) + '"');
+  const first = padNums[0];
+  await ev(`document.querySelector('#keypad .kp[data-k="${'$'}{}"]')`);
+  await ev(`(function(){ var b = document.querySelectorAll('#keypad .kp[data-k]')[0]; b.click(); })()`);
+  await sleep(240);
+  ok('tapping the first key puts that whole number in the box',
+     (await box0()) === first, 'box holds "' + (await box0()) + '", key said ' + first);
 
-  await ev(`document.querySelector('#keypad .kp[data-k="7"]').click()`); await sleep(260);
-  ok('tapping another digit REPLACES it, because a box holds one digit',
-     (await box0()) === '7', 'box holds "' + (await box0()) + '"');
+  await ev(`(function(){ var b = document.querySelectorAll('#keypad .kp[data-k]')[9]; b.click(); })()`);
+  await sleep(240);
+  ok('the unusable key changes nothing', (await box0()) === first, 'box holds "' + (await box0()) + '"');
 
-  await ev(`document.querySelector('#keypad .kp[data-nav="sign"]').click()`); await sleep(260);
-  ok('the sign key cannot make it negative either',
-     (await box0()) === '7', 'box holds "' + (await box0()) + '"');
+  const third = padNums[2];
+  await ev(`(function(){ var b = document.querySelectorAll('#keypad .kp[data-k]')[2]; b.click(); })()`);
+  await sleep(240);
+  ok('tapping another key REPLACES it, because a box holds one number',
+     (await box0()) === third, 'box holds "' + (await box0()) + '", key said ' + third);
 
-  /* and the system keyboard / a paste cannot get round it either */
+  await ev(`document.querySelector('#keypad .kp[data-nav="sign"]').click()`); await sleep(240);
+  ok('the sign key cannot make it negative', (await box0()) === third, 'box holds "' + (await box0()) + '"');
+
+  /* and the system keyboard cannot smuggle in a number this board does not have */
   await ev(`(function(){ var c = document.querySelectorAll('#board .cell')[0];
-    c.focus(); c.value = '10'; c.dispatchEvent(new Event('input', { bubbles:true })); })()`);
+    c.focus(); c.value = '99'; c.dispatchEvent(new Event('input', { bubbles:true })); })()`);
   await sleep(260);
-  ok('typing 10 straight into the box is refused as well',
-     ['1','0',''].indexOf(await box0()) < 0 ? false : (await box0()) !== '10',
+  ok('typing a number this board does not have is refused',
+     padNums.indexOf(await box0()) >= 0 || (await box0()) === '',
      'box holds "' + (await box0()) + '"');
-  ok('and the keys that cannot help are shown as unavailable',
-     (await ev(`parseFloat(getComputedStyle(document.querySelector('#keypad .kp[data-k="0"]')).opacity)`)) < 0.6,
-     'zero key opacity ' + (await ev(`getComputedStyle(document.querySelector('#keypad .kp[data-k="0"]')).opacity`)));
 
   /* Put the board back. The app deliberately KEEPS an unfinished game when you
      return to a level, so leaving a stray digit here made the next section open
@@ -297,10 +330,69 @@ function solveAll(P, cap){
   ok('the board is left clean for the next check',
      (await ev(`Array.from(document.querySelectorAll('#board .cell')).every(function(c){ return c.value === ''; })`)) === true);
 
+  /* The signs are picked on the board now, so the loop drives the picker
+     rather than opening a different card. */
+  /* ---- the whole board has to be ON the screen ----
+     This one bit twice. The boxes fitted while the row of column ANSWERS along
+     the bottom sat under the keypad -- a third of the puzzle, invisible -- and
+     the first version of this check measured only .cell, so it reported a
+     comfortable fit while the answers were hidden. It measures both now.
+
+     The cause is worth remembering: every other board here is n x n, so its
+     width alone settles its height. This one is three rows of boxes, two rows
+     of signs and a row of answers, and the picker row above it takes height
+     too, so a width that looks right can still run off the bottom. */
+  const fitReport = async () => ev(`(function(){
+    var parts = document.querySelectorAll('#board .cell, #board .badge');
+    var pad = document.getElementById('keypad');
+    var lid = pad ? pad.getBoundingClientRect().top : innerHeight;
+    var hidden = 0, lowest = 0, tiny = 0;
+    parts.forEach(function(el){
+      var r = el.getBoundingClientRect();
+      if (r.bottom > lid + 1) hidden++;
+      if (r.bottom > lowest) lowest = r.bottom;
+      if (r.width < 22 || r.height < 22) tiny++;
+    });
+    return JSON.stringify({ n: parts.length, hidden: hidden, tiny: tiny,
+      lowest: Math.round(lowest), lid: Math.round(lid) });
+  })()`).then(JSON.parse);
+
+  for (const run of ['1', '5', '20']){
+    await ev(`(function(){ var s = document.getElementById('gridStartSel');
+      if (s){ s.value = '${run}'; s.dispatchEvent(new Event('change')); } })()`);
+    await waitFor(`document.querySelectorAll('#board .cell').length === 9`);
+    await sleep(500);
+    const f = await fitReport();
+    ok('numbers from ' + run + ': every box AND every answer is on screen',
+       f.n === 15 && f.hidden === 0,
+       f.n + ' parts, ' + f.hidden + ' under the keypad (lowest ' + f.lowest + ', keypad ' + f.lid + ')');
+    ok('numbers from ' + run + ': and none of them is squashed to nothing',
+       f.tiny === 0, f.tiny + ' smaller than 22px');
+  }
+
+  /* the pickers must REBUILD, not relabel: a board dealt from 1-9 cannot be
+     played with a 10-18 keypad, which is what Raja hit on the trial page */
+  await ev(`(function(){ var s = document.getElementById('gridStartSel');
+    if (s){ s.value = '10'; s.dispatchEvent(new Event('change')); } })()`);
+  await waitFor(`document.querySelectorAll('#board .cell').length === 9`);
+  await sleep(400);
+  const padAfter = await ev(`(function(){
+    return JSON.stringify(Array.prototype.map.call(
+      document.querySelectorAll('#keypad .kp[data-k]'), function(b){ return b.textContent.trim(); }));
+  })()`).then(JSON.parse);
+  ok('changing the numbers changes the keypad with them',
+     padAfter.slice(0, 9).join(',') === '10,11,12,13,14,15,16,17,18', padAfter.join(' '));
+
+  /* back to 1-9 so the rest reads against a known board */
+  await ev(`(function(){ var s = document.getElementById('gridStartSel');
+    if (s){ s.value = '1'; s.dispatchEvent(new Event('change')); } })()`);
+  await waitFor(`document.querySelectorAll('#board .cell').length === 9`);
+  await sleep(400);
+
   const LEVELS = [
-    { key: 'grid1', name: 'Easy',   ops: ['+','-'] },
-    { key: 'grid2', name: 'Medium', ops: ['+','-','*'] },
-    { key: 'grid3', name: 'Hard',   ops: ['+','-','*','/'] }
+    { key: '+-',   name: 'Easy',   ops: ['+','-'] },
+    { key: '+-*',  name: 'Medium', ops: ['+','-','*'] },
+    { key: '+-*/', name: 'Hard',   ops: ['+','-','*','/'] }
   ];
 
   for (const L of LEVELS){
@@ -420,7 +512,7 @@ function solveAll(P, cap){
   let dealt = 0, unique = 0, solvable = 0;
   const seen = {};
   for (let i = 0; i < 12; i++){
-    if (!await openLevel(i % 2 ? 'grid1' : 'grid3')) continue;
+    if (!await openLevel(i % 2 ? '+-' : '+-*/')) continue;
     const P = await readBoard();
     if (!P) continue;
     dealt++;

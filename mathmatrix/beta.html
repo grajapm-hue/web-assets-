@@ -2038,24 +2038,28 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
    built through fitBoard()'s --tracks/--cell autofit system at all (see
    fitBoard's own comment). Plain responsive CSS instead: proven sizing
    from the standalone prototype this was built from, not new math. */
-.board.sizegrid1, .board.sizegrid2, .board.sizegrid3{
+.board.sizegrid{
   display:block !important; background:transparent !important;
   padding:0 !important; box-shadow:none !important; }
 /* Six columns: cell op cell op cell answer. The operator and spacer tracks are
    narrower than the boxes on purpose -- the numbers are what is being read,
    the signs only join them. */
+/* One number decides the whole board: --gridCell, set by fitBoard from the
+   room actually available in BOTH directions. Everything else is a fraction of
+   it, so the grid can never be taller than the box it sits in. */
 .gridWrap{ display:grid; justify-content:center; align-content:center;
-  grid-template-columns:repeat(3, minmax(0,1fr) auto);
-  gap:clamp(3px, 1.1vw, 7px); width:100%; max-width:340px; margin:0 auto; }
-.gridWrap .cell{ width:100% !important; aspect-ratio:1 !important; height:auto !important;
-  min-width:0 !important; padding:0 !important; text-align:center;
-  font-size:clamp(17px, 6.2vw, 28px) !important; line-height:1 !important; }
-.gridWrap .badge{ width:100% !important; aspect-ratio:1 !important; height:auto !important;
-  min-width:0 !important; display:flex !important; align-items:center; justify-content:center;
-  font-size:clamp(14px, 5vw, 22px) !important; }
+  grid-template-columns:repeat(3, var(--gridCell, 64px) calc(var(--gridCell, 64px) * 0.36));
+  gap:var(--gridGap, 5px); margin:0 auto; }
+.gridWrap .cell{ width:var(--gridCell, 64px) !important; height:var(--gridCell, 64px) !important;
+  aspect-ratio:auto !important; min-width:0 !important; padding:0 !important; text-align:center;
+  font-size:calc(var(--gridCell, 64px) * 0.44) !important; line-height:1 !important; }
+.gridWrap .badge{ width:var(--gridCell, 64px) !important; height:var(--gridCell, 64px) !important;
+  aspect-ratio:auto !important; min-width:0 !important; display:flex !important;
+  align-items:center; justify-content:center;
+  font-size:calc(var(--gridCell, 64px) * 0.34) !important; }
 .gridOp{ display:flex; align-items:center; justify-content:center;
-  min-width:clamp(13px, 4.6vw, 24px); font-weight:900; line-height:1;
-  font-size:clamp(15px, 5.4vw, 24px); }
+  min-width:0; height:calc(var(--gridCell, 64px) * 0.34); font-weight:900; line-height:1;
+  font-size:calc(var(--gridCell, 64px) * 0.40); }
 /* Raja: "+ and x seems similar in visibility". At this size they differ only by
    a 45 degree turn, so size alone cannot separate them -- it just makes two
    bigger similar shapes. Split them by FAMILY instead, which is also a true
@@ -2070,15 +2074,28 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
    `em` resolves against the PARENT, not against .gridOp's clamp above it, so
    1.34em quietly made the times sign 17px next to a 21px plus: smaller, which
    is the opposite of the intent, and exactly what was being complained about. */
-.gridOp-times{ font-size:clamp(20px, 7.2vw, 32px); }
+.gridOp-times{ font-size:calc(var(--gridCell, 64px) * 0.54); }
 /* The blanks between the column signs. Shaded, exactly as the printed puzzle
    shades them, so the eye follows the six lines instead of reading the whole
    thing as one block. */
-.gridGap{ background:rgba(94,64,32,.13); border-radius:5px; min-height:10px; }
+.gridGap{ background:rgba(94,64,32,.13); border-radius:5px;
+  height:calc(var(--gridCell, 64px) * 0.34); }
+/* The pickers sit with the board, not in the app's settings: they change what
+   the puzzle IS, and a control that reshapes one puzzle does not belong in a
+   row that speaks for the whole app. */
+.gridPicks{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap;
+  margin:0 auto 8px; max-width:340px; }
+/* An explicit colour, not a token: --bink2 is a light ink meant for text on
+   the dark theme, and on the sandalwood board it came out almost invisible. */
+.gridPick{ display:flex; align-items:center; gap:6px; font-size:11.5px;
+  font-weight:800; color:#4A331A !important; }
+.gridPick select{ font-family:inherit; font-weight:800; font-size:13px;
+  padding:5px 7px; border-radius:9px; border:2px solid rgba(94,64,32,.42);
+  background:#FFFAF0; color:#241708; }
 /* The signs ARE the level now -- they are the only thing separating Easy from
    Medium from Hard on the list, so they get spacing and a little size rather
    than being set as quiet meta text like "one space" or "1 to 99". */
-.toggleBtn[data-size^="grid"] .lvDiff{ font-size:1.2em; letter-spacing:.2em; font-weight:800; }
+.toggleBtn[data-size="grid"] .lvDiff{ font-size:1.2em; letter-spacing:.2em; font-weight:800; }
 #playRow{ flex:none; display:flex !important; gap:5px !important; margin:6px 0 !important; }
 /* min-height 44 so Hint and CLEAR clear the touch minimum — they were 33px */
 /* 15px, not 10.5. Measured first: at 10.5 the longest label needed 42px in a
@@ -2288,12 +2305,14 @@ body.sudokuMode .solvedCounter{ display:none !important; }
    say -- there is no one number to show, and showing ? forever reads like
    something failed to load. */
 body.gridMode .targetPill{ display:none !important; }
+#gridPicks{ display:none; }
+body.gridMode #gridPicks{ display:flex; }
 /* 0 and the sign key cannot produce a legal entry on this board -- every box
    holds a single digit from 1 to 9. They stay in place so the keypad does not
    reshuffle under a child's thumb, but they read as unavailable instead of
    looking live and doing nothing. */
-body.gridMode #keypad .kp[data-k="0"],
-body.gridMode #keypad .kp[data-nav="sign"]{ opacity:.34 !important; }
+body.gridMode #keypad .kp[data-nav="sign"],
+#keypad .kp.kpDead{ opacity:.34 !important; }
 body.gridMode .solvedCounter{ flex:1 1 auto !important; }
 #sudokuPanel{ width:100%; max-width:560px; margin:0 auto; }
 /* Scrollable, exactly as #slidePanel and #gatePanel are, and for the same
@@ -4746,28 +4765,20 @@ body{ background:#C9A87C !important; }
   </div>
 
   <!-- Two one-card groups on one line, so neither leaves an empty seat. -->
-  <!-- 🔢 NUMBER GRID -- took the triangle's seat. Raja, relaying his
-       group: "suggest remove triangle puzzle, it was completely mind mapping
-       and dragging to follow." This asks what a number IS rather than where it
-       goes, which is the whole point of the swap. Three levels by which signs
-       appear, so a beginner does not meet division first. -->
+  <!-- 🔢 FILL IN THE BLANK -- one card, not three. The level used to be
+       baked into the card, so the list carried three rows that differed only
+       by which signs were allowed. Raja, after playing the standalone: "opted
+       both easy medium hard in one tab listings". Both choices moved onto the
+       board, which also freed the numbers to stop being 1-9. -->
   <div class="modeGroup">
     <div class="modeHead" style="--m1:#a5d8f3; --m2:#0ea5e9;">
       <span class="mIco">🔢</span>
-      <span><b>Fill In The Blank</b><i>fill the blanks so every row and column makes its number</i></span>
+      <span><b>Fill In The Blank</b><i>fill the boxes so every row and column makes its number</i></span>
     </div>
     <div class="toggleSwitch">
-      <button class="toggleBtn lvCard" data-size="grid1" data-name="🔢 Fill In The Blank · Easy" data-short="🔢 Fill In The Blank" style="color:#0ea5e9; border-color:#0284c7; --c1:#a5d8f3; --c2:#38bdf8;">
-        <span class="lvGlyph" aria-hidden="true">➕</span>
-        <span class="lvText"><b class="lvName">Fill In The Blank · Easy</b><span class="lvDiff">+ −</span><span class="lvMeta">1-9 once each · work left to right</span><span class="lvNow">PLAYING</span></span>
-      </button>
-      <button class="toggleBtn lvCard" data-size="grid2" data-name="🔢 Fill In The Blank · Medium" style="color:#0ea5e9; border-color:#0284c7; --c1:#a5d8f3; --c2:#38bdf8;">
-        <span class="lvGlyph" aria-hidden="true">✖️</span>
-        <span class="lvText"><b class="lvName">Fill In The Blank · Medium</b><span class="lvDiff">+ − ×</span><span class="lvMeta">1-9 once each · work left to right</span><span class="lvNow">PLAYING</span></span>
-      </button>
-      <button class="toggleBtn lvCard lvWide" data-size="grid3" data-name="🔢 Fill In The Blank · Hard" style="color:#0ea5e9; border-color:#0284c7; --c1:#a5d8f3; --c2:#38bdf8;">
-        <span class="lvGlyph" aria-hidden="true">➗</span>
-        <span class="lvText"><b class="lvName">Fill In The Blank · Hard</b><span class="lvDiff">+ − × ÷</span><span class="lvMeta">1-9 once each · work left to right</span><span class="lvNow">PLAYING</span></span>
+      <button class="toggleBtn lvCard lvWide" data-size="grid" data-name="🔢 Fill In The Blank" style="color:#0ea5e9; border-color:#0284c7; --c1:#a5d8f3; --c2:#38bdf8;">
+        <span class="lvGlyph" aria-hidden="true">🔢</span>
+        <span class="lvText"><b class="lvName">Fill In The Blank</b><span class="lvDiff">+ − × ÷ = n</span><span class="lvMeta">pick the numbers and the signs on the board · work left to right</span><span class="lvNow">PLAYING</span></span>
       </button>
     </div>
   </div>
@@ -5273,15 +5284,24 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
        Stored flat at cells[0][0..8], the same trick the triangle used, so
        every rows x cols-generic function in this file keeps working. */
-    'grid1': { shape:'opgrid', ops:['+','-'], need:['+','-'],         caps:[12,20],    rows:1, cols:9,
+    /* ONE entry, not three. The level used to be baked into the card -- Easy
+       meant "+ and -" for ever -- so the puzzle list carried three rows that
+       differed only by which signs were allowed. Raja, after playing the
+       standalone: "opted both easy medium hard in one tab listings."
+
+       Both choices now live on the board: which nine numbers, and which signs.
+       That also lets the numbers stop being 1-9. The magic square has always
+       accepted any run -- "start at 2 and step by 2" -- and this now does too,
+       any nine CONSECUTIVE numbers, so multi-digit numbers and multi-digit
+       answers arrive on their own. Measured across 72 boards, every start and
+       every sign set: one answer each, every printed answer matching its line. */
+    'grid': { shape:'opgrid', rows:1, cols:9,
       lines:['r0','r1','r2','c0','c1','c2'],
-      inst:'<b>Fill In The Blank!</b> Put <b>1 to 9</b> in the white boxes, each one only once, so every row and every column makes the number at its end. <b>Work left to right</b> — do not do × before +. ➕➖' },
-    'grid2': { shape:'opgrid', ops:['+','-','*'], need:['+','-','*'],     caps:[15,24,30], rows:1, cols:9,
-      lines:['r0','r1','r2','c0','c1','c2'],
-      inst:'<b>Fill In The Blank — with ×!</b> Put <b>1 to 9</b> in the white boxes, each one only once, so every row and every column makes the number at its end. <b>Work left to right</b> — do not do × before +. ✖️' },
-    'grid3': { shape:'opgrid', ops:['+','-','*','/'], need:['+','-','*','/'], caps:[10,14,20], rows:1, cols:9,
-      lines:['r0','r1','r2','c0','c1','c2'],
-      inst:'<b>Fill In The Blank — all four!</b> Put <b>1 to 9</b> in the white boxes, each one only once, so every row and every column makes the number at its end. <b>Work left to right</b> — do not do × before +. ➗' }
+      starts:[1,2,3,5,10,20],
+      sets:[ { k:'+-', label:'+ \u2212' },
+             { k:'+-*', label:'+ \u2212 \u00d7' },
+             { k:'+-*/', label:'+ \u2212 \u00d7 \u00f7' } ],
+      inst:'<b>Fill In The Blank!</b> Put the nine numbers in the white boxes, each one only once, so every row and every column makes the number at its end. <b>Work left to right</b> \u2014 do not do \u00d7 before +.' }
   };
   
   /* -- the Number Grid's arithmetic and its generator ----------------------
@@ -5302,28 +5322,30 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     var y = GRID_OPS[o2](x, c); if (y === null || y < 0) return null;
     return y;
   }
-  function gridShuffled(){
-    var x = [1,2,3,4,5,6,7,8,9];
+  function gridShuffled(vals){
+    var x = vals.slice();
     for (var i = 8; i > 0; i--){ var j = (Math.random()*(i+1))|0, t = x[i]; x[i] = x[j]; x[j] = t; }
     return x;
   }
   /* Does more than one arrangement fit? A grid with two answers calls a child
      wrong when they are right, so this stops as soon as it finds a second. */
-  function gridCountSolutions(rOps, cOps, r, c, stopAt){
-    var found = 0, cell = [], used = new Array(10);
+  function gridCountSolutions(vals, rOps, cOps, r, c, stopAt){
+    var found = 0, cell = [], used = new Array(9);
     (function place(i){
       if (found >= stopAt) return;
       if (i === 9){ found++; return; }
-      for (var v = 1; v <= 9; v++){
-        if (used[v]) continue;
-        cell[i] = v; used[v] = true;
+      /* over the nine numbers this board was dealt from, by index -- the one
+         change that lets any run of nine work rather than 1-9 alone */
+      for (var k = 0; k < 9; k++){
+        if (used[k]) continue;
+        cell[i] = vals[k]; used[k] = true;
         var ok = true;
         if (i % 3 === 2){ var rw = (i/3)|0;
           if (gridLtr(cell[rw*3], rOps[rw][0], cell[rw*3+1], rOps[rw][1], cell[rw*3+2]) !== r[rw]) ok = false; }
         if (ok && i >= 6){ var cl = i - 6;
           if (gridLtr(cell[cl], cOps[cl][0], cell[cl+3], cOps[cl][1], cell[cl+6]) !== c[cl]) ok = false; }
         if (ok) place(i + 1);
-        used[v] = false;
+        used[k] = false;
       }
     })(0);
     return found;
@@ -5331,9 +5353,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   /* Can it be REASONED out, or only brute-forced? Uniqueness is not enough:
      the Method sheet teaches narrowing each box by what its line allows, so a
      grid is only fair if that narrowing actually finishes it. */
-  function gridDeduce(P){
+  function gridDeduce(vals, P){
     var cand = [], eqs = [], i;
-    for (i = 0; i < 9; i++) cand.push([1,2,3,4,5,6,7,8,9]);
+    for (i = 0; i < 9; i++) cand.push(vals.slice());
     for (i = 0; i < 3; i++) eqs.push({ cells:[i*3, i*3+1, i*3+2], ops:P.rOps[i], target:P.r[i] });
     for (i = 0; i < 3; i++) eqs.push({ cells:[i, i+3, i+6],       ops:P.cOps[i], target:P.c[i] });
     var changed = true, guard = 0;
@@ -5375,13 +5397,26 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
      resort rather than ever coming back empty. The standalone learned that the
      hard way: clamping at the last cap returned nothing about once in 300, and
      the caller read .grid straight off it. */
-  function gridGenerate(pool, caps, need){
-    var budget = 60000, ladder = budget * 0.85, stageLen = ladder / caps.length;
+  function gridGenerate(vals, pool){
+    /* An empty or unknown sign pool would send pick() back undefined and throw
+       inside the arithmetic, which aborts initBoard and leaves NO board at all
+       -- a blank screen rather than a puzzle. A picker cannot produce that, but
+       a saved value from an older build could, so fall back rather than die. */
+    if (!pool || !pool.length) pool = ['+','-','*'];
+    pool = pool.filter(function(o){ return GRID_OPS[o]; });
+    if (!pool.length) pool = ['+','-','*'];
+    /* The cap is a PREFERENCE, widened as a last resort so this never comes
+       back empty when a grid does exist -- the lesson the 1-9 version learned
+       when clamping made it return nothing about once in 300. Scaled to the
+       numbers now rather than fixed, because a run of 20-28 makes far bigger
+       line answers than 1-9 ever could. */
+    var top = vals[vals.length - 1], ladder = [2*top, 4*top, 8*top];
+    var budget = 60000, span = budget * 0.85, stage = span / ladder.length;
     var pick = function(){ return pool[(Math.random()*pool.length)|0]; };
     for (var attempt = 0; attempt < budget; attempt++){
-      var cap = attempt < ladder ? caps[(attempt/stageLen)|0]
-              : caps[caps.length-1] + (1 + (((attempt-ladder)/500)|0)) * 10;
-      var g = gridShuffled(), i, v, ok = true, r = [], c = [];
+      var cap = attempt < span ? ladder[(attempt/stage)|0]
+              : ladder[ladder.length-1] * (2 + (((attempt-span)/2000)|0));
+      var g = gridShuffled(vals), i, v, ok = true, r = [], c = [];
       var rOps = [[pick(),pick()],[pick(),pick()],[pick(),pick()]];
       var cOps = [[pick(),pick()],[pick(),pick()],[pick(),pick()]];
       for (i = 0; i < 3 && ok; i++){ v = gridLtr(g[i*3], rOps[i][0], g[i*3+1], rOps[i][1], g[i*3+2]);
@@ -5389,36 +5424,32 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       for (i = 0; i < 3 && ok; i++){ v = gridLtr(g[i], cOps[i][0], g[i+3], cOps[i][1], g[i+6]);
         if (v === null || v > cap || v < 1) ok = false; else c.push(v); }
       if (!ok) continue;
-      /* Raja, reading the Medium card's "plus, minus and times": "what it
-         means, that times it must need?"
-
-         It did not. Every sign was drawn at random from the level's pool, so
-         nothing stopped a Medium grid coming out with no x in it at all --
-         which is an Easy grid wearing the wrong label. Measured, it happened
-         rarely, because a grid with only + and - seldom has a single answer;
-         but rarely is not never, and a card should not promise something the
-         puzzle merely tends to do. Now the promise is a requirement. */
-      if (need){
-        var missing = false;
-        for (i = 0; i < need.length && !missing; i++){
-          var seen = false;
-          for (var q = 0; q < 3 && !seen; q++){
-            if (rOps[q][0] === need[i] || rOps[q][1] === need[i]) seen = true;
-            if (cOps[q][0] === need[i] || cOps[q][1] === need[i]) seen = true;
-          }
-          if (!seen) missing = true;
+      /* Every sign the board offers must actually appear, or a "+ - x" board
+         can arrive with no x on it -- an easier board under a harder label,
+         which is the gap Raja found by reading the card. */
+      var missing = false;
+      for (i = 0; i < pool.length && !missing; i++){
+        var seen = false;
+        for (var q = 0; q < 3 && !seen; q++){
+          if (rOps[q][0] === pool[i] || rOps[q][1] === pool[i]) seen = true;
+          if (cOps[q][0] === pool[i] || cOps[q][1] === pool[i]) seen = true;
         }
-        if (missing) continue;
+        if (!seen) missing = true;
       }
-      if (gridCountSolutions(rOps, cOps, r, c, 2) !== 1) continue;
-      var P = { grid:g, rOps:rOps, cOps:cOps, r:r, c:c };
-      if (!gridDeduce(P)) continue;
+      if (missing) continue;
+      if (gridCountSolutions(vals, rOps, cOps, r, c, 2) !== 1) continue;
+      var P = { vals:vals, grid:g, rOps:rOps, cOps:cOps, r:r, c:c };
+      if (!gridDeduce(vals, P)) continue;
       return P;
     }
     return null;
   }
+
   // the grid currently on screen -- its answer, its operators and its six targets
   var gridP = null;
+  // and what it was dealt from: the run of nine, and which signs may appear
+  var gridStart = 1, gridOps = '+-*';
+  function gridNine(){ var v = []; for (var i = 0; i < 9; i++) v.push(gridStart + i); return v; }
 
   var currentSize = '3x3';
   var solvedCount3x3 = 0; // Track 3x3 solves
@@ -6066,9 +6097,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
        operators and six fresh answers every deal. Generated BEFORE the board
        is built, because the board draws the operators and the answers. */
     if (puzzle.shape === 'opgrid'){
-      var dealt = gridGenerate(puzzle.ops, puzzle.caps, puzzle.need);
+      var dealt = gridGenerate(gridNine(), gridOps.split(''));
       if (dealt) gridP = dealt;            // keep the old one rather than crash
     }
+    gridKeypad(puzzle.shape === 'opgrid');
     board.className = 'board size' + currentSize;
     document.body.classList.toggle('gridMode', puzzle.shape === 'opgrid');
     
@@ -6357,6 +6389,46 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         return d;
       }
 
+      /* The two choices that used to BE the three cards. On the board, because
+         they change the puzzle rather than describe it -- picking a different
+         run of nine cannot leave the old grid on screen. */
+      var picks = document.createElement('div');
+      picks.className = 'gridPicks';
+      function pickerFor(label, id, items, current, onPick){
+        var w = document.createElement('label');
+        w.className = 'gridPick';
+        w.setAttribute('for', id);
+        w.appendChild(document.createTextNode(label));
+        var sel = document.createElement('select');
+        sel.id = id;
+        items.forEach(function(it){
+          var o = document.createElement('option');
+          o.value = it.v; o.textContent = it.t;
+          if (String(it.v) === String(current)) o.selected = true;
+          sel.appendChild(o);
+        });
+        sel.addEventListener('change', function(){ onPick(sel.value); });
+        w.appendChild(sel);
+        return w;
+      }
+      picks.appendChild(pickerFor('Numbers', 'gridStartSel',
+        puzzle.starts.map(function(n){ return { v:n, t:n + '\u2013' + (n+8) }; }),
+        gridStart, function(v){ gridStart = +v; initBoard(); }));
+      picks.appendChild(pickerFor('Signs', 'gridOpsSel',
+        puzzle.sets.map(function(x){ return { v:x.k, t:x.label }; }),
+        gridOps, function(v){ gridOps = v; initBoard(); }));
+      /* ABOVE the board, not inside it. .boardContainer is a fixed-height,
+         overflow:hidden box that sizes the grid to fill it -- put the pickers
+         in there and the grid plus the pickers are taller than the box allows,
+         so the bottom row is clipped away behind the keypad. A whole row of the
+         puzzle, gone. They belong in the flow above it. */
+      var wrapHost = document.getElementById('boardWrap') || board;
+      var old = document.getElementById('gridPicks');
+      if (old && old.parentNode) old.parentNode.removeChild(old);
+      picks.id = 'gridPicks';
+      if (wrapHost.parentNode) wrapHost.parentNode.insertBefore(picks, wrapHost);
+      else board.appendChild(picks);
+
       var wrap = document.createElement('div');
       wrap.className = 'gridWrap';
       var made = [], WHERE = ['top left','top middle','top right',
@@ -6634,7 +6706,28 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // implementation rather than forcing this math to cover a shape it was
     // never built for. Still calls fitCells() below: that part (auto-shrink
     // font by digit count) is already generic over rows×cols.
-    if (pz.shape === 'opgrid'){ fitCells(); fitBadges(); return; }
+    if (pz.shape === 'opgrid'){
+      /* Three rows of boxes, two rows of signs between them, and the row of
+         column answers along the bottom -- four square rows and two short ones.
+         Every other board here is n x n, so its width alone settles its height;
+         this one can look fine across and still run past the bottom, and what
+         goes under the keypad is the answers, a third of the puzzle.
+
+         So the box size comes from BOTH directions and takes the smaller. The
+         sign columns and rows are a fraction of a box, measured from the CSS
+         above rather than guessed: 0.36 across, 0.34 down. */
+      var host = document.getElementById('boardWrap');
+      var availW = (host ? host.clientWidth : 320) - 6;
+      var availH = (host ? host.clientHeight : 320) - 6;
+      var g = 5;
+      var byW = (availW - 5*g) / (3 + 3*0.36);
+      var byH = (availH - 5*g) / (4 + 2*0.34);
+      var cell = Math.max(26, Math.min(92, Math.floor(Math.min(byW, byH))));
+      board.style.setProperty('--gridCell', cell + 'px');
+      board.style.setProperty('--gridGap', g + 'px');
+      fitCells(); fitBadges();
+      return;
+    }
     var tracks = pz.rows + 2;                       // grid cells + the badge ring
     var gap = tracks >= 10 ? 2 : tracks >= 8 ? 3 : 6;
     var vw = document.documentElement.clientWidth || window.innerWidth || 360;
@@ -7138,7 +7231,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   var NEXT_SIZE_MAP = {
     '3x3':'4x4', '4x4':'5x5', '5x5':'6x6',
     '6x6':'8x8', '8x8':'10x10', '10x10':'3x3',
-    '3cube':'grid1', 'grid1':'grid2', 'grid2':'grid3', 'grid3':'ramanujan',
+    '3cube':'grid', 'grid':'ramanujan',
     'ramanujan':'binary', 'binary':'3x3'
   };
 
@@ -13019,8 +13112,21 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
        paste. Keeping the LAST valid digit also makes a second tap REPLACE
        rather than append, which is what a one-digit box should do. */
     if ((PUZZLES[currentSize] || {}).shape === 'opgrid'){
-      var kept = cell.value.replace(/[^1-9]/g, '');
-      cell.value = kept ? kept.slice(-1) : '';
+      /* Only a number this board was dealt from may stand. A part-typed entry
+         is allowed through while it could still BECOME one -- "1" on a 10-18
+         board is on its way to 13 -- so the system keyboard still works; but
+         anything that can never be one of the nine is dropped on the spot.
+         The old rule here was "a single digit 1-9", which was right when the
+         numbers were always 1-9 and wrong the moment they were not. */
+      var kept = cell.value.replace(/[^0-9]/g, '');
+      var vals = (gridP && gridP.vals) || [1,2,3,4,5,6,7,8,9];
+      var couldBe = function(t){
+        if (!t) return false;
+        for (var i = 0; i < vals.length; i++) if (String(vals[i]).indexOf(t) === 0) return true;
+        return false;
+      };
+      while (kept && !couldBe(kept)) kept = kept.slice(1);   // drop from the front, keep what still fits
+      cell.value = kept;
       if (cell.value !== '') sfx('place', panForCell(cell));
       duckMusic();
       startTimer();
@@ -13053,9 +13159,57 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   }
 
   // ---- Custom keypad actions ----
+  /* The nine keys carry this board's own numbers on Fill In The Blank, and go
+     back to being digits everywhere else. With a run of 10-18 a 0-9 pad has
+     nothing useful to offer: 13 cannot be built from single digits without
+     allowing multi-digit typing, which is exactly what had to be shut off when
+     a box accepted "10". Keys that mean whole numbers sidestep that entirely,
+     and also show at a glance which numbers are still unused. */
+  function gridKeypad(on){
+    var keys = document.querySelectorAll('#keypad .kp[data-k]');
+    if (!keys.length) return;
+    var digits = ['1','2','3','4','5','6','7','8','9','0'];
+    for (var i = 0; i < keys.length; i++){
+      var k = keys[i];
+      if (on && gridP && i < 9){
+        k.dataset.k = String(gridP.vals[i]);
+        k.textContent = gridP.vals[i];
+        k.classList.remove('kpDead');
+      } else if (on && i === 9){
+        k.dataset.k = '';                 // nothing for a tenth key to say
+        k.textContent = '\u2013';
+        k.classList.add('kpDead');
+      } else {
+        k.dataset.k = digits[i] !== undefined ? digits[i] : String(i);
+        k.textContent = k.dataset.k;
+        k.classList.remove('kpDead');
+      }
+    }
+  }
+
   function kpDigit(d){
     var cell = currentCell();
     if (!cell || cell.readOnly || cell.value.length >= 4) return;
+    /* On this board a key IS a number, not a digit. With 10-18 there is
+       nothing a 0-9 pad can do -- you cannot build 13 from single digits
+       without allowing multi-digit typing, which is the very thing that had to
+       be closed off. So the key carries its whole number and replaces
+       whatever was in the box. */
+    if ((PUZZLES[currentSize] || {}).shape === 'opgrid'){
+      /* Only a number this board was dealt from. The tenth key has nothing to
+         offer on a nine-number board and carries no value -- without this it
+         passed an empty string through and quietly ERASED the box, which is a
+         worse thing for a key to do than nothing at all. */
+      var ok9 = gridP && gridP.vals && gridP.vals.indexOf(+d) >= 0;
+      if (!ok9) return;
+      setActive(cell);
+      cell.value = String(d);
+      startTimer();
+      sfx('place', panForCell(cell));
+      duckMusic();
+      update();
+      return;
+    }
     setActive(cell);
     cell.value += d;
     processInput(cell);
@@ -15489,7 +15643,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     '3x3':'🥇 Count-down Master', '4x4':'🧩 Fill & Swap Master', '5x5':'🌟 Big Square Master',
     '6x6':'🧱 Four-Block Master', '8x8':'🏅 Flip Master', '10x10':'🏆 Grandmaster',
     '3cube':'✖️ Powers of Two', 'ramanujan':'🎂 Birthday Magician',
-    'grid1':'➕ Blank Filler', 'grid2':'✖️ Blank Filler · Times', 'grid3':'➗ Blank Filler · All Four'
+    'grid':'🔢 Blank Filler'
   };
   function stickerStore(){
     try { return JSON.parse(localStorage.getItem('mmStickers') || '[]'); } catch(e){ return []; }
@@ -15691,7 +15845,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-261 (a Fill In The Blank box takes one digit from 1 to 9 and nothing else — the keypad could build 10 because maxLength never applied to it)';
+  var BUILD_VER = 'beta-262 (Fill In The Blank is one card now — the numbers and the signs are chosen on the board, and the numbers no longer have to be 1 to 9)';
   /* ── BEACON FOR APPS INSTALLED LONG AGO ─────────────────────────────────
      Raja's iPhone sat on v139 and would not come forward, however many times
      he tapped Online Update.
@@ -15716,7 +15870,7 @@ if (navigator.storage && navigator.storage.persist) {
      rejects). check-update-beacon.js keeps it equal to BUILD_VER, because a
      beacon that goes stale strands people exactly as thoroughly as no beacon.
 
-     window.BETA_VER = 'beta-261'
+     window.BETA_VER = 'beta-262'
      ───────────────────────────────────────────────────────────────────── */
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
