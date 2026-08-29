@@ -46,15 +46,29 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
 
   await send('Runtime.enable');
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
-  await sleep(900);
+  /* Wait for each step to actually happen instead of sleeping a guessed
+     amount. Against the local file every fixed sleep was generous; against the
+     live URL the very first one was not, the splash had not rendered yet, and
+     every assertion after it failed for a reason that had nothing to do with
+     the product. */
+  const waitFor = async (expr, ms) => {
+    const until = Date.now() + (ms || 15000);
+    while (Date.now() < until){
+      if (await ev(expr)) return true;
+      await sleep(200);
+    }
+    return false;
+  };
+
+  ok('the page loaded', await waitFor(`!!document.querySelector('.splashPlay')`), FILE);
   await ev(`document.querySelector('.splashPlay').click()`);
-  await sleep(900);
+  ok('the puzzle list opened', await waitFor(`!!document.getElementById('gateListBtn')`));
   await ev(`document.getElementById('gateListBtn').click()`);
-  await sleep(800);
+  ok('the gate list opened', await waitFor(`!!document.querySelector('.rowBtn[data-gate="xnor"]')`));
   await ev(`(function(){ var b=document.querySelector('.rowBtn[data-gate="xnor"]:not([data-level])'); if(b) b.click(); })()`);
-  await sleep(700);
+  ok('XNOR offers its levels', await waitFor(`!!document.querySelector('.rowBtn[data-gate="xnor"][data-level="0"]')`));
   await ev(`(function(){ var b=document.querySelector('.rowBtn[data-gate="xnor"][data-level="0"]'); if(b) b.click(); })()`);
-  await sleep(1000);
+  ok('a room opened', await waitFor(`!!document.querySelector('.gateChoiceBtn')`));
 
   const room = () => ev(`(function(){
     var p = document.querySelector('.gateProgress');
