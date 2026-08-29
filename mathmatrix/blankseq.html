@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Fill In The Blank — any nine in a row (trial)</title>
+<!--
+  STANDALONE TRIAL. Raja: "try with stand alone with individual code, after
+  how results successful later think to integrate to existing."
+
+  Nothing here touches beta.html. Open the file, press Measure, play a board.
+
+  THE QUESTION
+  The shipped puzzle is fixed to 1-9. Raja asked whether it can work the way
+  the magic square does -- "0 to 9 or 1 to 10 or 2 to 11 like continuing" --
+  nine CONSECUTIVE numbers starting anywhere, so multi-digit numbers appear on
+  their own once the start is high enough, and the six answers are calculated
+  behind the play and frozen.
+
+  WHY IT IS NOT FREE
+  A magic square accepts any such run because its property survives shifting:
+  add 5 to every number and every line total rises by 15, so 6-14 behaves
+  exactly like 1-9. This puzzle mixes + - x /, and those do NOT shift together.
+  a+b-c shifts by a predictable amount; a x b - c does not shift at all, it
+  distorts. So no grid can be derived from the 1-9 one -- each start has to be
+  searched for on its own.
+
+  The real unknown is DIVISION. Every step here must stay whole and positive,
+  and 12 / 7 does not land. That is what this measures rather than guesses.
+-->
+<style>
+  :root{ --gr:#DCC49E; --sf:#FFFAF0; --ink:#241708; --ink2:#4A331A; --ink3:#6B5334;
+         --open:#F0A500; --done:#127A45; --bad:#B3261E; --accent:#8A5E31; --mul:#5B21B6; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:"Trebuchet MS",Verdana,sans-serif; color:var(--ink);
+    background:linear-gradient(176deg,#E4CFAC 0%,#CDAE83 38%,#DCC49E 66%,#C9A87C 100%);
+    min-height:100dvh; padding:12px 12px 40px; }
+  .wrap{ max-width:560px; margin:0 auto; }
+  h1{ font-size:19px; margin:0 0 4px; letter-spacing:-.2px; }
+  .sub{ font-size:12.5px; color:var(--ink2); margin:0 0 12px; line-height:1.55; }
+  .panel{ background:rgba(255,250,240,.72); border-radius:12px; padding:11px 13px;
+    margin-bottom:12px; font-size:13px; line-height:1.6; }
+  label{ font-weight:800; font-size:12.5px; color:var(--ink2); }
+  select, button{ font-family:inherit; font-weight:800; }
+  select{ font-size:14px; padding:7px 9px; border-radius:9px; border:2px solid var(--accent);
+    background:var(--sf); color:var(--ink); }
+  .btn{ padding:10px 16px; border:0; border-radius:11px; font-size:14px; cursor:pointer; }
+  .btn.primary{ background:var(--open); color:#2B0512; }
+  .btn.go{ background:var(--done); color:#fff; }
+  .btn.ghost{ background:rgba(94,64,32,.18); color:var(--ink2); }
+  .row{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:9px; }
+
+  table{ width:100%; border-collapse:collapse; font-size:12.5px; margin-top:9px; }
+  th,td{ padding:5px 6px; text-align:center; border-bottom:1px solid rgba(94,64,32,.22); }
+  th{ font-size:11.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--ink3); }
+  td.k{ text-align:left; font-weight:800; }
+  .yes{ color:var(--done); font-weight:800; }
+  .no{ color:var(--bad); font-weight:800; }
+
+  /* the board: cell op cell op cell answer, exactly the printed shape */
+  .grid{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr) auto);
+    gap:5px; max-width:420px; margin:10px auto 0; }
+  /* Only the BOXES and the ANSWERS are squares. The spacer between the column
+     signs must not be one: an aspect-ratio block sitting in an `auto` track
+     takes its width from its height and its height from its width, and the
+     flexible columns collapse around it -- which is exactly what happened, and
+     the boxes rendered as dots. */
+  .sq{ aspect-ratio:1; width:100%; display:grid; place-items:center; font-weight:800; border-radius:9px; }
+  .cell{ background:var(--sf); color:var(--ink); border:2px solid #7FC8DA; cursor:pointer;
+    user-select:none; font-size:clamp(13px,4.4vw,20px); }
+  .cell.sel{ border-color:var(--open); box-shadow:0 0 0 3px rgba(240,165,0,.45); }
+  .cell.bad{ background:#FFD9D9; border-color:var(--bad); }
+  .op{ display:flex; align-items:center; justify-content:center; min-width:16px;
+    font-size:clamp(14px,5vw,22px); font-weight:900; }
+  .op-add{ color:var(--ink2); }
+  .op-mul{ color:var(--mul); font-size:clamp(18px,6.4vw,28px); }
+  .tgt{ background:var(--open); color:#2B0512; border-radius:0;
+    box-shadow:inset 0 0 0 1px rgba(0,0,0,.30); font-size:clamp(12px,4vw,19px); }
+  .tgt.done{ background:var(--done); color:#fff; }
+  .tgt.wrong{ background:var(--bad); color:#fff; }
+  .gap{ background:rgba(94,64,32,.13); border-radius:5px; min-height:12px; }
+
+  .pad{ display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin:12px auto 0; max-width:420px; }
+  .key{ padding:12px 0; border:0; border-radius:11px; background:var(--accent);
+    color:#FFF6E7; font-size:16px; font-weight:800; cursor:pointer; }
+  .key.dim{ opacity:.34; }
+  .say{ margin-top:11px; background:var(--sf); border-radius:12px; padding:11px 13px;
+    font-size:13.5px; line-height:1.6; min-height:42px; }
+  .say b{ color:#9A3412; }
+  code{ background:rgba(94,64,32,.14); padding:1px 5px; border-radius:5px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Fill In The Blank — any nine in a row</h1>
+  <p class="sub">The shipped puzzle is fixed to <b>1–9</b>. This trial asks whether it works with
+  <b>nine consecutive numbers starting anywhere</b> — 2–10, 5–13, 10–18 — so multi-digit numbers
+  appear on their own and the six answers are worked out behind the play.</p>
+
+  <div class="panel">
+    <b>Does it hold up?</b> The magic square accepts any run because its property survives
+    shifting. This one mixes <b>+ − × ÷</b>, which do not shift together, so every start has to be
+    searched for on its own. The real unknown is <b>÷</b>: every step must stay whole and positive,
+    and <code>12 ÷ 7</code> does not land. Measure it rather than guess.
+    <div class="row">
+      <button class="btn primary" id="measureBtn">Measure every start</button>
+      <span id="measureNote" style="font-size:12px; color:var(--ink3);"></span>
+    </div>
+    <div id="report"></div>
+  </div>
+
+  <div class="panel">
+    <div class="row">
+      <label for="startSel">Numbers</label>
+      <select id="startSel"></select>
+      <label for="opsSel">Signs</label>
+      <select id="opsSel">
+        <option value="+-">+ −</option>
+        <option value="+-*" selected>+ − ×</option>
+        <option value="+-*/">+ − × ÷</option>
+      </select>
+      <button class="btn go" id="dealBtn">Deal a board</button>
+      <button class="btn ghost" id="revealBtn">Reveal</button>
+      <button class="btn ghost" id="clearBtn">Clear</button>
+    </div>
+    <div class="grid" id="grid"></div>
+    <div class="pad" id="pad"></div>
+    <div class="say" id="say">Press <b>Deal a board</b>.</div>
+  </div>
+</div>
+
+<script>
+/* ── arithmetic ──────────────────────────────────────────────────────────────
+   Left to right, whole and positive at EVERY step -- not merely at the end. */
+var OPS = { '+':function(a,b){ return a+b; }, '-':function(a,b){ return a-b; },
+            '*':function(a,b){ return a*b; },
+            '/':function(a,b){ return (b!==0 && a%b===0) ? a/b : null; } };
+var SY  = { '+':'+', '-':'−', '*':'×', '/':'÷' };
+
+function ltr(a,o1,b,o2,c){
+  var x = OPS[o1](a,b); if (x === null || x < 0) return null;
+  var y = OPS[o2](x,c); if (y === null || y < 0) return null;
+  return y;
+}
+function nineFrom(start){
+  var v = []; for (var i = 0; i < 9; i++) v.push(start + i); return v;
+}
+function shuffled(v){
+  var x = v.slice();
+  for (var i = x.length-1; i > 0; i--){ var j=(Math.random()*(i+1))|0, t=x[i]; x[i]=x[j]; x[j]=t; }
+  return x;
+}
+
+/* How many arrangements of THESE nine numbers fit? Stops at `cap`, so a broken
+   grid cannot hang the page. Backtracks over indices, not over 1..9, which is
+   the whole change that lets any run of nine work. */
+function countSolutions(vals, rOps, cOps, r, c, stopAt){
+  var found = 0, cell = [], used = new Array(vals.length);
+  (function place(i){
+    if (found >= stopAt) return;
+    if (i === 9){ found++; return; }
+    for (var k = 0; k < 9; k++){
+      if (used[k]) continue;
+      cell[i] = vals[k]; used[k] = true;
+      var ok = true;
+      if (i % 3 === 2){ var rw = (i/3)|0;
+        if (ltr(cell[rw*3], rOps[rw][0], cell[rw*3+1], rOps[rw][1], cell[rw*3+2]) !== r[rw]) ok = false; }
+      if (ok && i >= 6){ var cl = i - 6;
+        if (ltr(cell[cl], cOps[cl][0], cell[cl+3], cOps[cl][1], cell[cl+6]) !== c[cl]) ok = false; }
+      if (ok) place(i+1);
+      used[k] = false;
+    }
+  })(0);
+  return found;
+}
+
+/* Can it be reasoned out, or only brute-forced? Same narrowing the Method sheet
+   teaches: each box keeps only the numbers its two lines still allow. */
+function deduce(vals, P){
+  var cand = [], eqs = [], i;
+  for (i = 0; i < 9; i++) cand.push(vals.slice());
+  for (i = 0; i < 3; i++) eqs.push({ cells:[i*3,i*3+1,i*3+2], ops:P.rOps[i], target:P.r[i] });
+  for (i = 0; i < 3; i++) eqs.push({ cells:[i,i+3,i+6],       ops:P.cOps[i], target:P.c[i] });
+  var changed = true, guard = 0;
+  while (changed && guard++ < 60){
+    changed = false;
+    for (var e = 0; e < eqs.length; e++){
+      var eq = eqs[e], ways = [], A = cand[eq.cells[0]], B = cand[eq.cells[1]], C = cand[eq.cells[2]];
+      for (var a = 0; a < A.length; a++) for (var b = 0; b < B.length; b++){
+        if (B[b] === A[a]) continue;
+        for (var q = 0; q < C.length; q++){
+          if (C[q] === A[a] || C[q] === B[b]) continue;
+          if (ltr(A[a],eq.ops[0],B[b],eq.ops[1],C[q]) === eq.target) ways.push([A[a],B[b],C[q]]);
+        }
+      }
+      if (!ways.length) return false;
+      for (var k = 0; k < 3; k++){
+        var allow = {}, w;
+        for (w = 0; w < ways.length; w++) allow[ways[w][k]] = 1;
+        var idx = eq.cells[k], before = cand[idx].length;
+        cand[idx] = cand[idx].filter(function(v){ return allow[v]; });
+        if (cand[idx].length < before) changed = true;
+      }
+    }
+    for (i = 0; i < 9; i++){
+      if (cand[i].length !== 1) continue;
+      var only = cand[i][0];
+      for (var j = 0; j < 9; j++){
+        if (j === i || cand[j].indexOf(only) < 0) continue;
+        cand[j] = cand[j].filter(function(v){ return v !== only; });
+        changed = true;
+      }
+    }
+  }
+  for (i = 0; i < 9; i++) if (cand[i].length !== 1) return false;
+  return true;
+}
+
+/* One random draw: an arrangement and twelve signs. Returns the puzzle if it is
+   fair -- exactly one answer, and reachable by reasoning. */
+function tryOne(vals, pool, cap){
+  var pick = function(){ return pool[(Math.random()*pool.length)|0]; };
+  var g = shuffled(vals), i, v, ok = true, r = [], c = [];
+  var rOps = [[pick(),pick()],[pick(),pick()],[pick(),pick()]];
+  var cOps = [[pick(),pick()],[pick(),pick()],[pick(),pick()]];
+  for (i = 0; i < 3 && ok; i++){ v = ltr(g[i*3],rOps[i][0],g[i*3+1],rOps[i][1],g[i*3+2]);
+    if (v === null || v > cap || v < 1) ok = false; else r.push(v); }
+  for (i = 0; i < 3 && ok; i++){ v = ltr(g[i],cOps[i][0],g[i+3],cOps[i][1],g[i+6]);
+    if (v === null || v > cap || v < 1) ok = false; else c.push(v); }
+  if (!ok) return null;
+  if (countSolutions(vals, rOps, cOps, r, c, 2) !== 1) return null;
+  var P = { vals:vals, grid:g, rOps:rOps, cOps:cOps, r:r, c:c };
+  if (!deduce(vals, P)) return null;
+  return P;
+}
+/* The cap is a PREFERENCE, widened as a last resort so this never comes back
+   empty when a grid does exist -- the lesson the shipped generator learned. */
+function generate(vals, pool, budget){
+  var top = vals[vals.length-1], ladder = [2*top, 4*top, 8*top];
+  var span = (budget||40000) * 0.85, stage = span/ladder.length;
+  for (var attempt = 0; attempt < (budget||40000); attempt++){
+    var cap = attempt < span ? ladder[(attempt/stage)|0]
+            : ladder[ladder.length-1] * (2 + (((attempt-span)/2000)|0));
+    var P = tryOne(vals, pool, cap);
+    if (P) return P;
+  }
+  return null;
+}
+
+/* ── the measurement ─────────────────────────────────────────────────────── */
+var STARTS = [1, 2, 3, 5, 10, 20];
+var SETS = [ {k:'+-', label:'+ −'}, {k:'+-*', label:'+ − ×'}, {k:'+-*/', label:'+ − × ÷'} ];
+
+document.getElementById('measureBtn').addEventListener('click', function(){
+  var note = document.getElementById('measureNote');
+  note.textContent = 'measuring…';
+  setTimeout(function(){
+    var rows = [], TRIALS = 4000;
+    STARTS.forEach(function(s){
+      var vals = nineFrom(s), top = vals[8];
+      SETS.forEach(function(set){
+        var pool = set.k.split(''), hits = 0, t0 = performance.now(), biggest = 0;
+        for (var i = 0; i < TRIALS; i++){
+          var P = tryOne(vals, pool, 8*top);
+          if (P){ hits++; var m = Math.max.apply(null, P.r.concat(P.c)); if (m > biggest) biggest = m; }
+        }
+        var per = performance.now() - t0;
+        // and how long to actually deal one, which is what a player waits for
+        var t1 = performance.now();
+        var one = generate(vals, pool, 40000);
+        var dealMs = performance.now() - t1;
+        rows.push({ start:s, span:s + '–' + top, set:set.label,
+          hits:hits, trials:TRIALS, biggest:biggest, dealMs:Math.round(dealMs), ok:!!one });
+      });
+    });
+    var html = '<table><tr><th>Numbers</th><th>Signs</th><th>Fair grids<br>per 4000 draws</th>' +
+               '<th>Biggest<br>answer</th><th>Time to<br>deal one</th></tr>';
+    rows.forEach(function(x){
+      html += '<tr><td class="k">' + x.span + '</td><td>' + x.set + '</td>' +
+        '<td class="' + (x.hits ? 'yes' : 'no') + '">' + x.hits + '</td>' +
+        '<td>' + (x.biggest || '—') + '</td>' +
+        '<td class="' + (x.ok ? 'yes' : 'no') + '">' + (x.ok ? x.dealMs + ' ms' : 'none found') + '</td></tr>';
+    });
+    html += '</table>';
+    document.getElementById('report').innerHTML = html;
+    note.textContent = '';
+  }, 30);
+});
+
+/* ── the playable board ──────────────────────────────────────────────────── */
+var startSel = document.getElementById('startSel');
+STARTS.forEach(function(s){
+  var o = document.createElement('option');
+  o.value = s; o.textContent = s + '–' + (s+8);
+  if (s === 5) o.selected = true;
+  startSel.appendChild(o);
+});
+
+var P = null, entry = [], sel = -1;
+var gridEl = document.getElementById('grid'), sayEl = document.getElementById('say');
+
+function build(){
+  gridEl.innerHTML = '';
+  if (!P) return;
+  var lay = [], rr;
+  for (rr = 0; rr < 3; rr++){
+    lay.push(['cell',rr*3],['op',P.rOps[rr][0]],['cell',rr*3+1],['op',P.rOps[rr][1]],['cell',rr*3+2],['tgt','r'+rr]);
+    if (rr < 2) lay.push(['op',P.cOps[0][rr]],['gap'],['op',P.cOps[1][rr]],['gap'],['op',P.cOps[2][rr]],['gap']);
+  }
+  lay.push(['tgt','c0'],['gap'],['tgt','c1'],['gap'],['tgt','c2'],['gap']);
+  lay.forEach(function(it){
+    var d = document.createElement('div');
+    if (it[0] === 'cell'){ d.className = 'sq cell'; d.dataset.i = it[1]; }
+    else if (it[0] === 'op'){
+      var isMul = (it[1] === '*' || it[1] === '/');
+      d.className = 'op ' + (isMul ? 'op-mul' : 'op-add');
+      d.textContent = SY[it[1]];
+    }
+    else if (it[0] === 'tgt'){ d.className = 'sq tgt'; d.dataset.t = it[1];
+      d.textContent = it[1][0] === 'r' ? P.r[+it[1][1]] : P.c[+it[1][1]]; }
+    else d.className = 'gap';
+    gridEl.appendChild(d);
+  });
+  paint();
+}
+function paint(){
+  if (!P) return;
+  var seen = {};
+  for (var i = 0; i < 9; i++) if (entry[i] != null) seen[entry[i]] = (seen[entry[i]]||0)+1;
+  gridEl.querySelectorAll('.cell').forEach(function(d){
+    var i = +d.dataset.i;
+    d.textContent = entry[i] != null ? entry[i] : '';
+    d.classList.toggle('sel', i === sel);
+    d.classList.toggle('bad', !!(entry[i] != null && seen[entry[i]] > 1));
+  });
+  var done = 0;
+  gridEl.querySelectorAll('.tgt').forEach(function(d){
+    var tt = d.dataset.t, k = +tt[1], cs, ops, want;
+    if (tt[0] === 'r'){ cs=[k*3,k*3+1,k*3+2]; ops=P.rOps[k]; want=P.r[k]; }
+    else { cs=[k,k+3,k+6]; ops=P.cOps[k]; want=P.c[k]; }
+    var full = cs.every(function(x){ return entry[x] != null; });
+    var got = full ? ltr(entry[cs[0]],ops[0],entry[cs[1]],ops[1],entry[cs[2]]) : null;
+    d.classList.toggle('done', !!(full && got === want));
+    d.classList.toggle('wrong', !!(full && got !== want));
+    if (full && got === want) done++;
+  });
+  var all = true; for (i = 0; i < 9; i++) if (entry[i] == null) all = false;
+  if (all && done === 6) sayEl.innerHTML = '<b>Solved.</b> All six lines come out right — with ' +
+    P.vals[0] + ' to ' + P.vals[8] + ', not 1 to 9.';
+}
+
+/* The keypad offers THIS board's nine numbers, not digits. With 10-18 there is
+   nothing sensible for a 0-9 pad to do, and picking from the actual set is also
+   how a child sees at a glance which numbers are still unused. */
+function buildPad(){
+  var pad = document.getElementById('pad');
+  pad.innerHTML = '';
+  if (!P) return;
+  P.vals.forEach(function(v){
+    var b = document.createElement('button');
+    b.className = 'key'; b.textContent = v;
+    b.addEventListener('click', function(){
+      if (sel < 0) { sayEl.innerHTML = 'Tap a <b>box</b> first, then a number.'; return; }
+      entry[sel] = v; paint(); markUsed();
+    });
+    pad.appendChild(b);
+  });
+  var er = document.createElement('button');
+  er.className = 'key'; er.textContent = '⌫';
+  er.addEventListener('click', function(){ if (sel >= 0){ entry[sel] = null; paint(); markUsed(); } });
+  pad.appendChild(er);
+  markUsed();
+}
+function markUsed(){
+  var used = {};
+  for (var i = 0; i < 9; i++) if (entry[i] != null) used[entry[i]] = 1;
+  var keys = document.getElementById('pad').querySelectorAll('.key');
+  P.vals.forEach(function(v, i){ keys[i].classList.toggle('dim', !!used[v]); });
+}
+
+gridEl.addEventListener('click', function(e){
+  var c = e.target.closest('.cell');
+  if (!c) return;
+  sel = +c.dataset.i; paint();
+});
+
+function deal(){
+  var start = +startSel.value, pool = document.getElementById('opsSel').value.split('');
+  sayEl.textContent = 'searching…';
+  setTimeout(function(){
+    var vals = nineFrom(start), t0 = performance.now();
+    var got = generate(vals, pool, 60000);
+    if (!got){
+      sayEl.innerHTML = '<b>No fair grid found</b> for ' + vals[0] + '–' + vals[8] +
+        ' with those signs. That is the answer to the question, not a failure.';
+      P = null; gridEl.innerHTML = ''; document.getElementById('pad').innerHTML = '';
+      return;
+    }
+    P = got; entry = [null,null,null,null,null,null,null,null,null]; sel = -1;
+    build(); buildPad();
+    sayEl.innerHTML = 'Numbers <b>' + vals[0] + '–' + vals[8] + '</b>, each used once. ' +
+      'Found in ' + Math.round(performance.now()-t0) + ' ms. Tap a box, then a number.';
+  }, 20);
+}
+document.getElementById('dealBtn').addEventListener('click', deal);
+document.getElementById('clearBtn').addEventListener('click', function(){
+  if (!P) return; entry = [null,null,null,null,null,null,null,null,null]; paint(); markUsed();
+  sayEl.textContent = 'Cleared.';
+});
+document.getElementById('revealBtn').addEventListener('click', function(){
+  if (!P) return;
+  for (var i = 0; i < 9; i++) entry[i] = P.grid[i];
+  paint(); markUsed();
+});
+deal();
+</script>
+</body>
+</html>
