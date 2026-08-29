@@ -80,6 +80,83 @@ const ok = (n,c,x) => { console.log((c?'  PASS  ':'  FAIL  ')+n+(x!==undefined?'
        state.say);
   }
 
+  /* ---- THE DEEP SWEEP ----
+     Every run of nine against every set of signs, several boards each, and
+     each board judged by a solver written HERE rather than by the page's own:
+     a checker that borrows the code under test only proves the code agrees
+     with itself.
+
+     Three things must hold for every board dealt, or a child is being handed
+     an unfair puzzle -- the six printed answers must match what the lines
+     actually make read left to right, or the grid cannot be finished at all;
+     exactly ONE arrangement may fit; and the numbers must be the run asked
+     for, no substitutes. */
+  const OPS2 = { '+':(a,b)=>a+b, '-':(a,b)=>a-b, '*':(a,b)=>a*b,
+                 '/':(a,b)=> (b !== 0 && a % b === 0) ? a/b : null };
+  const ltr2 = (a,o1,b,o2,c) => {
+    const x = OPS2[o1](a,b); if (x === null || x < 0) return null;
+    const y = OPS2[o2](x,c); if (y === null || y < 0) return null;
+    return y;
+  };
+  function countFits(vals, P, cap){
+    let found = 0; const cell = [], used = new Array(9);
+    (function place(i){
+      if (found >= cap) return;
+      if (i === 9){ found++; return; }
+      for (let k = 0; k < 9; k++){
+        if (used[k]) continue;
+        cell[i] = vals[k]; used[k] = true;
+        let good = true;
+        if (i % 3 === 2){ const r = (i/3)|0;
+          if (ltr2(cell[r*3],P.rOps[r][0],cell[r*3+1],P.rOps[r][1],cell[r*3+2]) !== P.r[r]) good = false; }
+        if (good && i >= 6){ const c = i - 6;
+          if (ltr2(cell[c],P.cOps[c][0],cell[c+3],P.cOps[c][1],cell[c+6]) !== P.c[c]) good = false; }
+        if (good) place(i+1);
+        used[k] = false;
+      }
+    })(0);
+    return found;
+  }
+
+  const SETS = ['+-', '+-*', '+-*/'];
+  let dealt = 0, unique = 0, honest = 0, rightNums = 0;
+  const trouble = [];
+  for (const st of starts){
+    for (const set of SETS){
+      for (let n = 0; n < 4; n++){
+        await ev('(function(){ document.getElementById("startSel").value = "' + st +
+                 '"; document.getElementById("opsSel").value = "' + set + '"; deal(); })()');
+        await sleep(430);
+        const raw = await ev('P ? JSON.stringify({ vals:P.vals, grid:P.grid, rOps:P.rOps, cOps:P.cOps, r:P.r, c:P.c }) : ""');
+        if (!raw){ if (trouble.length < 4) trouble.push(st + ' ' + set + ': no board dealt'); continue; }
+        const p = JSON.parse(raw);
+        dealt++;
+        const want = []; for (let i = 0; i < 9; i++) want.push((+st) + i);
+        if (p.vals.join(',') === want.join(',') &&
+            p.grid.slice().sort((a,b)=>a-b).join(',') === want.join(',')) rightNums++;
+        let printedOk = true;
+        for (let i = 0; i < 3; i++){
+          if (ltr2(p.grid[i*3],p.rOps[i][0],p.grid[i*3+1],p.rOps[i][1],p.grid[i*3+2]) !== p.r[i]) printedOk = false;
+          if (ltr2(p.grid[i],p.cOps[i][0],p.grid[i+3],p.cOps[i][1],p.grid[i+6]) !== p.c[i]) printedOk = false;
+        }
+        if (printedOk) honest++;
+        else if (trouble.length < 4) trouble.push(st + ' ' + set + ': printed answers do not match the lines');
+        const fits = countFits(p.vals, p, 2);
+        if (fits === 1) unique++;
+        else if (trouble.length < 4) trouble.push(st + ' ' + set + ': ' + (fits ? 'more than one answer' : 'NO answer'));
+      }
+    }
+  }
+  const wanted = starts.length * SETS.length * 4;
+  ok('a board was dealt for every run of nine and every set of signs', dealt === wanted,
+     dealt + '/' + wanted);
+  ok('every board uses exactly the nine numbers asked for', rightNums === dealt,
+     rightNums + '/' + dealt);
+  ok('every printed answer matches its line, read LEFT TO RIGHT', honest === dealt,
+     honest + '/' + dealt + (trouble.length ? '   ' + trouble.join(' | ') : ''));
+  ok('every board has exactly ONE answer', unique === dealt,
+     unique + '/' + dealt + (trouble.length ? '   ' + trouble.join(' | ') : ''));
+
   /* the answers must be reachable: solve the board with its own numbers */
   const solved = await ev(`(function(){
     for (var i=0;i<9;i++) entry[i] = P.grid[i];
