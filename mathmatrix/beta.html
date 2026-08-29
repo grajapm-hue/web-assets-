@@ -2288,6 +2288,12 @@ body.sudokuMode .solvedCounter{ display:none !important; }
    say -- there is no one number to show, and showing ? forever reads like
    something failed to load. */
 body.gridMode .targetPill{ display:none !important; }
+/* 0 and the sign key cannot produce a legal entry on this board -- every box
+   holds a single digit from 1 to 9. They stay in place so the keypad does not
+   reshuffle under a child's thumb, but they read as unavailable instead of
+   looking live and doing nothing. */
+body.gridMode #keypad .kp[data-k="0"],
+body.gridMode #keypad .kp[data-nav="sign"]{ opacity:.34 !important; }
 body.gridMode .solvedCounter{ flex:1 1 auto !important; }
 #sudokuPanel{ width:100%; max-width:560px; margin:0 auto; }
 /* Scrollable, exactly as #slidePanel and #gatePanel are, and for the same
@@ -12999,6 +13005,28 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
   // Core input processing — shared by the native input event and the custom keypad.
   function processInput(cell){
+    /* Raja, having typed 10 into a box: "the eligibility is 1 to 9 -- 0, and
+       anything beyond 9, should not be allowed to enter."
+
+       Right, and the boxes were only half protected. The cell carries
+       maxLength=1, which stops the SYSTEM keyboard, but the app's own keypad
+       assigns cell.value directly and maxLength does not apply to that -- so
+       tapping 1 then 0 built "10" on a board whose whole rule is one digit,
+       1 to 9, used once.
+
+       Guarded here rather than in kpDigit, because this is the one place every
+       way of entering a number arrives: the keypad, the system keyboard, a
+       paste. Keeping the LAST valid digit also makes a second tap REPLACE
+       rather than append, which is what a one-digit box should do. */
+    if ((PUZZLES[currentSize] || {}).shape === 'opgrid'){
+      var kept = cell.value.replace(/[^1-9]/g, '');
+      cell.value = kept ? kept.slice(-1) : '';
+      if (cell.value !== '') sfx('place', panForCell(cell));
+      duckMusic();
+      startTimer();
+      update();
+      return;
+    }
     // keep an optional leading minus: negative numbers make valid magic squares too
     var neg = cell.value.charAt(0) === '-';
     cell.value = (neg ? '-' : '') + cell.value.replace(/[^0-9]/g, '');
@@ -15663,7 +15691,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-260 (the Fill In The Blank cards name their signs with the signs themselves — no English word for an operation a child may not have met)';
+  var BUILD_VER = 'beta-261 (a Fill In The Blank box takes one digit from 1 to 9 and nothing else — the keypad could build 10 because maxLength never applied to it)';
   /* ── BEACON FOR APPS INSTALLED LONG AGO ─────────────────────────────────
      Raja's iPhone sat on v139 and would not come forward, however many times
      he tapped Online Update.
@@ -15688,7 +15716,7 @@ if (navigator.storage && navigator.storage.persist) {
      rejects). check-update-beacon.js keeps it equal to BUILD_VER, because a
      beacon that goes stale strands people exactly as thoroughly as no beacon.
 
-     window.BETA_VER = 'beta-260'
+     window.BETA_VER = 'beta-261'
      ───────────────────────────────────────────────────────────────────── */
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told

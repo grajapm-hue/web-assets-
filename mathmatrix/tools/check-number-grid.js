@@ -248,6 +248,55 @@ function solveAll(P, cap){
      cardText.grid1 === '+ −' && cardText.grid2 === '+ − ×' &&
      cardText.grid3 === '+ − × ÷', JSON.stringify(cardText));
 
+  /* Raja, having typed 10 into a box: "the eligibility is 1 to 9 -- 0, and
+     anything beyond 9, should not be allowed to enter."
+
+     The box carried maxLength=1, which stops the system keyboard, but the
+     app's own keypad assigns the value directly and maxLength does not apply
+     to that. So this drives the KEYPAD, the way he did, rather than firing an
+     input event -- the same distinction that once hid a dead Install button
+     behind a green test. */
+  await openLevel('grid1');
+  const tapKey = k => ev(`(function(){ var b = document.querySelector('#keypad .kp[data-k="' + ${JSON.stringify('K')}.replace('K','${'$'}') + '"]'); if (b) b.click(); })()`);
+  const box0 = () => ev(`(document.querySelectorAll('#board .cell')[0]||{}).value`);
+  await ev(`(function(){ var c = document.querySelectorAll('#board .cell')[0]; c.focus(); c.click(); })()`);
+  await sleep(200);
+
+  await ev(`document.querySelector('#keypad .kp[data-k="1"]').click()`); await sleep(220);
+  ok('tapping 1 puts a 1 in the box', (await box0()) === '1', 'box holds "' + (await box0()) + '"');
+
+  await ev(`document.querySelector('#keypad .kp[data-k="0"]').click()`); await sleep(260);
+  ok('tapping 0 after it does NOT make 10 — 0 is not a legal entry',
+     (await box0()) === '1', 'box holds "' + (await box0()) + '"');
+
+  await ev(`document.querySelector('#keypad .kp[data-k="7"]').click()`); await sleep(260);
+  ok('tapping another digit REPLACES it, because a box holds one digit',
+     (await box0()) === '7', 'box holds "' + (await box0()) + '"');
+
+  await ev(`document.querySelector('#keypad .kp[data-nav="sign"]').click()`); await sleep(260);
+  ok('the sign key cannot make it negative either',
+     (await box0()) === '7', 'box holds "' + (await box0()) + '"');
+
+  /* and the system keyboard / a paste cannot get round it either */
+  await ev(`(function(){ var c = document.querySelectorAll('#board .cell')[0];
+    c.focus(); c.value = '10'; c.dispatchEvent(new Event('input', { bubbles:true })); })()`);
+  await sleep(260);
+  ok('typing 10 straight into the box is refused as well',
+     ['1','0',''].indexOf(await box0()) < 0 ? false : (await box0()) !== '10',
+     'box holds "' + (await box0()) + '"');
+  ok('and the keys that cannot help are shown as unavailable',
+     (await ev(`parseFloat(getComputedStyle(document.querySelector('#keypad .kp[data-k="0"]')).opacity)`)) < 0.6,
+     'zero key opacity ' + (await ev(`getComputedStyle(document.querySelector('#keypad .kp[data-k="0"]')).opacity`)));
+
+  /* Put the board back. The app deliberately KEEPS an unfinished game when you
+     return to a level, so leaving a stray digit here made the next section open
+     on a half-played grid and report "it opens empty" as a failure -- this
+     test's mess, not the app's. */
+  await ev(`document.getElementById('clearBtn').click()`);
+  await sleep(300);
+  ok('the board is left clean for the next check',
+     (await ev(`Array.from(document.querySelectorAll('#board .cell')).every(function(c){ return c.value === ''; })`)) === true);
+
   const LEVELS = [
     { key: 'grid1', name: 'Easy',   ops: ['+','-'] },
     { key: 'grid2', name: 'Medium', ops: ['+','-','*'] },
