@@ -6738,7 +6738,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         else if (Object.keys(dups).length > prevDup && Object.keys(dups).length > 0) sfx('dup');
       }
       prevComplete = gridDone; prevDup = Object.keys(dups).length;
-      if (gridWin) win(gridDone);   // six lines, all agreeing with their own answer
+      /* null, not gridDone: there is no single target on this board, and the
+         count of finished lines is not one. Passing 6 is what stamped 6 over
+         all six answers. */
+      if (gridWin) win(null);
       else msg.textContent = '';
       return;
     }
@@ -6883,8 +6886,16 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     
     targetPill.classList.remove('preview');
     targetPill.classList.add('solved');
-    targetVal.textContent = actualTarget;
-    puzzle.lines.forEach(function(k){ setBadge(k, actualTarget, 'win'); });
+    /* A magic square's lines all make the SAME number, so stamping the target
+       into every badge is right there. The Number Grid's six lines each make
+       their own, printed on the board from the start -- overwriting them with
+       one value throws away the whole answer the child just worked out. */
+    if (puzzle.shape === 'opgrid'){
+      puzzle.lines.forEach(function(k){ setBadge(k, gridTarget(k), 'win'); });
+    } else {
+      targetVal.textContent = actualTarget;
+      puzzle.lines.forEach(function(k){ setBadge(k, actualTarget, 'win'); });
+    }
     
     for (var r = 0; r < puzzle.rows; r++) for (var c = 0; c < puzzle.cols; c++){
       cells[r][c].classList.remove('given','dup','anchor','swapA','swapB','cursor');
@@ -6892,7 +6903,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       cells[r][c].readOnly = true;
     }
     
-    msg.textContent = '🎉 Solved! ' + (isMul() ? 'Every line × = ' : 'Your target: ') + actualTarget;
+    msg.textContent = puzzle.shape === 'opgrid'
+      ? '🎉 Solved! All six lines come out right.'
+      : '🎉 Solved! ' + (isMul() ? 'Every line × = ' : 'Your target: ') + actualTarget;
     msg.className = 'win';
     
     // Handle progression
@@ -15412,6 +15425,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     var pz = PUZZLES[currentSize] || {};
     var lines = pz.lines ? pz.lines.length : (pz.rows ? pz.rows * 2 + 2 : 8);
     var target = (document.getElementById('targetVal') || {}).textContent || '—';
+    /* "Every line" is a true thing to say about a magic square and a false one
+       here: these six lines deliberately make six DIFFERENT numbers. The Target
+       pill is hidden on this board too, so reading it would show whatever the
+       last puzzle left behind. */
+    var isGridWin = pz.shape === 'opgrid';
+    var headStat = isGridWin ? '1-9' : target;
+    var headLabel = isGridWin ? 'each used once' : 'Every line';
     var time = (document.getElementById('timerBox') || {}).textContent || '—';
     // stars are the reward for needing little help
     var stars = hintsUsed === 0 ? 3 : hintsUsed <= 2 ? 2 : 1;
@@ -15432,7 +15452,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       '<div class="winTitle">Solved it!</div>' +
       '<p class="winLine">' + praise + '</p>' +
       '<div class="winStats">' +
-        '<div class="winStat g"><b>' + target + '</b><span>Every line</span></div>' +
+        '<div class="winStat g"><b>' + headStat + '</b><span>' + headLabel + '</span></div>' +
         '<div class="winStat"><b>' + time + '</b><span>Time</span></div>' +
         '<div class="winStat w"><b>' + lines + '/' + lines + '</b><span>Lines</span></div>' +
       '</div>' +
@@ -15586,7 +15606,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-256 (Triangle Magic is out and the Number Grid takes its seat — nine boxes, 1-9 once each, six little equations that must all come out right, read left to right)';
+  var BUILD_VER = 'beta-257 (solving a Number Grid no longer overwrites its six answers with one number — each line keeps the answer it was set)';
   /* ── BEACON FOR APPS INSTALLED LONG AGO ─────────────────────────────────
      Raja's iPhone sat on v139 and would not come forward, however many times
      he tapped Online Update.
@@ -15611,7 +15631,7 @@ if (navigator.storage && navigator.storage.persist) {
      rejects). check-update-beacon.js keeps it equal to BUILD_VER, because a
      beacon that goes stale strands people exactly as thoroughly as no beacon.
 
-     window.BETA_VER = 'beta-256'
+     window.BETA_VER = 'beta-257'
      ───────────────────────────────────────────────────────────────────── */
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told

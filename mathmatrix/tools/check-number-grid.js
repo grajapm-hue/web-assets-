@@ -199,6 +199,29 @@ function solveAll(P, cap){
         return !!m && getComputedStyle(m).display !== 'none'; })()`);
     }
     ok(L.name + ': filling it correctly wins', won === true);
+
+    /* Raja: after solving it, all six answers turned into 6.
+
+       win() was written for a magic square, whose lines all make the SAME
+       number, so it stamps that number into every badge -- and it was handed
+       the COUNT of finished lines, six, which is how every answer became 6.
+       This board's six lines deliberately make six DIFFERENT numbers, printed
+       on it from the start. Solving must not erase the very thing that was
+       solved, so the answers are read back and compared with what the board
+       showed before the win. */
+    if (won){
+      const after = await readBoard();
+      ok(L.name + ': the six answers still say what they said before',
+         !!after && after.r.concat(after.c).join(',') === P.r.concat(P.c).join(','),
+         after ? 'was ' + P.r.concat(P.c).join(',') + ' -> now ' + after.r.concat(after.c).join(',')
+               : 'the answers could not be read at all');
+      const panel = await ev(`(function(){
+        var m = document.getElementById('congratsModal');
+        return ((m && m.textContent) || '').replace(/\s+/g, ' ').trim().slice(0, 120);
+      })()`);
+      ok(L.name + ': and the panel does not claim one number for every line',
+         !/Every line/i.test(panel), panel);
+    }
     if (won) await ev(`(function(){ var b = document.getElementById('nextBtn'); if (b) b.click(); })()`);
     ok(L.name + ': no JS errors while playing it', errs.length === 0, errs.join(' | '));
   }
