@@ -2075,6 +2075,10 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
    shades them, so the eye follows the six lines instead of reading the whole
    thing as one block. */
 .gridGap{ background:rgba(94,64,32,.13); border-radius:5px; min-height:10px; }
+/* The signs ARE the level now -- they are the only thing separating Easy from
+   Medium from Hard on the list, so they get spacing and a little size rather
+   than being set as quiet meta text like "one space" or "1 to 99". */
+.toggleBtn[data-size^="grid"] .lvDiff{ font-size:1.2em; letter-spacing:.2em; font-weight:800; }
 #playRow{ flex:none; display:flex !important; gap:5px !important; margin:6px 0 !important; }
 /* min-height 44 so Hint and CLEAR clear the touch minimum — they were 33px */
 /* 15px, not 10.5. Measured first: at 10.5 the longest label needed 42px in a
@@ -4749,15 +4753,15 @@ body{ background:#C9A87C !important; }
     <div class="toggleSwitch">
       <button class="toggleBtn lvCard" data-size="grid1" data-name="🔢 Fill In The Blank · Easy" data-short="🔢 Fill In The Blank" style="color:#0ea5e9; border-color:#0284c7; --c1:#a5d8f3; --c2:#38bdf8;">
         <span class="lvGlyph" aria-hidden="true">➕</span>
-        <span class="lvText"><b class="lvName">Fill In The Blank · Easy</b><span class="lvDiff">plus and minus</span><span class="lvMeta">1-9 once each · work left to right</span><span class="lvNow">PLAYING</span></span>
+        <span class="lvText"><b class="lvName">Fill In The Blank · Easy</b><span class="lvDiff">+ −</span><span class="lvMeta">1-9 once each · work left to right</span><span class="lvNow">PLAYING</span></span>
       </button>
       <button class="toggleBtn lvCard" data-size="grid2" data-name="🔢 Fill In The Blank · Medium" style="color:#0ea5e9; border-color:#0284c7; --c1:#a5d8f3; --c2:#38bdf8;">
         <span class="lvGlyph" aria-hidden="true">✖️</span>
-        <span class="lvText"><b class="lvName">Fill In The Blank · Medium</b><span class="lvDiff">plus, minus and times</span><span class="lvMeta">1-9 once each · work left to right</span><span class="lvNow">PLAYING</span></span>
+        <span class="lvText"><b class="lvName">Fill In The Blank · Medium</b><span class="lvDiff">+ − ×</span><span class="lvMeta">1-9 once each · work left to right</span><span class="lvNow">PLAYING</span></span>
       </button>
       <button class="toggleBtn lvCard lvWide" data-size="grid3" data-name="🔢 Fill In The Blank · Hard" style="color:#0ea5e9; border-color:#0284c7; --c1:#a5d8f3; --c2:#38bdf8;">
         <span class="lvGlyph" aria-hidden="true">➗</span>
-        <span class="lvText"><b class="lvName">Fill In The Blank · Hard</b><span class="lvDiff">all four signs</span><span class="lvMeta">1-9 once each · work left to right</span><span class="lvNow">PLAYING</span></span>
+        <span class="lvText"><b class="lvName">Fill In The Blank · Hard</b><span class="lvDiff">+ − × ÷</span><span class="lvMeta">1-9 once each · work left to right</span><span class="lvNow">PLAYING</span></span>
       </button>
     </div>
   </div>
@@ -5265,13 +5269,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
        every rows x cols-generic function in this file keeps working. */
     'grid1': { shape:'opgrid', ops:['+','-'], need:['+','-'],         caps:[12,20],    rows:1, cols:9,
       lines:['r0','r1','r2','c0','c1','c2'],
-      inst:'<b>Fill In The Blank!</b> Put <b>1 to 9</b> in the white boxes, each one only once, so every row and every column makes the number at its end. <b>Work left to right</b> — not times-before-plus. ➕➖' },
+      inst:'<b>Fill In The Blank!</b> Put <b>1 to 9</b> in the white boxes, each one only once, so every row and every column makes the number at its end. <b>Work left to right</b> — do not do × before +. ➕➖' },
     'grid2': { shape:'opgrid', ops:['+','-','*'], need:['+','-','*'],     caps:[15,24,30], rows:1, cols:9,
       lines:['r0','r1','r2','c0','c1','c2'],
-      inst:'<b>Fill In The Blank — with ×!</b> Put <b>1 to 9</b> in the white boxes, each one only once, so every row and every column makes the number at its end. <b>Work left to right</b> — not times-before-plus. ✖️' },
+      inst:'<b>Fill In The Blank — with ×!</b> Put <b>1 to 9</b> in the white boxes, each one only once, so every row and every column makes the number at its end. <b>Work left to right</b> — do not do × before +. ✖️' },
     'grid3': { shape:'opgrid', ops:['+','-','*','/'], need:['+','-','*','/'], caps:[10,14,20], rows:1, cols:9,
       lines:['r0','r1','r2','c0','c1','c2'],
-      inst:'<b>Fill In The Blank — all four!</b> Put <b>1 to 9</b> in the white boxes, each one only once, so every row and every column makes the number at its end. <b>Work left to right</b> — not times-before-plus. ➗' }
+      inst:'<b>Fill In The Blank — all four!</b> Put <b>1 to 9</b> in the white boxes, each one only once, so every row and every column makes the number at its end. <b>Work left to right</b> — do not do × before +. ➗' }
   };
   
   /* -- the Number Grid's arithmetic and its generator ----------------------
@@ -6278,7 +6282,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     } else if (PUZZLES[currentSize].shape === 'opgrid') {
       document.getElementById('logicBox').innerHTML = `
         <h3>🔢 Fill In The Blank — how to work it out</h3>
-        <p><b>The one rule that trips everyone:</b> read each line <b>left to right</b>. So <b>8 − 6 × 2</b> is <b>4</b> here (8−6=2, then 2×2=4) — <i>not</i> times-before-plus. Every line on this board is read that way, and nothing works if you do it the school way.</p>
+        <p><b>The one rule that trips everyone:</b> read each line <b>left to right</b>. So <b>8 − 6 × 2</b> is <b>4</b> here (8−6=2, then 2×2=4) — <i>not</i> × before +. Every line on this board is read that way, and nothing works if you do it the school way.</p>
         <p><b>What is really going on:</b> every box belongs to <b>two</b> lines at once — its row and its column. That is the whole puzzle. A number has to satisfy both, and that is what lets you pin it down without guessing.</p>
         <ol style="margin: 10px 0; padding-left: 20px;">
           <li><b>Start with the line that allows fewest numbers.</b> A row making a small answer out of × or ÷ has very few ways to happen. Find it and list them.</li>
@@ -15659,7 +15663,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-259 (each Fill In The Blank level now really contains the signs its card names — Medium always has a ×, Hard always has all four)';
+  var BUILD_VER = 'beta-260 (the Fill In The Blank cards name their signs with the signs themselves — no English word for an operation a child may not have met)';
   /* ── BEACON FOR APPS INSTALLED LONG AGO ─────────────────────────────────
      Raja's iPhone sat on v139 and would not come forward, however many times
      he tapped Online Update.
@@ -15684,7 +15688,7 @@ if (navigator.storage && navigator.storage.persist) {
      rejects). check-update-beacon.js keeps it equal to BUILD_VER, because a
      beacon that goes stale strands people exactly as thoroughly as no beacon.
 
-     window.BETA_VER = 'beta-259'
+     window.BETA_VER = 'beta-260'
      ───────────────────────────────────────────────────────────────────── */
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told

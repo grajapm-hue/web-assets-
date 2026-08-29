@@ -31,13 +31,17 @@ const TAMIL = /[\u0B80-\u0BFF]/;
 
 (async () => {
   const tmp = path.join(__dirname, '_cplang');
-  fs.rmSync(tmp, { recursive: true, force: true, maxRetries: 3 });
+  /* Windows keeps a lock on a Chrome profile for a moment after the browser
+     exits, so deleting it can throw EPERM -- which killed the whole run before
+     a single thing was checked, and read as this guard failing. Every other
+     check in this folder swallows it; this one did not. */
+  try { fs.rmSync(tmp, { recursive: true, force: true, maxRetries: 8, retryDelay: 250 }); } catch(e){}
   const ch = spawn('C:/Program Files/Google/Chrome/Application/chrome.exe',
     ['--headless=new', '--disable-gpu', '--no-sandbox', '--mute-audio',
      '--remote-debugging-port=' + PORT, '--user-data-dir=' + tmp,
      '--window-size=360,800', FILE], { stdio: 'ignore' });
   let t = null;
-  for (let i = 0; i < 40 && !t; i++){ await sleep(280);
+  for (let i = 0; i < 100 && !t; i++){ await sleep(280);
     try { t = JSON.parse(execSync(`curl -s http://127.0.0.1:${PORT}/json/list`, { encoding: 'utf8' })).find(x => x.type === 'page'); } catch (e) {} }
   const ws = new WebSocket(t.webSocketDebuggerUrl);
   await new Promise(r => ws.addEventListener('open', r));
@@ -59,7 +63,15 @@ const TAMIL = /[\u0B80-\u0BFF]/;
   const outside = () => ev(`(function(){
     return JSON.stringify({
       tabs: document.querySelector('.tabBar').textContent.replace(/\\s+/g,' ').trim(),
-      list: document.querySelector('.difficultyBar').textContent.replace(/\\s+/g,' ').trim().slice(0, 400),
+      /* The PUZZLE CARDS only. This used to fingerprint the whole
+         .difficultyBar, which also carries the Install and Share chips -- and
+         the install chip relabels itself from "Install App" to "How to Install"
+         once the browser settles whether it can offer a prompt. That happens on
+         its own schedule, so the snapshot changed for a reason having nothing to
+         do with language, and this assertion failed calling it a leak. Its name
+         says puzzle list; now it reads the puzzle list. */
+      list: Array.prototype.map.call(document.querySelectorAll('.difficultyBar .modeGroup'),
+              function(g){ return g.textContent.replace(/\\s+/g,' ').trim(); }).join(' | ').slice(0, 400),
       sana: (document.querySelector('.sanaBub') || {}).textContent || ''
     }); })()`).then(JSON.parse);
   const beforeSwitch = await outside();
@@ -200,7 +212,9 @@ const TAMIL = /[\u0B80-\u0BFF]/;
   ok('the tab bar is untouched', after.tabs === beforeSwitch.tabs, JSON.stringify(after.tabs));
   ok('the puzzle list is untouched and still English',
     after.list === beforeSwitch.list && !TAMIL.test(after.list),
-    after.list === beforeSwitch.list ? 'identical to before the switch' : 'CHANGED');
+    after.list === beforeSwitch.list ? 'identical to before the switch'
+      : 'CHANGED  before[' + beforeSwitch.list.slice(0, 200) +
+        ']  after[' + after.list.slice(0, 200) + ']');
   /* The mascot was the one thing that could plausibly carry Tamil off the board,
      since it sits above every screen and speaks the game's commentary — "a new
      board, Player 1 starts". It turns out leaving the game gives it its own

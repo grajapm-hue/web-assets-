@@ -64,9 +64,20 @@ function solveAll(P, cap){
     ['--headless=new', '--disable-gpu', '--no-sandbox', '--mute-audio',
      '--remote-debugging-port=' + PORT, '--user-data-dir=' + tmp,
      '--window-size=390,844', FILE], { stdio: 'ignore' });
+  /* Wait generously for Chrome, and say so plainly if it never arrives. The
+     old 12s ceiling was enough on an idle machine and not always enough while
+     the rest of the suite is running, and the script then died on
+     `t.webSocketDebuggerUrl` of null -- a stack trace that names this file and
+     says nothing about the real cause, which is that the browser had not
+     started yet. */
   let t = null;
-  for (let i = 0; i < 40 && !t; i++){ await sleep(300);
+  for (let i = 0; i < 100 && !t; i++){ await sleep(300);
     try { t = JSON.parse(execSync(`curl -s http://127.0.0.1:${PORT}/json/list`, { encoding: 'utf8' })).find(x => x.type === 'page'); } catch(e){} }
+  if (!t){
+    console.log('  FAIL  Chrome never opened a page on port ' + PORT + ' within 30s — the browser did not start, nothing was tested');
+    try { ch.kill(); } catch(e){}
+    process.exit(1);
+  }
   const ws = new WebSocket(t.webSocketDebuggerUrl);
   await new Promise(r => ws.addEventListener('open', r));
   let id = 0; const pend = new Map(); let errs = [];
@@ -106,13 +117,20 @@ function solveAll(P, cap){
       cells: raw.cells
     };
   };
+  /* Count the badges that are NOT one of the three states too, and say what
+     colour they were. Dropping them silently turned a puzzling state into a
+     puzzling number -- "4 badges, none red" reads like a judging bug when the
+     truth may be that two badges are a colour this test has never heard of. */
   const ring = () => ev(`(function(){
-    var n = { green:0, red:0, orange:0 };
+    var n = { green:0, red:0, orange:0, other:0, otherWas:[] };
     document.querySelectorAll('#board .badge').forEach(function(b){
       var bg = getComputedStyle(b).backgroundColor;
       if (/18, 122, 69/.test(bg)) n.green++;
       else if (/179, 38, 30/.test(bg)) n.red++;
       else if (/240, 165, 0/.test(bg)) n.orange++;
+      else { n.other++;
+        var tag = bg + ' [' + b.className + '] "' + (b.textContent||'').trim() + '"';
+        if (n.otherWas.indexOf(tag) < 0) n.otherWas.push(tag); }
     });
     return JSON.stringify(n);
   })()`).then(JSON.parse);
@@ -125,8 +143,15 @@ function solveAll(P, cap){
     let prev = null;
     for (let i = 0; i < 25; i++){
       const now = await ring();
+      /* Settled means every badge is one of the three states AND the reading
+         has stopped moving. Comparing only the COUNTS was not enough: two reads
+         taken during the 300ms fade can report the same counts while sitting on
+         different intermediate colours, so the poll would declare a mid-fade
+         board settled and report "4 green, 0 red, 0 orange" -- two badges
+         quietly dropped for being neither. Comparing the colours too closes it,
+         and requiring none left over says out loud what settled means. */
       const key = JSON.stringify(now);
-      if (prev === key) return now;
+      if (prev === key && now.other === 0) return now;
       prev = key;
       await sleep(160);
     }
@@ -200,6 +225,28 @@ function solveAll(P, cap){
   ok('the puzzle is called Fill In The Blank on the board too',
      (await ev(`/Fill In The Blank/.test((document.getElementById('appBarTitle')||{}).textContent||'')`)) === true,
      await ev(`(document.getElementById('appBarTitle')||{}).textContent`));
+
+  /* Raja: "remove that word times -- it represents only the operation behind
+     the play, the name will confuse a player who does not know the times
+     operation."
+
+     Right, and the word was doing no work the symbol cannot do better. The
+     cards name their signs with the signs themselves, which a child who cannot
+     yet read "times" still recognises -- and which reads the same in Tamil. */
+  const cardText = await ev(`(function(){
+    var out = {};
+    document.querySelectorAll('.toggleBtn[data-size^="grid"]').forEach(function(b){
+      var d = b.querySelector('.lvDiff');
+      out[b.getAttribute('data-size')] = d ? d.textContent.trim() : '';
+    });
+    return JSON.stringify(out);
+  })()`).then(JSON.parse);
+  ok('the cards name their signs with SIGNS, not English words',
+     !/times|plus|minus|divide/i.test(Object.keys(cardText).map(k => cardText[k]).join(' ')),
+     JSON.stringify(cardText));
+  ok('and each card shows exactly the signs its level uses',
+     cardText.grid1 === '+ −' && cardText.grid2 === '+ − ×' &&
+     cardText.grid3 === '+ − × ÷', JSON.stringify(cardText));
 
   const LEVELS = [
     { key: 'grid1', name: 'Easy',   ops: ['+','-'] },
