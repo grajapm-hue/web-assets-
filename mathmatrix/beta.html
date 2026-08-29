@@ -2057,8 +2057,20 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
   aspect-ratio:auto !important; min-width:0 !important; display:flex !important;
   align-items:center; justify-content:center;
   font-size:calc(var(--gridCell, 64px) * 0.34) !important; }
+/* Raja: "the + - symbols are shifted towards up -- keep centre, and keep
+   uniform between all boxes."
+
+   Mine. Every sign was given a fixed height of 0.34 of a box, which is right
+   for the short rows BETWEEN the number rows and wrong for the signs that sit
+   between two boxes: there the row is a whole box tall, so a 0.34-tall item
+   pinned itself to the TOP and the sign floated above the numbers it joins.
+
+   No height here at all now -- a grid item stretches to its row by default, so
+   a sign between two boxes fills that row and centres in it, and a sign in a
+   short row fills the short row. The row heights are set by .gridGap instead,
+   which is the only thing in those rows that needs a size of its own. */
 .gridOp{ display:flex; align-items:center; justify-content:center;
-  min-width:0; height:calc(var(--gridCell, 64px) * 0.34); font-weight:900; line-height:1;
+  min-width:0; font-weight:900; line-height:1;
   font-size:calc(var(--gridCell, 64px) * 0.40); }
 /* Raja: "+ and x seems similar in visibility". At this size they differ only by
    a 45 degree turn, so size alone cannot separate them -- it just makes two
@@ -15845,7 +15857,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-262 (Fill In The Blank is one card now — the numbers and the signs are chosen on the board, and the numbers no longer have to be 1 to 9)';
+  var BUILD_VER = 'beta-263 (on Fill In The Blank, every + − × ÷ now sits on the centre line of the boxes it joins, instead of floating above them)';
   /* ── BEACON FOR APPS INSTALLED LONG AGO ─────────────────────────────────
      Raja's iPhone sat on v139 and would not come forward, however many times
      he tapped Online Update.
@@ -15870,7 +15882,7 @@ if (navigator.storage && navigator.storage.persist) {
      rejects). check-update-beacon.js keeps it equal to BUILD_VER, because a
      beacon that goes stale strands people exactly as thoroughly as no beacon.
 
-     window.BETA_VER = 'beta-262'
+     window.BETA_VER = 'beta-263'
      ───────────────────────────────────────────────────────────────────── */
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told

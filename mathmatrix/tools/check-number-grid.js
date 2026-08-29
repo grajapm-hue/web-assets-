@@ -332,6 +332,44 @@ function solveAll(P, cap){
 
   /* The signs are picked on the board now, so the loop drives the picker
      rather than opening a different card. */
+  /* ---- the signs must sit on the line of what they join ----
+     Raja: "the + - symbols are shifted towards up -- keep centre, and keep
+     uniform between all boxes."
+
+     Every sign had a fixed height of a third of a box, which is right for the
+     short rows BETWEEN the number rows and wrong for a sign standing between
+     two boxes: that row is a whole box tall, so the sign pinned to the TOP and
+     floated above the numbers it was joining.
+
+     Measured against the boxes themselves rather than against a stylesheet: a
+     sign between two boxes must share their centre line, and all three rows
+     must be spaced the same. */
+  const align = await ev(`(function(){
+    var mid = function(el){ var r = el.getBoundingClientRect(); return r.top + r.height/2; };
+    var cells = document.querySelectorAll('#board .cell');
+    var ops = document.querySelectorAll('#board .gridOp');
+    if (cells.length !== 9 || ops.length !== 12) return '{}';
+    /* the wrap lays out row by row: the two signs joining a number row come
+       first, then the three joining that row to the next one */
+    var pairs = [ { op:0, a:0, b:1 }, { op:1, a:1, b:2 },
+                  { op:5, a:3, b:4 }, { op:6, a:4, b:5 },
+                  { op:10, a:6, b:7 }, { op:11, a:7, b:8 } ];
+    var worst = 0, detail = '';
+    pairs.forEach(function(p){
+      var want = (mid(cells[p.a]) + mid(cells[p.b])) / 2;
+      var off = Math.abs(mid(ops[p.op]) - want);
+      if (off > worst){ worst = off; detail = 'sign ' + p.op + ' is ' + Math.round(off) + 'px off'; }
+    });
+    /* and the three number rows must be evenly spaced */
+    var gaps = [ mid(cells[3]) - mid(cells[0]), mid(cells[6]) - mid(cells[3]) ];
+    return JSON.stringify({ worst: Math.round(worst), detail: detail,
+      rowGapDiff: Math.round(Math.abs(gaps[0] - gaps[1])), gaps: gaps.map(Math.round) });
+  })()`).then(JSON.parse);
+  ok('every sign between two boxes sits on their centre line',
+     align.worst <= 2, align.detail || ('worst ' + align.worst + 'px off'));
+  ok('and the three number rows are evenly spaced',
+     align.rowGapDiff <= 2, 'row gaps ' + (align.gaps || []).join(' and ') + 'px');
+
   /* ---- the whole board has to be ON the screen ----
      This one bit twice. The boxes fitted while the row of column ANSWERS along
      the bottom sat under the keypad -- a third of the puzzle, invisible -- and
