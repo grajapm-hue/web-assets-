@@ -3967,7 +3967,16 @@ body{ background:#C9A87C !important; }
    reads as a toast, not just a line of text. */
 .gateFeedback-ok{ color:#0E5A34; background:#DFF7E9; border:2px solid #22c55e;
   border-radius:12px; padding:10px 14px; font-size:18px; }
-.gateFeedback-bad{ color:#9A3412; }
+/* Raja: "else pop red wrong try again."
+
+   The right answer already got a filled pill, for the reason written just
+   above — a plain colour change on small text was too easy to miss. The wrong
+   answer still WAS just a colour change, and a burnt orange one at that, so it
+   read as a quieter version of the same thing rather than as "no". Same pill
+   shape, in the red this app already uses for a line that does not match its
+   target, so a child meets red in one meaning only. */
+.gateFeedback-bad{ color:#7F1D1D; background:#FDE7E7; border:2px solid #B3261E;
+  border-radius:12px; padding:10px 14px; font-size:18px; }
 /* Tap-to-continue instead of a timer — see the comment in gateChoose()
    for why. Block-level so it sits on its own line under the message,
    not squeezed inline beside it. */
@@ -7706,7 +7715,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       } else {
         var row = level.rows[st.roomIdx - wc];
         correct = (val === row[row.length - 1]);
-        wrongMsg = '❌ Not quite. ' + g.rule;
+        wrongMsg = '❌ Not quite — try again. ' + g.rule;
       }
 
       if (correct){
@@ -7763,8 +7772,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         // find, so make sure it is actually on screen rather than trusting
         // it always lands inside the visible viewport on every device.
         try { fb.scrollIntoView({ behavior:'smooth', block:'end' }); } catch(e){}
+        /* Long enough to read, short enough not to wait on. The warm-up hand-off
+           says something the child has not seen before ("now the real logic
+           begins"), so it gets longer than an ordinary well-done. */
+        gateArmNext(enteringLogic ? 1900 : 1150);
       } else {
         sfx('no');
+        gateCancelNext();   // a wrong answer never moves anyone on
         if (btn){
           btn.classList.remove('gateShake'); void btn.offsetWidth; btn.classList.add('gateShake');
         }
@@ -7773,9 +7787,53 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       }
     }
 
-    // Tapped after seeing the appreciation — see the comment in
-    // gateChoose() on why this replaced the setTimeout auto-advance.
+    /* Raja: "keep auto next in when success, else pop red wrong try again —
+       it will help move next step fast while correct selection."
+
+       This deliberately walks back part of an earlier decision, so the reason
+       is worth writing down. Auto-advance was REMOVED from here once before,
+       because a timed appreciation pop kept being missed: every tuning pass
+       (1.6s, then 3.5s, then 1.2s) was a race against when he happened to
+       look, and a tap-to-continue button ended it by making the pop impossible
+       to miss.
+
+       That fix worked, and it is now the cost: a gate is up to 37 rooms, and
+       an extra tap on every single correct answer is a lot of tapping for
+       something the child already knows they got right.
+
+       So both, rather than swapping one for the other. The pill and the Next
+       button stay exactly as they are -- nothing is taken away, and an
+       impatient child can still tap straight through -- and a timer moves on
+       by itself if they do not. The appreciation is still shown; it just no
+       longer has to be acknowledged.
+
+       A wrong answer never schedules anything. It stays put, in red, and the
+       choices stay live, which is the "try again" half of the ask. */
+    var gateNextTimer = null;
+    function gateCancelNext(){
+      if (gateNextTimer){ clearTimeout(gateNextTimer); gateNextTimer = null; }
+    }
+    function gateArmNext(delay){
+      gateCancelNext();
+      var st = gateState; if (!st) return;
+      /* Remember exactly which room armed this. The timer then refuses to fire
+         unless that same room is still on screen -- so tapping Next, going
+         back to All Gates, skipping the level, or leaving the puzzle entirely
+         cannot be overtaken by a stale timer landing a moment later. */
+      var key = st.gate.key, lvl = st.levelIdx, room = st.roomIdx;
+      gateNextTimer = setTimeout(function(){
+        gateNextTimer = null;
+        var now = gateState;
+        if (!now || now.gate.key !== key || now.levelIdx !== lvl || now.roomIdx !== room) return;
+        var btn = document.getElementById('gateNextBtn');
+        if (!btn || btn.offsetParent === null) return;   // answered room is no longer visible
+        gateAdvance();
+      }, delay);
+    }
+
+    // Tapped after seeing the appreciation, or reached on the timer above.
     function gateAdvance(){
+      gateCancelNext();
       var st = gateState; if (!st) return;
       var g = st.gate, total = gateTotalRooms(g, st.levelIdx);
       st.roomIdx++;
@@ -12282,6 +12340,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     var gateBackBtn = document.getElementById('gateBackBtn');
     if (gateBackBtn) gateBackBtn.addEventListener('click', function(){
       sfx('back');
+      gateCancelNext();
       if (gateState && gateState.gate.levels.length > 1) openGateLevels(gateState.gate.key);
       else openGatePicker();
     });
@@ -15294,7 +15353,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-253 (long line totals shrink to fit their badge, so 3³ Multiply stays readable at seven digits; and the XOR/XNOR rules now say what happens when every input is OFF)';
+  var BUILD_VER = 'beta-254 (a right answer in the logic rooms moves on by itself, so a 37-room gate is not 37 extra taps; a wrong one now pops red and waits)';
   /* ── BEACON FOR APPS INSTALLED LONG AGO ─────────────────────────────────
      Raja's iPhone sat on v139 and would not come forward, however many times
      he tapped Online Update.
@@ -15319,7 +15378,7 @@ if (navigator.storage && navigator.storage.persist) {
      rejects). check-update-beacon.js keeps it equal to BUILD_VER, because a
      beacon that goes stale strands people exactly as thoroughly as no beacon.
 
-     window.BETA_VER = 'beta-253'
+     window.BETA_VER = 'beta-254'
      ───────────────────────────────────────────────────────────────────── */
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
