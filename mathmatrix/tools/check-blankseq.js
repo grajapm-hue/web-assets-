@@ -30,7 +30,18 @@ const ok = (n,c,x) => { console.log((c?'  PASS  ':'  FAIL  ')+n+(x!==undefined?'
   const send=(mm,p)=>new Promise(res=>{const i=++id;pend.set(i,res);ws.send(JSON.stringify({id:i,method:mm,params:p}));});
   const ev=async x=>(await send('Runtime.evaluate',{expression:x,returnByValue:true,awaitPromise:true,timeout:300000})).result?.result?.value;
   await send('Runtime.enable');
-  await sleep(2200);
+  /* Wait for the page to have built itself rather than sleeping a guessed
+     amount. 2.2s was generous over file:// and short over the network, and the
+     picker then read as empty -- which looks like the page being broken and is
+     only this file being impatient. */
+  const waitFor = async (expr, ms) => {
+    const until = Date.now() + (ms || 25000);
+    while (Date.now() < until){ if (await ev(expr)) return true; await sleep(250); }
+    return false;
+  };
+  ok('the trial page loaded and dealt its first board',
+     await waitFor(`document.querySelectorAll('#startSel option').length > 0
+                    && document.querySelectorAll('#pad .key').length > 0`), FILE);
 
   const starts = await ev(`Array.prototype.map.call(document.querySelectorAll('#startSel option'), function(o){ return o.value; })`);
   ok('the picker offers several runs of nine', starts.length >= 4, starts.join(', '));
