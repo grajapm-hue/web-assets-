@@ -7473,9 +7473,46 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         });
       });
     })();
+    /* Raja: "in the logic picture card the correct tab is mostly placed top
+       left, or the same place again — can you change its order to a different
+       location?"
+
+       Measured before touching anything: of the 62 warm-up questions, 59 had
+       the right answer in the FIRST slot. A child could score 95% by tapping
+       top-left every time without reading a word — which is precisely the
+       habit a warm-up exists to avoid teaching.
+
+       So the four cards are shuffled per room. DETERMINISTICALLY, and that is
+       the whole difficulty: renderGateRoom() draws the buttons and numbers
+       them by position, then gateChoose() calls this again to look up what was
+       tapped. A fresh Math.random() on the second call would deal a different
+       order and mark a right answer wrong. Seeded from the room's own identity
+       instead, so both calls agree — and so leaving a room and coming back
+       finds the cards exactly where they were left. */
+    function gateShuffleSeed(key, levelIdx, roomIdx){
+      var s = key + '|' + levelIdx + '|' + roomIdx, h = 2166136261;   // FNV-1a
+      for (var i = 0; i < s.length; i++){
+        h ^= s.charCodeAt(i);
+        h = (h * 16777619) >>> 0;
+      }
+      return h;
+    }
     function gateWarmup(g, levelIdx, roomIdx){
       var base = GATE_WARMUP_OFFSET[g.key][levelIdx];
-      return WARMUPS[(base + roomIdx) % WARMUPS.length];
+      var w = WARMUPS[(base + roomIdx) % WARMUPS.length];
+      var order = w.choices.slice(), h = gateShuffleSeed(g.key, levelIdx, roomIdx);
+      for (var i = order.length - 1; i > 0; i--){
+        h = (h * 1664525 + 1013904223) >>> 0;      // same seed, same deal, every time
+        /* Take the HIGH bits, not h % (i+1). An LCG's low-order bits cycle
+           very short, and with only four cards every draw is h % 4, h % 3,
+           h % 2 -- exactly those bits. The first version did that and left the
+           answer top-left 60% of the time: better than the 95% it replaced,
+           and still a corner worth guessing. Scaling the top bits instead
+           spreads it properly. */
+        var j = Math.floor((h / 4294967296) * (i + 1)), t = order[i];
+        order[i] = order[j]; order[j] = t;
+      }
+      return { tip: w.tip, choices: order };
     }
     // Rotated per correct answer so 4-6 in a row don't all say the same
     // thing — same short "cheer" voice SaNa already uses for a finished
@@ -15353,7 +15390,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-254 (a right answer in the logic rooms moves on by itself, so a 37-room gate is not 37 extra taps; a wrong one now pops red and waits)';
+  var BUILD_VER = 'beta-255 (the warm-up picture cards are shuffled now — the right answer used to sit top-left in 59 of 62 questions, so tapping the same corner scored 95% without reading)';
   /* ── BEACON FOR APPS INSTALLED LONG AGO ─────────────────────────────────
      Raja's iPhone sat on v139 and would not come forward, however many times
      he tapped Online Update.
@@ -15378,7 +15415,7 @@ if (navigator.storage && navigator.storage.persist) {
      rejects). check-update-beacon.js keeps it equal to BUILD_VER, because a
      beacon that goes stale strands people exactly as thoroughly as no beacon.
 
-     window.BETA_VER = 'beta-254'
+     window.BETA_VER = 'beta-255'
      ───────────────────────────────────────────────────────────────────── */
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
