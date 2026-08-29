@@ -49,9 +49,18 @@ const SIZES = ['3x3', '4x4', '5x5', '6x6', '8x8', '10x10', '3cube', 'ramanujan']
 
   await send('Runtime.enable');
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
-  await sleep(900);
+  /* Wait for the page rather than sleeping a guessed amount. Fixed sleeps are
+     generous over file:// and far too short over the network, which made this
+     fail against the live URL for reasons that had nothing to do with the
+     product -- exactly when a promotion check most needs to be trusted. */
+  const waitFor = async (expr, ms) => {
+    const until = Date.now() + (ms || 20000);
+    while (Date.now() < until){ if (await ev(expr)) return true; await sleep(200); }
+    return false;
+  };
+  await waitFor(`!!document.querySelector('.splashPlay')`);
   await ev(`document.querySelector('.splashPlay').click()`);
-  await sleep(900);
+  await waitFor(`!!document.querySelector('.toggleBtn[data-size="3x3"]')`);
 
   /* every badge must contain its own text, and the text must still be legible */
   const overflow = () => ev(`(function(){
@@ -73,7 +82,8 @@ const SIZES = ['3x3', '4x4', '5x5', '6x6', '8x8', '10x10', '3cube', 'ramanujan']
     await ev(`document.getElementById('tab-scHome').click()`);
     await sleep(250);
     await ev(`document.querySelector('.toggleBtn[data-size="${size}"]').click()`);
-    await sleep(1100);
+    await waitFor(`document.querySelectorAll('#board .badge').length > 0`);
+    await sleep(400);
     await ev(`document.getElementById('peekBtn').click()`);
     await sleep(450);
     const sol = await ev(`JSON.stringify(Array.from(document.querySelectorAll('#board .cell')).map(function(i){ return i.value; }))`);

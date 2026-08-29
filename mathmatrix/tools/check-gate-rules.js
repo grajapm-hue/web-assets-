@@ -66,11 +66,20 @@ const FROM_THE_WORDS = {
 
   await send('Runtime.enable');
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
-  await sleep(900);
+  /* Wait for the page rather than sleeping a guessed amount. Fixed sleeps are
+     generous over file:// and far too short over the network, which made this
+     fail against the live URL for reasons that had nothing to do with the
+     product -- exactly when a promotion check most needs to be trusted. */
+  const waitFor = async (expr, ms) => {
+    const until = Date.now() + (ms || 20000);
+    while (Date.now() < until){ if (await ev(expr)) return true; await sleep(200); }
+    return false;
+  };
+  await waitFor(`!!document.querySelector('.splashPlay')`);
   await ev(`document.querySelector('.splashPlay').click()`);
-  await sleep(900);
+  await waitFor(`!!document.getElementById('gateListBtn')`);
   await ev(`document.getElementById('gateListBtn').click()`);
-  await sleep(900);
+  await waitFor(`!!document.querySelector('.rowBtn[data-gate]')`);
 
   const back  = () => ev(`(function(){ var b=document.getElementById('gateBackBtn'); if(b) b.click(); })()`);
   const gate  = k => ev(`(function(){ var b=document.querySelector('.rowBtn[data-gate="' + ${JSON.stringify('K')}.replace('K','${k}') + '"]:not([data-level])'); if(b) b.click(); })()`);

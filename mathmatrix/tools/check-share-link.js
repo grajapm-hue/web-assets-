@@ -86,8 +86,15 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
     const keys = Object.keys(p).sort().join(',');
     ok(b.where + ' shares a LINK, not a paragraph', !('text' in p) && typeof p.url === 'string' && /^https?:|^file:/.test(p.url),
       'fields sent: ' + keys + (('text' in p) ? '  <-- text is what Android glues onto the URL' : ''));
-    ok(b.where + ' sends the page it is running from', p.url && p.url.indexOf('beta.html') > -1,
-      p.url);
+    /* Compare against the page's OWN address rather than the literal
+       "beta.html". The property is that Share sends whatever page you are on,
+       and hard-coding the beta filename made this fail on the promotion build
+       — which is named _index-built.html — for a reason that had nothing to do
+       with sharing. A promotion check that cries wolf is one that gets waved
+       through, and this runs immediately before publishing to real users. */
+    const here = await ev(`location.href.split('#')[0].split('?')[0]`);
+    ok(b.where + ' sends the page it is running from', p.url === here,
+      p.url + (p.url === here ? '' : '  (page is ' + here + ')'));
   }
 
   /* Copy Link: Raja's own words are that this one works everywhere. It has to
