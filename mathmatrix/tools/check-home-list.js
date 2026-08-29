@@ -72,7 +72,7 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
        fault where there was only a ninth game. Naming them keeps the real
        guarantee, that nothing SILENTLY DISAPPEARS from the list, while letting
        the list grow. */
-    const WANT = ['Add Magic', 'Multiply Magic', 'Triangle Magic', 'Birthday Magic',
+    const WANT = ['Add Magic', 'Multiply Magic', 'Number Grid', 'Birthday Magic',
                   'Gate Logic', 'Binary Magic', 'Slide Magic', 'Sudoku', 'Pallanguzhi'];
     const have = D.groups.map(g => g.name);
     const missing = WANT.filter(w => !have.some(h => h.indexOf(w) > -1));
@@ -86,9 +86,9 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
 
     const sameLine = (a, b) => a && b && Math.abs(a.t - b.t) <= 2 && a.r <= b.l + 1;
     if (D.page >= 360){
-      ok(S.w + ': Multiply and Triangle share a line',
-        sameLine(byName['Multiply Magic'], byName['Triangle Magic']),
-        'multiply y' + byName['Multiply Magic'].t + ', triangle y' + byName['Triangle Magic'].t);
+      ok(S.w + ': Multiply and Number Grid share a line',
+        sameLine(byName['Multiply Magic'], byName['Number Grid']),
+        'multiply y' + byName['Multiply Magic'].t + ', grid y' + byName['Number Grid'].t);
       ok(S.w + ': Sir Ramanujan and Gate Logic share a line',
         sameLine(byName['Sir Ramanujan MathMagic'] || byName['Birthday Magic'], byName['Gate Logic']),
         'birthday y' + (byName['Birthday Magic'] || {}).t + ', gate y' + byName['Gate Logic'].t);
@@ -101,19 +101,19 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
          a QUARTER of the screen and the names broke mid-word. Overlap and
          overflow checks all passed on that — only width caught it. */
       const ref = byName['Binary Magic'].cardW;      // a card on a normal line
-      ['Multiply Magic', 'Triangle Magic', 'Birthday Magic', 'Gate Logic'].forEach(n => {
+      ['Multiply Magic', 'Number Grid', 'Birthday Magic', 'Gate Logic'].forEach(n => {
         ok(S.w + ': ' + n + ' card is a full half-row wide, not a quarter',
           byName[n].cardW >= ref * 0.9, byName[n].cardW + 'px vs ' + ref + 'px on a normal row');
       });
       ok(S.w + ': no paired puzzle name breaks onto extra lines',
-        ['Multiply Magic', 'Triangle Magic', 'Gate Logic'].every(n => byName[n].nameLines <= 1),
-        ['Multiply Magic', 'Triangle Magic', 'Gate Logic'].map(n => n + '=' + byName[n].nameLines + 'ln').join(', '));
+        ['Multiply Magic', 'Number Grid', 'Gate Logic'].every(n => byName[n].nameLines <= 1),
+        ['Multiply Magic', 'Number Grid', 'Gate Logic'].map(n => n + '=' + byName[n].nameLines + 'ln').join(', '));
     } else {
       // narrow phones keep one column, so pairs must stack rather than squeeze
       ok(S.w + ': narrow phone keeps the groups stacked',
-        byName['Multiply Magic'].t < byName['Triangle Magic'].t
-        && byName['Multiply Magic'].l === byName['Triangle Magic'].l,
-        'multiply y' + byName['Multiply Magic'].t + ', triangle y' + byName['Triangle Magic'].t);
+        byName['Multiply Magic'].t < byName['Number Grid'].t
+        && byName['Multiply Magic'].l === byName['Number Grid'].l,
+        'multiply y' + byName['Multiply Magic'].t + ', grid y' + byName['Number Grid'].t);
     }
 
     ok(S.w + ': every group fits inside the page',

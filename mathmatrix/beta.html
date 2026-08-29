@@ -2038,28 +2038,28 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
    built through fitBoard()'s --tracks/--cell autofit system at all (see
    fitBoard's own comment). Plain responsive CSS instead: proven sizing
    from the standalone prototype this was built from, not new math. */
-.board.sizetriangle{ display:flex !important; flex-direction:column !important;
-  align-items:center !important; position:relative !important;
-  padding:4px 30px 10px !important; }
-.triWrap{ display:flex; flex-direction:column; align-items:center;
-  gap:clamp(4px, 1.6vw, 8px); position:relative; }
-.triRow{ display:flex; align-items:center; justify-content:center; gap:clamp(6px, 2.4vw, 10px); }
-/* Styled via the ancestor, not a class on the cell itself: resetVisuals()
-   (runs on every CLEAR and at the top of the Watch handler) does
-   cells[r][c].className = 'cell', stripping any other class the cell was
-   carrying — a .triCell class here would vanish the instant Watch starts
-   and every cell would collapse to whatever bare .cell defaults to. The
-   square boards already solved exactly this with .board.autofit .cell —
-   same fix, same reason. */
-.board.sizetriangle .cell{ width:clamp(40px, 11vw, 58px) !important; height:clamp(40px, 11vw, 58px) !important;
-  font-size:clamp(14px, 4vw, 20px) !important; padding:0 !important; text-align:center; }
-.triGap{ display:inline-block; width:clamp(46px, 13.4vw, 68px); flex:none; }
-.triBadge{ width:38px !important; height:38px !important; border-radius:50% !important;
-  font-size:13px !important; flex:none; }
-.triBadgeL{ position:absolute !important; left:-30px; top:50%; transform:translateY(-50%); }
-.triBadgeR{ position:absolute !important; right:-30px; top:50%; transform:translateY(-50%); }
-.triBadgeB{ margin-top:6px; }
-.board.sizetriangle .cell.anchor{ box-shadow:0 0 0 2px var(--gold) inset, 0 3px 0 rgba(0,0,0,.28) !important; }
+.board.sizegrid1, .board.sizegrid2, .board.sizegrid3{
+  display:block !important; background:transparent !important;
+  padding:0 !important; box-shadow:none !important; }
+/* Six columns: cell op cell op cell answer. The operator and spacer tracks are
+   narrower than the boxes on purpose -- the numbers are what is being read,
+   the signs only join them. */
+.gridWrap{ display:grid; justify-content:center; align-content:center;
+  grid-template-columns:repeat(3, minmax(0,1fr) auto);
+  gap:clamp(3px, 1.1vw, 7px); width:100%; max-width:340px; margin:0 auto; }
+.gridWrap .cell{ width:100% !important; aspect-ratio:1 !important; height:auto !important;
+  min-width:0 !important; padding:0 !important; text-align:center;
+  font-size:clamp(17px, 6.2vw, 28px) !important; line-height:1 !important; }
+.gridWrap .badge{ width:100% !important; aspect-ratio:1 !important; height:auto !important;
+  min-width:0 !important; display:flex !important; align-items:center; justify-content:center;
+  font-size:clamp(14px, 5vw, 22px) !important; }
+.gridOp{ display:flex; align-items:center; justify-content:center;
+  min-width:clamp(13px, 4.6vw, 24px); font-weight:900; line-height:1;
+  font-size:clamp(14px, 5vw, 22px); color:var(--ink2, #4A331A); }
+/* The blanks between the column signs. Shaded, exactly as the printed puzzle
+   shades them, so the eye follows the six lines instead of reading the whole
+   thing as one block. */
+.gridGap{ background:rgba(94,64,32,.13); border-radius:5px; min-height:10px; }
 #playRow{ flex:none; display:flex !important; gap:5px !important; margin:6px 0 !important; }
 /* min-height 44 so Hint and CLEAR clear the touch minimum — they were 33px */
 /* 15px, not 10.5. Measured first: at 10.5 the longest label needed 42px in a
@@ -2264,6 +2264,12 @@ body.sudokuMode #learnHint,
 body.sudokuMode .keysChip,
 body.sudokuMode .targetPill,
 body.sudokuMode .solvedCounter{ display:none !important; }
+/* The Number Grid carries its six answers on the board itself, one at the end
+   of every line. A single "Target : ?" pill beside that has nothing true to
+   say -- there is no one number to show, and showing ? forever reads like
+   something failed to load. */
+body.gridMode .targetPill{ display:none !important; }
+body.gridMode .solvedCounter{ flex:1 1 auto !important; }
 #sudokuPanel{ width:100%; max-width:560px; margin:0 auto; }
 /* Scrollable, exactly as #slidePanel and #gatePanel are, and for the same
    reason: .screens is overflow:hidden, so anything taller than the screen is
@@ -4730,16 +4736,28 @@ body{ background:#C9A87C !important; }
     </div>
   </div>
 
-  <!-- 🔺 TRIANGLE MODE -->
+  <!-- 🔢 NUMBER GRID -- took the triangle's seat. Raja, relaying his
+       group: "suggest remove triangle puzzle, it was completely mind mapping
+       and dragging to follow." This asks what a number IS rather than where it
+       goes, which is the whole point of the swap. Three levels by which signs
+       appear, so a beginner does not meet division first. -->
   <div class="modeGroup">
-    <div class="modeHead" style="--m1:#fdba8c; --m2:#ea580c;">
-      <span class="mIco">🔺</span>
-      <span><b>Triangle Magic</b><i>3 sides, not rows and columns — only 5 targets ever work</i></span>
+    <div class="modeHead" style="--m1:#a5d8f3; --m2:#0ea5e9;">
+      <span class="mIco">🔢</span>
+      <span><b>Number Grid</b><i>fill the blanks so every row and column makes its number</i></span>
     </div>
     <div class="toggleSwitch">
-      <button class="toggleBtn lvCard" data-size="triangle" data-name="🔺 Triangle Magic" style="color:#fb923c; border-color:#ea580c; --c1:#fdba8c; --c2:#fb923c;">
-        <span class="lvGlyph" aria-hidden="true">🔺</span>
-        <span class="lvText"><b class="lvName">Triangle Magic</b><span class="lvDiff">9 boxes, 3 sides</span><span class="lvMeta">uses 1-9 · each side adds to the same total</span><span class="lvNow">PLAYING</span></span>
+      <button class="toggleBtn lvCard" data-size="grid1" data-name="🔢 Number Grid" style="color:#0ea5e9; border-color:#0284c7; --c1:#a5d8f3; --c2:#38bdf8;">
+        <span class="lvGlyph" aria-hidden="true">➕</span>
+        <span class="lvText"><b class="lvName">Number Grid · Easy</b><span class="lvDiff">plus and minus</span><span class="lvMeta">1-9 once each · work left to right</span><span class="lvNow">PLAYING</span></span>
+      </button>
+      <button class="toggleBtn lvCard" data-size="grid2" data-name="🔢 Number Grid · Medium" style="color:#0ea5e9; border-color:#0284c7; --c1:#a5d8f3; --c2:#38bdf8;">
+        <span class="lvGlyph" aria-hidden="true">✖️</span>
+        <span class="lvText"><b class="lvName">Number Grid · Medium</b><span class="lvDiff">plus, minus and times</span><span class="lvMeta">1-9 once each · work left to right</span><span class="lvNow">PLAYING</span></span>
+      </button>
+      <button class="toggleBtn lvCard" data-size="grid3" data-name="🔢 Number Grid · Hard" style="color:#0ea5e9; border-color:#0284c7; --c1:#a5d8f3; --c2:#38bdf8;">
+        <span class="lvGlyph" aria-hidden="true">➗</span>
+        <span class="lvText"><b class="lvName">Number Grid · Hard</b><span class="lvDiff">all four signs</span><span class="lvMeta">1-9 once each · work left to right</span><span class="lvNow">PLAYING</span></span>
       </button>
     </div>
   </div>
@@ -5203,40 +5221,160 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       cols: 4,
       inst: '<b>Sir Ramanujan MathMagic!</b> Type any date of birth in the TOP row using <b>two digits each</b> — DD · MM · CC · YY (Ramanujan: 22 12 18 87) — and the rest of the square fills itself. Every row, column and diagonal becomes YOUR total. 🎂'
     },
-    /* 9 cells, 3 SIDES (not rows/columns) — a shape none of the other puzzles
-       use, so it's flagged with shape:'triangle' and stored flat: rows:1,
-       cols:9, cells[0][0..8]. That keeps every already-generic rows×cols
-       loop in the app (resetVisuals, win, fitCells, kpMove, snapshot — all
-       already iterate rows×cols as independent bounds, never assuming a
-       square) working unmodified; only initBoard/lineVals/fitBoard/the
-       Watch demo, which actually touch the SHAPE, get their own branch.
-       Cell layout: 0=top corner, 1/2=row2, 3/4=row3, 5..8=bottom row
-       (5,8 corners). Sides: s0(left)=[0,1,3,5] s1(right)=[0,2,4,8]
-       s2(bottom)=[5,6,7,8] — corners are shared by two sides each, same
-       "counted twice" idea as every other puzzle's rows/cols/diagonals.
-       Exhaustively verified (not assumed): only 5 of the 7 targets the
-       corner-sum formula allows (17..23) are actually reachable — 18 and
-       22 fit the formula but no pairing of the other 6 numbers ever
-       completes them. These 5 example solutions are the real, checked
-       ones, generated by brute-force search over every corner triple and
-       every remaining pairing, one per target. */
-    'triangle': {
-      shape: 'triangle',
-      example: [[1, 6, 3, 8, 7, 5, 2, 4, 9]],   // target 20 — the demo/SHOW default
-      targets: [
-        { t: 17, v: [1, 5, 6, 9, 7, 2, 4, 8, 3] },
-        { t: 19, v: [1, 5, 3, 9, 8, 4, 2, 6, 7] },
-        { t: 20, v: [1, 6, 3, 8, 7, 5, 2, 4, 9] },
-        { t: 21, v: [3, 4, 2, 8, 7, 6, 1, 5, 9] },
-        { t: 23, v: [7, 2, 3, 6, 4, 8, 1, 5, 9] }
-      ],
-      lines: ['s0', 's1', 's2'],
-      rows: 1,
-      cols: 9,
-      inst: '<b>Triangle Magic!</b> Fill the triangle with 1–9 — no repeats — so each SIDE (not row or column!) adds to the SAME total. Only 5 totals ever work: 17, 19, 20, 21 or 23. 🔺'
-    }
+    /* ── NUMBER GRID ──────────────────────────────────────────────────────
+       Raja, relaying his group: "suggest remove triangle puzzle, it was
+       completely mind mapping and dragging to follow — I too feel same. Can
+       opt there another with including calculation behind."
+
+       Fair. The triangle asked WHERE a number goes; nothing is calculated to
+       find it, you shuffle nine digits until three sums agree. This asks what
+       a number IS: nine boxes, 1-9 once each, and six little equations that
+       must all come out right at once.
+
+       Three things about it are deliberate and easy to get wrong:
+
+       LEFT TO RIGHT, always. 8 - 6 x 2 is 4 here, not -4. Under BODMAS almost
+       no grid has an answer at all, which is why the printed versions of this
+       puzzle all read this way, and why it is said on the card, in the rule
+       line, and in the method sheet.
+
+       ONE answer only. A grid with two answers tells a child they are wrong
+       when they are not, so every generated grid is solved exhaustively and
+       thrown away unless exactly one arrangement fits.
+
+       REASONABLE without guessing. Uniqueness alone is not enough — a grid can
+       have one answer that only brute force finds. Each one is also run
+       through a constraint solver, and kept only if plain reasoning finishes
+       it, because that reasoning is what the Method sheet teaches.
+
+       Stored flat at cells[0][0..8], the same trick the triangle used, so
+       every rows x cols-generic function in this file keeps working. */
+    'grid1': { shape:'opgrid', ops:['+','-'],         caps:[12,20],    rows:1, cols:9,
+      lines:['r0','r1','r2','c0','c1','c2'],
+      inst:'<b>Number Grid!</b> Put <b>1 to 9</b> in the white boxes, each one only once, so every row and every column makes the number at its end. <b>Work left to right</b> — not times-before-plus. ➕➖' },
+    'grid2': { shape:'opgrid', ops:['+','-','*'],     caps:[15,24,30], rows:1, cols:9,
+      lines:['r0','r1','r2','c0','c1','c2'],
+      inst:'<b>Number Grid — with ×!</b> Put <b>1 to 9</b> in the white boxes, each one only once, so every row and every column makes the number at its end. <b>Work left to right</b> — not times-before-plus. ✖️' },
+    'grid3': { shape:'opgrid', ops:['+','-','*','/'], caps:[10,14,20], rows:1, cols:9,
+      lines:['r0','r1','r2','c0','c1','c2'],
+      inst:'<b>Number Grid — all four!</b> Put <b>1 to 9</b> in the white boxes, each one only once, so every row and every column makes the number at its end. <b>Work left to right</b> — not times-before-plus. ➗' }
   };
   
+  /* -- the Number Grid's arithmetic and its generator ----------------------
+     Lifted from the standalone Raja played and signed off on, not rewritten
+     here: the maths that decides whether a grid is fair is the last thing to
+     re-derive from memory. tools/opgrid-generator.js has the CLI version and
+     its self-test. */
+  var GRID_OPS = { '+':function(a,b){ return a+b; }, '-':function(a,b){ return a-b; },
+                   '*':function(a,b){ return a*b; },
+                   '/':function(a,b){ return (b!==0 && a%b===0) ? a/b : null; } };
+  var GRID_SY  = { '+':'+', '-':'−', '*':'×', '/':'÷' };
+
+  /* Left to right, and whole and positive at EVERY step -- not merely at the
+     end. A child should never meet 7/2 halfway along a row that finishes on a
+     whole number. */
+  function gridLtr(a, o1, b, o2, c){
+    var x = GRID_OPS[o1](a, b); if (x === null || x < 0) return null;
+    var y = GRID_OPS[o2](x, c); if (y === null || y < 0) return null;
+    return y;
+  }
+  function gridShuffled(){
+    var x = [1,2,3,4,5,6,7,8,9];
+    for (var i = 8; i > 0; i--){ var j = (Math.random()*(i+1))|0, t = x[i]; x[i] = x[j]; x[j] = t; }
+    return x;
+  }
+  /* Does more than one arrangement fit? A grid with two answers calls a child
+     wrong when they are right, so this stops as soon as it finds a second. */
+  function gridCountSolutions(rOps, cOps, r, c, stopAt){
+    var found = 0, cell = [], used = new Array(10);
+    (function place(i){
+      if (found >= stopAt) return;
+      if (i === 9){ found++; return; }
+      for (var v = 1; v <= 9; v++){
+        if (used[v]) continue;
+        cell[i] = v; used[v] = true;
+        var ok = true;
+        if (i % 3 === 2){ var rw = (i/3)|0;
+          if (gridLtr(cell[rw*3], rOps[rw][0], cell[rw*3+1], rOps[rw][1], cell[rw*3+2]) !== r[rw]) ok = false; }
+        if (ok && i >= 6){ var cl = i - 6;
+          if (gridLtr(cell[cl], cOps[cl][0], cell[cl+3], cOps[cl][1], cell[cl+6]) !== c[cl]) ok = false; }
+        if (ok) place(i + 1);
+        used[v] = false;
+      }
+    })(0);
+    return found;
+  }
+  /* Can it be REASONED out, or only brute-forced? Uniqueness is not enough:
+     the Method sheet teaches narrowing each box by what its line allows, so a
+     grid is only fair if that narrowing actually finishes it. */
+  function gridDeduce(P){
+    var cand = [], eqs = [], i;
+    for (i = 0; i < 9; i++) cand.push([1,2,3,4,5,6,7,8,9]);
+    for (i = 0; i < 3; i++) eqs.push({ cells:[i*3, i*3+1, i*3+2], ops:P.rOps[i], target:P.r[i] });
+    for (i = 0; i < 3; i++) eqs.push({ cells:[i, i+3, i+6],       ops:P.cOps[i], target:P.c[i] });
+    var changed = true, guard = 0;
+    while (changed && guard++ < 60){
+      changed = false;
+      for (var e = 0; e < eqs.length; e++){
+        var eq = eqs[e], ways = [], A = cand[eq.cells[0]], B = cand[eq.cells[1]], C = cand[eq.cells[2]];
+        for (var a = 0; a < A.length; a++) for (var b = 0; b < B.length; b++){
+          if (B[b] === A[a]) continue;
+          for (var q = 0; q < C.length; q++){
+            if (C[q] === A[a] || C[q] === B[b]) continue;
+            if (gridLtr(A[a], eq.ops[0], B[b], eq.ops[1], C[q]) === eq.target) ways.push([A[a], B[b], C[q]]);
+          }
+        }
+        if (!ways.length) return false;
+        for (var k = 0; k < 3; k++){
+          var allow = {}, w;
+          for (w = 0; w < ways.length; w++) allow[ways[w][k]] = 1;
+          var idx = eq.cells[k], before = cand[idx].length;
+          cand[idx] = cand[idx].filter(function(v){ return allow[v]; });
+          if (cand[idx].length < before) changed = true;
+        }
+      }
+      for (i = 0; i < 9; i++){
+        if (cand[i].length !== 1) continue;
+        var only = cand[i][0];
+        for (var j = 0; j < 9; j++){
+          if (j === i || cand[j].indexOf(only) < 0) continue;
+          cand[j] = cand[j].filter(function(v){ return v !== only; });
+          changed = true;
+        }
+      }
+    }
+    for (i = 0; i < 9; i++) if (cand[i].length !== 1) return false;
+    return true;
+  }
+  /* The caps are a PREFERENCE, not a ceiling -- the tight ones are tried first
+     so most grids land in small friendly numbers, then it widens as a last
+     resort rather than ever coming back empty. The standalone learned that the
+     hard way: clamping at the last cap returned nothing about once in 300, and
+     the caller read .grid straight off it. */
+  function gridGenerate(pool, caps){
+    var budget = 60000, ladder = budget * 0.85, stageLen = ladder / caps.length;
+    var pick = function(){ return pool[(Math.random()*pool.length)|0]; };
+    for (var attempt = 0; attempt < budget; attempt++){
+      var cap = attempt < ladder ? caps[(attempt/stageLen)|0]
+              : caps[caps.length-1] + (1 + (((attempt-ladder)/500)|0)) * 10;
+      var g = gridShuffled(), i, v, ok = true, r = [], c = [];
+      var rOps = [[pick(),pick()],[pick(),pick()],[pick(),pick()]];
+      var cOps = [[pick(),pick()],[pick(),pick()],[pick(),pick()]];
+      for (i = 0; i < 3 && ok; i++){ v = gridLtr(g[i*3], rOps[i][0], g[i*3+1], rOps[i][1], g[i*3+2]);
+        if (v === null || v > cap || v < 1) ok = false; else r.push(v); }
+      for (i = 0; i < 3 && ok; i++){ v = gridLtr(g[i], cOps[i][0], g[i+3], cOps[i][1], g[i+6]);
+        if (v === null || v > cap || v < 1) ok = false; else c.push(v); }
+      if (!ok) continue;
+      if (gridCountSolutions(rOps, cOps, r, c, 2) !== 1) continue;
+      var P = { grid:g, rOps:rOps, cOps:cOps, r:r, c:c };
+      if (!gridDeduce(P)) continue;
+      return P;
+    }
+    return null;
+  }
+  // the grid currently on screen -- its answer, its operators and its six targets
+  var gridP = null;
+
   var currentSize = '3x3';
   var solvedCount3x3 = 0; // Track 3x3 solves
   var solvedTargets3x3 = []; // Track different targets used
@@ -5254,8 +5392,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   var solvedTargetsRam = []; // different birthday totals
   var solvedCount3cube = 0; // Track 3³ multiply solves
   var solvedTargets3cube = []; // Track different targets used
-  var solvedCountTriangle = 0; // Track Triangle Magic solves
-  var solvedTargetsTriangle = []; // Track different targets used (only 5 ever possible)
+  var solvedCountGrid = 0;     // Track Number Grid solves
+  var solvedGridSeen = [];     // Track the different grids finished
   var board = document.getElementById('board');
   var targetPill = document.getElementById('targetPill');
   var targetVal = document.getElementById('targetVal');
@@ -5800,8 +5938,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       cells[1][1].classList.add('anchor');
     } else if (currentSize === '3cube') {
       cells[1][1].classList.add('anchor');   // center = heart (target is center³)
-    } else if (currentSize === 'triangle') {
-      [0, 5, 8].forEach(function(i){ cells[0][i].classList.add('anchor'); });   // the 3 corners — place these first
+    } else if (PUZZLES[currentSize].shape === 'opgrid') {
+      /* No anchor. Every box on this board is equally the place to start --
+         where you begin is whichever line the numbers pin down first, and
+         highlighting one would be advice rather than fact. */
     } else if (currentSize === '5x5') {
       cells[2][2].classList.add('anchor');
       cells[2][2].classList.add('center-heart');
@@ -5877,7 +6017,15 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     resetTimer();
 
     var puzzle = PUZZLES[currentSize];
+    /* The Number Grid is generated, not chosen from a table: a fresh set of
+       operators and six fresh answers every deal. Generated BEFORE the board
+       is built, because the board draws the operators and the answers. */
+    if (puzzle.shape === 'opgrid'){
+      var dealt = gridGenerate(puzzle.ops, puzzle.caps);
+      if (dealt) gridP = dealt;            // keep the old one rather than crash
+    }
     board.className = 'board size' + currentSize;
+    document.body.classList.toggle('gridMode', puzzle.shape === 'opgrid');
     
     // Update instruction
     instCard.innerHTML = puzzle.inst;
@@ -6092,43 +6240,38 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         <p><b>➖ Negative numbers are welcome!</b> A January or February birthday makes MM−3 go below zero — try <b>09-01-2015</b> and you will see <b>−2</b> and <b>−1</b> in the square, yet every line still totals 45. Tap the <b>±</b> key to type a minus yourself, then <b>tap the next box</b> — a single-digit entry completes the moment you move on. The magic holds for negatives, for zero, even for decimals. The recipe cares about the <i>differences</i>, never the size of the numbers.</p>
         <p><b>💡 Try it:</b> type your own birthday, then your friend's — each person gets their own magic number. 🎂</p>
       `;
-    } else if (currentSize === 'triangle') {
+    } else if (PUZZLES[currentSize].shape === 'opgrid') {
       document.getElementById('logicBox').innerHTML = `
-        <h3>🔺 Triangle Magic — put the right number in the right box</h3>
-        <p>No formula here — just five worked answers. Pick a Target, copy the numbers into the matching boxes, and check: each side really does add to that Target.</p>
-        <table style="width:100%; border-collapse:collapse; margin:10px 0; font-size:14px; text-align:center;">
-          <tr style="color:#CE93D8;"><th style="padding:4px;">Target</th><th>Top</th><th>Up-L</th><th>Up-R</th><th>Lo-L</th><th>Lo-R</th><th>Bot-L</th><th>Mid-L</th><th>Mid-R</th><th>Bot-R</th></tr>
-          ${PUZZLES.triangle.targets.map(function(x){
-            return '<tr><td style="font-weight:800; color:#4caf50;">' + x.t + '</td>' +
-              x.v.map(function(n2){ return '<td>' + n2 + '</td>'; }).join('') + '</tr>';
-          }).join('')}
-        </table>
-        <p style="font-size:0.9em; opacity:0.85;">Top / Bot-L / Bot-R are the 3 <b>corners</b> — each counts on two sides. The rest fill in around them.</p>
-        <p><b>💡 Try it:</b> tap ▶ <b>WATCH</b> to see all 5 filled in, one at a time, with arrows showing which two boxes pair up on each side.</p>
+        <h3>🔢 Number Grid — how to work it out</h3>
+        <p><b>The one rule that trips everyone:</b> read each line <b>left to right</b>. So <b>8 − 6 × 2</b> is <b>4</b> here (8−6=2, then 2×2=4) — <i>not</i> times-before-plus. Every line on this board is read that way, and nothing works if you do it the school way.</p>
+        <p><b>What is really going on:</b> every box belongs to <b>two</b> lines at once — its row and its column. That is the whole puzzle. A number has to satisfy both, and that is what lets you pin it down without guessing.</p>
+        <ol style="margin: 10px 0; padding-left: 20px;">
+          <li><b>Start with the line that allows fewest numbers.</b> A row making a small answer out of × or ÷ has very few ways to happen. Find it and list them.</li>
+          <li><b>Cross it with a column.</b> Take one box in that row and ask what its column allows. Usually only one number survives both.</li>
+          <li><b>Cross off as you go.</b> Each digit is used <b>once</b>, so every box you settle removes that number everywhere else.</li>
+          <li><b>Repeat.</b> Each settled box makes the next one easier — that is why no guessing is ever needed.</li>
+        </ol>
+        <p><b>\U0001f4a1 Why this puzzle is fair:</b> every grid is checked twice before you see it — that exactly <b>one</b> arrangement fits, and that plain reasoning is enough to find it. You are never asked to guess.</p>
+        <p><b>\U0001f4a1 Try it:</b> tap ▶ <b>WATCH</b> to see it worked out one step at a time, with the reason for each.</p>
       `;
     }
 
-    if (puzzle.shape === 'triangle'){
-      /* A shape none of the other puzzles use, so it gets its own DOM instead
-         of forcing it through place()'s CSS-Grid row/column math (built for
-         a square). Flow layout instead — proven in the standalone prototype
-         this was built from, not invented fresh here. 9 cells stored flat
-         at cells[0][0..8] (see PUZZLES.triangle's own comment for why that
-         keeps every other rows×cols-generic function working unmodified). */
-      function makeBadge(key, isCorner){
-        var b = document.createElement('div');
-        b.className = 'badge' + (isCorner ? ' corner' : '');
-        b.textContent = '?';
-        if (!badges[key]) badges[key] = [];
-        badges[key].push(b);
-        return b;
-      }
-      function makeCell(i, label){
+    if (puzzle.shape === 'opgrid'){
+      /* Six columns wide: cell op cell op cell target, with a row of column
+         operators between each pair of number rows. That is the printed
+         layout exactly, so a child who has met this puzzle on paper knows
+         where to look. It gets its own DOM for the same reason the triangle
+         did -- place()'s row/column maths below is built for an n x n square,
+         and this is not one.
+
+         Nine cells stored flat at cells[0][0..8], which keeps every other
+         rows x cols-generic function in this file working untouched. */
+      function gCell(i, label){
         var inp = document.createElement('input');
-        inp.className = 'cell';   // sized via .board.sizetriangle .cell in CSS, not a class on the cell (see that rule's comment)
+        inp.className = 'cell';
         inp.type = 'text';
         inp.inputMode = useSysKb ? 'numeric' : 'none';
-        inp.maxLength = 4;
+        inp.maxLength = 1;                 // one digit, 1-9, and only one of each
         inp.dataset.r = 0; inp.dataset.c = i;
         inp.setAttribute('aria-label', label);
         inp.addEventListener('input', onInput);
@@ -6140,40 +6283,59 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         });
         return inp;
       }
+      function gBadge(key, text){
+        var b = document.createElement('div');
+        b.className = 'badge';
+        b.textContent = text;
+        if (!badges[key]) badges[key] = [];
+        badges[key].push(b);
+        return b;
+      }
+      function gOp(sym){
+        var d = document.createElement('div');
+        d.className = 'gridOp';
+        d.textContent = sym;
+        d.setAttribute('aria-hidden', 'true');
+        return d;
+      }
+      function gGap(){
+        var d = document.createElement('div');
+        d.className = 'gridGap';
+        d.setAttribute('aria-hidden', 'true');
+        return d;
+      }
 
       var wrap = document.createElement('div');
-      wrap.className = 'triWrap';
-
-      var sideL = makeBadge('s0', false); sideL.classList.add('triBadge', 'triBadgeL');
-      var sideR = makeBadge('s1', false); sideR.classList.add('triBadge', 'triBadgeR');
-      wrap.appendChild(sideL); wrap.appendChild(sideR);
-
-      var LABELS = ['top corner', 'upper left', 'upper right', 'lower left', 'lower right',
-                     'bottom left corner', 'bottom middle left', 'bottom middle right', 'bottom right corner'];
-      var row0 = document.createElement('div'); row0.className = 'triRow triRow0';
-      var c0 = makeCell(0, LABELS[0]); row0.appendChild(c0);
-
-      var row1 = document.createElement('div'); row1.className = 'triRow triRow1';
-      var c1 = makeCell(1, LABELS[1]), c2 = makeCell(2, LABELS[2]);
-      row1.appendChild(c1); row1.appendChild(c2);
-
-      var row2 = document.createElement('div'); row2.className = 'triRow triRow2';
-      var c3 = makeCell(3, LABELS[3]), c4 = makeCell(4, LABELS[4]);
-      var gap = document.createElement('span'); gap.className = 'triGap';
-      row2.appendChild(c3); row2.appendChild(gap); row2.appendChild(c4);
-
-      var row3 = document.createElement('div'); row3.className = 'triRow triRow3';
-      var c5 = makeCell(5, LABELS[5]), c6 = makeCell(6, LABELS[6]),
-          c7 = makeCell(7, LABELS[7]), c8 = makeCell(8, LABELS[8]);
-      row3.appendChild(c5); row3.appendChild(c6); row3.appendChild(c7); row3.appendChild(c8);
-
-      wrap.appendChild(row0); wrap.appendChild(row1); wrap.appendChild(row2); wrap.appendChild(row3);
+      wrap.className = 'gridWrap';
+      var made = [], WHERE = ['top left','top middle','top right',
+                              'middle left','centre','middle right',
+                              'bottom left','bottom middle','bottom right'];
+      for (var gr = 0; gr < 3; gr++){
+        for (var gc = 0; gc < 3; gc++){
+          var idx = gr * 3 + gc;
+          var cel = gCell(idx, WHERE[idx] + ' box');
+          made[idx] = cel;
+          wrap.appendChild(cel);
+          if (gc < 2) wrap.appendChild(gOp(GRID_SY[gridP.rOps[gr][gc]]));
+        }
+        // the row's own answer, at the end of the row
+        wrap.appendChild(gBadge('r' + gr, gridP.r[gr]));
+        if (gr < 2){
+          // the operators that join this number row to the next one, column by column
+          for (var oc = 0; oc < 3; oc++){
+            wrap.appendChild(gOp(GRID_SY[gridP.cOps[oc][gr]]));
+            wrap.appendChild(gGap());
+          }
+        }
+      }
+      // and the three column answers along the bottom
+      for (var bc = 0; bc < 3; bc++){
+        wrap.appendChild(gBadge('c' + bc, gridP.c[bc]));
+        wrap.appendChild(gGap());
+      }
       board.appendChild(wrap);
 
-      var sideB = makeBadge('s2', false); sideB.classList.add('triBadge', 'triBadgeB');
-      board.appendChild(sideB);
-
-      cells.push([c0, c1, c2, c3, c4, c5, c6, c7, c8]);
+      cells.push(made);
       markAnchors();
       activeCell = null;
       if (cells[0] && cells[0][0]) setActive(cells[0][0]);
@@ -6260,14 +6422,23 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     return isNaN(v) ? null : v;
   }
   
-  // The triangle's 3 sides, as flat cell indices into cells[0][0..8].
-  // Corners (0,5,8) each belong to two sides, same as a square's corner
-  // belonging to a row AND a column.
-  var TRI_SIDES = { s0: [0, 1, 3, 5], s1: [0, 2, 4, 8], s2: [5, 6, 7, 8] };
+  // The Number Grid's six lines, as flat cell indices into cells[0][0..8].
+  var GRID_LINES = { r0:[0,1,2], r1:[3,4,5], r2:[6,7,8],
+                     c0:[0,3,6], c1:[1,4,7], c2:[2,5,8] };
+  // what a line makes, using its own two operators, strictly left to right
+  function gridLineValue(key){
+    var v = lineVals(key);
+    if (v.some(function(x){ return x === null; })) return null;
+    var ops = key[0] === 'r' ? gridP.rOps[+key[1]] : gridP.cOps[+key[1]];
+    return gridLtr(v[0], ops[0], v[1], ops[1], v[2]);
+  }
+  function gridTarget(key){
+    return key[0] === 'r' ? gridP.r[+key[1]] : gridP.c[+key[1]];
+  }
 
   function lineVals(key){
     var puzzle = PUZZLES[currentSize];
-    if (puzzle.shape === 'triangle') return TRI_SIDES[key].map(function(i){ return val(0, i); });
+    if (puzzle.shape === 'opgrid') return GRID_LINES[key].map(function(i){ return val(0, i); });
     var n = puzzle.rows;
     var out = [];
     for (var i = 0; i < n; i++){
@@ -6381,13 +6552,19 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     else if (currentSize === '10x10') n = solvedCount10x10;
     else if (currentSize === '3cube') n = solvedCount3cube;
     else if (currentSize === 'ramanujan') n = solvedCountRam;
-    else if (currentSize === 'triangle') n = solvedCountTriangle;
+    else if (PUZZLES[currentSize].shape === 'opgrid') n = solvedCountGrid;
     else n = solvedCount3x3;
     solvedCounter.style.display = 'block';
     solvedCounter.classList.toggle('unlocked', n >= 2);
+    /* The Number Grid deals a brand new grid every time, so there is no target
+       to repeat and "2 different targets" would be meaningless. Same promise --
+       play it twice to master it -- said in the terms this puzzle actually has. */
+    var isGrid = PUZZLES[currentSize].shape === 'opgrid';
     solvedCounter.innerHTML = n >= 2
-      ? '🏆 <b>Level mastered!</b> ✨ Try a new target, or pick any level below.'
-      : '🏆 <b>' + n + '/2</b> different targets · solve 2 different ones to master this level!';
+      ? (isGrid ? '🏆 <b>Level mastered!</b> ✨ Try the next level, or pick any puzzle below.'
+                : '🏆 <b>Level mastered!</b> ✨ Try a new target, or pick any level below.')
+      : (isGrid ? '🏆 <b>' + n + '/2</b> grids solved · finish 2 to master this level!'
+                : '🏆 <b>' + n + '/2</b> different targets · solve 2 different ones to master this level!');
   }
 
   // Size the board to the available width so it always fills the screen without
@@ -6399,13 +6576,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // Guarded HERE, at the source: the resize listener captured this function by
     // reference before it was wrapped, so guarding only the wrapper missed it.
     if (!pz || !pz.rows) return;
-    // tracks = pz.rows + 2 (below) sizes a SQUARE n×n grid; the triangle is a
+    // tracks = pz.rows + 2 (below) sizes a SQUARE n×n grid; the Number Grid is
     // fixed 9-cell shape, not an n-scalable grid, so it uses plain responsive
     // CSS sizing instead (see .triCell) — same idea as fitBoard, a parallel
     // implementation rather than forcing this math to cover a shape it was
     // never built for. Still calls fitCells() below: that part (auto-shrink
     // font by digit count) is already generic over rows×cols.
-    if (pz.shape === 'triangle'){ fitCells(); return; }
+    if (pz.shape === 'opgrid'){ fitCells(); fitBadges(); return; }
     var tracks = pz.rows + 2;                       // grid cells + the badge ring
     var gap = tracks >= 10 ? 2 : tracks >= 8 ? 3 : 6;
     var vw = document.documentElement.clientWidth || window.innerWidth || 360;
@@ -6532,6 +6709,39 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       cells[r2][c2].classList.toggle('dup', !!(vv !== null && dups[vv]));
     }
     fitCells();   // keep digit sizes fitted on every change
+
+    /* The Number Grid judges itself differently from a magic square, so it
+       takes its own pass and leaves before the one below.
+
+       A magic square has to INFER its target -- it appears once two finished
+       lines agree -- which is why a finished line there can be right, wrong,
+       or not yet judgeable. Here all six answers are printed on the board from
+       the start, so a finished line is simply right or wrong, immediately, and
+       there is no third state to be careful about.
+
+       The badge shows the line's ANSWER, not its running total: that is what
+       the printed puzzle shows, and a running total beside a fixed answer
+       would be two numbers competing for the same square. */
+    if (puzzle.shape === 'opgrid'){
+      var gridDone = 0, gridFilled = 0;
+      for (var gi = 0; gi < 9; gi++) if (val(0, gi) !== null) gridFilled++;
+      puzzle.lines.forEach(function(k){
+        var got = gridLineValue(k), want = gridTarget(k);
+        setBadge(k, want, got === null ? 'partial' : (got === want ? 'win' : 'wrong'));
+        if (got === want) gridDone++;
+      });
+      fitBadges();
+      var gridWin = !peeking && !watching && gridFilled === 9 &&
+                    gridDone === puzzle.lines.length && Object.keys(dups).length === 0;
+      if (!peeking && !watching && !solvedFlag && !gridWin){
+        if (gridDone > prevComplete) sfx('line');
+        else if (Object.keys(dups).length > prevDup && Object.keys(dups).length > 0) sfx('dup');
+      }
+      prevComplete = gridDone; prevDup = Object.keys(dups).length;
+      if (gridWin) win(gridDone);   // six lines, all agreeing with their own answer
+      else msg.textContent = '';
+      return;
+    }
 
     // Badge updates
     var completeSums = [], completeLines = [];
@@ -6820,23 +7030,19 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
           msg.textContent = '⚠️ You already solved with target ' + actualTarget + '! Try a DIFFERENT center!';
         }, 1500);
       }
-    } else if (currentSize === 'triangle') {
-      // only 5 targets ever exist (17,19,20,21,23) — same "2 different" bar as every other size, still achievable
-      if (solvedTargetsTriangle.indexOf(actualTarget) === -1) {
-        solvedTargetsTriangle.push(actualTarget);
-        solvedCountTriangle = solvedTargetsTriangle.length;
-        refreshCounter();
-
-        if (solvedCountTriangle >= 2) {
-          showCongrats('🔺 Triangle Master!', 'You solved with 2 different targets! Try the rest of the 5.');
-        } else {
-          setTimeout(function(){
-            msg.textContent = '✨ ' + (2 - solvedCountTriangle) + ' more with a DIFFERENT target to master Triangle Magic!';
-          }, 1500);
-        }
+    } else if (PUZZLES[currentSize].shape === 'opgrid') {
+      /* Every deal is a different grid, so "two different targets" -- the bar
+         the magic squares use -- has no meaning here: there is no target to
+         repeat. Count finished grids instead, which is the same promise (play
+         it twice to master it) in the only terms this puzzle has. */
+      solvedCountGrid++;
+      solvedGridSeen.push(gridP.r.join(',') + '|' + gridP.c.join(','));
+      refreshCounter();
+      if (solvedCountGrid >= 2){
+        showCongrats('🔢 Number Grid Master!', 'Two grids solved — and every one of them had exactly one answer, so you reasoned it out. Try the next level up.');
       } else {
         setTimeout(function(){
-          msg.textContent = '⚠️ You already solved with target ' + actualTarget + '! Try a DIFFERENT one — 17, 19, 20, 21 or 23!';
+          msg.textContent = '✨ One more grid to master this level!';
         }, 1500);
       }
     } else if (currentSize === 'ramanujan') {
@@ -6857,7 +7063,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   var NEXT_SIZE_MAP = {
     '3x3':'4x4', '4x4':'5x5', '5x5':'6x6',
     '6x6':'8x8', '8x8':'10x10', '10x10':'3x3',
-    '3cube':'triangle', 'triangle':'ramanujan', 'ramanujan':'binary', 'binary':'3x3'
+    '3cube':'grid1', 'grid1':'grid2', 'grid2':'grid3', 'grid3':'ramanujan',
+    'ramanujan':'binary', 'binary':'3x3'
   };
 
   var _congratsAutoTimer = null; // global so difficulty-btn clicks can cancel it
@@ -12944,86 +13151,75 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
        put it: the Logic panel, for whoever chooses to open it. Five
        targets, ascending, back to back — same watchIv, so CLEAR/back still
        cancels it for free, same as before and every other demo here. */
-    if (puzzle.shape === 'triangle'){
-      var TRI_LABELS = ['top corner', 'upper left', 'upper right', 'lower left', 'lower right',
-                         'bottom left corner', 'bottom middle left', 'bottom middle right', 'bottom right corner'];
-      /* Raja: "show target... instead just place until end of sequence
-         only" — the pill's own auto-detect (in update(), below) needs 2
-         COMPLETE sides to agree before it shows anything, and a plain
-         1..9 walk finishes sides in a scattered order, so it stayed "?"
-         for most of a round and only popped in near the end. The demo
-         already knows the target — scoped to just this branch (not a
-         change to update() itself, which every other puzzle's demo also
-         relies on): re-assert it after every placement, since update()'s
-         own logic would otherwise reset it back to "?" the moment fewer
-         than 2 sides happen to agree yet. */
-      var demoTarget = null;
-      var showTarget = function(){
-        if (demoTarget === null) return;
-        targetVal.textContent = demoTarget;
-        targetPill.classList.add('preview');
-      };
-      var put = function(i, v){
-        var c = cells[0][i];
-        c.value = String(v);
+    if (puzzle.shape === 'opgrid'){
+      /* Show it being REASONED, not revealed. The triangle's demo filled its
+         boxes in value order -- 1, then 2, then 3 -- which is a slideshow of
+         an answer and teaches nothing, and is a fair part of why Raja's group
+         asked for it to go.
+
+         This fills them in the order they can actually be worked out: at each
+         step it asks which single empty box has only ONE number left that its
+         row and its column both allow, and fills that one. So the order the
+         child watches IS the order they could have found it themselves, and
+         SaNa names the line that pinned each box. */
+      var gLeft = [1,2,3,4,5,6,7,8,9], gPlaced = [];
+      var gAnswer = gridP.grid;
+
+      function gridAllows(idx, v, filled){
+        // does v break either line through this box, given what is already down?
+        var keys = ['r' + ((idx/3)|0), 'c' + (idx % 3)];
+        for (var k = 0; k < 2; k++){
+          var line = GRID_LINES[keys[k]], vals = [], full = true, j;
+          for (j = 0; j < 3; j++){
+            var at = line[j];
+            var have = (at === idx) ? v : filled[at];
+            if (have == null) full = false;
+            vals.push(have);
+          }
+          if (!full) continue;
+          var ops = keys[k][0] === 'r' ? gridP.rOps[+keys[k][1]] : gridP.cOps[+keys[k][1]];
+          var want = keys[k][0] === 'r' ? gridP.r[+keys[k][1]] : gridP.c[+keys[k][1]];
+          if (gridLtr(vals[0], ops[0], vals[1], ops[1], vals[2]) !== want) return false;
+        }
+        return true;
+      }
+      // the order a person could settle them in, one forced box at a time
+      var filledSoFar = [], order = [], guard = 0;
+      while (order.length < 9 && guard++ < 40){
+        var best = -1, bestWhy = '';
+        for (var idx = 0; idx < 9; idx++){
+          if (filledSoFar[idx] != null) continue;
+          var fits = gLeft.filter(function(v){
+            return gPlaced.indexOf(v) < 0 && gridAllows(idx, v, filledSoFar); });
+          if (fits.length === 1){ best = idx; bestWhy = 'only ' + fits[0] + ' fits here'; break; }
+        }
+        if (best < 0){                       // nothing forced yet: take the answer's own next box
+          for (var q = 0; q < 9; q++) if (filledSoFar[q] == null){ best = q; bestWhy = 'start here'; break; }
+        }
+        if (best < 0) break;
+        filledSoFar[best] = gAnswer[best];
+        gPlaced.push(gAnswer[best]);
+        order.push({ i: best, v: gAnswer[best], why: bestWhy });
+      }
+
+      var gi2 = 0;
+      watchIv = setInterval(function(){
+        if (gi2 >= order.length){
+          try { sana('<b>All six lines agree.</b> Every box was forced — no guessing anywhere. \U0001f412', 'party'); } catch(e){}
+          finishWatch();
+          return;
+        }
+        var st = order[gi2++];
+        var c = cells[0][st.i];
+        c.value = String(st.v);
         c.classList.remove('placing'); void c.offsetWidth; c.classList.add('placing');
         sfx('tick', panForCell(c));
         update();
-        showTarget();
-      };
-      var clearBoard = function(){
-        for (var i = 0; i < 9; i++){ cells[0][i].value = ''; cells[0][i].classList.remove('placing'); }
-        clearArrows();
-        demoTarget = null;
-        targetVal.textContent = '?';
-        targetPill.classList.remove('preview');
-        update();
-      };
-
-      var steps = [];
-      PUZZLES.triangle.targets.forEach(function(row, ti){
-        var v = row.v, t = row.t;
-        // cell indices sorted by their own value: order[0] holds 1, order[8] holds 9
-        var order = [0,1,2,3,4,5,6,7,8].slice().sort(function(a,b){ return v[a] - v[b]; });
-
-        steps.push({ hold: 3, run: function(){
-          msg.textContent = '▶ Target ' + t + ' (' + (ti + 1) + ' of 5) — put 1 in the ' + TRI_LABELS[order[0]] + '.';
-          msg.className = '';
-          demoTarget = t;
-          showTarget();
-        }});
-        steps.push({ hold: 3, run: function(){ put(order[0], 1); }});
-
-        for (var k = 1; k < 9; k++) (function(k){
-          steps.push({ hold: 3, run: function(){
-            drawSwapArrow([0, order[k - 1]], [0, order[k]], true);
-            cells[0][order[k - 1]].classList.add('swapPick');
-            msg.textContent = '▶ ' + k + '  →  ' + (k + 1) + '   (' + (k + 1) + ' of 9)';
-          }});
-          steps.push({ hold: 3, run: function(){
-            cells[0][order[k - 1]].classList.remove('swapPick');
-            put(order[k], k + 1);
-          }});
-        })(k);
-
-        steps.push({ hold: 5, run: function(){
-          clearArrows();
-          msg.textContent = '✨ Target ' + t + '! Every side adds to ' + t + '.';
-          msg.className = 'win';
-        }});
-        if (ti < PUZZLES.triangle.targets.length - 1){
-          steps.push({ hold: 3, run: clearBoard });
-        }
-      });
-
-      var TT = 190, ti2 = 0, tw = 0;
-      watchIv = setInterval(function(){
-        if (tw > 0){ tw--; return; }
-        if (ti2 >= steps.length){ finishWatch(); return; }
-        var st = steps[ti2++];
-        st.run();
-        tw = st.hold;
-      }, TT);
+        try {
+          var lineName = 'row ' + (((st.i/3)|0) + 1) + ' and column ' + ((st.i % 3) + 1);
+          sana('<b>' + st.v + '</b> — ' + st.why + ', because of ' + lineName + '.', 'think');
+        } catch(e){}
+      }, 900);
       return;
     }
 
@@ -15390,7 +15586,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-255 (the warm-up picture cards are shuffled now — the right answer used to sit top-left in 59 of 62 questions, so tapping the same corner scored 95% without reading)';
+  var BUILD_VER = 'beta-256 (Triangle Magic is out and the Number Grid takes its seat — nine boxes, 1-9 once each, six little equations that must all come out right, read left to right)';
   /* ── BEACON FOR APPS INSTALLED LONG AGO ─────────────────────────────────
      Raja's iPhone sat on v139 and would not come forward, however many times
      he tapped Online Update.
@@ -15415,7 +15611,7 @@ if (navigator.storage && navigator.storage.persist) {
      rejects). check-update-beacon.js keeps it equal to BUILD_VER, because a
      beacon that goes stale strands people exactly as thoroughly as no beacon.
 
-     window.BETA_VER = 'beta-255'
+     window.BETA_VER = 'beta-256'
      ───────────────────────────────────────────────────────────────────── */
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told

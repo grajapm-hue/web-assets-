@@ -11,7 +11,7 @@
    This walks a long, real transition chain -- including the EXACT sequence
    from his screenshots -- and after every single switch checks that no
    OTHER special-mode panel is left visible underneath. The grid-puzzle
-   family (3x3/4x4/.../ramanujan/triangle/3cube) shares one always-present
+   family (3x3/4x4/.../ramanujan/Number Grid/3cube) shares one always-present
    board area rather than its own named panel, so for those the check is
    simply "none of the six special panels are showing". */
 const { spawn, execSync } = require('child_process');
@@ -90,7 +90,7 @@ const PANEL_IDS = ['sudokuPanel', 'slidePanel', 'gatePanel', 'binaryPanel', 'pal
   await checkOnly('then Guess My Number Junior -- nothing stacked underneath', 'binaryPanel');
 
   await ev(`document.getElementById('tab-scHome').click()`); await sleep(200);
-  await ev(`document.querySelector('.toggleBtn[data-size="triangle"]').click()`); await sleep(700);
+  await ev(`document.querySelector('.toggleBtn[data-size="grid1"]').click()`); await sleep(700);
   await checkOnly('then Triangle Magic -- no special panel left showing', null);
 
   await ev(`document.getElementById('tab-scHome').click()`); await sleep(200);
