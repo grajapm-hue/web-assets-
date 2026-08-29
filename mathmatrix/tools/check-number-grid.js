@@ -149,6 +149,42 @@ function solveAll(P, cap){
   ok('all three Number Grid levels are listed',
      (await ev(`document.querySelectorAll('.toggleBtn[data-size^="grid"]').length`)) === 3);
 
+  /* Raja: "the symbol + and x seems similar in visibility."
+     At this size they differ only by a 45 degree turn, so size alone cannot
+     separate them -- it only makes two bigger similar shapes. They are split by
+     FAMILY instead: plus and minus in the board's ink, times and divide in a
+     colour used nowhere else on this board. Deliberately NOT green, orange or
+     red, which already mean line-right, line-unfinished and line-wrong: a sign
+     borrowing one of those would read as a verdict on the line. */
+  await openLevel('grid3');
+  const signs = await ev(`(function(){
+    var out = {};
+    document.querySelectorAll('#board .gridOp').forEach(function(o){
+      var cs = getComputedStyle(o);
+      out[o.textContent.trim()] = cs.color + '|' + Math.round(parseFloat(cs.fontSize));
+    });
+    return JSON.stringify(out);
+  })()`).then(JSON.parse);
+  const plus = signs['+'], times = signs['×'];
+  if (plus && times){
+    ok('+ and x are not drawn the same way', plus !== times, '+ ' + plus + '   x ' + times);
+    ok('and they differ in COLOUR, not just size — the two shapes are one rotation apart',
+       plus.split('|')[0] !== times.split('|')[0], '+ ' + plus.split('|')[0] + '   x ' + times.split('|')[0]);
+    ok('the times sign is not smaller than the plus, as the font draws it',
+       parseInt(times.split('|')[1], 10) >= parseInt(plus.split('|')[1], 10),
+       '+ ' + plus.split('|')[1] + 'px   x ' + times.split('|')[1] + 'px');
+  }
+  /* the sign IS the instruction on this board, so it must not be invisible to
+     a screen reader the way an aria-hidden decoration would be */
+  ok('every sign says its own word for a screen reader',
+     (await ev(`Array.prototype.every.call(document.querySelectorAll('#board .gridOp'),
+        function(o){ return /plus|minus|times|divided/.test(o.getAttribute('aria-label')||''); })`)) === true);
+
+  /* the name Raja asked for, in the list AND in the bar above the board */
+  ok('the puzzle is called Fill In The Blank on the board too',
+     (await ev(`/Fill In The Blank/.test((document.getElementById('appBarTitle')||{}).textContent||'')`)) === true,
+     await ev(`(document.getElementById('appBarTitle')||{}).textContent`));
+
   const LEVELS = [
     { key: 'grid1', name: 'Easy',   ops: ['+','-'] },
     { key: 'grid2', name: 'Medium', ops: ['+','-','*'] },
@@ -186,11 +222,42 @@ function solveAll(P, cap){
     const wrong = sol[8] === sol[0] ? sol[1] : sol[0];
     await typeInto(8, wrong);
     await sleep(800);
+    /* Check the number actually went IN before judging the colours. A run once
+       reported "a wrong number stays orange", which reads like the ring failing
+       to judge -- when the real story could equally be that the box never took
+       the digit. Two very different bugs, and the colour count alone cannot
+       tell them apart. */
+    const inBox = await ev(`(document.querySelectorAll('#board .cell')[8]||{}).value`);
+    ok(L.name + ': the wrong number actually went into the box',
+       String(inBox) === String(wrong), 'box holds "' + inBox + '", typed ' + wrong);
     const bad = await ring();
     ok(L.name + ': a wrong number turns its lines RED, never green', bad.red >= 1,
        'put ' + wrong + ' where ' + sol[8] + ' belongs -> ' + JSON.stringify(bad));
 
+    /* ---- a full board may never claim to be unfinished ----
+       The bug this pins: gridLineValue() returns null both for an empty box and
+       for arithmetic that cannot be done at all -- a step going negative, or a
+       division that is not whole. Treating them alike showed a badly wrong line
+       as ORANGE, exactly as if the child had not finished it.
+
+       Filling every box with a shifted permutation guarantees several lines are
+       not just wrong but impossible. With all nine boxes full, "unfinished" is
+       not a state the board can honestly be in. */
+    const scrambled = sol.slice(1).concat(sol[0]);
+    for (let i = 0; i < 9; i++) await typeInto(i, scrambled[i]);
+    await sleep(900);
+    const fullBoard = await ring();
+    const allIn = await ev(`Array.prototype.every.call(document.querySelectorAll('#board .cell'),
+      function(c){ return c.value !== ''; })`);
+    ok(L.name + ': every box took a number', allIn === true);
+    ok(L.name + ': with every box full, no line still says "unfinished"',
+       fullBoard.orange === 0, JSON.stringify(fullBoard));
+    ok(L.name + ': and the broken lines say WRONG instead', fullBoard.red >= 1,
+       JSON.stringify(fullBoard));
+
     /* ---- and the right one finishes it ---- */
+    for (let i = 0; i < 8; i++) await typeInto(i, sol[i]);
+    await sleep(500);
     await typeInto(8, sol[8]);
     let won = false;
     for (let i = 0; i < 10 && !won; i++){

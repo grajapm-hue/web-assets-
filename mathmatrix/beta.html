@@ -2055,7 +2055,22 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
   font-size:clamp(14px, 5vw, 22px) !important; }
 .gridOp{ display:flex; align-items:center; justify-content:center;
   min-width:clamp(13px, 4.6vw, 24px); font-weight:900; line-height:1;
-  font-size:clamp(14px, 5vw, 22px); color:var(--ink2, #4A331A); }
+  font-size:clamp(15px, 5.4vw, 24px); }
+/* Raja: "+ and x seems similar in visibility". At this size they differ only by
+   a 45 degree turn, so size alone cannot separate them -- it just makes two
+   bigger similar shapes. Split them by FAMILY instead, which is also a true
+   thing about the arithmetic: plus and minus in the board's own ink, times and
+   divide in a colour used nowhere else here. Deliberately not green, orange or
+   red: those three already mean line-right, line-unfinished and line-wrong, and
+   a sign that borrows one of them would look like a verdict. */
+.gridOp-add{ color:#4A331A; }
+.gridOp-mul{ color:#5B21B6; }
+/* U+00D7 is drawn smaller than + at the same font-size in almost every face,
+   so it gets the difference back -- with its own clamp, NOT an em multiple.
+   `em` resolves against the PARENT, not against .gridOp's clamp above it, so
+   1.34em quietly made the times sign 17px next to a 21px plus: smaller, which
+   is the opposite of the intent, and exactly what was being complained about. */
+.gridOp-times{ font-size:clamp(20px, 7.2vw, 32px); }
 /* The blanks between the column signs. Shaded, exactly as the printed puzzle
    shades them, so the eye follows the six lines instead of reading the whole
    thing as one block. */
@@ -4721,6 +4736,32 @@ body{ background:#C9A87C !important; }
   </div>
 
   <!-- Two one-card groups on one line, so neither leaves an empty seat. -->
+  <!-- 🔢 NUMBER GRID -- took the triangle's seat. Raja, relaying his
+       group: "suggest remove triangle puzzle, it was completely mind mapping
+       and dragging to follow." This asks what a number IS rather than where it
+       goes, which is the whole point of the swap. Three levels by which signs
+       appear, so a beginner does not meet division first. -->
+  <div class="modeGroup">
+    <div class="modeHead" style="--m1:#a5d8f3; --m2:#0ea5e9;">
+      <span class="mIco">🔢</span>
+      <span><b>Fill In The Blank</b><i>fill the blanks so every row and column makes its number</i></span>
+    </div>
+    <div class="toggleSwitch">
+      <button class="toggleBtn lvCard" data-size="grid1" data-name="🔢 Fill In The Blank · Easy" data-short="🔢 Fill In The Blank" style="color:#0ea5e9; border-color:#0284c7; --c1:#a5d8f3; --c2:#38bdf8;">
+        <span class="lvGlyph" aria-hidden="true">➕</span>
+        <span class="lvText"><b class="lvName">Fill In The Blank · Easy</b><span class="lvDiff">plus and minus</span><span class="lvMeta">1-9 once each · work left to right</span><span class="lvNow">PLAYING</span></span>
+      </button>
+      <button class="toggleBtn lvCard" data-size="grid2" data-name="🔢 Fill In The Blank · Medium" style="color:#0ea5e9; border-color:#0284c7; --c1:#a5d8f3; --c2:#38bdf8;">
+        <span class="lvGlyph" aria-hidden="true">✖️</span>
+        <span class="lvText"><b class="lvName">Fill In The Blank · Medium</b><span class="lvDiff">plus, minus and times</span><span class="lvMeta">1-9 once each · work left to right</span><span class="lvNow">PLAYING</span></span>
+      </button>
+      <button class="toggleBtn lvCard lvWide" data-size="grid3" data-name="🔢 Fill In The Blank · Hard" style="color:#0ea5e9; border-color:#0284c7; --c1:#a5d8f3; --c2:#38bdf8;">
+        <span class="lvGlyph" aria-hidden="true">➗</span>
+        <span class="lvText"><b class="lvName">Fill In The Blank · Hard</b><span class="lvDiff">all four signs</span><span class="lvMeta">1-9 once each · work left to right</span><span class="lvNow">PLAYING</span></span>
+      </button>
+    </div>
+  </div>
+
   <div class="modePair">
   <!-- ✖️ MULTIPLY MODE -->
   <div class="modeGroup">
@@ -4736,37 +4777,10 @@ body{ background:#C9A87C !important; }
     </div>
   </div>
 
-  <!-- 🔢 NUMBER GRID -- took the triangle's seat. Raja, relaying his
-       group: "suggest remove triangle puzzle, it was completely mind mapping
-       and dragging to follow." This asks what a number IS rather than where it
-       goes, which is the whole point of the swap. Three levels by which signs
-       appear, so a beginner does not meet division first. -->
-  <div class="modeGroup">
-    <div class="modeHead" style="--m1:#a5d8f3; --m2:#0ea5e9;">
-      <span class="mIco">🔢</span>
-      <span><b>Number Grid</b><i>fill the blanks so every row and column makes its number</i></span>
-    </div>
-    <div class="toggleSwitch">
-      <button class="toggleBtn lvCard" data-size="grid1" data-name="🔢 Number Grid" style="color:#0ea5e9; border-color:#0284c7; --c1:#a5d8f3; --c2:#38bdf8;">
-        <span class="lvGlyph" aria-hidden="true">➕</span>
-        <span class="lvText"><b class="lvName">Number Grid · Easy</b><span class="lvDiff">plus and minus</span><span class="lvMeta">1-9 once each · work left to right</span><span class="lvNow">PLAYING</span></span>
-      </button>
-      <button class="toggleBtn lvCard" data-size="grid2" data-name="🔢 Number Grid · Medium" style="color:#0ea5e9; border-color:#0284c7; --c1:#a5d8f3; --c2:#38bdf8;">
-        <span class="lvGlyph" aria-hidden="true">✖️</span>
-        <span class="lvText"><b class="lvName">Number Grid · Medium</b><span class="lvDiff">plus, minus and times</span><span class="lvMeta">1-9 once each · work left to right</span><span class="lvNow">PLAYING</span></span>
-      </button>
-      <button class="toggleBtn lvCard" data-size="grid3" data-name="🔢 Number Grid · Hard" style="color:#0ea5e9; border-color:#0284c7; --c1:#a5d8f3; --c2:#38bdf8;">
-        <span class="lvGlyph" aria-hidden="true">➗</span>
-        <span class="lvText"><b class="lvName">Number Grid · Hard</b><span class="lvDiff">all four signs</span><span class="lvMeta">1-9 once each · work left to right</span><span class="lvNow">PLAYING</span></span>
-      </button>
-    </div>
-  </div>
-  </div><!-- /.modePair -->
-
-  <!-- Sir Ramanujan pairs with Gate Logic, which moved up from below Binary to
-       fill the seat beside him — the shift Raja drew an arrow for. -->
-  <div class="modePair">
-  <!-- 🎂 BIRTHDAY MODE -->
+  <!-- 🎂 BIRTHDAY MODE — paired with Multiply because both are single cards,
+       so neither is left with an empty half beside it. Fill In The Blank moved
+       out to a full-width group of its own: three cards cannot sit in half a
+       row without leaving the other half blank, which is what Raja marked. -->
   <div class="modeGroup">
     <div class="modeHead" style="--m1:#ffb3bf; --m2:#e11d48;">
       <span class="mIco">🎂</span>
@@ -4781,6 +4795,7 @@ body{ background:#C9A87C !important; }
       </button>
     </div>
   </div>
+  </div><!-- /.modePair -->
 
   <!-- 🔀 GATE LOGIC — ONE compact entry, not 7 full rows: the 7 individual
        gate cards inflated .difficultyBar's natural content height enough
@@ -4804,13 +4819,12 @@ body{ background:#C9A87C !important; }
       <span><b>Gate Logic</b><i>flip the inputs, watch each gate decide ON or OFF</i></span>
     </div>
     <div class="toggleSwitch">
-      <button class="toggleBtn lvCard" id="gateListBtn" type="button" data-name="🔀 Gate Logic" style="color:#8b5cf6; border-color:#8b5cf6; --c1:#c4b5fd; --c2:#8b5cf6;">
+      <button class="toggleBtn lvCard lvWide" id="gateListBtn" type="button" data-name="🔀 Gate Logic" style="color:#8b5cf6; border-color:#8b5cf6; --c1:#c4b5fd; --c2:#8b5cf6;">
         <span class="lvGlyph" aria-hidden="true">🔀</span>
         <span class="lvText"><b class="lvName">7 Logic Gates</b><span class="lvDiff">AND · OR · NOT · NAND · NOR · XOR · XNOR</span><span class="lvMeta">pick one, then walk its whole truth table</span></span>
       </button>
     </div>
   </div>
-  </div><!-- /.modePair -->
 
   <!-- 🔢 BINARY MODE — Raja: split into the same 2-column grid as Add Magic
        (3x3/4x4 etc.), instead of stacking full-width, to leave more room
@@ -5251,13 +5265,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
        every rows x cols-generic function in this file keeps working. */
     'grid1': { shape:'opgrid', ops:['+','-'],         caps:[12,20],    rows:1, cols:9,
       lines:['r0','r1','r2','c0','c1','c2'],
-      inst:'<b>Number Grid!</b> Put <b>1 to 9</b> in the white boxes, each one only once, so every row and every column makes the number at its end. <b>Work left to right</b> — not times-before-plus. ➕➖' },
+      inst:'<b>Fill In The Blank!</b> Put <b>1 to 9</b> in the white boxes, each one only once, so every row and every column makes the number at its end. <b>Work left to right</b> — not times-before-plus. ➕➖' },
     'grid2': { shape:'opgrid', ops:['+','-','*'],     caps:[15,24,30], rows:1, cols:9,
       lines:['r0','r1','r2','c0','c1','c2'],
-      inst:'<b>Number Grid — with ×!</b> Put <b>1 to 9</b> in the white boxes, each one only once, so every row and every column makes the number at its end. <b>Work left to right</b> — not times-before-plus. ✖️' },
+      inst:'<b>Fill In The Blank — with ×!</b> Put <b>1 to 9</b> in the white boxes, each one only once, so every row and every column makes the number at its end. <b>Work left to right</b> — not times-before-plus. ✖️' },
     'grid3': { shape:'opgrid', ops:['+','-','*','/'], caps:[10,14,20], rows:1, cols:9,
       lines:['r0','r1','r2','c0','c1','c2'],
-      inst:'<b>Number Grid — all four!</b> Put <b>1 to 9</b> in the white boxes, each one only once, so every row and every column makes the number at its end. <b>Work left to right</b> — not times-before-plus. ➗' }
+      inst:'<b>Fill In The Blank — all four!</b> Put <b>1 to 9</b> in the white boxes, each one only once, so every row and every column makes the number at its end. <b>Work left to right</b> — not times-before-plus. ➗' }
   };
   
   /* -- the Number Grid's arithmetic and its generator ----------------------
@@ -6242,7 +6256,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       `;
     } else if (PUZZLES[currentSize].shape === 'opgrid') {
       document.getElementById('logicBox').innerHTML = `
-        <h3>🔢 Number Grid — how to work it out</h3>
+        <h3>🔢 Fill In The Blank — how to work it out</h3>
         <p><b>The one rule that trips everyone:</b> read each line <b>left to right</b>. So <b>8 − 6 × 2</b> is <b>4</b> here (8−6=2, then 2×2=4) — <i>not</i> times-before-plus. Every line on this board is read that way, and nothing works if you do it the school way.</p>
         <p><b>What is really going on:</b> every box belongs to <b>two</b> lines at once — its row and its column. That is the whole puzzle. A number has to satisfy both, and that is what lets you pin it down without guessing.</p>
         <ol style="margin: 10px 0; padding-left: 20px;">
@@ -6293,9 +6307,16 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       }
       function gOp(sym){
         var d = document.createElement('div');
-        d.className = 'gridOp';
+        /* Named by family so the CSS can tell them apart. aria-hidden is wrong
+           for these -- the sign IS the instruction on this board, and a screen
+           reader that skips it reads "9 4 2" with no way to know what joins
+           them. Each one says its own word instead. */
+        var WORD = { '+':'plus', '\u2212':'minus', '\u00d7':'times', '\u00f7':'divided by' };
+        var FAMILY = { '+':'add', '\u2212':'add', '\u00d7':'mul', '\u00f7':'mul' };
+        d.className = 'gridOp gridOp-' + (FAMILY[sym] || 'add');
+        if (sym === '\u00d7') d.className += ' gridOp-times';
         d.textContent = sym;
-        d.setAttribute('aria-hidden', 'true');
+        d.setAttribute('aria-label', WORD[sym] || sym);
         return d;
       }
       function gGap(){
@@ -6726,9 +6747,19 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       var gridDone = 0, gridFilled = 0;
       for (var gi = 0; gi < 9; gi++) if (val(0, gi) !== null) gridFilled++;
       puzzle.lines.forEach(function(k){
+        /* "Not finished yet" and "finished, and impossible" are two different
+           things and only one of them is orange.
+
+           gridLineValue() returns null for BOTH -- for an empty box, and for
+           arithmetic that cannot be done at all, which on this board means a
+           step going negative or a division that is not whole. Treating them
+           alike meant a wrong number that broke the line showed ORANGE, as if
+           the child had simply not finished it, when in fact it was as wrong as
+           a line can be. Ask whether the boxes are full FIRST, then judge. */
+        var full = GRID_LINES[k].every(function(i){ return val(0, i) !== null; });
         var got = gridLineValue(k), want = gridTarget(k);
-        setBadge(k, want, got === null ? 'partial' : (got === want ? 'win' : 'wrong'));
-        if (got === want) gridDone++;
+        setBadge(k, want, !full ? 'partial' : (got === want ? 'win' : 'wrong'));
+        if (full && got === want) gridDone++;
       });
       fitBadges();
       var gridWin = !peeking && !watching && gridFilled === 9 &&
@@ -7052,7 +7083,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       solvedGridSeen.push(gridP.r.join(',') + '|' + gridP.c.join(','));
       refreshCounter();
       if (solvedCountGrid >= 2){
-        showCongrats('🔢 Number Grid Master!', 'Two grids solved — and every one of them had exactly one answer, so you reasoned it out. Try the next level up.');
+        showCongrats('🔢 Fill In The Blank Master!', 'Two grids solved — and every one of them had exactly one answer, so you reasoned it out. Try the next level up.');
       } else {
         setTimeout(function(){
           msg.textContent = '✨ One more grid to master this level!';
@@ -15404,7 +15435,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   var STICKERS = {
     '3x3':'🥇 Count-down Master', '4x4':'🧩 Fill & Swap Master', '5x5':'🌟 Big Square Master',
     '6x6':'🧱 Four-Block Master', '8x8':'🏅 Flip Master', '10x10':'🏆 Grandmaster',
-    '3cube':'✖️ Powers of Two', 'ramanujan':'🎂 Birthday Magician'
+    '3cube':'✖️ Powers of Two', 'ramanujan':'🎂 Birthday Magician',
+    'grid1':'➕ Blank Filler', 'grid2':'✖️ Blank Filler · Times', 'grid3':'➗ Blank Filler · All Four'
   };
   function stickerStore(){
     try { return JSON.parse(localStorage.getItem('mmStickers') || '[]'); } catch(e){ return []; }
@@ -15606,7 +15638,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-257 (solving a Number Grid no longer overwrites its six answers with one number — each line keeps the answer it was set)';
+  var BUILD_VER = 'beta-258 (the grid puzzle is Fill In The Blank now, its three levels sit on a full row like Sudoku, the times sign no longer looks like a plus — and a line broken beyond arithmetic reads red instead of unfinished)';
   /* ── BEACON FOR APPS INSTALLED LONG AGO ─────────────────────────────────
      Raja's iPhone sat on v139 and would not come forward, however many times
      he tapped Online Update.
@@ -15631,7 +15663,7 @@ if (navigator.storage && navigator.storage.persist) {
      rejects). check-update-beacon.js keeps it equal to BUILD_VER, because a
      beacon that goes stale strands people exactly as thoroughly as no beacon.
 
-     window.BETA_VER = 'beta-257'
+     window.BETA_VER = 'beta-258'
      ───────────────────────────────────────────────────────────────────── */
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
