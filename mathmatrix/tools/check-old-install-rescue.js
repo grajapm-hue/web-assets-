@@ -109,7 +109,18 @@ const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'application/javascri
   // ---- 2. reload so the worker is actually CONTROLLING, and caches are warm
   await go(PAGE);
   await sleep(2500);
-  const sw = await ev(`navigator.serviceWorker.controller ? navigator.serviceWorker.controller.scriptURL : 'NONE'`);
+  /* A worker does not take control the instant the page loads -- it installs,
+     activates, and only then claims the client, and how long that takes moves
+     with machine load. A fixed 2.5s wait made this guard fail about one run in
+     five with "NONE", which reads exactly like the rescue being broken and was
+     never anything but a race in this file. Wait for control, with a ceiling so
+     a worker that genuinely never activates still fails. */
+  let sw = 'NONE';
+  for (let i = 0; i < 40; i++){
+    sw = await ev(`navigator.serviceWorker.controller ? navigator.serviceWorker.controller.scriptURL : 'NONE'`);
+    if (/sw\.js/.test(String(sw))) break;
+    await sleep(300);
+  }
   ok('its service worker is controlling the page', /sw\.js/.test(String(sw)), String(sw));
   const cached = await ev(`caches.keys().then(function(k){ return k.join(','); })`);
   ok('and its caches are populated, so a stale page could stick', !!cached, cached || '(none)');

@@ -116,6 +116,22 @@ function solveAll(P, cap){
     });
     return JSON.stringify(n);
   })()`).then(JSON.parse);
+  /* Read the ring only once it has stopped moving. The badges carry a 300ms
+     colour fade, and this machine's timings swing enough that a fixed settle
+     was occasionally read mid-change -- which shows up as a colour count that
+     is nobody's bug. Poll until two reads agree, with a ceiling so a genuinely
+     stuck board still fails rather than hanging. */
+  const settledRing = async () => {
+    let prev = null;
+    for (let i = 0; i < 25; i++){
+      const now = await ring();
+      const key = JSON.stringify(now);
+      if (prev === key) return now;
+      prev = key;
+      await sleep(160);
+    }
+    return ring();
+  };
   const typeInto = async (i, v) => ev(`(function(){
     var cs = document.querySelectorAll('#board .cell');
     cs[${i}].focus(); cs[${i}].value = '${v}';
@@ -202,6 +218,19 @@ function solveAll(P, cap){
     ok(L.name + ': it only uses the signs this level promises',
        P.rOps.concat(P.cOps).every(pr => pr.every(o => L.ops.indexOf(o) >= 0)),
        P.rOps.concat(P.cOps).map(x => x.join('')).join(' '));
+    /* Raja, on the Medium card's "plus, minus and times": "what it means, that
+       times it must need?"
+
+       It has to. Every sign used to be drawn at random from the level's pool,
+       so nothing stopped a Medium grid arriving with no x anywhere -- an Easy
+       grid under the wrong name. A card must not promise what the puzzle only
+       tends to do, so the level's signs are now required, and this checks the
+       card against the board. */
+    const onBoard = P.rOps.concat(P.cOps).reduce((a, pr) => a.concat(pr), []);
+    ok(L.name + ': and every sign the card names really appears',
+       L.ops.every(o => onBoard.indexOf(o) >= 0),
+       'card says ' + L.ops.join(' ') + ', board has ' +
+       L.ops.filter(o => onBoard.indexOf(o) >= 0).join(' '));
 
     const answers = solveAll(P, 2);
     ok(L.name + ': the grid on screen can be solved at all, reading LEFT TO RIGHT',
@@ -213,15 +242,13 @@ function solveAll(P, cap){
 
     /* ---- play it: eight right, one still empty ---- */
     for (let i = 0; i < 8; i++) await typeInto(i, sol[i]);
-    await sleep(700);
-    const mid = await ring();
+    const mid = await settledRing();
     ok(L.name + ': with one box empty its two lines are still waiting', mid.orange >= 2, JSON.stringify(mid));
     ok(L.name + ': the lines already finished show green', mid.green >= 2, JSON.stringify(mid));
 
     /* ---- a wrong number: its lines must go RED, never green ---- */
     const wrong = sol[8] === sol[0] ? sol[1] : sol[0];
     await typeInto(8, wrong);
-    await sleep(800);
     /* Check the number actually went IN before judging the colours. A run once
        reported "a wrong number stays orange", which reads like the ring failing
        to judge -- when the real story could equally be that the box never took
@@ -230,7 +257,7 @@ function solveAll(P, cap){
     const inBox = await ev(`(document.querySelectorAll('#board .cell')[8]||{}).value`);
     ok(L.name + ': the wrong number actually went into the box',
        String(inBox) === String(wrong), 'box holds "' + inBox + '", typed ' + wrong);
-    const bad = await ring();
+    const bad = await settledRing();
     ok(L.name + ': a wrong number turns its lines RED, never green', bad.red >= 1,
        'put ' + wrong + ' where ' + sol[8] + ' belongs -> ' + JSON.stringify(bad));
 
@@ -245,8 +272,7 @@ function solveAll(P, cap){
        not a state the board can honestly be in. */
     const scrambled = sol.slice(1).concat(sol[0]);
     for (let i = 0; i < 9; i++) await typeInto(i, scrambled[i]);
-    await sleep(900);
-    const fullBoard = await ring();
+    const fullBoard = await settledRing();
     const allIn = await ev(`Array.prototype.every.call(document.querySelectorAll('#board .cell'),
       function(c){ return c.value !== ''; })`);
     ok(L.name + ': every box took a number', allIn === true);

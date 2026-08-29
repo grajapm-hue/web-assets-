@@ -5263,13 +5263,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
        Stored flat at cells[0][0..8], the same trick the triangle used, so
        every rows x cols-generic function in this file keeps working. */
-    'grid1': { shape:'opgrid', ops:['+','-'],         caps:[12,20],    rows:1, cols:9,
+    'grid1': { shape:'opgrid', ops:['+','-'], need:['+','-'],         caps:[12,20],    rows:1, cols:9,
       lines:['r0','r1','r2','c0','c1','c2'],
       inst:'<b>Fill In The Blank!</b> Put <b>1 to 9</b> in the white boxes, each one only once, so every row and every column makes the number at its end. <b>Work left to right</b> — not times-before-plus. ➕➖' },
-    'grid2': { shape:'opgrid', ops:['+','-','*'],     caps:[15,24,30], rows:1, cols:9,
+    'grid2': { shape:'opgrid', ops:['+','-','*'], need:['+','-','*'],     caps:[15,24,30], rows:1, cols:9,
       lines:['r0','r1','r2','c0','c1','c2'],
       inst:'<b>Fill In The Blank — with ×!</b> Put <b>1 to 9</b> in the white boxes, each one only once, so every row and every column makes the number at its end. <b>Work left to right</b> — not times-before-plus. ✖️' },
-    'grid3': { shape:'opgrid', ops:['+','-','*','/'], caps:[10,14,20], rows:1, cols:9,
+    'grid3': { shape:'opgrid', ops:['+','-','*','/'], need:['+','-','*','/'], caps:[10,14,20], rows:1, cols:9,
       lines:['r0','r1','r2','c0','c1','c2'],
       inst:'<b>Fill In The Blank — all four!</b> Put <b>1 to 9</b> in the white boxes, each one only once, so every row and every column makes the number at its end. <b>Work left to right</b> — not times-before-plus. ➗' }
   };
@@ -5365,7 +5365,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
      resort rather than ever coming back empty. The standalone learned that the
      hard way: clamping at the last cap returned nothing about once in 300, and
      the caller read .grid straight off it. */
-  function gridGenerate(pool, caps){
+  function gridGenerate(pool, caps, need){
     var budget = 60000, ladder = budget * 0.85, stageLen = ladder / caps.length;
     var pick = function(){ return pool[(Math.random()*pool.length)|0]; };
     for (var attempt = 0; attempt < budget; attempt++){
@@ -5379,6 +5379,27 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       for (i = 0; i < 3 && ok; i++){ v = gridLtr(g[i], cOps[i][0], g[i+3], cOps[i][1], g[i+6]);
         if (v === null || v > cap || v < 1) ok = false; else c.push(v); }
       if (!ok) continue;
+      /* Raja, reading the Medium card's "plus, minus and times": "what it
+         means, that times it must need?"
+
+         It did not. Every sign was drawn at random from the level's pool, so
+         nothing stopped a Medium grid coming out with no x in it at all --
+         which is an Easy grid wearing the wrong label. Measured, it happened
+         rarely, because a grid with only + and - seldom has a single answer;
+         but rarely is not never, and a card should not promise something the
+         puzzle merely tends to do. Now the promise is a requirement. */
+      if (need){
+        var missing = false;
+        for (i = 0; i < need.length && !missing; i++){
+          var seen = false;
+          for (var q = 0; q < 3 && !seen; q++){
+            if (rOps[q][0] === need[i] || rOps[q][1] === need[i]) seen = true;
+            if (cOps[q][0] === need[i] || cOps[q][1] === need[i]) seen = true;
+          }
+          if (!seen) missing = true;
+        }
+        if (missing) continue;
+      }
       if (gridCountSolutions(rOps, cOps, r, c, 2) !== 1) continue;
       var P = { grid:g, rOps:rOps, cOps:cOps, r:r, c:c };
       if (!gridDeduce(P)) continue;
@@ -6035,7 +6056,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
        operators and six fresh answers every deal. Generated BEFORE the board
        is built, because the board draws the operators and the answers. */
     if (puzzle.shape === 'opgrid'){
-      var dealt = gridGenerate(puzzle.ops, puzzle.caps);
+      var dealt = gridGenerate(puzzle.ops, puzzle.caps, puzzle.need);
       if (dealt) gridP = dealt;            // keep the old one rather than crash
     }
     board.className = 'board size' + currentSize;
@@ -15638,7 +15659,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-258 (the grid puzzle is Fill In The Blank now, its three levels sit on a full row like Sudoku, the times sign no longer looks like a plus — and a line broken beyond arithmetic reads red instead of unfinished)';
+  var BUILD_VER = 'beta-259 (each Fill In The Blank level now really contains the signs its card names — Medium always has a ×, Hard always has all four)';
   /* ── BEACON FOR APPS INSTALLED LONG AGO ─────────────────────────────────
      Raja's iPhone sat on v139 and would not come forward, however many times
      he tapped Online Update.
@@ -15663,7 +15684,7 @@ if (navigator.storage && navigator.storage.persist) {
      rejects). check-update-beacon.js keeps it equal to BUILD_VER, because a
      beacon that goes stale strands people exactly as thoroughly as no beacon.
 
-     window.BETA_VER = 'beta-258'
+     window.BETA_VER = 'beta-259'
      ───────────────────────────────────────────────────────────────────── */
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told

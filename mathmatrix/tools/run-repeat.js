@@ -14,7 +14,9 @@ const file = process.argv[2] || 'check-sudoku.js';
 const N = +(process.argv[3] || 8);
 let green = 0; const fails = [];
 for (let i = 0; i < N; i++){
-  const r = spawnSync(process.execPath, [file], { cwd: __dirname, encoding: 'utf8' });
+  const env = Object.assign({}, process.env);
+  if (process.argv[4]) env.MM_TARGET = process.argv[4]; else delete env.MM_TARGET;
+  const r = spawnSync(process.execPath, [file], { cwd: __dirname, encoding: 'utf8', env });
   if (r.status === 0) green++;
   else fails.push((r.stdout || '').split('\n').filter(l => /FAIL/.test(l)).map(l => l.trim()).join(' ;; '));
   process.stdout.write(r.status === 0 ? 'G' : 'F');
