@@ -1,0 +1,12 @@
+# The backup bundles under _bk/ are byte-exact records of what was published,
+# and each one ships a SHA256SUMS.txt so anyone can prove nothing was altered.
+#
+# Git's line-ending conversion would quietly break that: on a fresh clone it
+# rewrites LF to CRLF in text files, every byte-count shifts, and every
+# fingerprint in SHA256SUMS.txt stops matching the file beside it. The record
+# would still be readable, but it would no longer be provable -- which is the
+# only reason the fingerprints are there.
+#
+# -text turns that conversion off for these folders. Nothing else in the
+# repository is affected.
+_bk/** -text

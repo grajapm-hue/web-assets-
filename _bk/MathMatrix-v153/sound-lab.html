@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MathMatrix · Sound Lab</title>
+<style>
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { margin:0; background:#0b1020; color:#e8eefc; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; padding:18px; }
+  h1 { font-size:22px; text-align:center; margin:6px 0 2px; }
+  .sub { text-align:center; color:#9fb0d0; font-size:14px; margin-bottom:16px; line-height:1.5; }
+  h2 { font-size:16px; color:#8ab4f8; margin:22px 0 8px; border-bottom:1px solid #223; padding-bottom:6px; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  button.tone {
+    background:linear-gradient(135deg,#1c2748,#141c34); color:#e8eefc;
+    border:2px solid #2c3a63; border-radius:12px; padding:14px 10px;
+    font-size:15px; font-weight:700; cursor:pointer; text-align:left; line-height:1.35;
+    transition:transform .08s ease, border-color .15s ease;
+  }
+  button.tone:active { transform:scale(.96); border-color:#4f7df0; }
+  button.tone .lab { font-size:19px; color:#ffd166; display:block; margin-bottom:2px; }
+  button.tone .desc { font-size:12.5px; color:#9fb0d0; font-weight:500; }
+  .note { margin-top:24px; padding:12px 14px; background:#111a30; border-left:4px solid #ffd166;
+          border-radius:8px; font-size:14px; line-height:1.55; color:#cfe; }
+  .foot { text-align:center; margin-top:20px; }
+  .foot a { color:#8ab4f8; }
+</style>
+</head>
+<body>
+  <h1>🎵 MathMatrix Sound Lab</h1>
+  <div class="sub">Tap each button to hear it.<br>Tell Claude the ones you like — e.g. <b>"Place D + Win 2"</b>.</div>
+
+  <h2>👉 Enter / Place tone (tap number)</h2>
+  <div class="grid" id="placeGrid"></div>
+
+  <h2>✨ Line-complete chime</h2>
+  <div class="grid" id="lineGrid"></div>
+
+  <h2>🎉 Win / Solve sound</h2>
+  <div class="grid" id="winGrid"></div>
+
+  <div class="note">
+    💡 <b>How to pick:</b> The top group is the little tap you hear on every number you type
+    (you wanted something softer, phone-keypad-like, up to a juicy Candy-Crush feel).
+    Try them a few times each. Then message Claude your favourites and I'll set them into the game.
+  </div>
+  <div class="foot"><a href="index.html">← back to the puzzle</a></div>
+
+<script>
+  var ctx = null;
+  function ac(){ try{ if(!ctx) ctx=new (window.AudioContext||window.webkitAudioContext)(); if(ctx.state==='suspended') ctx.resume(); }catch(e){ ctx=null; } return ctx; }
+
+  // one voice: freq (or [from,to] glide), dur, wave, peak, delay
+  function v(freq, dur, wave, peak, delay){
+    if(!ctx) return;
+    var t0 = ctx.currentTime + (delay||0);
+    var o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = wave||'sine';
+    if (Array.isArray(freq)){ o.frequency.setValueAtTime(freq[0], t0); o.frequency.exponentialRampToValueAtTime(freq[1], t0+dur*0.9); }
+    else o.frequency.setValueAtTime(freq, t0);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(peak||0.2, t0+0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(t0); o.stop(t0+dur+0.03);
+  }
+
+  // ---- PLACE candidates ----
+  var PLACE = {
+    A: { name:'A · Soft key-tap', desc:'phone-keypad tick, very light', play:function(){ v(660,0.045,'triangle',0.10); } },
+    B: { name:'B · Marimba pop',  desc:'warm rounded blip',            play:function(){ v(587,0.12,'sine',0.22); v(1174,0.06,'sine',0.06); } },
+    C: { name:'C · Water drop',   desc:'bloop, pitch slides down',      play:function(){ v([900,480],0.12,'sine',0.20); } },
+    D: { name:'D · Bubble pop',   desc:'poppy, pitch slides up',        play:function(){ v([420,880],0.09,'sine',0.20); } },
+    E: { name:'E · Xylophone',    desc:'bright wooden plink',           play:function(){ v(784,0.14,'triangle',0.18); v(1568,0.08,'sine',0.08); } },
+    F: { name:'F · Candy plink',  desc:'juicy, Candy-Crush-ish',        play:function(){ v([700,1150],0.10,'triangle',0.20); v(1400,0.08,'sine',0.10,0.02); } }
+  };
+  // ---- LINE-complete candidates ----
+  var LINE = {
+    1: { name:'1 · Sparkle bling', desc:'current style',        play:function(){ v(880,0.10,'triangle',0.16); v(1320,0.12,'triangle',0.13,0.05); } },
+    2: { name:'2 · Coin ding',     desc:'two bright coins',      play:function(){ v(988,0.09,'square',0.14); v(1319,0.14,'square',0.14,0.07); } },
+    3: { name:'3 · Candy shimmer', desc:'3-note rise',           play:function(){ [784,1047,1319].forEach(function(f,i){ v(f,0.12,'triangle',0.15,i*0.05); }); } }
+  };
+  // ---- WIN candidates ----
+  var WIN = {
+    1: { name:'1 · Simple fanfare', desc:'current do-mi-so-do',   play:function(){ [523,659,784,1047].forEach(function(f,i){ v(f,0.20,'square',0.17,i*0.11); }); } },
+    2: { name:'2 · Candy cascade',  desc:'sparkly rising run',    play:function(){ [523,587,659,784,880,1047,1319].forEach(function(f,i){ v(f,0.16,'triangle',0.16,i*0.06); v(f*2,0.10,'sine',0.05,i*0.06); }); } },
+    3: { name:'3 · Chord + shimmer',desc:'happy chord then twinkle', play:function(){ [523,659,784].forEach(function(f){ v(f,0.35,'triangle',0.14); }); [1047,1319,1568].forEach(function(f,i){ v(f,0.14,'sine',0.10,0.25+i*0.07); }); } }
+  };
+
+  function build(id, set){
+    var grid = document.getElementById(id);
+    Object.keys(set).forEach(function(k){
+      var b = document.createElement('button');
+      b.className = 'tone';
+      b.innerHTML = '<span class="lab">'+set[k].name+'</span><span class="desc">'+set[k].desc+'</span>';
+      b.addEventListener('click', function(){ ac(); set[k].play(); });
+      grid.appendChild(b);
+    });
+  }
+  build('placeGrid', PLACE);
+  build('lineGrid', LINE);
+  build('winGrid', WIN);
+</script>
+</body>
+</html>
