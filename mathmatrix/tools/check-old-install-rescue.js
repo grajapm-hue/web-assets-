@@ -88,6 +88,7 @@ const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'application/javascri
     ['--headless=new', '--disable-gpu', '--no-sandbox', '--mute-audio',
      '--remote-debugging-port=' + CDP, '--user-data-dir=' + tmp,
      '--window-size=390,844', 'about:blank'], { stdio: 'ignore' });
+  await require('./quiet-audio').early(CDP);
   let t = null;
   for (let i = 0; i < 40 && !t; i++){ await sleep(280);
     try { t = JSON.parse(execSync(`curl -s http://127.0.0.1:${CDP}/json/list`, { encoding: 'utf8' })).find(x => x.type === 'page'); } catch (e) {} }
@@ -96,6 +97,10 @@ const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'application/javascri
   let id = 0; const pend = new Map();
   ws.addEventListener('message', e => { const m = JSON.parse(e.data); if (m.id && pend.has(m.id)){ pend.get(m.id)(m); pend.delete(m.id); } });
   const send = (mm, p) => new Promise(res => { const i = ++id; pend.set(i, res); ws.send(JSON.stringify({ id: i, method: mm, params: p })); });
+  /* Nothing here tests audio, but music defaults ON and the splash click
+     builds `new Audio('bgm-monkeys.mp3')` with preload='auto'. Over an http
+     target that is a real 470KB download, once per guard. */
+  await require('./quiet-audio')(ws, send);
   const ev = async x => (await send('Runtime.evaluate', { expression: x, returnByValue: true, awaitPromise: true })).result?.result?.value;
   const go = async (url) => { await send('Page.navigate', { url }); await sleep(2600); };
 

@@ -75,6 +75,7 @@ function solveAll(P, cap){
      `t.webSocketDebuggerUrl` of null -- a stack trace that names this file and
      says nothing about the real cause, which is that the browser had not
      started yet. */
+  await require('./quiet-audio').early(PORT);
   let t = null;
   for (let i = 0; i < 100 && !t; i++){ await sleep(300);
     try { t = JSON.parse(execSync(`curl -s http://127.0.0.1:${PORT}/json/list`, { encoding: 'utf8' })).find(x => x.type === 'page'); } catch(e){} }
@@ -92,6 +93,10 @@ function solveAll(P, cap){
     if (m.id && pend.has(m.id)){ pend.get(m.id)(m); pend.delete(m.id); }
   });
   const send = (mm, p) => new Promise(res => { const i = ++id; pend.set(i, res); ws.send(JSON.stringify({ id: i, method: mm, params: p })); });
+  /* Nothing here tests audio, but music defaults ON and the splash click
+     builds `new Audio('bgm-monkeys.mp3')` with preload='auto'. Over an http
+     target that is a real 470KB download, once per guard. */
+  await require('./quiet-audio')(ws, send);
   const ev = async x => (await send('Runtime.evaluate', { expression: x, returnByValue: true, awaitPromise: true })).result?.result?.value;
   const waitFor = async (expr, ms) => {
     const until = Date.now() + (ms || 20000);
