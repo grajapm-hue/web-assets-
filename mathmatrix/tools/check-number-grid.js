@@ -628,6 +628,9 @@ function solveAll(P, cap){
          after[stage.r] === 'orange', 'line reads ' + after[stage.r]);
       ok('and the row it borrowed from loses its green too -- either occurrence may be the one to go',
          after[0] === 'orange', 'row reads ' + after[0]);
+      /* leave the picture of this exact state -- it is the one Raja photographed */
+      const dupShot = await send('Page.captureScreenshot', { format: 'png' });
+      fs.writeFileSync(path.join(ROOT, 'number-grid-dup.png'), Buffer.from(dupShot.result.data, 'base64'));
 
       /* put the true numbers in: the doubt must lift on its own */
       for (let i = 0; i < 3; i++) await typeInto(3*stage.r + i, stage.trueRow[i]);
