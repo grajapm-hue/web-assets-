@@ -14,7 +14,7 @@ const MT = process.env.MM_TARGET || 'beta.html';
 const FILE = /^https?:/.test(MT) ? MT
   : 'file:///' + path.join(__dirname, '..', MT).replace(/\\/g, '/');
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-const LEVELS = ['3x3', '4x4', '5x5', '6x6', '8x8', '10x10', '3cube', 'grid', 'ramanujan', 'binary', 'binary2'];
+const LEVELS = ['3x3', '4x4', '5x5', '6x6', '8x8', '10x10', '3cube', 'triangle', 'ramanujan', 'binary', 'binary2'];
 let fail = 0;
 const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !== undefined ? '  -> ' + x : '')); if (!c) fail++; };
 
