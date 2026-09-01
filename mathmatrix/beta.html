@@ -6894,8 +6894,29 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
            a line can be. Ask whether the boxes are full FIRST, then judge. */
         var full = GRID_LINES[k].every(function(i){ return val(0, i) !== null; });
         var got = gridLineValue(k), want = gridTarget(k);
-        setBadge(k, want, !full ? 'partial' : (got === want ? 'win' : 'wrong'));
-        if (full && got === want) gridDone++;
+        /* Raja's screenshot, on live v153: 3 entered twice, both boxes duly
+           marked red -- and both lines using a 3 shining green, with SaNa
+           saying "That line is finished -- nice!" over the very move that
+           created the duplicate.
+
+           The judgement below looked only at the arithmetic. But a line whose
+           number is ALSO used elsewhere is not finished, however well it adds
+           up: one of the two occurrences has to go, and the board cannot know
+           which. So such a line is in doubt, not right and not wrong --
+           orange, the same as unfinished, with the red boxes pointing at the
+           culprit. If the arithmetic is wrong it is wrong regardless of any
+           duplicate, and stays red.
+
+           Keeping tainted lines out of gridDone also rights the voice: the
+           cheer fires on gridDone rising, and it outranks the dup warning in
+           the else-if below -- so completing a line WITH a duplicate praised
+           the child and silenced "That number is already used", which was the
+           one thing worth saying. */
+        var tainted = GRID_LINES[k].some(function(i){ var tv = val(0, i); return tv !== null && dups[tv]; });
+        setBadge(k, want, !full ? 'partial'
+                        : (got !== want ? 'wrong'
+                        : (tainted ? 'partial' : 'win')));
+        if (full && got === want && !tainted) gridDone++;
       });
       fitBadges();
       var gridWin = !peeking && !watching && gridFilled === 9 &&
@@ -6969,7 +6990,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
                                            honestly be said about it yet. */
     if (!peeking && !solvedFlag && candidate !== null){
       completeLines.forEach(function(L){
-        setBadge(L.k, L.sum, L.sum === candidate ? 'win' : 'wrong');
+        /* Same rule as the Number Grid above: a line holding a number that is
+           ALSO used elsewhere cannot be pronounced right, however well it sums
+           -- one of the two occurrences must go, and it may be this one. Such
+           a line goes back to the neutral complete tint; the duplicated boxes
+           are already red. A sum that misses the target is wrong regardless. */
+        var tainted = lineVals(L.k).some(function(v){ return v !== null && dups[v]; });
+        setBadge(L.k, L.sum, L.sum !== candidate ? 'wrong' : (tainted ? 'full' : 'win'));
       });
     }
     fitBadges();   // every badge's text is final by here — size it to fit
@@ -15857,7 +15884,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-263 (on Fill In The Blank, every + − × ÷ now sits on the centre line of the boxes it joins, instead of floating above them)';
+  var BUILD_VER = 'beta-264 (a number entered twice can no longer keep its lines green — they go back to orange until the duplicate is fixed, and SaNa warns instead of praising)';
   /* ── BEACON FOR APPS INSTALLED LONG AGO ─────────────────────────────────
      Raja's iPhone sat on v139 and would not come forward, however many times
      he tapped Online Update.
@@ -15882,7 +15909,7 @@ if (navigator.storage && navigator.storage.persist) {
      rejects). check-update-beacon.js keeps it equal to BUILD_VER, because a
      beacon that goes stale strands people exactly as thoroughly as no beacon.
 
-     window.BETA_VER = 'beta-263'
+     window.BETA_VER = 'beta-264'
      ───────────────────────────────────────────────────────────────────── */
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told

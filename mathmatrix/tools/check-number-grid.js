@@ -545,6 +545,98 @@ function solveAll(P, cap){
     ok(L.name + ': no JS errors while playing it', errs.length === 0, errs.join(' | '));
   }
 
+  /* ---- a duplicated number must take the green away ----
+     Raja's screenshot, on live v153: 3 entered twice, both boxes duly marked
+     red -- and both lines using a 3 shining GREEN, SaNa saying "That line is
+     finished -- nice!" over the very move that created the duplicate.
+
+     The badge pass judged only the arithmetic. But uniqueness of the answer is
+     only promised over fills with each number used ONCE -- reuse a number and
+     a line can add up perfectly while never being part of any finished board.
+     One of the two occurrences has to go, and the board cannot know which, so
+     BOTH lines touching the value are in doubt: orange, with the red boxes
+     pointing at the culprit.
+
+     Staged here exactly as on the phone: fill one row with its true answer
+     (green), then fill another row with numbers that hit ITS answer while
+     reusing a number -- typed so the reuse lands on the completing keystroke,
+     the way it happened. */
+  {
+    const findStaging = (P2, sol2) => {
+      const row0 = [sol2[0], sol2[1], sol2[2]];
+      for (let r = 1; r < 3; r++){
+        const want = P2.r[r], o1 = P2.rOps[r][0], o2 = P2.rOps[r][1];
+        const t = [sol2[3*r], sol2[3*r+1], sol2[3*r+2]];
+        for (const x of P2.vals) for (const y of P2.vals) for (const z of P2.vals){
+          if (ltr(x, o1, y, o2, z) !== want) continue;
+          if (x === t[0] && y === t[1] && z === t[2]) continue;
+          /* exactly ONE reused value, and it must SPAN the two lines the way
+             the phone showed -- a 3 in the row and the same 3 in another line,
+             putting BOTH lines in doubt. A first draft accepted any collision
+             and promptly staged 1,5,1: a reuse internal to one row, where the
+             OTHER row rightly keeps its green -- the app was correct and the
+             test's assumption was not. Five distinct among six says one
+             collision; a fill value sitting in row0 says it is the cross one
+             (an internal pair plus a borrow would be two collisions, size 4). */
+          if (new Set(row0.concat([x, y, z])).size !== 5) continue;
+          if ([x, y, z].every(v => row0.indexOf(v) < 0)) continue;
+          return { r, fill: [x, y, z], trueRow: t, row0 };
+        }
+      }
+      return null;
+    };
+    let stage = null, sol2 = null;
+    for (let deal = 0; deal < 10 && !stage; deal++){
+      if (!await openLevel('+-*')) continue;
+      const P2 = await readBoard();
+      if (!P2) continue;
+      const ans = solveAll(P2, 2);
+      if (ans.length !== 1) continue;
+      sol2 = ans[0];
+      stage = findStaging(P2, sol2);
+    }
+    ok('a right-adding fill that reuses a number could be staged', !!stage,
+       stage ? 'row ' + stage.r + ' takes ' + stage.fill.join(',') + ' against true ' + stage.trueRow.join(',') : '10 deals offered none');
+    if (stage){
+      const badges = async () => { await settledRing(); return ev(`(function(){
+        return JSON.stringify(Array.prototype.map.call(
+          document.querySelectorAll('#board .badge'), function(b){
+            var bg = getComputedStyle(b).backgroundColor;
+            return /18, 122, 69/.test(bg) ? 'green' : /179, 38, 30/.test(bg) ? 'red'
+                 : /240, 165, 0/.test(bg) ? 'orange' : bg; }));
+      })()`).then(JSON.parse); };
+
+      for (let i = 0; i < 3; i++) await typeInto(i, sol2[i]);
+      const before = await badges();
+      ok('the truly-filled row reads green first', before[0] === 'green', JSON.stringify(before));
+
+      /* type the reused number LAST, so the line completes and the duplicate
+         appears on the same keystroke -- the exact moment the phone showed */
+      const dupHere = stage.fill.findIndex((v, i) =>
+        stage.row0.indexOf(v) >= 0 || stage.fill.indexOf(v) !== i);
+      const order = [0, 1, 2].sort((a, b) => (a === dupHere) - (b === dupHere));
+      for (const i of order) await typeInto(3*stage.r + i, stage.fill[i]);
+      await sleep(350);
+      const said = await ev(`(document.querySelector('.sanaBub')||{}).textContent || ''`);
+      ok('SaNa warns "already used" instead of praising the line',
+         /already used/i.test(said) && !/finished/i.test(said), said.replace(/\s+/g, ' ').trim().slice(0, 80));
+
+      const dupBoxes = await ev(`document.querySelectorAll('#board .cell.dup').length`);
+      ok('both boxes holding the reused number are marked', dupBoxes >= 2, dupBoxes + ' marked');
+      const after = await badges();
+      ok('the line that reuses a number is NOT green -- in doubt, not finished',
+         after[stage.r] === 'orange', 'line reads ' + after[stage.r]);
+      ok('and the row it borrowed from loses its green too -- either occurrence may be the one to go',
+         after[0] === 'orange', 'row reads ' + after[0]);
+
+      /* put the true numbers in: the doubt must lift on its own */
+      for (let i = 0; i < 3; i++) await typeInto(3*stage.r + i, stage.trueRow[i]);
+      const fixed = await badges();
+      ok('correcting the reuse gives both lines their green back',
+         fixed[0] === 'green' && fixed[stage.r] === 'green', JSON.stringify(fixed));
+    }
+  }
+
   /* One grid proves nothing about a generator. Deal a run of them through the
      UI, exactly as a child pressing the level again would, and judge the rate. */
   let dealt = 0, unique = 0, solvable = 0;

@@ -15,6 +15,11 @@ const fs = require('fs'); const path = require('path');
 const only = process.argv.slice(2);
 const files = fs.readdirSync(__dirname)
   .filter(f => /^check-.*\.js$/.test(f))
+  /* check-backup-bundle.js is a promotion-time tool, not a permanent guard:
+     it needs a vNNN argument and holds only while the LIVE site still serves
+     that exact version -- in this suite it just dies on its usage line in 0s.
+     Run it by hand after building a bundle: node check-backup-bundle.js vNNN */
+  .filter(f => f !== 'check-backup-bundle.js')
   .filter(f => !only.length || only.some(w => f.includes(w)))
   .sort();
 
