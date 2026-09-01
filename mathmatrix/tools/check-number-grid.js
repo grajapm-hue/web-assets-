@@ -433,6 +433,7 @@ function solveAll(P, cap){
     { key: '+-*/', name: 'Hard',   ops: ['+','-','*','/'] }
   ];
 
+  const levelFont = {};
   for (const L of LEVELS){
     errs = [];
     ok(L.name + ': the board opens with nine boxes', await openLevel(L.key));
@@ -441,6 +442,35 @@ function solveAll(P, cap){
     if (!P) continue;
     ok(L.name + ': it opens empty, nothing filled in',
        (await ev(`Array.from(document.querySelectorAll('#board .cell')).every(function(c){ return c.value === ''; })`)) === true);
+    /* Raja: "initial open font size differ". Every badge was sized from its
+       own text, so a one-digit answer got roughly double the font of a
+       two-digit one beside it. All six answers share one size now.
+
+       Read the SETTLED size: right after the deal the badges are re-fitted
+       once layout lands, and a read taken mid-deal once caught a uniform
+       8.84px -- uniformly tiny, which the one-size assertion alone was happy
+       with. Poll until two reads agree, and require a size a child can read
+       on this 390px viewport, so "all equally unreadable" cannot pass. */
+    let fonts = null;
+    for (let fi = 0; fi < 20; fi++){
+      const now = await ev(`(function(){
+        var s = {}; document.querySelectorAll('#board .badge').forEach(function(b){
+          s[getComputedStyle(b).fontSize] = ((b.textContent||'').trim().length) + 'ch'; });
+        var w = document.getElementById('boardWrap'), b = document.getElementById('board');
+        s._host = (w ? w.clientWidth + 'x' + w.clientHeight : '?') +
+                  ' cell ' + b.style.getPropertyValue('--gridCell') +
+                  ' ceil ' + b.style.getPropertyValue('--badgeFont');
+        return JSON.stringify(s); })()`);
+      if (fonts === now) break;
+      fonts = now; await sleep(200);
+    }
+    fonts = JSON.parse(fonts);
+    const where = fonts._host; delete fonts._host;
+    ok(L.name + ': all six answers share ONE font size',
+       Object.keys(fonts).length === 1, JSON.stringify(fonts) + ' @ ' + where);
+    ok(L.name + ': and it is a size a child can read',
+       parseFloat(Object.keys(fonts)[0]) >= 14, Object.keys(fonts)[0]);
+    levelFont[L.name] = Object.keys(fonts)[0];
     ok(L.name + ': it only uses the signs this level promises',
        P.rOps.concat(P.cOps).every(pr => pr.every(o => L.ops.indexOf(o) >= 0)),
        P.rOps.concat(P.cOps).map(x => x.join('')).join(' '));
@@ -545,6 +575,16 @@ function solveAll(P, cap){
     ok(L.name + ': no JS errors while playing it', errs.length === 0, errs.join(' | '));
   }
 
+  /* One viewport, one box size -- so the three levels must agree on the one
+     answer size too. They did not, twice over: --badgeFont was inherited from
+     whatever CLASSIC board was sized before this one (a stale 15px ceiling
+     against a later deal's 29px), and then the board re-measured itself every
+     time SaNa's bubble breathed, so readings landed mid-fade. A small spread
+     is the dead-band that stops that breathing; half the size is a bug. */
+  const px = Object.values(levelFont).map(parseFloat);
+  ok('the three levels agree on that one size',
+     Math.max(...px) - Math.min(...px) <= 2, JSON.stringify(levelFont));
+
   /* ---- a duplicated number must take the green away ----
      Raja's screenshot, on live v153: 3 entered twice, both boxes duly marked
      red -- and both lines using a 3 shining GREEN, SaNa saying "That line is
@@ -596,7 +636,7 @@ function solveAll(P, cap){
       stage = findStaging(P2, sol2);
     }
     ok('a right-adding fill that reuses a number could be staged', !!stage,
-       stage ? 'row ' + stage.r + ' takes ' + stage.fill.join(',') + ' against true ' + stage.trueRow.join(',') : '10 deals offered none');
+       stage ? 'row ' + stage.r + ' takes ' + stage.fill.join(',') + ' against true ' + stage.trueRow.join(',') : '24 deals offered none');
     if (stage){
       const badges = async () => { await settledRing(); return ev(`(function(){
         return JSON.stringify(Array.prototype.map.call(
@@ -647,8 +687,12 @@ function solveAll(P, cap){
        filled row KEEPS its green, because the fault is entirely inside one
        line and no number of the other row is in question. */
     let inn = null, sol3 = null;
-    for (let deal = 0; deal < 10 && !inn; deal++){
-      if (!await openLevel('+-*')) continue;
+    /* 24 tries across all three sign pools: one earlier run drew 10 boards on
+       one pool and none of them admitted a same-number fill -- rare, but a
+       staging that can come up empty fails the suite for nobody's bug. */
+    const POOLS = ['+-*', '+-*/', '+-'];
+    for (let deal = 0; deal < 24 && !inn; deal++){
+      if (!await openLevel(POOLS[deal % 3])) continue;
       const P3 = await readBoard();
       if (!P3) continue;
       const ans = solveAll(P3, 2);
@@ -669,7 +713,7 @@ function solveAll(P, cap){
       }
     }
     ok('a right-adding fill with the same number twice could be staged', !!inn,
-       inn ? 'row ' + inn.r + ' takes ' + inn.fill.join(',') : '10 deals offered none');
+       inn ? 'row ' + inn.r + ' takes ' + inn.fill.join(',') : '24 deals offered none');
     if (inn){
       const badges2 = async () => { await settledRing(); return ev(`(function(){
         return JSON.stringify(Array.prototype.map.call(
@@ -690,8 +734,31 @@ function solveAll(P, cap){
       ok('twice in one line: both boxes are marked',
          (await ev(`document.querySelectorAll('#board .cell.dup').length`)) >= 2);
       const b2 = await badges2();
-      ok('twice in one line: that line is NOT green', b2[inn.r] === 'orange', 'line reads ' + b2[inn.r]);
+      /* Raja's rule: the same number twice inside ONE line is a certainty, not
+         doubt -- no arrangement can keep both -- so it reads RED outright.
+         Orange stays for the reuse that spans two lines. */
+      ok('twice in one line: that line reads RED -- certain, not in doubt',
+         b2[inn.r] === 'red', 'line reads ' + b2[inn.r]);
       ok('twice in one line: the other row rightly KEEPS its green', b2[0] === 'green', 'row reads ' + b2[0]);
+      /* Raja: "just one of cell 3 only border ring red color" -- the keypad
+         cursor painted its gold ring OVER the duplicate's red border, so the
+         box the child stood on never looked wrong. The cursor sits on the
+         last-typed cell, which is the second occurrence: its ring must read
+         red, in whichever theme is live. */
+      const ring2 = await ev(`(function(){
+        var c = document.querySelectorAll('#board .cell')[${3*inn.r + second}];
+        if (!c) return JSON.stringify({ err: 'no cell' });
+        var cs = getComputedStyle(c);
+        return JSON.stringify({
+          cursor: c.classList.contains('cursor'),
+          dup: c.classList.contains('dup'),
+          red: cs.boxShadow.indexOf('217, 48, 37') >= 0 ||
+               cs.outlineColor.indexOf('239, 68, 68') >= 0 ||
+               cs.boxShadow.indexOf('239, 68, 68') >= 0
+        });
+      })()`).then(JSON.parse);
+      ok('the cursor ring on the duplicated box reads RED, not gold',
+         ring2.cursor === true && ring2.dup === true && ring2.red === true, JSON.stringify(ring2));
       const shot2 = await send('Page.captureScreenshot', { format: 'png' });
       fs.writeFileSync(path.join(ROOT, 'number-grid-dup-same-line.png'), Buffer.from(shot2.result.data, 'base64'));
     }
