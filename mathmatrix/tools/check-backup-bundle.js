@@ -28,7 +28,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 let fail = 0;
 const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !== undefined ? '  -> ' + x : '')); if (!c) fail++; };
 
-const LEVELS = ['3x3', '4x4', '5x5', '6x6', '8x8', '10x10', '3cube', 'grid', 'ramanujan', 'binary', 'binary2'];
+const LEVELS = ['3x3', '4x4', '5x5', '6x6', '8x8', '10x10', '3cube', 'triangle', 'ramanujan', 'binary', 'binary2'];
 
 (async () => {
   /* ---- the editable copy is the live page, unchanged ---- */

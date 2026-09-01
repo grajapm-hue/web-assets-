@@ -77,7 +77,7 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
        fault where there was only a ninth game. Naming them keeps the real
        guarantee, that nothing SILENTLY DISAPPEARS from the list, while letting
        the list grow. */
-    const WANT = ['Add Magic', 'Multiply Magic', 'Fill In The Blank', 'Birthday Magic',
+    const WANT = ['Add Magic', 'Multiply Magic', 'Triangle Magic', 'Birthday Magic',
                   'Gate Logic', 'Binary Magic', 'Slide Magic', 'Sudoku', 'Pallanguzhi'];
     const have = D.groups.map(g => g.name);
     const missing = WANT.filter(w => !have.some(h => h.indexOf(w) > -1));
@@ -91,19 +91,12 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
 
     const sameLine = (a, b) => a && b && Math.abs(a.t - b.t) <= 2 && a.r <= b.l + 1;
     if (D.page >= 360){
-      /* Multiply and Sir Ramanujan are both single cards, so they pair without
-         either being left with an empty half. */
-      ok(S.w + ': Multiply and Birthday share a line',
-        sameLine(byName['Multiply Magic'], byName['Birthday Magic']),
-        'multiply y' + byName['Multiply Magic'].t + ', birthday y' + byName['Birthday Magic'].t);
-      /* And the two groups that are NOT paired must actually use the full
-         width, or they are the blank Raja marked, just moved somewhere else. */
-      const fullW = byName['Add Magic'].r - byName['Add Magic'].l;
-      [ 'Fill In The Blank', 'Gate Logic' ].forEach(n => {
-        ok(S.w + ': ' + n + ' uses the whole row, with no empty half beside it',
-          (byName[n].r - byName[n].l) >= fullW * 0.95,
-          (byName[n].r - byName[n].l) + 'px of ' + fullW + 'px');
-      });
+      ok(S.w + ': Multiply and Triangle share a line',
+        sameLine(byName['Multiply Magic'], byName['Triangle Magic']),
+        'multiply y' + byName['Multiply Magic'].t + ', triangle y' + byName['Triangle Magic'].t);
+      ok(S.w + ': Sir Ramanujan and Gate Logic share a line',
+        sameLine(byName['Sir Ramanujan MathMagic'] || byName['Birthday Magic'], byName['Gate Logic']),
+        'birthday y' + (byName['Birthday Magic'] || {}).t + ', gate y' + byName['Gate Logic'].t);
       ok(S.w + ': Gate Logic now sits ABOVE Binary Magic, as marked',
         byName['Gate Logic'].t < byName['Binary Magic'].t,
         'gate y' + byName['Gate Logic'].t + ' vs binary y' + byName['Binary Magic'].t);
@@ -113,19 +106,19 @@ const ok = (n, c, x) => { console.log((c ? '  PASS  ' : '  FAIL  ') + n + (x !==
          a QUARTER of the screen and the names broke mid-word. Overlap and
          overflow checks all passed on that — only width caught it. */
       const ref = byName['Binary Magic'].cardW;      // a card on a normal line
-      ['Multiply Magic', 'Birthday Magic'].forEach(n => {
+      ['Multiply Magic', 'Triangle Magic', 'Birthday Magic', 'Gate Logic'].forEach(n => {
         ok(S.w + ': ' + n + ' card is a full half-row wide, not a quarter',
           byName[n].cardW >= ref * 0.9, byName[n].cardW + 'px vs ' + ref + 'px on a normal row');
       });
       ok(S.w + ': no paired puzzle name breaks onto extra lines',
-        ['Multiply Magic', 'Gate Logic'].every(n => byName[n].nameLines <= 1),
-        ['Multiply Magic', 'Gate Logic'].map(n => n + '=' + byName[n].nameLines + 'ln').join(', '));
+        ['Multiply Magic', 'Triangle Magic', 'Gate Logic'].every(n => byName[n].nameLines <= 1),
+        ['Multiply Magic', 'Triangle Magic', 'Gate Logic'].map(n => n + '=' + byName[n].nameLines + 'ln').join(', '));
     } else {
       // narrow phones keep one column, so pairs must stack rather than squeeze
       ok(S.w + ': narrow phone keeps the groups stacked',
-        byName['Multiply Magic'].t < byName['Birthday Magic'].t
-        && byName['Multiply Magic'].l === byName['Birthday Magic'].l,
-        'multiply y' + byName['Multiply Magic'].t + ', birthday y' + byName['Birthday Magic'].t);
+        byName['Multiply Magic'].t < byName['Triangle Magic'].t
+        && byName['Multiply Magic'].l === byName['Triangle Magic'].l,
+        'multiply y' + byName['Multiply Magic'].t + ', triangle y' + byName['Triangle Magic'].t);
     }
 
     ok(S.w + ': every group fits inside the page',
