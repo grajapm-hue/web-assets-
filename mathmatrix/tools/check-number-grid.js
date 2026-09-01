@@ -638,6 +638,63 @@ function solveAll(P, cap){
       ok('correcting the reuse gives both lines their green back',
          fixed[0] === 'green' && fixed[stage.r] === 'green', JSON.stringify(fixed));
     }
+
+    /* ---- and the same number twice in ONE line ----
+       Raja's second screenshot: 8 - 3 + 3 = 8, the 3 twice in the same row,
+       both boxes marked red -- and the row green, SaNa praising. The cross-line
+       staging above deliberately excludes this shape, so it gets pinned on its
+       own. Here the row holding both occurrences goes orange; the other truly
+       filled row KEEPS its green, because the fault is entirely inside one
+       line and no number of the other row is in question. */
+    let inn = null, sol3 = null;
+    for (let deal = 0; deal < 10 && !inn; deal++){
+      if (!await openLevel('+-*')) continue;
+      const P3 = await readBoard();
+      if (!P3) continue;
+      const ans = solveAll(P3, 2);
+      if (ans.length !== 1) continue;
+      sol3 = ans[0];
+      const row0 = [sol3[0], sol3[1], sol3[2]];
+      for (let r = 1; r < 3 && !inn; r++){
+        const want = P3.r[r], o1 = P3.rOps[r][0], o2 = P3.rOps[r][1];
+        for (const x of P3.vals) for (const y of P3.vals) for (const z of P3.vals){
+          if (inn) break;
+          if (ltr(x, o1, y, o2, z) !== want) continue;
+          const f = [x, y, z];
+          /* exactly one INTERNAL pair, nothing borrowed from row0 */
+          if (new Set(f).size !== 2) continue;
+          if (f.some(v => row0.indexOf(v) >= 0)) continue;
+          inn = { r, fill: f, row0 };
+        }
+      }
+    }
+    ok('a right-adding fill with the same number twice could be staged', !!inn,
+       inn ? 'row ' + inn.r + ' takes ' + inn.fill.join(',') : '10 deals offered none');
+    if (inn){
+      const badges2 = async () => { await settledRing(); return ev(`(function(){
+        return JSON.stringify(Array.prototype.map.call(
+          document.querySelectorAll('#board .badge'), function(b){
+            var bg = getComputedStyle(b).backgroundColor;
+            return /18, 122, 69/.test(bg) ? 'green' : /179, 38, 30/.test(bg) ? 'red'
+                 : /240, 165, 0/.test(bg) ? 'orange' : bg; }));
+      })()`).then(JSON.parse); };
+      for (let i = 0; i < 3; i++) await typeInto(i, sol3[i]);
+      /* the second occurrence last, so the dup lands on the completing key */
+      const second = inn.fill.findIndex((v, i) => inn.fill.indexOf(v) !== i);
+      const order2 = [0, 1, 2].sort((a, b) => (a === second) - (b === second));
+      for (const i of order2) await typeInto(3*inn.r + i, inn.fill[i]);
+      await sleep(350);
+      const said2 = await ev(`(document.querySelector('.sanaBub')||{}).textContent || ''`);
+      ok('twice in one line: SaNa warns instead of praising',
+         /already used/i.test(said2) && !/finished/i.test(said2), said2.replace(/\s+/g, ' ').trim().slice(0, 80));
+      ok('twice in one line: both boxes are marked',
+         (await ev(`document.querySelectorAll('#board .cell.dup').length`)) >= 2);
+      const b2 = await badges2();
+      ok('twice in one line: that line is NOT green', b2[inn.r] === 'orange', 'line reads ' + b2[inn.r]);
+      ok('twice in one line: the other row rightly KEEPS its green', b2[0] === 'green', 'row reads ' + b2[0]);
+      const shot2 = await send('Page.captureScreenshot', { format: 'png' });
+      fs.writeFileSync(path.join(ROOT, 'number-grid-dup-same-line.png'), Buffer.from(shot2.result.data, 'base64'));
+    }
   }
 
   /* One grid proves nothing about a generator. Deal a run of them through the
