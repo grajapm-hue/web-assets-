@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0d0d0d">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>3³ — Multiply Magic Matrix</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { height:100%; width:100%; touch-action:manipulation; }
+  body {
+    background:#000; color:#fff;
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display:flex; flex-direction:column; align-items:center;
+    min-height:100vh; padding:12px 8px 30px; overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  a { color:#8ab4f8; }
+  .titleCard { background:#101820; border:3px solid #f59e0b; border-radius:14px; padding:10px 22px; margin-bottom:6px; text-align:center; }
+  .titleCard h1 { font-size:22px; color:#fbbf24; font-weight:800; }
+  .titleCard .sub { font-size:12px; font-weight:700; color:#f59e0b; margin-top:4px; letter-spacing:.5px; }
+  .backLink { font-size:13px; margin-bottom:12px; }
+  .targetPill {
+    border-radius:14px; padding:10px 26px; font-size:22px; font-weight:800; color:#fff;
+    display:flex; align-items:center; justify-content:center; gap:8px; line-height:1;
+    margin:6px 0 14px; background:linear-gradient(135deg,#b45309,#f59e0b); transition:all .3s ease;
+  }
+  .targetPill.preview { background:linear-gradient(135deg,#f59e0b,#fb923c) !important; }
+  .targetPill.solved  { background:linear-gradient(135deg,#15803d,#22c55e) !important; }
+  .instCard { background:#1e1e1e; border-left:6px solid #f59e0b; border-radius:12px; padding:10px 12px; font-size:13px; line-height:1.4; max-width:560px; margin-bottom:12px; }
+  .boardContainer { display:inline-flex; justify-content:center; width:100%; margin:0 auto 22px; border-bottom:2px solid #333; padding-bottom:18px; }
+  .board { display:grid; grid-gap:6px; gap:6px; grid-template-columns:repeat(5,52px); grid-template-rows:repeat(5,52px); }
+  @media (min-width:480px){ .board { grid-template-columns:repeat(5,64px); grid-template-rows:repeat(5,64px); } }
+  .cell {
+    -webkit-appearance:none; appearance:none;   /* iOS: honour our border/bg instead of default input chrome */
+    background:#1a1b22; border:2px solid #f59e0b; border-radius:6px; color:#fff; font-weight:600;  /* solid border + neutral tile so the box is visible on iOS (dashes render faint there) */
+    text-align:center; width:52px; height:52px; font-size:22px; outline:none; transition:all .15s ease;
+  }
+  @media (min-width:480px){ .cell { width:64px; height:64px; } }
+  .cell:focus { border-style:solid; border-color:#fbbf24; }
+  .cell.dup { border-color:#ef4444; color:#f87171; }
+  .cell.center { background:rgba(245,158,11,.15); }
+  .cell.win { border-style:solid; border-color:#10b981; background:#051f1f; color:#34d399; }
+  .badge {
+    border:2px solid #22d3ee; border-radius:6px; display:flex; align-items:center; justify-content:center;
+    width:52px; height:52px; font-weight:700; color:#7fd8e8; line-height:1; overflow:hidden;
+  }
+  @media (min-width:480px){ .badge { width:64px; height:64px; } }
+  .badge.corner { border-style:solid; border-color:#d946ef; color:#e59bf5; }
+  .badge.full { border-color:#f59e0b; color:#fbbf24; }
+  .badge.win  { border-color:#22c55e; color:#4ade80; border-style:solid; }
+  .btnRow { display:flex; gap:10px; width:100%; max-width:560px; margin:0 auto 12px; padding:0 6px; }
+  .btnRow button, .btnRow .box {
+    flex:1; border:2px solid; border-radius:8px; height:46px; line-height:44px; padding:0;
+    font-size:16px; font-weight:800; cursor:pointer; text-align:center; background:transparent;
+  }
+  #clearBtn { border-color:#ef4444; color:#ef4444; }
+  #showBtn { border-color:#7c3aed; color:#a78bfa; }
+  #watchBtn { border-color:#22c55e; color:#4ade80; }
+  #watchBtn:disabled { opacity:.5; cursor:default; }
+  @keyframes dropIn { 0%{transform:scale(.25);opacity:0;} 60%{transform:scale(1.18);opacity:1;} 100%{transform:scale(1);} }
+  .cell.placing { animation:dropIn .42s ease; color:#fbbf24 !important; }
+  #timerBox { border-color:#2ecc71; color:#2ecc71; font-variant-numeric:tabular-nums; cursor:default; }
+  #msg { min-height:22px; font-size:15px; font-weight:700; text-align:center; margin:2px 0 10px; }
+  #msg.win { color:#4ade80; }
+  #logicBtn { background:linear-gradient(135deg,#b45309,#f59e0b); border:none; border-radius:12px; height:46px; line-height:46px; padding:0 20px; text-align:center; font-size:16px; font-weight:700; color:#fff; cursor:pointer; width:100%; max-width:560px; margin:0 auto 12px; display:block; }
+  #logicBtn:active { transform:scale(0.98); }
+  #logicPanel { display:none; }
+  .logicBox { background:#141414; border:1px solid #333; border-radius:12px; padding:14px 14px; max-width:560px; font-size:14px; line-height:1.5; margin-bottom:14px; margin-left:auto; margin-right:auto; }
+  .logicBox h3 { color:#fbbf24; font-size:16px; margin-bottom:8px; }
+  .logicBox b { color:#f59e0b; }
+  .ex { font-family:monospace; background:rgba(50,50,50,.7); padding:10px; border-radius:6px; margin:8px 0; border-left:4px solid #f59e0b; white-space:pre; }
+  .credit { font-size:12px; color:#888; text-align:center; margin-top:8px; line-height:1.5; }
+</style>
+</head>
+<body>
+<div class="titleCard">
+  <h1>🐒🎲 3³ — Multiply Magic</h1>
+  <div class="sub">🧙 ADVANCED · Lines MULTIPLY (× × ×) · after you master 5×5</div>
+</div>
+<div class="backLink">← <a href="index.html">Back to Add Magic (3×3 · 4×4 · 5×5)</a></div>
+
+<div class="targetPill"><span>🎯</span><span>Target : <span id="targetVal">?</span></span></div>
+
+<div class="instCard"><b>Multiply Magic!</b> Fill 3×3 — every row, column and diagonal must <b>MULTIPLY</b> to the SAME. Set the center first → target = center³. ✖️</div>
+
+<div class="boardContainer"><div class="board" id="board"></div></div>
+
+<div class="btnRow">
+  <button id="clearBtn">CLEAR</button>
+  <div class="box" id="timerBox">00:00</div>
+</div>
+<div class="btnRow">
+  <button id="showBtn">👁 SHOW</button>
+  <button id="watchBtn">▶ Watch Me Solve</button>
+</div>
+<div style="text-align:center; margin:6px 0 2px;">
+  <button id="soundBtn" style="background:transparent; border:2px solid #f59e0b; color:#fbbf24; border-radius:8px; padding:6px 16px; font-size:15px; font-weight:800; cursor:pointer;">🔊 Sound: ON</button>
+</div>
+<div id="msg"></div>
+
+<button id="logicBtn">📐 Show Math Logic ▼</button>
+<div id="logicPanel">
+
+<div class="logicBox">
+  <h3>📐 How Multiply Magic works</h3>
+  <p>Every line (row, column, diagonal) has the same <b>product</b> — you multiply the three numbers, not add them.</p>
+  <p style="margin-top:8px;"><b>Target = center³</b> (center × center × center). Set the center box and the goal appears in orange.</p>
+  <p style="margin-top:8px;"><b>Opposite boxes</b> through the center multiply to <b>center²</b>.</p>
+  <p style="margin-top:10px;"><b>Worked examples</b> (center → target):</p>
+  <div class="ex">center 6  → 216
+  3  36   2
+  4   6   9
+ 18   1  12</div>
+  <div class="ex">center 12 → 1728
+  6  72   4
+  8  12  18
+ 36   2  24</div>
+  <div class="ex">center 16 → 4096
+  8 256   2
+  4  16  64
+128   1  32</div>
+  <p style="margin-top:8px; font-size:.9em; opacity:.85;">Tip: these are the same magic squares as the adding ones — written as powers. Maths has no boundary. 🙌</p>
+</div>
+
+<div class="logicBox">
+  <h3>🔢 Three Types — how the numbers rise</h3>
+  <p>Multiply Magic works with any family of numbers whose factors line up. Three ready examples, <b>easy → hard</b>:</p>
+  <ol style="margin:8px 0; padding-left:20px;">
+    <li><b>Type 1 · 2s &amp; 3s → Target 216</b> (center 6)<br><span style="font-family:monospace;">1, 2, 3, 4, 6, 9, 12, 18, 36</span> — built by multiplying 2s and 3s.</li>
+    <li style="margin-top:6px;"><b>Type 2 · bigger 2s &amp; 3s → Target 1728</b> (center 12)<br><span style="font-family:monospace;">2, 4, 6, 8, 12, 18, 24, 36, 72</span> — the same idea, scaled up.</li>
+    <li style="margin-top:6px;"><b>Type 3 · powers of 2 → Target 4096</b> (center 16)<br><span style="font-family:monospace;">1, 2, 4, 8, 16, 32, 64, 128, 256</span> — each number doubles the last (2⁰ … 2⁸).</li>
+  </ol>
+  <p style="margin-top:8px;"><b>How the sequence rises:</b> pick a center, then its factors are spread around it so every line multiplies back to <b>center³</b>. A bigger center means a bigger target and faster-rising numbers.</p>
+  <p style="margin-top:8px;"><b>When / after:</b> try them in order — <b>216 → 1728 → 4096</b> (small numbers first). Attempt these only after you are comfortable with the adding 5×5 — this is the advanced magic. 🧙</p>
+</div>
+</div><!-- /logicPanel -->
+
+<div class="credit">Created by G.RajaPathamuthu · Kids Puzzle Library<br>Guided by : JNT<br>Code Coordinated by : Claude AI<br>
+  <i style="opacity:.85;">(What we get is all we ask for.)</i><br>
+  Mail To : <a href="mailto:grajapm@gmail.com?subject=MathMatrix%203cube%20Feedback">✉️ Feedback &amp; Suggestion</a>
+</div>
+
+<script>
+(function(){
+  var board = document.getElementById('board');
+  var targetVal = document.getElementById('targetVal');
+  var targetPill = document.querySelector('.targetPill');
+  var msg = document.getElementById('msg');
+  var inputs = [[],[],[]];      // 3x3 input cells
+  var badges = {};              // line-key -> [nodes]
+  var solved = false, showing = false, watching = false, timer = null, secs = 0;
+  var prevComplete = 0, prevDup = 0;
+
+  // ---- Sound FX: playful/arcade tones generated in-code (WebAudio, no files) ----
+  var soundOn = (localStorage.getItem('mmSound') !== 'off');   // default ON, shared key with main game
+  var audioCtx = null;
+  function ensureAudio(){
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    } catch (e) { audioCtx = null; }
+  }
+  function tone(freq, start, dur, type, peak){
+    if (!audioCtx) return;
+    var t0 = audioCtx.currentTime + start;
+    var osc = audioCtx.createOscillator(), g = audioCtx.createGain();
+    osc.type = type || 'square';
+    if (Array.isArray(freq)){ osc.frequency.setValueAtTime(freq[0], t0); osc.frequency.exponentialRampToValueAtTime(freq[1], t0 + dur * 0.9); }
+    else osc.frequency.setValueAtTime(freq, t0);   // number = steady pitch; [from,to] = glide
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(peak || 0.18, t0 + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(g); g.connect(audioCtx.destination);
+    osc.start(t0); osc.stop(t0 + dur + 0.03);
+  }
+  function sfx(kind){
+    if (!soundOn) return;
+    ensureAudio();
+    if (!audioCtx) return;
+    switch (kind){
+      case 'place':  tone([700,1150], 0, 0.10, 'triangle', 0.20); tone(1400, 0.02, 0.08, 'sine', 0.10); break;   // F · candy plink
+      case 'line':   [784,1047,1319].forEach(function(fr,i){ tone(fr, i*0.05, 0.12, 'triangle', 0.15); }); break; // 3 · candy shimmer
+      case 'dup':    tone(150, 0, 0.16, 'sawtooth', 0.10); break;
+      case 'win':    [523,587,659,784,880,1047,1319].forEach(function(fr,i){ tone(fr, i*0.06, 0.16, 'triangle', 0.16); tone(fr*2, i*0.06, 0.10, 'sine', 0.05); }); break; // 2 · candy cascade
+      case 'tick':   tone(700, 0, 0.045, 'square', 0.08); break;
+    }
+  }
+  function refreshSoundBtn(){
+    var b = document.getElementById('soundBtn');
+    if (!b) return;
+    b.textContent = soundOn ? '🔊 Sound: ON' : '🔇 Sound: OFF';
+    b.style.borderColor = soundOn ? '#f59e0b' : '#666';
+    b.style.color = soundOn ? '#fbbf24' : '#888';
+  }
+  // Mobile audio unlock: wake the AudioContext on the first real touch/key, so the
+  // place-pop plays on manual entry (typing's 'input' event may not count as a gesture).
+  ['pointerdown','touchstart','keydown'].forEach(function(evt){
+    document.addEventListener(evt, function(){ if (soundOn) ensureAudio(); }, { passive:true });
+  });
+  function celebrate(){
+    var emojis = ['⭐','✨','🎉','🎊','🌟','💫'];
+    var cx = window.innerWidth / 2, cy = window.innerHeight * 0.40;
+    for (var i = 0; i < 22; i++){
+      var s = document.createElement('span');
+      s.textContent = emojis[i % emojis.length];
+      s.style.cssText = 'position:fixed;left:' + cx + 'px;top:' + cy + 'px;font-size:' +
+        (18 + Math.round(Math.random() * 22)) + 'px;pointer-events:none;z-index:9999;opacity:1;' +
+        'transition:transform 1s cubic-bezier(.2,.7,.3,1),opacity 1s ease;transform:translate(-50%,-50%)';
+      document.body.appendChild(s);
+      void s.offsetWidth;
+      var ang = Math.random() * Math.PI * 2, dist = 90 + Math.random() * 170;
+      var dx = Math.cos(ang) * dist, dy = Math.sin(ang) * dist - 40;
+      s.style.transform = 'translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px)) rotate(' + (Math.random() * 720 - 360) + 'deg)';
+      s.style.opacity = '0';
+      (function(el){ setTimeout(function(){ el.remove(); }, 1150); })(s);
+    }
+    var fl = document.createElement('div');
+    fl.style.cssText = 'position:fixed;inset:0;background:radial-gradient(circle at 50% 40%, rgba(255,220,120,.30), transparent 60%);pointer-events:none;z-index:9998;transition:opacity .5s ease;opacity:1';
+    document.body.appendChild(fl);
+    void fl.offsetWidth; fl.style.opacity = '0';
+    setTimeout(function(){ fl.remove(); }, 560);
+  }
+
+  // display 5x5: ring badges + inner 3x3 inputs
+  function keyAt(dr, dc){
+    // returns ['input', r, c] or ['badge', key, isCorner]
+    var r = dr - 1, c = dc - 1;
+    if (dr >= 1 && dr <= 3 && dc >= 1 && dc <= 3) return ['input', r, c];
+    // corners -> diagonals
+    if ((dr===0&&dc===0) || (dr===4&&dc===4)) return ['badge','d1',true];
+    if ((dr===0&&dc===4) || (dr===4&&dc===0)) return ['badge','d2',true];
+    // top/bottom edges -> columns
+    if (dr===0 || dr===4) return ['badge','c'+(dc-1),false];
+    // left/right edges -> rows
+    return ['badge','r'+(dr-1),false];
+  }
+  for (var dr=0; dr<5; dr++) for (var dc=0; dc<5; dc++){
+    var spec = keyAt(dr,dc);
+    if (spec[0]==='input'){
+      var inp = document.createElement('input');
+      inp.className = 'cell' + (spec[1]===1&&spec[2]===1 ? ' center' : '');
+      inp.type='text'; inp.inputMode='numeric'; inp.maxLength=4;
+      inp.addEventListener('input', function(e){ e.target.value = e.target.value.replace(/[^0-9]/g,''); if(e.target.value!=='') sfx('place'); update(); startTimer(); });
+      inputs[spec[1]][spec[2]] = inp;
+      board.appendChild(inp);
+    } else {
+      var b = document.createElement('div');
+      b.className = 'badge' + (spec[2] ? ' corner' : '');
+      b.textContent = '?';
+      (badges[spec[1]] = badges[spec[1]] || []).push(b);
+      board.appendChild(b);
+    }
+  }
+
+  function val(r,c){ var v = parseInt(inputs[r][c].value,10); return isNaN(v) ? null : v; }
+  function lineVals(k){
+    var out=[];
+    for (var i=0;i<3;i++){
+      if (k[0]==='r') out.push(val(+k[1], i));
+      else if (k[0]==='c') out.push(val(i, +k[1]));
+      else if (k==='d1') out.push(val(i,i));
+      else out.push(val(i,2-i));
+    }
+    return out;
+  }
+  function setBadge(k, txt, cls){
+    badges[k].forEach(function(b){ b.textContent = txt; b.classList.remove('full','win'); if (cls) b.classList.add(cls); });
+  }
+  function fitCells(){
+    var w = inputs[0][0].clientWidth; if(!w) return;
+    for (var r=0;r<3;r++) for (var c=0;c<3;c++){
+      var len = (inputs[r][c].value||'').length || 1;
+      var f = len<=1?0.5: len===2?0.42: len===3?0.32: 0.26;
+      inputs[r][c].style.fontSize = Math.round(w*f)+'px';
+    }
+  }
+  function product(arr){ return arr.reduce(function(a,b){ return a*b; }, 1); }
+
+  var LINES = ['r0','r1','r2','c0','c1','c2','d1','d2'];
+  function update(){
+    if (solved) return;
+    // dup detection
+    var seen={}, dups={};
+    for (var r=0;r<3;r++) for (var c=0;c<3;c++){ var v=val(r,c); if(v===null)continue; if(seen[v])dups[v]=true; seen[v]=true; }
+    for (var r2=0;r2<3;r2++) for (var c2=0;c2<3;c2++){ var vv=val(r2,c2); inputs[r2][c2].classList.toggle('dup', !!(vv!==null&&dups[vv])); }
+    fitCells();
+
+    var complete=[];
+    LINES.forEach(function(k){
+      var vals=lineVals(k), filled=vals.filter(function(x){return x!==null;});
+      if (filled.length===0) setBadge(k,'?',null);
+      else if (filled.length<3) setBadge(k, product(filled), null);
+      else { setBadge(k, product(filled), 'full'); complete.push(product(filled)); }
+    });
+
+    // Target: center^3 preview (orange) when center set; else completed product; else ?
+    var cen = val(1,1);
+    if (cen !== null){ targetVal.textContent = cen*cen*cen; targetPill.classList.add('preview'); }
+    else { targetPill.classList.remove('preview'); targetVal.textContent = complete.length ? complete[0] : '?'; }
+
+    // win: all 9 filled, all 8 products equal
+    var allFilled=true;
+    for (var r3=0;r3<3;r3++) for (var c3=0;c3<3;c3++) if (val(r3,c3)===null) allFilled=false;
+    var isWin = !showing && !watching && allFilled && Object.keys(dups).length===0 && complete.length===8 && complete.every(function(p){return p===complete[0];});
+
+    // playful feedback on real moves only
+    if (!showing && !watching && !solved && !isWin){
+      var dupCount = Object.keys(dups).length;
+      if (complete.length > prevComplete) sfx('line');
+      else if (dupCount > prevDup && dupCount > 0) sfx('dup');
+    }
+    prevComplete = complete.length; prevDup = Object.keys(dups).length;
+
+    if (isWin){ win(complete[0]); }
+    else { msg.textContent=''; msg.className=''; }
+  }
+
+  function win(t){
+    solved=true; sfx('win'); celebrate(); stopTimer();
+    targetPill.classList.remove('preview'); targetPill.classList.add('solved'); targetVal.textContent=t;
+    LINES.forEach(function(k){ setBadge(k,t,'win'); });
+    for (var r=0;r<3;r++) for (var c=0;c<3;c++){ inputs[r][c].classList.add('win'); inputs[r][c].readOnly=true; }
+    msg.textContent='🎉 Multiply Magic solved! Every line × = '+t;
+    msg.className='win';
+  }
+
+  function resetAll(){
+    solved=false; prevComplete=0; prevDup=0; targetPill.classList.remove('solved','preview');
+    for (var r=0;r<3;r++) for (var c=0;c<3;c++){ inputs[r][c].value=''; inputs[r][c].readOnly=false; inputs[r][c].classList.remove('dup','win'); }
+    msg.textContent=''; msg.className=''; stopTimer(); secs=0; document.getElementById('timerBox').textContent='00:00';
+    update();
+  }
+
+  // Timer
+  function startTimer(){ if (timer||solved) return; timer=setInterval(function(){ secs++; var m=String(Math.floor(secs/60)).padStart(2,'0'), s=String(secs%60).padStart(2,'0'); document.getElementById('timerBox').textContent=m+':'+s; },1000); }
+  function stopTimer(){ if(timer){ clearInterval(timer); timer=null; } }
+
+  document.getElementById('clearBtn').addEventListener('click', function(){ if(showing) return; resetAll(); });
+
+  document.getElementById('showBtn').addEventListener('click', function(){
+    if (showing || solved) return;
+    showing=true;
+    var ex=[[8,256,2],[4,16,64],[128,1,32]]; // the 4096 example — powers of 2 (familiar bit values)
+    var saved=[]; for (var r=0;r<3;r++) for (var c=0;c<3;c++) saved.push(inputs[r][c].value);
+    for (var r2=0;r2<3;r2++) for (var c2=0;c2<3;c2++){ inputs[r2][c2].value=ex[r2][c2]; inputs[r2][c2].readOnly=true; }
+    sfx('line');
+    update();
+    var btn=this, n=3; btn.textContent='👁 '+n;
+    var iv=setInterval(function(){
+      n--; if(n>0){ btn.textContent='👁 '+n; return; }
+      clearInterval(iv);
+      var i=0; for (var r=0;r<3;r++) for (var c=0;c<3;c++){ inputs[r][c].value=saved[i++]; inputs[r][c].readOnly=false; }
+      btn.textContent='👁 SHOW'; showing=false; update();
+    },1000);
+  });
+
+  // Watch Me Build — reveals the 4096 square in value sequence 1,2,4,8,16,32,64,128,256 (like 3x3's 1..9)
+  document.getElementById('watchBtn').addEventListener('click', function(){
+    if (watching || showing || solved) return;
+    watching = true;
+    var btn = this; btn.disabled = true; document.getElementById('showBtn').disabled = true;
+    resetAll();
+    var ex = [[8,256,2],[4,16,64],[128,1,32]]; // 4096 — powers of 2 (familiar bit values)
+    // cells in ascending value order: 1→2→4→8→16→32→64→128→256
+    var order = [[2,1],[0,2],[1,0],[0,0],[1,1],[2,2],[1,2],[2,0],[0,1]];
+    var i = 0;
+    msg.textContent = '▶ Watch the products build to center³…'; msg.className = '';
+    var iv = setInterval(function(){
+      if (i >= order.length){
+        clearInterval(iv);
+        for (var r=0;r<3;r++) for (var c=0;c<3;c++){ inputs[r][c].classList.add('win'); inputs[r][c].readOnly = true; }
+        msg.textContent = '✨ Every line × = 4096 = 16³ (powers of 2!). Tap CLEAR and try your own!'; msg.className = 'win';
+        btn.disabled = false; document.getElementById('showBtn').disabled = false; watching = false;
+        return;
+      }
+      var rc = order[i], cell = inputs[rc[0]][rc[1]];
+      cell.value = String(ex[rc[0]][rc[1]]);
+      cell.classList.remove('placing'); void cell.offsetWidth; cell.classList.add('placing');
+      sfx('tick'); update(); i++;
+    }, 1100);  // slow pace for mind-mapping
+  });
+
+  // Show/Hide Math Logic (tips collapsed like the other tables)
+  document.getElementById('logicBtn').addEventListener('click', function(){
+    var box = document.getElementById('logicPanel');
+    var open = box.style.display === 'block';
+    box.style.display = open ? 'none' : 'block';
+    this.textContent = open ? '📐 Show Math Logic ▼' : '📐 Hide Math Logic ▲';
+  });
+
+  // Sound on/off toggle (shares the 'mmSound' setting with the main game)
+  refreshSoundBtn();
+  document.getElementById('soundBtn').addEventListener('click', function(){
+    soundOn = !soundOn;
+    localStorage.setItem('mmSound', soundOn ? 'on' : 'off');
+    refreshSoundBtn();
+    if (soundOn){ ensureAudio(); sfx('line'); }
+  });
+
+  window.addEventListener('resize', fitCells);
+  if ('serviceWorker' in navigator){ window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); }); }
+  // Best-effort: keep the offline cache from being evicted under storage pressure.
+  if (navigator.storage && navigator.storage.persist){ navigator.storage.persisted().then(function(a){ if(!a) navigator.storage.persist(); }).catch(function(){}); }
+  // iOS ignores user-scalable=no — block pinch/gesture zoom so the layout stays put.
+  ['gesturestart','gesturechange','gestureend'].forEach(function(evt){ document.addEventListener(evt, function(e){ e.preventDefault(); }, { passive:false }); });
+  update();
+})();
+</script>
+</body>
+</html>

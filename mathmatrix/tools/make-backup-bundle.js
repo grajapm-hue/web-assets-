@@ -1,6 +1,7 @@
 /* Build Raja's personal backup bundle for a published version.
 
-     node make-backup-bundle.js v153
+     node make-backup-bundle.js v152       the live site
+     node make-backup-bundle.js beta-255   the beta preview
 
    What comes out is a folder that owes nothing to this machine, this repo, or
    whoever built it. Two copies of the game and the papers that explain them:
@@ -29,9 +30,22 @@ const crypto = require('crypto');
 const { execSync } = require('child_process');
 
 const VER = process.argv[2];
-if (!/^v\d+$/.test(VER || '')) { console.error('usage: node make-backup-bundle.js vNNN'); process.exit(1); }
+if (!/^(v\d+|beta-\d+)$/.test(VER || '')) {
+  console.error('usage: node make-backup-bundle.js vNNN     (the live site)');
+  console.error('       node make-backup-bundle.js beta-NNN (the beta preview)');
+  process.exit(1);
+}
 
-const SITE = 'https://kidsmathsmatrixpuzzle.github.io/';
+/* The beta is a different site with differently-named plumbing, and every one
+   of those names is load-bearing: the manifest it links, the worker it
+   registers, and the page itself. Naming them once here is what lets the rest
+   of this file stay a single code path instead of two that drift apart. */
+const BETA = VER.startsWith('beta-');
+const SITE = BETA ? 'https://grajapm-hue.github.io/web-assets-/mathmatrix/'
+                  : 'https://kidsmathsmatrixpuzzle.github.io/';
+const PAGE = BETA ? 'beta.html' : 'index.html';
+const MANIFEST = BETA ? 'beta-manifest.json' : 'manifest.json';
+const WORKER = BETA ? 'beta-sw.js' : 'sw.js';
 const OUT = path.join(__dirname, '..', '..', '_bk', 'MathMatrix-' + VER);
 
 /* Everything the live site serves. The pictures and the music are what get
@@ -39,7 +53,7 @@ const OUT = path.join(__dirname, '..', '..', '_bk', 'MathMatrix-' + VER);
 const ASSETS = ['cheat-3x3.png', 'cheat-4x4.png', 'cheat-5x5.png', 'cheat-6x6.png',
   'cheat-8x8.png', 'cheat-10x10.png', 'cheat-3cube.png', 'cheat-ramanujan.jpg',
   'bgm-monkeys.mp3', 'icon-192.png', 'icon-512.png', 'icon-512-maskable.png'];
-const LOOSE = ['sw.js', 'manifest.json', 'MultiplyMagic3.html', 'sound-lab.html',
+const LOOSE = [WORKER, MANIFEST, 'MultiplyMagic3.html', 'sound-lab.html',
   'design-preview.html'];
 const MIME = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', mp3: 'audio/mpeg' };
 
@@ -52,10 +66,12 @@ const grab = (name) => {
   return b;
 };
 
-console.log('fetching the live site ...');
-const indexBuf = grab('index.html');
+console.log('fetching ' + SITE + ' ...');
+const indexBuf = grab(PAGE);
 const index = indexBuf.toString('utf8');
-const live = (index.match(/BUILD_VER = '([^']+)'/) || [])[1];
+/* The beta's BUILD_VER carries a sentence of release notes after the number.
+   The version is the first word; the rest is prose. */
+const live = ((index.match(/BUILD_VER = '([^']+)'/) || [])[1] || '').split(' ')[0];
 if (live !== VER) {
   console.error(`\nthe live site is serving ${live}, not ${VER} — refusing to label a bundle wrongly`);
   process.exit(1);
@@ -90,20 +106,26 @@ for (const a of ASSETS) {
 
 /* The manifest travels inside the page too, with its own icons inside IT, so
    the app still knows its name and pictures with not one file beside it. */
-const mf = JSON.parse(bytes['manifest.json'].toString('utf8'));
+const mf = JSON.parse(bytes[MANIFEST].toString('utf8'));
 if (Array.isArray(mf.icons)) mf.icons.forEach(i => {
   const f = String(i.src).replace(/^\.?\//, '');
   if (bytes[f]) i.src = dataUri(f);
 });
 const mfUri = 'data:application/manifest+json;base64,' + Buffer.from(JSON.stringify(mf), 'utf8').toString('base64');
-one = one.replace(/href="manifest\.json"/g, `href="${mfUri}"`);
+const mfBefore = one;
+one = one.replace(new RegExp('href="' + MANIFEST.replace('.', '\\.') + '"', 'g'), `href="${mfUri}"`);
+if (one === mfBefore) console.log(`  NOTE: no href="${MANIFEST}" found to inline`);
 
 /* The stock worker caches a dozen files BY NAME. In the single-file edition
    those files do not exist, so it fails to install and you silently get no
    offline play at all. Point at the one that only has the page to look after. */
+/* The beta registers its worker with a scope pinned to beta.html. The
+   single-file copy is uploaded as index.html, so that scope would lock the
+   worker to a page that is not there. Take the whole call, options and all. */
 const swBefore = one;
-one = one.replace(/register\('sw\.js'\)/g, "register('sw-standalone.js')");
-if (one === swBefore) console.log('  NOTE: no register(\'sw.js\') found to repoint');
+one = one.replace(new RegExp("register\\('" + WORKER.replace('.', '\\.') + "'(?:\\s*,\\s*\\{[^}]*\\})?\\)", 'g'),
+  "register('sw-standalone.js')");
+if (one === swBefore) console.log(`  NOTE: no register('${WORKER}') found to repoint`);
 
 const PUB = `PUBLISH-THIS-MathMatrix-${VER}.html`;
 fs.writeFileSync(path.join(OUT, PUB), one, 'utf8');
@@ -152,6 +174,16 @@ self.addEventListener('fetch', (event) => {
   );
 });
 `, 'utf8');
+
+/* ---- the papers ----
+   A release note is the one page that cannot be measured out of the files, so
+   it is written by hand and kept in the repo next to this script. If there is
+   one for this version it travels with the bundle and the index links it. */
+const note = path.join(__dirname, `whats-new-${VER}.md`);
+if (fs.existsSync(note)) fs.copyFileSync(note, path.join(OUT, `WHATS-NEW-${VER}.md`));
+const docs = require('./bundle-docs')({ OUT, VER, BETA, SITE, PAGE, MANIFEST, WORKER, EDIT, PUB, ASSETS });
+console.log(`  ${docs.count} guides written` + (fs.existsSync(note) ? ' + the release note' : '')
+  + `  (${docs.levels.length} puzzles, ${docs.sheets} formula sheets)`);
 
 /* ---- fingerprints, so anyone can prove nothing was altered ---- */
 const names = fs.readdirSync(OUT).filter(f => f !== 'SHA256SUMS.txt').sort();

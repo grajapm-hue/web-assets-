@@ -19,7 +19,14 @@ const crypto = require('crypto');
 const { spawn, execSync } = require('child_process');
 
 const VER = process.argv[2];
-if (!/^v\d+$/.test(VER || '')) { console.error('usage: node check-backup-bundle.js vNNN'); process.exit(1); }
+if (!/^(v\d+|beta-\d+)$/.test(VER || '')) {
+  console.error('usage: node check-backup-bundle.js vNNN | beta-NNN');
+  process.exit(1);
+}
+const BETA = VER.startsWith('beta-');
+const SITE = BETA ? 'https://grajapm-hue.github.io/web-assets-/mathmatrix/'
+                  : 'https://kidsmathsmatrixpuzzle.github.io/';
+const PAGE = BETA ? 'beta.html' : 'index.html';
 const DIR = path.join(__dirname, '..', '..', '_bk', 'MathMatrix-' + VER);
 const PUB = `PUBLISH-THIS-MathMatrix-${VER}.html`;
 const EDIT = `EDIT-THIS-MathMatrix-${VER}.html`;
@@ -33,12 +40,14 @@ const LEVELS = ['3x3', '4x4', '5x5', '6x6', '8x8', '10x10', '3cube', 'triangle',
 (async () => {
   /* ---- the editable copy is the live page, unchanged ---- */
   const liveTmp = path.join(os.tmpdir(), 'mmlive-' + Date.now() + '.html');
-  execSync(`curl -sfL -o "${liveTmp}" "https://kidsmathsmatrixpuzzle.github.io/index.html"`);
+  execSync(`curl -sfL -o "${liveTmp}" "${SITE}${PAGE}"`);
   const h = f => crypto.createHash('sha256').update(fs.readFileSync(f)).digest('hex');
-  ok('the editable copy is byte-for-byte the live page',
+  ok('the editable copy is byte-for-byte the published page',
      h(path.join(DIR, EDIT)) === h(liveTmp), h(path.join(DIR, EDIT)).slice(0, 16));
+  /* The beta's BUILD_VER has a sentence of release notes after the number, so
+     the version ends at the closing quote OR at the first space. */
   ok('and it is the version this bundle claims',
-     new RegExp(`BUILD_VER = '${VER}'`).test(fs.readFileSync(path.join(DIR, EDIT), 'utf8')), VER);
+     new RegExp(`BUILD_VER = '${VER}[ ']`).test(fs.readFileSync(path.join(DIR, EDIT), 'utf8')), VER);
   fs.unlinkSync(liveTmp);
 
   /* ---- fingerprints match what is in the folder ---- */
