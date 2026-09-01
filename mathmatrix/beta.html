@@ -782,6 +782,12 @@ window.onerror = function(msg, src, line, col, err){
   .kp.kpsys.on { border-color:#f59e0b; color:#fbbf24; }
   /* active cell highlight (keypad cursor) */
   .cell.cursor { outline:3px solid #fde047; outline-offset:-2px; box-shadow:0 0 9px rgba(253,224,71,.55); }
+  /* Raja: with a number entered twice, "just one of cell 3 only border ring
+     red color". The cursor ring painted gold OVER the duplicate's red border,
+     so the box the child was standing on never looked wrong. On a duplicated
+     cell the cursor ring itself turns red -- you still see where you are, and
+     you see that where you are is the problem. */
+  .cell.cursor.dup { outline-color:#ef4444; box-shadow:0 0 9px rgba(239,68,68,.55); }
 
   /* Ramanujan birthday square: top row is yours to type, the rest is computed */
   .board.sizeramanujan .cell.anchor { background:#3b0a1e; border-color:#f43f5e; color:#fecdd3; }
@@ -1310,6 +1316,9 @@ body{ background:var(--gr) !important; color:var(--bink) !important; }
   border-radius:14px !important; box-shadow:var(--clay) !important; font-weight:900 !important; }
 .cell:active{ transform:translateY(3px) scale(.95) !important; box-shadow:var(--sunk) !important; }
 .cell.cursor{ box-shadow:0 0 0 3px var(--gold), 0 3px 0 rgba(0,0,0,.34) !important; z-index:2; }
+/* the same rule for this skin: a duplicated cell's cursor ring is red, never
+   gold -- the gold ring was hiding the red border on the very box in question */
+.cell.cursor.dup{ box-shadow:0 0 0 3px #D93025, 0 3px 0 rgba(0,0,0,.34) !important; }
 .cell.correct,.cell.solved{ background:linear-gradient(160deg,#5BE8AB,var(--wingreen)) !important;
   color:#04231a !important; }
 /* diagonal corner badges — arrow shows which line, so colour is not the only signal */
@@ -6735,9 +6744,32 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       var byW = (availW - 5*g) / (3 + 3*0.36);
       var byH = (availH - 5*g) / (4 + 2*0.34);
       var cell = Math.max(26, Math.min(92, Math.floor(Math.min(byW, byH))));
+      var prevCell = parseFloat(board.style.getPropertyValue('--gridCell')) || 0;
+      /* Unlike every other board, this one is sized from the host's HEIGHT --
+         and that height breathes: SaNa's bubble grows and shrinks a few pixels
+         as her messages come and go, and each breath re-measured the board,
+         re-wrote its sizes, and restarted the badges' colour-and-size fade.
+         The board was never wrong, it was never STILL. A measurement within a
+         few pixels of the one already applied changes nothing; only a real
+         change -- first open, rotation, keyboard -- gets through. */
+      if (prevCell && Math.abs(cell - prevCell) <= 4) cell = prevCell;
+      if (cell === prevCell){ fitCells(); fitBadges(); return; }
       board.style.setProperty('--gridCell', cell + 'px');
       board.style.setProperty('--gridGap', g + 'px');
+      /* This board must own its badge ceiling. --badgeFont is written by the
+         CLASSIC board fits and was never restated here, so fitBadges capped
+         these answers at whatever the previously sized board left behind --
+         the first open read 15px against a later deal's 29px, from one stale
+         property. 0.34 of a box is this board's own stylesheet intent. */
+      board.style.setProperty('--badgeFont', Math.max(8, Math.round(cell * 0.34)) + 'px');
       fitCells(); fitBadges();
+      /* Measure once more on the next frame, the WHOLE measurement. On the
+         very first open the host is read while the screen is still settling,
+         the box comes out small, and everything scaled to it stays small until
+         something else causes a refit. The dead-band above keeps this from
+         ever ticking: a re-measure that lands within a few pixels applies
+         nothing and queues nothing. */
+      requestAnimationFrame(function(){ fitBoard(); });
       return;
     }
     var tracks = pz.rows + 2;                       // grid cells + the badge ring
@@ -6815,13 +6847,50 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     var ceil = parseFloat(board.style.getPropertyValue('--badgeFont')) || 0;
     var i, b, sized = [];
 
+    /* Raja, on the Fill In The Blank answers: "initial open font size differ".
+       He is right: this sized every badge from ITS OWN text, so a one-digit
+       answer got roughly double the font of a two-digit answer beside it. The
+       magic-square ring never showed it because its badges carry similar
+       lengths; this board prints six answers of mixed lengths side by side,
+       so 15 sat tiny next to a large 2. On that board every badge is fitted
+       to the LONGEST answer, so all six share one size. */
+    var uniform = 0, gridCell = 0;
+    if ((PUZZLES[currentSize] || {}).shape === 'opgrid'){
+      for (i = 0; i < list.length; i++){
+        var u = (list[i].textContent || '').trim().length;
+        if (u > uniform) uniform = u;
+      }
+      /* Every measurement below is taken while the badge is still moving: a
+         .badge transitions `all`, so its width fades up to its final size over
+         .3s, and clientWidth read during that fade is the fade, not the
+         layout. The same board measured 20px wide on one open and 64px on the
+         next, and the answers were sized to whatever the fade happened to be
+         showing -- 13px, 17px, 24px on three opens of the same puzzle.
+
+         On this board the width is not in doubt: the stylesheet gives every
+         badge width:var(--gridCell). So take it from the box size the board
+         has just committed, and the answer size stops depending on WHEN it is
+         measured. The ceiling comes from that same number, so it can never
+         drift out of step with the boxes it belongs to either. */
+      gridCell = parseFloat(board.style.getPropertyValue('--gridCell')) || 0;
+      if (gridCell){
+        ceil = Math.max(8, Math.round(gridCell * 0.34));
+        /* Write it back so the property agrees with what is on screen. A
+           stylesheet rule still reads --badgeFont, and this board can inherit
+           the value a square board left behind; leaving the two to disagree is
+           how the ceiling went stale in the first place. */
+        board.style.setProperty('--badgeFont', ceil + 'px');
+      }
+    }
+
     /* Pass 1: estimate. A digit runs about 0.68em in this bold face, and a
        corner badge carries an arrow as well, which is wider still. */
     for (i = 0; i < list.length; i++){
       b = list[i];
-      if (!b.clientWidth) continue;
-      var n = (b.textContent || '').trim().length || 1;
-      var fit = Math.floor((b.clientWidth - 3) / (n * 0.68));
+      var bw = gridCell || b.clientWidth;
+      if (!bw) continue;
+      var n = uniform || (b.textContent || '').trim().length || 1;
+      var fit = Math.floor((bw - 3) / (n * 0.68));
       b.style.setProperty('font-size',
         Math.max(7, ceil ? Math.min(ceil, fit) : fit) + 'px', 'important');
       sized.push(b);
@@ -6836,6 +6905,27 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
        Writes are batched before reads on purpose: all of pass 1, then all of
        pass 2, so this costs two reflows for the whole ring rather than two per
        badge. In the normal case pass 2 changes nothing. */
+    if (uniform){
+      /* One shared size means one shared correction: if any badge still
+         spills, every badge comes down by the same ratio, or the spilling one
+         alone would break the very uniformity pass 1 just bought. */
+      var ratio = 1;
+      for (i = 0; i < sized.length; i++){
+        b = sized[i];
+        /* A badge caught mid-fade is narrower than it will be, so its text
+           "spills" for a few frames and this would shrink an answer that fits
+           perfectly well. Only a badge that has reached its committed width
+           gets a vote. */
+        if (gridCell && b.clientWidth < gridCell) continue;
+        if (b.scrollWidth > b.clientWidth) ratio = Math.min(ratio, b.clientWidth / b.scrollWidth);
+      }
+      if (ratio < 1) for (i = 0; i < sized.length; i++){
+        b = sized[i];
+        var cu = parseFloat(b.style.fontSize) || 12;
+        b.style.setProperty('font-size', Math.max(7, Math.floor(cu * ratio)) + 'px', 'important');
+      }
+      return;
+    }
     for (i = 0; i < sized.length; i++){
       b = sized[i];
       if (b.scrollWidth <= b.clientWidth) continue;
@@ -6913,7 +7003,16 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
            the child and silenced "That number is already used", which was the
            one thing worth saying. */
         var tainted = GRID_LINES[k].some(function(i){ var tv = val(0, i); return tv !== null && dups[tv]; });
-        setBadge(k, want, !full ? 'partial'
+        /* Raja's rule, refining the above: the same number twice inside THIS
+           line's own three boxes is not doubt, it is a certainty -- no
+           arrangement can ever keep both -- so that line reads RED at once,
+           even before it is full. Orange stays reserved for the reuse that
+           spans two lines, where either occurrence might be the right one. */
+        var lineSeen = {}, innerDup = false;
+        GRID_LINES[k].forEach(function(i){ var lv = val(0, i);
+          if (lv === null) return; if (lineSeen[lv]) innerDup = true; lineSeen[lv] = true; });
+        setBadge(k, want, innerDup ? 'wrong'
+                        : !full ? 'partial'
                         : (got !== want ? 'wrong'
                         : (tainted ? 'partial' : 'win')));
         if (full && got === want && !tainted) gridDone++;
@@ -6995,8 +7094,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
            -- one of the two occurrences must go, and it may be this one. Such
            a line goes back to the neutral complete tint; the duplicated boxes
            are already red. A sum that misses the target is wrong regardless. */
-        var tainted = lineVals(L.k).some(function(v){ return v !== null && dups[v]; });
-        setBadge(L.k, L.sum, L.sum !== candidate ? 'wrong' : (tainted ? 'full' : 'win'));
+        var lvv = lineVals(L.k);
+        var tainted = lvv.some(function(v){ return v !== null && dups[v]; });
+        /* the same number twice inside THIS line is a certainty, not doubt --
+           no arrangement keeps both -- so it reads wrong outright */
+        var lseen = {}, innerDup = false;
+        lvv.forEach(function(v){ if (v === null) return; if (lseen[v]) innerDup = true; lseen[v] = true; });
+        setBadge(L.k, L.sum, (innerDup || L.sum !== candidate) ? 'wrong' : (tainted ? 'full' : 'win'));
       });
     }
     fitBadges();   // every badge's text is final by here — size it to fit
@@ -14793,6 +14897,15 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     var pz = PUZZLES[currentSize];
     if (!pz || !pz.rows) return;
     _fitBoard.apply(null, arguments);          // keep every existing side effect
+    /* Fill In The Blank is not an n x n grid, and _fitBoard has already sized
+       it from both directions and set its own box and badge sizes. Everything
+       below is the square-board math -- tracks = rows + 2 -- and on a one-row
+       board it derived a cell of its own and then overwrote this board's badge
+       ceiling with 0.30 of it: 29px once the screen settled, 15px while it was
+       still settling on the very first open. That is the "initial open font
+       size differ" Raja reported; the answers were being capped by a formula
+       for a board this one is not. */
+    if (pz.shape === 'opgrid') return;
     var box = document.getElementById('boardWrap');
     if (!box) return;
     var tracks = pz.rows + 2;
@@ -15884,7 +15997,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-264 (a number entered twice can no longer keep its lines green — they go back to orange until the duplicate is fixed, and SaNa warns instead of praising)';
+  var BUILD_VER = 'beta-265 (all six Fill In The Blank answers share one font size; a number twice in ONE line reads red at once; and the cursor ring on a duplicated box turns red instead of hiding the red border)';
   /* ── BEACON FOR APPS INSTALLED LONG AGO ─────────────────────────────────
      Raja's iPhone sat on v139 and would not come forward, however many times
      he tapped Online Update.
@@ -15909,7 +16022,7 @@ if (navigator.storage && navigator.storage.persist) {
      rejects). check-update-beacon.js keeps it equal to BUILD_VER, because a
      beacon that goes stale strands people exactly as thoroughly as no beacon.
 
-     window.BETA_VER = 'beta-264'
+     window.BETA_VER = 'beta-265'
      ───────────────────────────────────────────────────────────────────── */
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
