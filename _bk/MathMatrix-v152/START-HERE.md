@@ -2,38 +2,34 @@
 
 Taken from the live site on **1 September 2026**.
 
-Keep this folder wherever you like. Nothing in it talks to the internet, nothing
-in it can be changed by anyone else, and nothing in it needs my machine, this
-chat, or any remote connection. It is complete on its own.
+Keep this folder wherever you like. Nothing in it talks to the internet, nothing in it can be changed by anyone else, and nothing in it needs my machine, this chat, or any remote connection. It is complete on its own.
 
-> If you want to carry on working with a **different Claude account**, with no
-> dependence on the current setup, read **`CONTINUE-WITH-CLAUDE.md`**. It has a
-> ready-made opening message to paste.
+> If you want to carry on working with a **different Claude account**, with no dependence on the current setup, read **`CONTINUE-WITH-CLAUDE.md`**. It has a ready-made opening message to paste.
 
 ## The two copies of the game
 
 | File | Size | Use it for |
-|---|---|---|
+| --- | --- | --- |
 | **`EDIT-THIS-MathMatrix-v152.html`** | 886 kB | ⭐ reading and editing. Opens fine in Markor. |
 | **`PUBLISH-THIS-MathMatrix-v152.html`** | 5.5 MB | playing anywhere, and uploading to a site. One file, nothing beside it. |
 | `index.html` | 886 kB | the published page, untouched — a true record. Leave it alone. |
 
-Both copies are the same game. The difference is only where the pictures and
-the music are kept.
+Both copies are the same game. The difference is only where the pictures and the music are kept.
 
-- **EDIT** keeps them as separate files beside it. Longest line **729
-  characters**, so a phone editor opens it instantly.
+- **EDIT** keeps them as separate files beside it. Longest line **729**
+
+  characters**, so a phone editor opens it instantly.**
+
 - **PUBLISH** keeps them *inside* the page as text. That is what makes it work
-  from a folder with no signal — but it contains a single line of **676,117
-  characters**, which is why a phone editor shows a blank screen on it.
 
-**So: edit the EDIT one, publish the PUBLISH one.** Never try to edit the
-publish copy on a phone.
+  from a folder with no signal — but it contains a single line of **676,117   characters**, which is why a phone editor shows a blank screen on it.
+
+**So: edit the EDIT one, publish the PUBLISH one.** Never try to edit the publish copy on a phone.
 
 ## What is in the folder
 
 | File | What it is |
-|---|---|
+| --- | --- |
 | `EDIT-THIS-MathMatrix-v152.html` | ⭐ the one to work on |
 | `PUBLISH-THIS-MathMatrix-v152.html` | the single-file copy for playing and publishing |
 | `sw-standalone.js` | its partner **for publishing only** — this is what makes a published copy work with no signal |
@@ -52,37 +48,27 @@ publish copy on a phone.
 
 ## Opening it on your phone
 
-**To read or edit** — open `EDIT-THIS-MathMatrix-v152.html` in **Markor**, from
-inside Markor's own file browser (not "Open with").
+**To read or edit** — open `EDIT-THIS-MathMatrix-v152.html` in **Markor**, from inside Markor's own file browser (not "Open with").
 
-**To play** — open `PUBLISH-THIS-MathMatrix-v152.html` in **Chrome**. Because
-everything is inside that one file, you can move it, rename it, mail it to
-yourself or drop it in Google Drive and it still works. No other file has to
-travel with it.
+**To play** — open `PUBLISH-THIS-MathMatrix-v152.html` in **Chrome**. Because everything is inside that one file, you can move it, rename it, mail it to yourself or drop it in Google Drive and it still works. No other file has to travel with it.
 
 ## What works from a folder, and what does not
 
-| | From a folder | From a web address |
-|---|---|---|
+|  | From a folder | From a web address |
+| --- | --- | --- |
 | All 11 puzzles | ✅ | ✅ |
 | Formula sheet pictures | ✅ | ✅ |
 | Sounds and music | ✅ | ✅ |
 | Works with no internet | ✅ | ✅ (after first visit) |
 | **Add to Home Screen / install** | ❌ | ✅ |
 
-**Why install does not work from a folder.** Phones only allow an app to be
-installed from a real web address (`https://…`), never from a file sitting in
-your storage. That is the phone's rule, not something in this code.
+**Why install does not work from a folder.** Phones only allow an app to be installed from a real web address (`https://…`), never from a file sitting in your storage. That is the phone's rule, not something in this code.
 
-**Nothing has to be added later.** The app name and all three home-screen icons
-are already built into the publish copy, and `sw-standalone.js` is already
-written and tested. The day you decide to publish, you upload those two files
-and installing works immediately.
+**Nothing has to be added later.** The app name and all three home-screen icons are already built into the publish copy, and `sw-standalone.js` is already written and tested. The day you decide to publish, you upload those two files and installing works immediately.
 
 ## This was tested, not assumed
 
-The publish copy was copied **alone into an empty folder**, opened with the
-**network switched off at the browser**, and played from there:
+The publish copy was copied **alone into an empty folder**, opened with the **network switched off at the browser**, and played from there:
 
 - all 11 puzzles opened and were playable
 - all 8 formula sheets drew their own picture, from inside the file
