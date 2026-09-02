@@ -1,29 +1,21 @@
 # MathMatrix — v131 full backup
 
-This is a complete, self-contained snapshot of **v131**, taken straight from git
-history (commit `f873daf` — "Wording precision: any numbers IN SEQUENCE on the additive cards (v131)", 2026-08-05 22:33:52 -0700).
+This is a complete, self-contained snapshot of **v131**, taken straight from git history (commit `f873daf` — "Wording precision: any numbers IN SEQUENCE on the additive cards (v131)", 2026-08-05 22:33:52 -0700).
 
-v131 is the version currently serving **https://kidsmathsmatrixpuzzle.github.io**.
-It was chosen as the safe baseline because it sits *before* the day/night theme
-(added v132, removed v134) and before the v134 decoration layer, while still
-containing every feature that had been verified: the wording fixes, the spatial
-stereo audio, and the Ramanujan single-digit / negative-number input fixes.
+v131 is the version currently serving **https://kidsmathsmatrixpuzzle.github.io**. It was chosen as the safe baseline because it sits *before* the day/night theme (added v132, removed v134) and before the v134 decoration layer, while still containing every feature that had been verified: the wording fixes, the spatial stereo audio, and the Ramanujan single-digit / negative-number input fixes.
 
 ## Why this backup exists
 
-To freeze a known-good edition so that a **separate version for adults** can be
-built from it later, with a plainer, more professional look — while the kids
-edition carries on evolving at /beta and, when approved, at the live link.
+To freeze a known-good edition so that a **separate version for adults** can be built from it later, with a plainer, more professional look — while the kids edition carries on evolving at /beta and, when approved, at the live link.
 
 Suggested split, if you go that way:
 
 | Edition | Lives at | Look |
-|---|---|---|
+| --- | --- | --- |
 | Kids | `/` and `/beta` | monkey mascot, clay depth, stars, confetti |
 | Adults | e.g. `/pro/` | this v131 core, restrained type, no mascot, denser layout |
 
-Both would share the same puzzle engine and the same verified mathematics, so a
-fix to the maths only has to be made once.
+Both would share the same puzzle engine and the same verified mathematics, so a fix to the maths only has to be made once.
 
 ## What is in this folder
 
@@ -61,8 +53,7 @@ fix to the maths only has to be made once.
 
 ## How to run it
 
-Open `KidsMathsMatrixPuzzle.html` in any browser. Everything works offline
-except the background music file, which must sit beside it (`bgm-monkeys.mp3`).
+Open `KidsMathsMatrixPuzzle.html` in any browser. Everything works offline except the background music file, which must sit beside it (`bgm-monkeys.mp3`).
 
 ## How to put it back on the live site
 
@@ -70,19 +61,21 @@ The live site serves the game as **index.html**, not under its original name.
 
 1. Rename `KidsMathsMatrixPuzzle.html` → `index.html`
 2. Upload `index.html` and `sw.js` to the root of
+
    `KidsMathsMatrixPuzzle/kidsmathsmatrixpuzzle.github.io`
+
 3. Wait about 30–90 seconds for GitHub Pages to rebuild, then hard-refresh
 
-**Watch out:** if you change the HTML, bump **both** `BUILD_VER` in the HTML and
-`CACHE_VERSION` in `sw.js` and keep them equal — otherwise the service worker
-serves people a stale copy.
+**Watch out:** if you change the HTML, bump **both** `BUILD_VER` in the HTML and `CACHE_VERSION` in `sw.js` and keep them equal — otherwise the service worker serves people a stale copy.
 
 ## How to start the adults' edition from this
 
 1. Copy this folder to `pro/`
 2. Rename the game to `index.html`
 3. In `sw.js` change `CACHE_VERSION` to something like `mathmatrix-pro-v1` so the
+
    two editions never fight over the same cache
+
 4. Give it its own `manifest.json` name/icons if it should install separately
 
 The puzzle engine, the nine games and all the verified mathematics come with it.
@@ -118,4 +111,5 @@ Get-FileHash .\KidsMathsMatrixPuzzle.html -Algorithm SHA256
 ```
 
 ---
+
 Created by G. RajaPathamuthu · Kids Puzzle Library
