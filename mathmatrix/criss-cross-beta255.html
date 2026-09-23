@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Criss-Cross v60 - Guided Play + Persistent Keyboard</title>
+<style>
+:root{--safeTop:env(safe-area-inset-top,0px);--safeLeft:env(safe-area-inset-left,0px);--safeRight:env(safe-area-inset-right,0px);--bg:#d8b98c;--accent:#8a5a2b;--accent2:#c97b2e;--good:#2f9e5c;--bad:#c0392b;--ink:#3a2415;--blue:#2d6ca8;--kbd-height:0px;}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{margin:0;font-family:-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;padding-bottom:calc(140px + var(--kbd-height));}
+.ccmBar{display:flex;align-items:center;gap:8px;background:rgba(94,64,32,.18);color:#fff;padding:var(--safeTop,0px) calc(11px + var(--safeRight,0px)) 0 calc(11px + var(--safeLeft,0px));min-height:calc(56px + var(--safeTop,0px));font-size:14px;position:sticky;top:0;z-index:20;border-bottom:1px solid rgba(94,64,32,.30);}
+.ccmBack{width:46px;height:46px;flex:0 0 46px;border:none;border-radius:13px;background:#8a5e31;color:#fff6e7;font-size:19px;font-weight:900;box-shadow:0 3px 0 rgba(0,0,0,.25);cursor:pointer;}
+.ccmBack:active{transform:translateY(2px);}
+.ccmBarTitle{flex:1;min-width:0;font-size:16.5px;font-weight:900;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#0A4527;letter-spacing:.3px;}
+.ccmTopActions{display:flex;gap:8px;flex-shrink:0;}
+.ccmTopBtn{width:46px;min-width:46px;height:46px;flex:0 0 46px;border:none;border-radius:13px;padding:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;font-weight:800;line-height:1;color:#fff6e7;box-shadow:0 3px 0 rgba(94,64,32,.35);cursor:pointer;}
+.ccmTopBtn i{font-style:normal;font-size:17px;line-height:1;}
+.ccmTopBtn span{font-size:10px;font-weight:900;letter-spacing:.4px;text-transform:uppercase;line-height:1;margin-top:1px;}
+.ccmTopBtn.logic{background:linear-gradient(135deg,#7b5ae0,#9b7aff);}
+.ccmTopBtn.watchTop{background:linear-gradient(135deg,#2d6ca8,#4a90d9);}
+.ccmTopBtn.watchTop.inactive{background:#9e9e9e !important;opacity:0.5;pointer-events:none;}
+.ccmTopBtn.watchTop.watching{background:#1e8e5a !important;}
+.ccmTopBtn.soundTop{background:#8a5e31;}
+.ccmTopBtn.soundTop.off{background:#8a5e31 !important;opacity:1;}
+.ccmTopBtn br{display:block;}
+.ccmTopBtn{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;}
+@media (max-width:389px){.ccmBarTitle{font-size:14px;} .ccmTopActions{gap:5px;} .ccmTopBtn{width:46px;min-width:46px;flex-basis:46px;} .ccmTopBtn i{font-size:16px;} .ccmTopBtn span{font-size:10px;}}
+.sanaRow{display:flex;align-items:flex-start;gap:9px;margin:12px 10px 8px;}
+.sanaAvatar{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#ffd54f,#ffca28);display:flex;align-items:center;justify-content:center;font-size:24px;border:2px solid #fff;flex-shrink:0;}
+.sanaName{font-size:9px;font-weight:800;text-align:center;margin-top:3px;}
+.sanaBubble{flex:1;background:#fff;border-radius:18px 18px 18px 4px;padding:14px 16px;box-shadow:0 3px 10px rgba(0,0,0,.2);font-size:15px;font-weight:700;position:relative;min-height:48px;line-height:1.45;}
+.sanaBubble::before{content:'';position:absolute;left:-9px;top:15px;width:0;height:0;border-top:7px solid transparent;border-bottom:7px solid transparent;border-right:11px solid #fff;}
+.levelTextEasy{color:#2f9e5c;font-weight:900;}
+.levelTextMed{color:#2d6ca8;font-weight:900;}
+.levelTextHard{color:#c97b2e;font-weight:900;}
+.ccmLevels{display:flex;gap:7px;justify-content:center;margin:10px 6px 14px;flex-wrap:wrap;}
+.ccmLevelBtn{border:none;border-radius:10px;padding:9px 15px;font-weight:800;font-size:13px;position:relative;color:#fff;}
+.ccmLevelBtn.easy{background:linear-gradient(135deg,#2f9e5c,#4caf74);}
+.ccmLevelBtn.med{background:linear-gradient(135deg,#2d6ca8,#4a90d9);}
+.ccmLevelBtn.hard{background:linear-gradient(135deg,#c97b2e,#e67e22);}
+.ccmLevelBtn.active{box-shadow:0 0 0 3px rgba(0,0,0,.25),0 3px 8px rgba(0,0,0,.3);transform:scale(1.05);}
+.ccmLevelBtn .drop{font-size:9px;margin-left:5px;opacity:.8;}
+.ccmLevelBtn .drop{display:none !important;}
+.ccmBarTitle,.ccmLevelBtn,.sanaBubble,.sanaAvatar,.sanaName{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;}
+.ccmLevelBtn{cursor:pointer;}
+.ccmSoundChoice{border:2px solid #f59e0b;border-radius:10px;padding:10px 8px;font-size:14px;font-weight:900;background:#3b248c;color:#fbbf24;box-shadow:0 2px 0 rgba(94,64,32,.25);}
+.ccmSoundChoice:nth-child(2){border-color:#22c55e;background:#176b4a;color:#4ade80;}
+.ccmSoundChoice.soundOff,.ccmSoundChoice.musicOff{border-color:#666;background:#eee;color:#777;}
+.ccmSoundChoice:nth-child(2).musicOff{border-color:#666;background:#eee;color:#777;}
+.ccmSubLevels{display:none;position:absolute;top:105%;left:0;right:0;background:#fff;border-radius:10px;margin-top:6px;z-index:30;overflow:hidden;box-shadow:0 6px 16px rgba(0,0,0,.25);border:2px solid rgba(0,0,0,.15);}
+.ccmSubLevels.open{display:block;}
+.ccmSubBtn{display:block;width:100%;border:none;padding:9px 12px;font-size:12px;font-weight:800;text-align:left;border-bottom:1px solid #eee;}
+.ccmWrap{display:flex;flex-direction:column;align-items:center;padding:0 8px 24px;max-width:480px;margin:0 auto;}
+.ccmGrid{display:grid;grid-template-columns:60px 26px 60px 26px 60px 56px;grid-auto-rows:56px;gap:5px;margin:14px auto 24px;}
+.cell,.opCell,.resCell{display:flex;align-items:center;justify-content:center;font-weight:800;border-radius:12px;font-size:18px;}
+.cell{background:#fff;border:3px solid #ddd;}
+.cell.easyCell{background:#e8f5e9;border-color:#4caf74;}
+.cell.medCell{background:#e3f2fd;border-color:#4a90d9;}
+.cell.hardCell{background:#fff3e0;border-color:#ff9800;}
+.cell input{width:100%;height:100%;border:none;background:transparent;text-align:center;font-size:17px;font-weight:800;outline:none;}
+.cell.ok{background:#c8e6c9 !important;border-color:var(--good) !important;}
+.cell.selected{border-color:var(--blue) !important;box-shadow:0 0 0 3px rgba(45,108,168,.4) !important;background:#e6f0ff !important;z-index:2;}
+.opCell{font-weight:900;font-size:26px;}
+.opCell.op-plus{color:#2f9e5c;}
+.opCell.op-minus{color:#c0392b;}
+.opCell.op-mul{color:#2d6ca8;}
+.opCell.op-div{color:#8e44ad;}
+.resCell{background:var(--accent);color:#fff;font-size:13px;}
+.resCell.ok{background:var(--good) !important;}
+.resCell.wrong{background:var(--bad) !important;}
+.cell.guidedWrong{border:3px solid #d93025 !important;box-shadow:0 0 0 2px rgba(217,48,37,.16);}
+.cell.guidedWrong input{color:#b42318 !important;}
+.resCell.conflictBoth{background:linear-gradient(135deg,var(--bad),#ff6f00) !important;}
+.ccmBtns{display:flex;gap:8px;margin:16px 0 28px;justify-content:center;flex-wrap:wrap;}
+.ccTimerRow{display:flex;justify-content:center;align-items:center;gap:8px;margin:-4px 8px 10px;}
+.ccTimer{font-size:13px;font-weight:900;padding:5px 10px;border-radius:12px;background:#eef3f7;color:#263238;border:1px solid #cbd5dc;min-width:86px;text-align:center;}
+
+.ccmBtn{border:none;border-radius:10px;padding:10px 16px;font-weight:800;color:#fff;background:var(--accent2);font-size:13px;}
+.hidden{display:none !important;}
+.ccmBackdrop{position:fixed;inset:0;bottom:100px;background:transparent;z-index:39;pointer-events:none;}
+.ccmDock{position:fixed;bottom:0;left:0;right:0;z-index:50;background:rgba(239,213,178,0.99);border-top:3px solid rgba(0,0,0,.15);box-shadow:0 -6px 16px rgba(0,0,0,.2);padding:6px 6px calc(6px + env(safe-area-inset-bottom));}
+.ccmDock.hiddenDock{transform:translateY(110%);pointer-events:none;}
+.ccmDockHead{display:flex;justify-content:space-between;align-items:center;max-width:440px;margin:0 auto 6px;gap:6px;}
+.ccmToggle{border:none;border-radius:8px;padding:7px 10px;font-weight:800;color:#fff;font-size:11px;flex:1;}
+.ccmToggle.appMode{background:var(--blue);}
+.ccmToggle.sysMode{background:#1e8e5a;}
+.ccmToggle.activeMode{box-shadow:0 0 0 2px #fff, 0 0 0 4px var(--blue);border:2px solid #fff;}
+.ccmToggle.closeBtn{background:var(--bad);max-width:100%;}
+.ccmKeysRow{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;max-width:440px;margin:0 auto;}
+.ccmKeysRow .key{height:44px;border-radius:9px;border:2px solid #4db8e8;background:#6b4a26;color:#fff;font-size:18px;font-weight:800;}
+.ccmKeysRow.second{margin-top:5px;}
+.ccmKeysRow.third{margin-top:5px;grid-template-columns:1fr 1fr;}
+.ccmKeysRow.third .key{height:38px;font-size:14px;}
+.key.clearAll{background:#c0392b !important;}
+.key.delOne{background:#6b4a26 !important;}
+.ccmCalcDock{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:5px;max-width:440px;margin:0 auto;}
+.ccmCalcDisplay{grid-column:1 / -1;background:rgba(30,30,30,0.92);color:#fff;border-radius:9px;padding:8px 10px;text-align:right;font-size:18px;font-weight:800;min-height:42px;display:flex;justify-content:space-between;align-items:center;}
+.ccmCalcDock button{border:none;border-radius:8px;padding:10px 0;font-weight:800;background:rgba(255,255,255,0.92);font-size:15px;}
+.ccmCalcDock button.op{background:rgba(201,123,46,0.95);color:#fff;}
+.ccmCalcDock button.eq{background:rgba(47,158,92,0.95);color:#fff;}
+.ccmCalcDock button.clr{background:rgba(192,57,43,0.95);color:#fff;}
+.ccmShowKeyBtn{position:fixed;bottom:22px;right:14px;z-index:45;background:var(--blue);color:#fff;border:none;border-radius:24px;padding:11px 18px;font-weight:800;box-shadow:0 4px 12px rgba(0,0,0,.3);font-size:13px;}
+.logicModal{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.55);display:flex;align-items:flex-end;justify-content:center;}
+.logicSheet{background:#f9e8c9;width:100%;max-width:480px;max-height:92vh;border-radius:22px 22px 0 0;overflow:hidden;display:flex;flex-direction:column;}
+.logicHead{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:#e8d3a8;border-bottom:2px solid #d8b98c;}
+.logicTitle{font-size:15px;font-weight:900;}
+.logicClose{border:none;background:#8a5a2b;color:#fff;border-radius:12px;width:38px;height:38px;font-size:18px;font-weight:900;}
+.logicBody{overflow-y:auto;padding:12px 10px 20px;background:#fef6e4;}
+.logicCard{background:#fffef6;border-radius:16px;padding:14px 12px;box-shadow:0 2px 8px rgba(0,0,0,.12);border:1px solid #e8d3a8;}
+.logicTabs{display:flex;gap:6px;margin:10px 0;flex-wrap:wrap;}
+.logicTab{border:none;border-radius:10px;padding:8px 12px;font-weight:900;font-size:12px;color:#fff;}
+.logicTab.level{background:linear-gradient(135deg,#2f9e5c,#4caf74);}
+.logicTab.sub1{background:#8a5a2b;}
+.logicTab.sub2{background:#5a3a8a;}
+.logicTab.sub3{background:#c97b2e;}
+.logicTab.playguide{background:#2f78b7;}
+.logicTab.beginners{background:linear-gradient(135deg,#2f9e5c,#4caf74);color:#fff;}
+.logicTab.active{box-shadow:0 0 0 3px rgba(0,0,0,.25);transform:scale(1.05);}
+.logicBadge{display:inline-block;background:#fff3cd;border:1px solid #e0c36a;border-radius:6px;padding:1px 5px;font-weight:900;font-size:11px;}
+.sanaOps{font-weight:900;display:inline-flex;gap:3px;align-items:center;background:#fff3cd;padding:2px 6px;border-radius:6px;border:1px solid #e0c36a;margin-left:4px;}
+.sanaOps .op-plus{color:#2f9e5c;font-size:16px;}
+.sanaOps .op-minus{color:#c0392b;font-size:16px;}
+.sanaOps .op-mul{color:#2d6ca8;font-size:16px;}
+.sanaOps .op-div{color:#8e44ad;font-size:18px;}
+.cheatSheet{background:linear-gradient(135deg,#fff,#fff8e1);border:2px solid #e0c36a;border-radius:12px;padding:10px 12px;margin:8px 0;}
+.cheatTitle{font-weight:900;font-size:13px;color:#3a2415;margin-bottom:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.cheatSteps{list-style:none;padding:0;margin:0;}
+.cheatSteps li{padding:6px 0;border-bottom:1px dashed #e0c36a;font-size:12px;line-height:1.4;display:flex;gap:8px;}
+.cheatSteps li:last-child{border-bottom:none;}
+.stepNum{background:var(--blue);color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:10px;flex-shrink:0;}
+.watchSteps{background:#e8f5e9;border:2px solid #4caf74;border-radius:12px;padding:10px;margin:8px 0;}
+/* Beginners guide: readability only; existing puzzle/UI structure unchanged. */
+#logicContent.beginnersContent .cheatSheet,
+#logicContent.beginnersContent .watchSteps{background:#f4f4f4;border:1px solid #c8c8c8;color:#222;}
+#logicContent.beginnersContent .cheatTitle,
+#logicContent.beginnersContent .cheatSteps{color:#222;}
+.exampleGrid{display:grid;grid-template-columns:38px 18px 38px 18px 38px 38px;grid-auto-rows:34px;gap:3px;margin:8px auto;background:#fff3cd;padding:8px;border-radius:10px;border:1px solid #e0c36a;max-width:260px;}
+.exampleGrid .ec,.exampleGrid .eo,.exampleGrid .er{font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;border-radius:6px;}
+.exampleGrid .ec{background:#fff;border:1.5px solid #4caf74;}
+.exampleGrid .eo{font-weight:900;font-size:14px;}
+.exampleGrid .eo.op-plus{color:#2f9e5c;}
+.exampleGrid .eo.op-minus{color:#c0392b;}
+.exampleGrid .eo.op-mul{color:#2d6ca8;}
+.exampleGrid .eo.op-div{color:#8e44ad;font-size:16px;}
+.exampleGrid .er{background:#8a5a2b;color:#fff;font-size:10px;}
+.validBadge{display:inline-block;background:#c8e6c9;border:1px solid #4caf74;border-radius:6px;padding:2px 6px;font-weight:900;font-size:10px;color:#2f9e5c;margin-left:6px;}
+.posBadge{display:inline-block;background:#e3f2fd;border:1px solid #4a90d9;border-radius:6px;padding:1px 5px;font-weight:900;font-size:9px;color:#2d6ca8;}
+
+.ccmSoundSheet{position:fixed;left:0;right:0;bottom:0;z-index:90;background:#f9e8c9;border-radius:22px 22px 0 0;box-shadow:0 -8px 24px rgba(0,0,0,.3);padding:18px 16px 24px;max-width:480px;margin:0 auto;}
+.ccmSoundOverlay{position:fixed;inset:0;z-index:89;background:rgba(0,0,0,.48);}
+.ccmSoundHead{display:flex;justify-content:space-between;align-items:center;font-size:16px;font-weight:900;margin-bottom:12px;}
+.ccmSoundClose{border:none;background:#8a5e31;color:#fff;border-radius:12px;width:44px;height:44px;font-size:22px;box-shadow:0 3px 0 rgba(0,0,0,.2);}
+.ccmSoundChoices{display:flex;gap:10px;margin:12px 0;}
+.ccmSoundChoice{flex:1;}
+.ccmSoundNote{font-size:12px;line-height:1.5;margin-top:8px;}
+</style></head><body>
+<div class="ccmBar"><button class="ccmBack" id="ccmBack" type="button" aria-label="Back to puzzles">←</button><div class="ccmBarTitle" aria-label="Criss-Cross">Criss-Cross</div><div class="ccmTopActions"><button class="ccmTopBtn logic" id="logicBtn"><i>💡</i><span>LOGIC</span></button><button class="ccmTopBtn watchTop" id="watchTopBtn"><i>👁️</i><span>WATCH</span></button><button class="ccmTopBtn soundTop" id="ccmSoundBtn"><i>🔊</i><span>SOUND</span></button></div></div>
+<div class="sanaRow"><div><div class="sanaAvatar">🐒</div><div class="sanaName">SaNa</div></div><div class="sanaBubble playing" id="sanaBubble"><span class="levelTextEasy">Easy 1-9</span><span class="sanaOps"><span class="op-plus">+</span> <span class="op-minus">-</span></span> — Use 1-9. Tap a cell — take your time! 0/9</div></div>
+<div class="ccmLevels" id="ccmLevels">
+  <div class="ccmLevelBtn easy active" data-range="1-9" data-ops="+-">Easy 1-9</div>
+  <div class="ccmLevelBtn med" data-range="1-9" data-ops="+-x">Medium 1-9</div>
+  <div class="ccmLevelBtn hard" data-range="1-9" data-ops="+-x/">Hard 1-9</div>
+</div>
+<div class="ccTimerRow" aria-label="Puzzle timer"><div class="ccTimer" id="ccTimer">⏱ 00:00</div></div>
+<div class="ccmWrap"><div class="ccmGrid" id="ccmGrid"></div><div class="ccmBtns" id="ccmBtns"><button class="ccmBtn" id="ccmNewBtn">🔄 New</button><button class="ccmBtn" id="ccmClearBtn" style="background:var(--bad);">🧹 Clear</button><button class="ccmBtn" id="ccmCalcOpenBtn" style="background:var(--blue);">🧮 Calc</button></div></div>
+<div id="ccmBackdrop" class="ccmBackdrop hidden"></div><button id="ccmShowKeyBtn" class="ccmShowKeyBtn hidden">⌨️ Show Keyboard</button>
+<div class="ccmDock" id="ccmDock"><div class="ccmDockHead" id="appToggleHead"><button class="ccmToggle appMode activeMode" id="inAppBtn">📱 InApp</button><button class="ccmToggle sysMode" id="sysBtn">⌨️ Sys</button></div><div class="ccmDockHead hidden" id="calcToggleHead"><button class="ccmToggle closeBtn" id="ccmCalcCloseBtn2">✕ Close Calc</button></div><div id="ccmKeypadMode"><div class="ccmKeysRow" id="ccmKeysTop"></div><div class="ccmKeysRow second" id="ccmKeysMid"></div><div class="ccmKeysRow third" id="ccmKeysBottom"></div></div><div id="ccmCalcMode" class="hidden"><div class="ccmCalcDock"><div class="ccmCalcDisplay"><span style="font-size:11px;opacity:.7;">tap outside to close</span><span id="calcVal">0</span></div><button class="clr" data-k="C">C</button><button data-k="(">(</button><button data-k=")">)</button><button class="op" data-k="/">÷</button><button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button><button class="op" data-k="*">×</button><button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button><button class="op" data-k="-">−</button><button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button><button class="op" data-k="+">+</button><button data-k="0">0</button><button data-k=".">.</button><button data-k="del">⌫</button><button class="eq" data-k="=">=</button></div></div></div>
+<div id="ccmSoundOverlay" class="ccmSoundOverlay hidden"></div><div id="ccmSoundSheet" class="ccmSoundSheet hidden"><div class="ccmSoundHead"><span>🔊 Sound &amp; Music</span><button id="ccmSoundClose" class="ccmSoundClose">×</button></div><div style="font-size:12px;line-height:1.4;">Tap a button below to change it.</div><div class="ccmSoundChoices"><button id="ccmSoundMaster" class="ccmSoundChoice">🔊 Sound: ON</button><button id="ccmMusicToggle" class="ccmSoundChoice">🎵 Music: ON</button></div><div class="ccmSoundNote">🔊 <b>Sound</b> is the master switch. Turning it OFF stops both the monkey background music and typing tones.</div><div class="ccmSoundNote">🎵 <b>Music</b> controls only the monkey background tune. Turning Music OFF keeps the typing tones working while Sound remains ON.</div><div class="ccmSoundNote">🎧 <b>Spatial stereo</b> puts each sound where it happens on the board. Use earphones.</div></div>
+<div class="logicModal hidden" id="logicModal"><div class="logicSheet"><div class="logicHead"><div class="logicTitle" id="logicTitle">📐 Easy 1-9 — Logic</div><button class="logicClose" id="logicClose">✕</button></div><div class="logicBody"><div class="logicCard"><div class="logicTabs"><button class="logicTab beginners active" data-view="beginners">🌱 Beginners</button><button class="logicTab level" data-view="level">Overview</button><button class="logicTab sub1" data-view="sub1">Easy</button><button class="logicTab sub2" data-view="sub2">Medium</button><button class="logicTab sub3" data-view="sub3">Hard</button><button class="logicTab playguide" data-view="play">▶ How to Play</button></div><div id="logicContent"></div></div></div></div></div>
+<script>
+(function(){
+var vals=[6,9,7,5,4,3,8,1,2];var rowOps=[['+','-'],['+','+'],['-','+']];var colOps=[['-','+'],['+','+'],['-','-']];var rowT=[8,12,9];var colT=[9,14,2];
+var inputs=[],sel=null,appKeyboard=true,calcOpen=false,currentRange=[1,2,3,4,5,6,7,8,9],currentOps='+-',currentDifficulty='easy',currentLogicView='beginners',watchTimer=null,isWatching=false,sysKeyboardVisible=false;
+var guidedAlertTimer=null;
+function evalLineInt(a,o1,b,o2,c){
+  var v1; if(o1==='+') v1=a+b; else if(o1==='-') v1=a-b; else if(o1==='x'||o1==='*') v1=a*b; else if(o1==='/'||o1==='÷'){ if(b===0||a%b!==0) return {ok:false}; v1=Math.floor(a/b); }
+  if(v1<0) return {ok:false}; var v2; if(o2==='+') v2=v1+c; else if(o2==='-') v2=v1-c; else if(o2==='x'||o2==='*') v2=v1*c; else if(o2==='/'||o2==='÷'){ if(c===0||v1%c!==0) return {ok:false}; v2=Math.floor(v1/c); }
+  if(v2<1) return {ok:false}; return {v1:v1,v2:v2,ok:true};
+}
+function shuff(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function parseOps(str){if(str==='+-') return ['+','-']; if(str==='+-x') return ['+','-','x']; if(str==='+-x/') return ['+','-','x','÷']; return ['+','-'];}
+function opToDisplay(op){ if(op==='/'||op==='÷') return '÷'; if(op==='x'||op==='*') return 'x'; return op; }
+function opClass(op){ if(op==='+' ) return 'op-plus'; if(op==='-') return 'op-minus'; if(op==='x'||op==='*') return 'op-mul'; if(op==='/'||op==='÷') return 'op-div'; return ''; }
+function hasAllSelectedOps(opsList){
+  var needed=parseOps(currentOps), seen={};
+  for(var r=0;r<3;r++) for(var k=0;k<2;k++) seen[opsList[r][k]]=true;
+  for(var c=0;c<3;c++) for(var k=0;k<2;k++) seen[opsList[c][k]]=true;
+  for(var i=0;i<needed.length;i++) if(!seen[needed[i]]) return false;
+  return true;
+}
+function puzzleDataValid(vs,ros,cos,rts,cts){
+  if(!vs||vs.length!==9||!ros||!cos||!rts||!cts) return false;
+  var seen={};
+  for(var i=0;i<9;i++){
+    var n=vs[i];
+    if(!Number.isInteger(n)||!isAllowed(n)||seen[n]) return false;
+    seen[n]=true;
+  }
+  for(var r=0;r<3;r++){
+    var er=evalLineInt(vs[r*3],ros[r][0],vs[r*3+1],ros[r][1],vs[r*3+2]);
+    if(!er.ok||er.v2!==rts[r]) return false;
+  }
+  for(var c=0;c<3;c++){
+    var ec=evalLineInt(vs[c],cos[c][0],vs[3+c],cos[c][1],vs[6+c]);
+    if(!ec.ok||ec.v2!==cts[c]) return false;
+  }
+  return true;
+}
+function genPositive(){
+  /* Every puzzle is built from a complete solution first.
+     Targets are calculated from that solution and then verified again.
+     So the player never receives an unsolvable riddle. */
+  var fallback={
+    easy:{
+      '+-':{v:[8,9,5,1,6,7,4,2,3],r:[['+','+'],['+','+'],['-','+']],c:[['+','+'],['-','+'],['+','-']],rt:[22,14,5],ct:[13,5,9]},
+      '+-x':{v:[7,8,4,6,9,3,2,5,1],r:[['x','-'],['x','-'],['x','+']],c:[['+','x'],['x','+'],['+','x']],rt:[52,51,11],ct:[26,77,7]},
+      '+-x/':{v:[3,6,8,9,1,7,5,4,2],r:[['+','+'],['+','+'],['x','÷']],c:[['x','+'],['-','x'],['x','x']],rt:[17,17,10],ct:[32,20,112]}
+    }
+  };
+  fallback.med=fallback.easy;
+  fallback.hard=fallback.easy;
+  var isDivNeeded=(currentOps==='+-x/');
+  var found=false, tryVals=[],tryRowOps=[],tryColOps=[],tryRowT=[],tryColT=[];
+  var attempts=isDivNeeded?16000:5000;
+
+  for(var attempt=0;attempt<attempts;attempt++){
+    tryVals=shuff(currentRange.slice()).slice(0,9);
+    var p=parseOps(currentOps);
+    tryRowOps=[]; tryColOps=[];
+    for(var r=0;r<3;r++){
+      var ro=[];
+      for(var k=0;k<2;k++) ro.push(p[Math.floor(Math.random()*p.length)]);
+      tryRowOps.push(ro);
+    }
+    for(var c=0;c<3;c++){
+      var co=[];
+      for(var k=0;k<2;k++) co.push(p[Math.floor(Math.random()*p.length)]);
+      tryColOps.push(co);
+    }
+
+    if(!hasAllSelectedOps(tryRowOps.concat(tryColOps))) continue;
+
+    tryRowT=[]; var ok=true;
+    for(var r=0;r<3;r++){
+      var er=evalLineInt(tryVals[r*3],tryRowOps[r][0],tryVals[r*3+1],tryRowOps[r][1],tryVals[r*3+2]);
+      if(!er.ok||er.v2>500){ok=false;break;}
+      tryRowT.push(er.v2);
+    }
+    if(!ok) continue;
+
+    tryColT=[];
+    for(var c=0;c<3;c++){
+      var ec=evalLineInt(tryVals[c],tryColOps[c][0],tryVals[3+c],tryColOps[c][1],tryVals[6+c]);
+      if(!ec.ok||ec.v2>500){ok=false;break;}
+      tryColT.push(ec.v2);
+    }
+    if(!ok) continue;
+
+    if(isDivNeeded){
+      var hasDiv=false;
+      for(var r=0;r<3;r++) for(var k=0;k<2;k++) if(tryRowOps[r][k]==='÷'||tryRowOps[r][k]==='/') hasDiv=true;
+      for(var c=0;c<3;c++) for(var k=0;k<2;k++) if(tryColOps[c][k]==='÷'||tryColOps[c][k]==='/') hasDiv=true;
+      if(!hasDiv) continue;
+    }
+
+    if(!puzzleDataValid(tryVals,tryRowOps,tryColOps,tryRowT,tryColT)) continue;
+    // Keep the signs visually scattered so each new puzzle feels less patterned.
+    var flatOps=tryRowOps.flat().concat(tryColOps.flat());
+    var counts={}; flatOps.forEach(function(op){counts[op]=(counts[op]||0)+1;});
+    if(currentOps==='+-' && (counts['+']<4 || counts['-']<4)) continue;
+    if(currentOps==='+-x' && (counts['+']<2 || counts['-']<2 || counts['x']<2)) continue;
+    if(currentOps==='+-x/' && (counts['+']<1 || counts['-']<1 || counts['x']<1 || counts['÷']<1)) continue;
+
+    found=true;
+    vals=tryVals; rowOps=tryRowOps; colOps=tryColOps; rowT=tryRowT; colT=tryColT;
+    break;
+  }
+
+  if(!found){
+    var pack=fallback[currentDifficulty]&&fallback[currentDifficulty][currentOps];
+    if(pack && puzzleDataValid(pack.v,pack.r,pack.c,pack.rt,pack.ct)){
+      vals=pack.v.slice(); rowOps=pack.r.map(a=>a.slice()); colOps=pack.c.map(a=>a.slice()); rowT=pack.rt.slice(); colT=pack.ct.slice();
+    } else {
+      /* Final verified 1-9 fallback. */
+      vals=[6,9,7,5,4,3,8,1,2];
+      rowOps=[['+','-'],['+','+'],['-','+']];
+      colOps=[['-','+'],['+','+'],['-','-']];
+      rowT=[8,12,9]; colT=[9,14,2];
+    }
+  }
+}
+var CC_SAVE_PREFIX='mm.save.crisscross.';
+var ccTimerSeconds=0, ccTimerRunning=false, ccTimerSolved=false, ccTimerInterval=null, ccTimerLastTick=0;
+var ccTimerOn=true;
+function ccTimerKey(){ return 'mmCrissCrossTimerElapsed.'+currentDifficulty+'.'+currentOps; }
+function ccFormatTime(sec){ sec=Math.max(0,Math.floor(sec||0)); var m=Math.floor(sec/60), s=sec%60; return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0'); }
+function ccRenderTimer(){ var el=document.getElementById('ccTimer'); if(el) el.textContent='⏱ '+ccFormatTime(ccTimerSeconds); }
+function ccTimerSaveStandalone(){ try{ localStorage.setItem(ccTimerKey(),JSON.stringify({v:1,seconds:Math.floor(ccTimerSeconds),solved:!!ccTimerSolved})); }catch(e){} }
+function ccTimerStart(){ if(ccTimerSolved||ccTimerRunning||isWatching)return; ccTimerRunning=true; ccTimerLastTick=Date.now(); clearInterval(ccTimerInterval); ccTimerInterval=setInterval(function(){ if(!ccTimerRunning)return; var now=Date.now(); var delta=Math.floor((now-ccTimerLastTick)/1000); if(delta>0){ccTimerSeconds+=delta;ccTimerLastTick+=delta*1000;ccRenderTimer();ccTimerSaveStandalone();ccSaveProgress();} },250); ccRenderTimer(); }
+function ccTimerPause(){ if(!ccTimerRunning)return; var now=Date.now(); var delta=Math.floor((now-ccTimerLastTick)/1000); if(delta>0) ccTimerSeconds+=delta; ccTimerRunning=false; ccTimerLastTick=0; clearInterval(ccTimerInterval); ccTimerInterval=null; ccRenderTimer(); ccTimerSaveStandalone(); }
+function ccTimerReset(){ ccTimerPause(); ccTimerSeconds=0; ccTimerSolved=false; ccRenderTimer(); try{localStorage.removeItem(ccTimerKey());}catch(e){} }
+function ccTimerFinish(){ if(ccTimerSolved)return; ccTimerPause(); ccTimerSolved=true; ccTimerSaveStandalone(); ccRenderTimer(); }
+function ccTimerLoad(){ try{var raw=localStorage.getItem(ccTimerKey()); if(!raw){ccTimerSeconds=0;ccTimerSolved=false;ccRenderTimer();return;} var o=JSON.parse(raw); if(o&&o.v===1){ccTimerSeconds=Math.max(0,parseInt(o.seconds,10)||0);ccTimerSolved=!!o.solved;}else{ccTimerSeconds=0;ccTimerSolved=false;} }catch(e){ccTimerSeconds=0;ccTimerSolved=false;} ccRenderTimer(); }
+function ccSaveKey(){ return CC_SAVE_PREFIX + currentDifficulty + '.' + currentOps; }
+function ccSaveProgress(){
+  try{
+    if(!inputs.length || isWatching){ return; }
+    var valsNow=inputs.map(function(inp){return inp.value||'';});
+    var any=valsNow.some(function(v){return v!=='';});
+    if(!any && !ccTimerSolved){ localStorage.removeItem(ccSaveKey()); return; }
+    localStorage.setItem(ccSaveKey(),JSON.stringify({v:2,difficulty:currentDifficulty,ops:currentOps,vals:valsNow,timer:Math.floor(ccTimerSeconds),solved:!!ccTimerSolved,puzzle:{v:vals.slice(),r:rowOps.map(function(a){return a.slice();}),c:colOps.map(function(a){return a.slice();}),rt:rowT.slice(),ct:colT.slice()}}));
+  }catch(e){}
+}
+function ccLoadProgress(){
+  try{
+    var raw=localStorage.getItem(ccSaveKey()); if(!raw) return false;
+    var o=JSON.parse(raw); if(!o||!(o.v===1||o.v===2)||o.difficulty!==currentDifficulty||o.ops!==currentOps||!o.puzzle||!Array.isArray(o.vals)||o.vals.length!==9) return false;
+    var q=o.puzzle;
+    if(!puzzleDataValid(q.v,q.r,q.c,q.rt,q.ct)) return false;
+    vals=q.v.slice(); rowOps=q.r.map(function(a){return a.slice();}); colOps=q.c.map(function(a){return a.slice();}); rowT=q.rt.slice(); colT=q.ct.slice();
+    render(); inputs.forEach(function(inp,i){ inp.value=(o.vals[i]||''); });
+    if(o.v===2){ccTimerSeconds=Math.max(0,parseInt(o.timer,10)||0);ccTimerSolved=!!o.solved;} else {ccTimerLoad();}
+    ccRenderTimer(); check(); updateSana(ccTimerSolved?'solved':'partial'); updateWatchState();
+    if(!ccTimerSolved && inputs.some(function(i){return !!i.value;})) ccTimerStart();
+    return true;
+  }catch(e){ return false; }
+}
+function ccClearProgress(){ try{localStorage.removeItem(ccSaveKey());}catch(e){} }
+function gen(forceNew){
+  ccTimerPause(); hideDock();
+  if(!forceNew && ccLoadProgress()){ renderLogic(); updateWatchState(); return; }
+  ccClearProgress(); ccTimerReset(); genPositive(); render(); updateSana('new'); renderLogic(); updateWatchState();
+}
+function autoSlideForSys(){ if(appKeyboard) return; if(window.visualViewport){var kbdHeight=window.innerHeight-window.visualViewport.height; if(kbdHeight>80){sysKeyboardVisible=true; document.documentElement.style.setProperty('--kbd-height',kbdHeight+'px'); document.body.style.paddingBottom=(140+kbdHeight)+'px';}} setTimeout(()=>{ if(sel&&sel.parentElement){sel.parentElement.scrollIntoView({behavior:'smooth',block:'center'});} else {var btns=document.getElementById('ccmBtns'); if(btns) btns.scrollIntoView({behavior:'smooth',block:'end'});} window.scrollBy({top:-50,behavior:'smooth'});},150);}
+function autoSlideForAppAndCalc(){ setTimeout(()=>{ var btns=document.getElementById('ccmBtns'); if(btns) btns.scrollIntoView({behavior:'smooth',block:'nearest'}); if(sel&&sel.parentElement) sel.parentElement.scrollIntoView({behavior:'smooth',block:'nearest'});},100);}
+function render(){
+  var g=document.getElementById('ccmGrid'); if(!g) return; g.innerHTML=''; inputs=[];
+  for(var r=0;r<3;r++){ for(var c=0;c<3;c++){ var cell=document.createElement('div'); cell.className='cell '+currentDifficulty+'Cell'; var inp=document.createElement('input'); inp.readOnly=appKeyboard; inp.inputMode=appKeyboard?'none':'numeric'; inp.dataset.r=r; inp.dataset.c=c; inp.maxLength=2; inp.addEventListener('click',onCellClick); inp.addEventListener('input',onInput); inp.addEventListener('focus',()=>{ if(!appKeyboard) setTimeout(autoSlideForSys,200);}); cell.appendChild(inp); g.appendChild(cell); inputs.push(inp); if(c<2){var op=document.createElement('div'); var rawOp=(rowOps[r]&&rowOps[r][c])?rowOps[r][c]:'+'; op.className='opCell '+opClass(rawOp); op.textContent=opToDisplay(rawOp); g.appendChild(op);} } var res=document.createElement('div'); res.className='resCell'; res.dataset.rowResult=r; res.textContent='='+(rowT[r]!==undefined?rowT[r]:'?'); g.appendChild(res); if(r<2){ for(var c=0;c<3;c++){ var op=document.createElement('div'); var rawOp=(colOps[c]&&colOps[c][r])?colOps[c][r]:'+'; op.className='opCell '+opClass(rawOp); op.textContent=opToDisplay(rawOp); g.appendChild(op); if(c<2){var b=document.createElement('div');b.className='opCell';g.appendChild(b);} } var b2=document.createElement('div');b2.className='opCell';g.appendChild(b2); } }
+  for(var c=0;c<3;c++){ var res=document.createElement('div'); res.className='resCell'; res.dataset.colResult=c; res.textContent='='+(colT[c]!==undefined?colT[c]:'?'); g.appendChild(res); if(c<2){var b=document.createElement('div');b.className='opCell';g.appendChild(b);} } var b=document.createElement('div');b.className='opCell';g.appendChild(b); renderKeys(); check();
+}
+function onCellClick(e){ if(isWatching) return; e.preventDefault(); e.stopPropagation(); var inp=e.target; if(inp.tagName!=='INPUT') inp=inp.querySelector('input'); if(!inp) return; document.querySelectorAll('.cell').forEach(x=>x.classList.remove('selected')); inp.parentElement.classList.add('selected'); sel=inp; if(!appKeyboard){ var k=document.getElementById('ccmKeypadMode'); if(k) k.classList.add('hidden'); showDock(); setTimeout(()=>{ try{ inp.readOnly=false; inp.focus(); autoSlideForSys(); }catch(e){}},80);} else { showDock(); autoSlideForAppAndCalc(); } }
+function renderKeys(){ var top=document.getElementById('ccmKeysTop'); if(!top) return; top.innerHTML=''; [1,2,3,4,5].forEach(n=>{var btn=document.createElement('button');btn.className='key';btn.textContent=n; btn.addEventListener('click',e=>{e.stopPropagation(); if(isWatching) return; fill(n); autoSlideForAppAndCalc();}); top.appendChild(btn);}); var mid=document.getElementById('ccmKeysMid');mid.innerHTML=''; [6,7,8,9,0].forEach(n=>{var btn=document.createElement('button');btn.className='key';btn.textContent=n; btn.addEventListener('click',e=>{e.stopPropagation(); if(isWatching) return; fill(n); autoSlideForAppAndCalc();}); mid.appendChild(btn);}); var bottom=document.getElementById('ccmKeysBottom');bottom.innerHTML=''; var back=document.createElement('button');back.className='key delOne';back.textContent='⌫ Back';back.addEventListener('click',e=>{e.stopPropagation(); if(isWatching) return; backOne(); showDock(); if(appKeyboard) autoSlideForAppAndCalc(); else autoSlideForSys();}); bottom.appendChild(back); }
+function isAllowed(num){ return num>=1&&num<=9; }
+function getRangeText(){ return '1 to 9'; }
+function getLevelLabel(){ if(currentDifficulty==='easy') return 'Easy 1-9'; if(currentDifficulty==='med') return 'Medium 1-9'; if(currentDifficulty==='hard') return 'Hard 1-9'; return ''; }
+function getLevelColorClass(){ if(currentDifficulty==='easy') return 'levelTextEasy'; if(currentDifficulty==='med') return 'levelTextMed'; if(currentDifficulty==='hard') return 'levelTextHard'; return ''; }
+function getOpsText(){ if(currentOps==='+-') return '+ -'; if(currentOps==='+-x') return '+ - x'; if(currentOps==='+-x/') return '+ - x ÷'; return currentOps; }
+function getOpsHtml(){ var ops=currentOps; var html=''; if(ops.indexOf('+')!==-1) html+='<span class="op-plus">+</span> '; if(ops.indexOf('-')!==-1) html+='<span class="op-minus">-</span> '; if(ops.indexOf('x')!==-1) html+='<span class="op-mul">x</span> '; if(ops.indexOf('/')!==-1||ops.indexOf('÷')!==-1) html+='<span class="op-div">÷</span>'; return html; }
+var ccSoundStored = localStorage.getItem('mmSound');
+var ccSoundOn = (ccSoundStored === null) ? false : (ccSoundStored !== 'off');
+var ccMusicOn = (localStorage.getItem('mmMusic') !== 'off');
+var ccFirstUsePending = (ccSoundStored === null);
+// Read the shared MathMatrix sound state when entering this page or when the top Sound menu changes.
+// The current page does not silently change its state during normal puzzle actions.
+function ccSyncSoundState(){
+  ccSoundOn = (localStorage.getItem('mmSound') !== 'off');
+  ccMusicOn = (localStorage.getItem('mmMusic') !== 'off');
+}
+var ccAudioCtx = null, ccBgm = null, ccBgmTimer = null, ccBgmDuckTimer = null, ccAudioUnlocked=false, ccBgmLoading=false;
+function ccEnsureAudio(){ try{ var AC=window.AudioContext||window.webkitAudioContext; if(!AC) return false; if(!ccAudioCtx) ccAudioCtx=new AC(); if(ccAudioCtx.state==='suspended') ccAudioCtx.resume(); return true; }catch(e){ return false; } }
+function ccBeep(freq,dur){ if(!ccSoundOn)return; if(!ccEnsureAudio())return; try{var o=ccAudioCtx.createOscillator(),g=ccAudioCtx.createGain();o.type='sine';o.frequency.value=freq;g.gain.setValueAtTime(0.060,ccAudioCtx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ccAudioCtx.currentTime+dur);o.connect(g);g.connect(ccAudioCtx.destination);o.start();o.stop(ccAudioCtx.currentTime+dur);}catch(e){} }
+function ccMusicFade(target){ if(!ccBgm||!ccBgm.gain)return; clearInterval(ccBgmTimer); ccBgmTimer=setInterval(function(){if(!ccBgm||!ccBgm.gain){clearInterval(ccBgmTimer);return;}var cur=ccBgm.gain.gain.value,d=target-cur;if(Math.abs(d)<0.015){ccBgm.gain.gain.value=Math.max(0,Math.min(1,target));clearInterval(ccBgmTimer);return;}ccBgm.gain.gain.value=Math.max(0,Math.min(1,cur+(d>0?0.015:-0.015)));},60); }
+function ccStartBgm(){ if(!ccBgm||!ccBgm.buffer||ccBgm.playing||!ccAudioCtx||!ccSoundOn||!ccMusicOn)return; try{var src=ccAudioCtx.createBufferSource();src.buffer=ccBgm.buffer;src.loop=true;var g=ccAudioCtx.createGain();g.gain.value=0;var pan=ccAudioCtx.createStereoPanner?ccAudioCtx.createStereoPanner():null;if(pan){var lfo=ccAudioCtx.createOscillator(),lg=ccAudioCtx.createGain();lfo.type='sine';lfo.frequency.value=0.08;lg.gain.value=0.45;lfo.connect(lg);lg.connect(pan.pan);lfo.start();src.connect(g);g.connect(pan);pan.connect(ccAudioCtx.destination);ccBgm.lfo=lfo;ccBgm.pan=pan;}else{src.connect(g);g.connect(ccAudioCtx.destination);}ccBgm.source=src;ccBgm.gain=g;ccBgm.playing=true;src.onended=function(){if(ccBgm&&ccBgm.source===src)ccBgm.playing=false;};src.start(0);ccMusicFade(.24);}catch(e){ccBgm.playing=false;} }
+function ccEnsureMusic(){ if(!ccSoundOn||!ccMusicOn)return; if(!ccEnsureAudio())return; if(!ccBgm)ccBgm={buffer:null,source:null,gain:null,pan:null,lfo:null,playing:false}; if(ccBgm.buffer){ccStartBgm();return;} if(ccBgmLoading)return; ccBgmLoading=true; fetch('bgm-monkeys.mp3').then(function(r){if(!r.ok)throw new Error('music load');return r.arrayBuffer();}).then(function(ab){return new Promise(function(resolve,reject){ccAudioCtx.decodeAudioData(ab,resolve,reject);});}).then(function(buf){ccBgmLoading=false;if(!ccBgm)return;ccBgm.buffer=buf;if(ccSoundOn&&ccMusicOn)ccStartBgm();}).catch(function(){ccBgmLoading=false;}); }
+function ccDuckMusic(){ if(!ccMusicOn||!ccSoundOn||!ccBgm||!ccBgm.playing)return;ccMusicFade(.07);clearTimeout(ccBgmDuckTimer);ccBgmDuckTimer=setTimeout(function(){if(ccMusicOn&&ccSoundOn)ccMusicFade(.24);},2500); }
+function ccStopMusic(){ if(!ccBgm)return;ccMusicFade(0);setTimeout(function(){if(ccBgm&&!ccSoundOn)ccStopBgmBuffer();},900); }
+function ccStopBgmBuffer(){if(!ccBgm)return;try{if(ccBgm.source){ccBgm.source.stop();ccBgm.source.disconnect();}}catch(e){}try{if(ccBgm.lfo)ccBgm.lfo.stop();}catch(e){}try{if(ccBgm.gain)ccBgm.gain.disconnect();if(ccBgm.pan)ccBgm.pan.disconnect();}catch(e){}ccBgm.source=null;ccBgm.gain=null;ccBgm.pan=null;ccBgm.lfo=null;ccBgm.playing=false;clearInterval(ccBgmTimer);ccBgmTimer=null;}
+
+function refreshCCSound(){ var b=document.getElementById('ccmSoundBtn'); if(!b)return; var bi=b.querySelector('i'),bs=b.querySelector('span'); if(bi)bi.textContent=ccSoundOn?'🔊':'🔇'; if(bs)bs.textContent='SOUND'; b.classList.toggle('off',!ccSoundOn); b.setAttribute('aria-label','Sound & Music settings'); var sm=document.getElementById('ccmSoundMaster'),mu=document.getElementById('ccmMusicToggle'); if(sm){sm.textContent=ccSoundOn?'🔊 Sound: ON':'🔇 Sound: OFF';sm.classList.toggle('soundOff',!ccSoundOn);} if(mu){mu.textContent=ccMusicOn?'🎵 Music: ON':'🎵 Music: OFF';mu.classList.toggle('musicOff',!ccMusicOn);mu.disabled=!ccSoundOn;mu.title=ccSoundOn?'':'Turn Sound ON first';}}
+function openCCSound(){ refreshCCSound(); document.getElementById('ccmSoundOverlay').classList.remove('hidden'); document.getElementById('ccmSoundSheet').classList.remove('hidden'); }
+function closeCCSound(){ document.getElementById('ccmSoundOverlay').classList.add('hidden'); document.getElementById('ccmSoundSheet').classList.add('hidden'); }
+
+function fill(n){ if(isWatching) return; if(!sel){var emp=inputs.find(i=>!i.value); if(emp){sel=emp; emp.parentElement.classList.add('selected');} else return;} var cur=sel.value||''; if(cur.length>=2) cur=''; var next=cur+String(n); if(next.length>2) next=String(n); var num=parseInt(next,10); if(isNaN(num)) return; if(next.length===2&&!isAllowed(num)) { ccBeep(180,.12); return; } sel.value=next; ccBeep(520,.045); ccDuckMusic(); onInput({target:sel}); if(next.length>=2){ var idx=inputs.indexOf(sel); for(var i=idx+1;i<inputs.length;i++){if(!inputs[i].value){document.querySelectorAll('.cell').forEach(x=>x.classList.remove('selected')); inputs[i].parentElement.classList.add('selected'); sel=inputs[i]; break;}} } showDock(); if(appKeyboard) autoSlideForAppAndCalc(); else autoSlideForSys(); }
+function clearAll(){ ccClearProgress(); ccTimerReset(); stopWatch(); inputs.forEach(i=>i.value=''); sel=null; document.querySelectorAll('.cell').forEach(x=>x.classList.remove('selected','ok')); document.querySelectorAll('.resCell').forEach(rc=>rc.classList.remove('ok','wrong','conflictBoth')); hideDock(); updateSana('clear'); updateWatchState(); document.body.style.paddingBottom=''; document.documentElement.style.setProperty('--kbd-height','0px'); sysKeyboardVisible=false; }
+function onInput(e){ if(!ccTimerSolved && !isWatching) ccTimerStart(); if(isWatching) return; if(e && e.isTrusted){ ccBeep(520,.045); ccDuckMusic(); } var el=e.target; var raw=el.value.replace(/[^0-9]/g,''); if(raw.length>1&&raw[0]==='0') raw=raw.slice(1); if(raw){ var num=parseInt(raw,10); if(!isAllowed(num)){ if(raw.length===2){el.value=''; updateSana('rangeBlock'); return;}} if(guidedMode()&&!choiceStillPossible(parseInt(el.dataset.r,10)*3+parseInt(el.dataset.c,10),num)){ el.value=''; showGuidedWrong(el); check(); return; }} el.value=raw; document.querySelectorAll('.cell.guidedWrong').forEach(function(c){c.classList.remove('guidedWrong');}); check(); updateWatchState(); ccSaveProgress(); if(appKeyboard) autoSlideForAppAndCalc(); else autoSlideForSys(); }
+function getVal(r,c){var inp=inputs[r*3+c];return inp&&inp.value?parseInt(inp.value,10):null;}
+function updateSana(type){ var bubble=document.getElementById('sanaBubble'); var filled=inputs.filter(i=>i.value).length; var rangeText=getRangeText(); var levelLabel=getLevelLabel(); var colorClass=getLevelColorClass(); if(!bubble) return; bubble.className='sanaBubble '+type; var opsHtml='<span class="sanaOps">'+getOpsHtml()+'</span>'; if(type==='new'){bubble.innerHTML='<span class="'+colorClass+'">'+levelLabel+'</span>'+opsHtml+' — Enter '+rangeText+', tap a cell! <b>'+filled+'/9</b>';} else if(type==='solved'){bubble.innerHTML='🎉 <span class="'+colorClass+'">'+levelLabel+'</span>'+opsHtml+' solved! Every row & column is correct — <b>'+filled+'/9</b> done!'; bubble.className='sanaBubble solved';} else if(type==='conflict'){bubble.innerHTML='⚠️ Row OK but column WRONG — both RED! <span class="'+colorClass+'">'+levelLabel+'</span>'+opsHtml+' <b>'+filled+'/9</b>';} else if(type==='wrong'){bubble.innerHTML='❌ Wrong sum — RED! <span class="'+colorClass+'">'+levelLabel+'</span>'+opsHtml+' <b>'+filled+'/9</b>';} else if(type==='partial'){bubble.innerHTML='✏️ <b>'+filled+'/9</b> filled — Enter <b>'+rangeText+'</b>! <span class="'+colorClass+'">'+levelLabel+'</span>'+opsHtml+'';} else if(type==='clear'){bubble.innerHTML='🧹 Cleared! <span class="'+colorClass+'">'+levelLabel+'</span>'+opsHtml+' Enter '+rangeText+'! <b>0/9</b>';} else if(type==='correctRow'){bubble.innerHTML='✅ Nice! GREEN — <b>'+filled+'/9</b> <span class="'+colorClass+'">'+levelLabel+'</span>'+opsHtml+' Enter '+rangeText+'!'; bubble.className='sanaBubble ok';} else if(type==='guidedWrong'){bubble.innerHTML='🐒 <b>Good try!</b> That number would leave no complete solution here. Try another number. <span class="'+colorClass+'">'+levelLabel+'</span>'; bubble.className='sanaBubble wrong';} else if(type==='rangeBlock'){bubble.innerHTML='⛔ Only <b>'+rangeText+'</b> allowed! <span class="'+colorClass+'">'+levelLabel+'</span>'+opsHtml+' <b>'+filled+'/9</b>'; bubble.className='sanaBubble wrong';} else if(type==='watch'){bubble.innerHTML='👁️ Watch — showing solution! <span class="'+colorClass+'">'+levelLabel+'</span>'+opsHtml+''; bubble.className='sanaBubble playing';} }
+function renderLogic(){
+  var levelLabel=getLevelLabel(); var rangeText=getRangeText(); var titleEl=document.getElementById('logicTitle'); if(titleEl) titleEl.innerHTML='📐 '+levelLabel+' <span class="logicBadge">'+getOpsText()+'</span> — Logic'; var content=document.getElementById('logicContent'); if(!content) return; var html='';
+  if(currentLogicView==='beginners'){
+    html+=`<h3>🌱 BEGINNERS — Just Start Playing! <span class="validBadge">✓ You can do this</span></h3>
+    <div class="cheatSheet">
+      <div class="cheatTitle">🎯 You do not have to solve the whole puzzle before you begin</div>
+      <ul class="cheatSteps">
+        <li><span class="stepNum">1</span><span><b>Choose any empty box you like.</b> There is no fixed starting box and no fixed starting number. The center is useful, but it is only an example — you can start anywhere.</span></li>
+        <li><span class="stepNum">2</span><span><b>Try a number.</b> You can start with <b>5</b>, or try a number a little lower or higher, such as <b>4</b> or <b>6</b>.</span></li>
+        <li><span class="stepNum">3</span><span><b>Let SaNa guide you.</b> In the friendly learning levels, SaNa checks whether your choice can still lead to a complete solution. If it would block the puzzle, the box is rejected with a red ring and SaNa asks you to try another number.</span></li>
+        <li><span class="stepNum">4</span><span><b>Try → See → Adjust → Continue!</b> You do not need to calculate everything in your head first. Each accepted choice gives you another clue for the next step.</span></li>
+        <li><span class="stepNum">5</span><span><b>Most important: this is a puzzle you can start and finish.</b> You do not have to be an expert before you begin.</span></li>
+      </ul>
+    </div>
+    <div class="watchSteps">
+      <div class="cheatTitle">🐒 SaNa says</div>
+      <p style="font-size:13px;line-height:1.5;margin:6px 0 0;"><b>“Just start! Pick any empty box and try a number. I will help you discover the next step.”</b></p>
+    </div>
+    <div class="cheatSheet">
+      <div class="cheatTitle">🧠 When your arithmetic skills grow</div>
+      <ul class="cheatSteps">
+        <li><span class="stepNum">✓</span><span>You can use <b>Calc</b> for notes and work through the puzzle using your own arithmetic strategy.</span></li>
+        <li><span class="stepNum">✓</span><span>The beginner method is optional. It is simply an easy way to get started without feeling that you must solve everything before entering your first number.</span></li>
+        <li><span class="stepNum">✓</span><span>For the detailed arithmetic and logic methods, use the existing <b>How to Play</b> and Logic notes. They remain available below.</span></li>
+      </ul>
+    </div>`;
+  }
+  else if(currentLogicView==='level'){
+    html+=`
+    <div class="cheatSheet">
+      <div class="cheatTitle">📋 Cheat Sheet — How Start & End (Brief) <span class="validBadge">✓ No Repeat</span></div>
+      <ul class="cheatSteps">
+        <li><span class="stepNum">1</span><span><b>Start:</b> Tap Overview → Easy / Medium / Hard. Every puzzle uses the same 9 different numbers: 1-9. Difficulty increases by the arithmetic signs.</span></li>
+        <li><span class="stepNum">2</span><span><b>Guideline where:</b> Corners (0,0) (0,2) (2,0) (2,2) first, then middle edges, then <b>center (1,1)=heart</b> — center controls row2 & col2.</span></li>
+        <li><span class="stepNum">3</span><span><b>Enter:</b> Use only ${rangeText}. The number set stays the same; the arithmetic signs become more challenging.</span></li>
+        <li><span class="stepNum">4</span><span><b>End:</b> 9/9 GREEN → Solved.</span></li>
+      </ul>
+    </div>
+    <div class="watchSteps">
+      <div class="cheatTitle">🎯 9-Step Corner/Middle/Center Guide — Like WATCH</div>
+      <p style="font-size:11px;">Grid positions: TL=Top-Left Corner (0,0), TM=Top-Middle (0,1), TR=Top-Right Corner (0,2), ML=Middle-Left (1,0), C=Center (1,1), MR=Middle-Right (1,2), BL=Bottom-Left (2,0), BM=Bottom-Middle (2,1), BR=Bottom-Right (2,2)</p>
+    </div>`;
+  }
+  else if(currentLogicView==='play'){
+    html+=`<h3>▶ How to Play — Think, Test, Cross-Check <span class="validBadge">✓ No IQ Test</span></h3>
+    <div class="cheatSheet">
+      <div class="cheatTitle">🎯 The idea: find a number that makes the lines work</div>
+      <ul class="cheatSteps">
+        <li><span class="stepNum">1</span><span><b>Look first, don't rush.</b> Every empty box belongs to one row and one column. A number must make <b>both</b> lines possible.</span></li>
+        <li><span class="stepNum">2</span><span><b>Start with the easiest line.</b> If a line has two known numbers, use the answer to work backward. Example: <b>□ + 5 − 2 = 9</b> → □ + 3 = 9 → <b>□ = 6</b>.</span></li>
+        <li><span class="stepNum">3</span><span><b>Use candidates, not random guessing.</b> If you cannot find one number yet, write mentally 2 or 3 possible choices. Then check each choice against its crossing row/column.</span></li>
+        <li><span class="stepNum">✓</span><span><b>Friendly levels check ahead.</b> In Easy and Medium, SaNa rejects a number only when it would make the whole puzzle impossible. This lets you try a reasonable candidate without turning the game into an IQ test.</span></li>
+        <li><span class="stepNum">4</span><span><b>Center = heart.</b> The center box (1,1) belongs to the middle row <b>and</b> middle column, so it is useful to check early. But it is a <b>suggested starting point</b>, not a compulsory first answer.</span></li>
+        <li><span class="stepNum">5</span><span><b>Reverse the calculation carefully.</b> With + and −, undo the known operation step by step. With × and ÷, check the order of operations and use only a whole-number division when the puzzle requires it.</span></li>
+        <li><span class="stepNum">6</span><span><b>Cross-check.</b> Suppose a candidate makes the row correct. Now look at the column through that same box. If the column cannot work, reject that candidate and try another.</span></li>
+        <li><span class="stepNum">7</span><span><b>Remember the no-repeat rule.</b> Once a number is used, it cannot be used again in the same 9-box puzzle. This removes candidates and makes the next step easier.</span></li>
+        <li><span class="stepNum">8</span><span><b>Use GREEN as your friend.</b> A green completed line means that clue is satisfied. Use that new information to decide what to examine next.</span></li>
+        <li><span class="stepNum">9</span><span><b>Stuck? Try a candidate.</b> Pick one unfinished line, calculate its possible values, and cross-check them. You can also use WATCH or the existing example tabs to learn the method.</span></li>
+      </ul>
+    </div>
+    <div class="watchSteps">
+      <div class="cheatTitle">🧠 A simple play routine</div>
+      <p style="font-size:12px;line-height:1.45;"><b>Find an easy clue → work backward → choose a candidate → check its crossing line → remove repeated numbers → continue.</b></p>
+      <p style="font-size:12px;line-height:1.45;">You do <b>not</b> need to be fast. The aim is to discover the next useful step and enjoy seeing the puzzle turn GREEN.</p>
+    </div>
+    <div class="cheatSheet">
+      <div class="cheatTitle">🔎 Quick example — how to choose a number</div>
+      <ul class="cheatSteps">
+        <li><span class="stepNum">A</span><span><b>Row:</b> □ + 5 − 2 = 9 → the empty box must be 6.</span></li>
+        <li><span class="stepNum">B</span><span><b>Then cross-check:</b> put 6 in that box and inspect its column. If the column also remains possible, keep 6.</span></li>
+        <li><span class="stepNum">C</span><span><b>If two candidates remain:</b> use the crossing column and the no-repeat rule to eliminate one. That is logic—not a random guess.</span></li>
+      </ul>
+    </div>`;
+  }
+  else if(currentLogicView==='sub1'){
+    html+=`<h3>Easy: + - — Full 1to9 Example <span class="validBadge">✓ 1-9 No Repeat</span></h3>
+    <div class="exampleGrid"><div class="ec">6</div><div class="eo op-plus">+</div><div class="ec">9</div><div class="eo op-minus">-</div><div class="ec">7</div><div class="er">=8</div><div class="eo op-minus">-</div><div class="eo"></div><div class="eo op-plus">+</div><div class="eo"></div><div class="eo op-minus">-</div><div class="eo"></div><div class="ec">5</div><div class="eo op-plus">+</div><div class="ec">4</div><div class="eo op-plus">+</div><div class="ec">3</div><div class="er">=12</div><div class="eo op-plus">+</div><div class="eo"></div><div class="eo op-plus">+</div><div class="eo"></div><div class="eo op-minus">-</div><div class="eo"></div><div class="ec">8</div><div class="eo op-minus">-</div><div class="ec">1</div><div class="eo op-plus">+</div><div class="ec">2</div><div class="er">=9</div><div class="er">=9</div><div class="eo"></div><div class="er">=14</div><div class="eo"></div><div class="er">=2</div><div class="eo"></div></div>
+    <div class="cheatSheet"><div class="cheatTitle">📋 9-Step Fill Guide — Which Number Where (Corner/Middle/Center)</div><ul class="cheatSteps">
+      <li><span class="stepNum">1</span><span><b>Step1 First Output =8</b> → Look Row1 target =8. Need 6+9-7=8. <b>Start Center C (1,1)=4</b> <span class="posBadge">Center</span> — center controls Row2 & Col2. Fill <b>4</b> at center.</span></li>
+      <li><span class="stepNum">2</span><span>Step2 → <b>Top-Middle TM (0,1)=9</b> <span class="posBadge">Top Middle</span> — column 9+4+1=14 needs 9. Fill <b>9</b>.</span></li>
+      <li><span class="stepNum">3</span><span>Step3 → <b>Bottom-Middle BM (2,1)=1</b> <span class="posBadge">Bottom Middle</span> — same column. Fill <b>1</b> → Col2 9+4+1=14 GREEN first column solved.</span></li>
+      <li><span class="stepNum">4</span><span>Step4 → <b>Top-Left TL Corner (0,0)=6</b> <span class="posBadge">Corner</span> — Row1 needs 6. Fill <b>6</b>.</span></li>
+      <li><span class="stepNum">5</span><span>Step5 → <b>Top-Right TR Corner (0,2)=7</b> <span class="posBadge">Corner</span> — Row1 6+9-7=8 → Row1 =8 GREEN.</span></li>
+      <li><span class="stepNum">6</span><span>Step6 → <b>Middle-Left ML (1,0)=5</b> <span class="posBadge">Middle Left</span> — Col1 6-5+8=9.</span></li>
+      <li><span class="stepNum">7</span><span>Step7 → <b>Bottom-Left BL Corner (2,0)=8</b> <span class="posBadge">Corner</span> — Col1 6-5+8=9 GREEN.</span></li>
+      <li><span class="stepNum">8</span><span>Step8 → <b>Middle-Right MR (1,2)=3</b> <span class="posBadge">Middle Right</span> — Row2 5+4+3=12 GREEN.</span></li>
+      <li><span class="stepNum">9</span><span>Step9 → <b>Bottom-Right BR Corner (2,2)=2</b> <span class="posBadge">Corner</span> — Row3 8-1+2=9 GREEN, Col3 7-3-2=2 GREEN → 9/9 Solved! No hesitate.</span></li>
+    </ul></div>`;
+  }
+  else if(currentLogicView==='sub2'){
+    html+=`<h3>Medium: + - x — 9-Step Guide <span class="validBadge">✓ 1-9 No Repeat</span></h3>
+    <div class="exampleGrid"><div class="ec">9</div><div class="eo op-mul">x</div><div class="ec">4</div><div class="eo op-minus">-</div><div class="ec">5</div><div class="er">=31</div><div class="eo op-minus">-</div><div class="eo"></div><div class="eo op-plus">+</div><div class="eo"></div><div class="eo op-minus">-</div><div class="eo"></div><div class="ec">8</div><div class="eo op-minus">-</div><div class="ec">2</div><div class="eo op-plus">+</div><div class="ec">1</div><div class="er">=7</div><div class="eo op-plus">+</div><div class="eo"></div><div class="eo op-plus">+</div><div class="eo"></div><div class="eo op-mul">x</div><div class="eo"></div><div class="ec">7</div><div class="eo op-plus">+</div><div class="ec">3</div><div class="eo op-plus">+</div><div class="ec">6</div><div class="er">=16</div><div class="er">=8</div><div class="eo"></div><div class="er">=9</div><div class="eo"></div><div class="er">=24</div><div class="eo"></div></div>
+    <div class="cheatSheet"><div class="cheatTitle">📋 9-Step Corner/Middle Guide</div><ul class="cheatSteps">
+      <li><span class="stepNum">1</span><span>Center C (1,1)=2 — heart of puzzle</span></li>
+      <li><span class="stepNum">2</span><span>TM (0,1)=4 — top middle</span></li>
+      <li><span class="stepNum">3</span><span>BM (2,1)=3 — bottom middle → Col2 4+2+3=9 GREEN</span></li>
+      <li><span class="stepNum">4</span><span>TL (0,0)=9 Corner → Row1 start</span></li>
+      <li><span class="stepNum">5</span><span>TR (0,2)=5 Corner → Row1 9x4-5=31 GREEN</span></li>
+      <li><span class="stepNum">6</span><span>ML (1,0)=8 Middle Left</span></li>
+      <li><span class="stepNum">7</span><span>BL (2,0)=7 Corner → Col1 9-8+7=8 GREEN</span></li>
+      <li><span class="stepNum">8</span><span>MR (1,2)=1 Middle Right → Row2 8-2+1=7 GREEN</span></li>
+      <li><span class="stepNum">9</span><span>BR (2,2)=6 Corner → Row3 7+3+6=16, Col3 5-1x6=24 GREEN → Solved</span></li>
+    </ul></div>`;
+  }
+  else if(currentLogicView==='sub3'){
+    html+=`<h3>Hard: + - x ÷ — ALL signs 9-Step Guide <span class="validBadge">✓ 1-9 No Repeat + ÷</span></h3>
+    <div class="exampleGrid"><div class="ec">6</div><div class="eo op-plus">+</div><div class="ec">1</div><div class="eo op-minus">-</div><div class="ec">4</div><div class="er">=3</div><div class="eo op-plus">+</div><div class="eo"></div><div class="eo op-plus">+</div><div class="eo"></div><div class="eo op-mul">x</div><div class="eo"></div><div class="ec">9</div><div class="eo op-plus">+</div><div class="ec">2</div><div class="eo op-minus">-</div><div class="ec">8</div><div class="er">=3</div><div class="eo op-plus">+</div><div class="eo"></div><div class="eo op-div">÷</div><div class="eo"></div><div class="eo op-minus">-</div><div class="eo"></div><div class="ec">7</div><div class="eo op-minus">-</div><div class="ec">3</div><div class="eo op-mul">x</div><div class="ec">5</div><div class="er">=20</div><div class="er">=22</div><div class="eo"></div><div class="er">=1</div><div class="eo"></div><div class="er">=27</div><div class="eo"></div></div>
+    <div class="watchSteps">
+      <div class="cheatTitle">🎯 9-Step Guide — Corner / Middle / Center — Complete 1 to 9 to End Successfully</div>
+      <ul class="cheatSteps">
+        <li><span class="stepNum">1</span><span><b>Step1 First Output Row1 =3</b> → Start <b>Center C (1,1)=2</b> <span class="posBadge">Center — Heart</span> — controls Row2 & Col2 with ÷. Fill <b>2</b>.</span></li>
+        <li><span class="stepNum">2</span><span>Step2 → <b>Top-Middle TM (0,1)=1</b> <span class="posBadge">Top Middle</span> — Row1 needs 1 for 6+1-4=3. Fill <b>1</b>.</span></li>
+        <li><span class="stepNum">3</span><span>Step3 → <b>Bottom-Middle BM (2,1)=3</b> <span class="posBadge">Bottom Middle</span> — Col2 1+2÷3=1 (1+2=3 ÷3=1) GREEN — shows ÷ logic.</span></li>
+        <li><span class="stepNum">4</span><span>Step4 → <b>Top-Left TL Corner (0,0)=6</b> <span class="posBadge">Corner</span> — Row1 start 6+1-4=3.</span></li>
+        <li><span class="stepNum">5</span><span>Step5 → <b>Top-Right TR Corner (0,2)=4</b> <span class="posBadge">Corner</span> — Row1 6+1-4=3 → Row1 GREEN first output solved.</span></li>
+        <li><span class="stepNum">6</span><span>Step6 → <b>Middle-Left ML (1,0)=9</b> <span class="posBadge">Middle Left</span> — Col1 6+9+7=22.</span></li>
+        <li><span class="stepNum">7</span><span>Step7 → <b>Bottom-Left BL Corner (2,0)=7</b> <span class="posBadge">Corner</span> — Col1 6+9+7=22 GREEN.</span></li>
+        <li><span class="stepNum">8</span><span>Step8 → <b>Middle-Right MR (1,2)=8</b> <span class="posBadge">Middle Right</span> — Row2 9+2-8=3 GREEN.</span></li>
+        <li><span class="stepNum">9</span><span>Step9 → <b>Bottom-Right BR Corner (2,2)=5</b> <span class="posBadge">Corner</span> — Row3 7-3x5=20 (7-3=4 x5=20) GREEN, Col3 4x8-5=27 GREEN → 9/9 Solved! Take your time — complete the 1-9 sequence and finish!</span></li>
+      </ul>
+    </div>
+    <div class="cheatSheet"><div class="cheatTitle">📋 Why This Order Works — No Random Hesitate</div><ul class="cheatSteps">
+      <li><span class="stepNum">✓</span><span><b>Center first</b> — (1,1) touches Row2 & Col2, most constraints.</span></li>
+      <li><span class="stepNum">✓</span><span><b>Middle edges next</b> — TM & BM complete a column quickly → GREEN feedback.</span></li>
+      <li><span class="stepNum">✓</span><span><b>Corners last per row</b> — TL+TR close Row1, BL+BR close Col1 & Row3.</span></li>
+      <li><span class="stepNum">✓</span><span>WATCH mimics this: 1/9 Center → 9/9 Corners → Solved.</span></li>
+    </ul></div>`;
+  }
+  content.innerHTML=html;
+  content.classList.toggle('beginnersContent', currentLogicView==='beginners');
+  /* Keep the guide aligned with the play rules: Sub 1/2 can give a gentle feasibility alert; Sub 3 stays challenge-only. */
+  if(currentLogicView==='sub1'||currentLogicView==='sub2'||currentLogicView==='level'){
+    content.insertAdjacentHTML('beforeend','<div class="watchSteps"><div class="cheatTitle">🐒 Friendly Play Tip</div><p style="font-size:12px;line-height:1.45;margin:6px 0 0;">In Easy and Medium, SaNa checks the whole puzzle before accepting a number. If a choice would leave no complete solution, the box turns red and SaNa asks you to try another number. Hard leaves you to test your own logic.</p></div>');
+  }
+}
+
+function guidedMode(){
+  /* Sublevels 1 and 2 are friendly learning levels. Sublevel 3 (all four signs) is challenge-only. */
+  return currentOps!=='+-x/' && currentOps!=='unsupported';
+}
+function hasImmediateLineContradiction(grid){
+  for(var r=0;r<3;r++){
+    var a=grid[r*3],b=grid[r*3+1],c=grid[r*3+2];
+    if(a!==null&&b!==null&&c!==null){var e=evalLineInt(a,rowOps[r][0],b,rowOps[r][1],c);if(!e.ok||e.v2!==rowT[r])return true;}
+  }
+  for(var c=0;c<3;c++){
+    var a=grid[c],b=grid[3+c],d=grid[6+c];
+    if(a!==null&&b!==null&&d!==null){var e=evalLineInt(a,colOps[c][0],b,colOps[c][1],d);if(!e.ok||e.v2!==colT[c])return true;}
+  }
+  return false;
+}
+function partialLinePossible(a,b,c,o1,o2,target,domain){
+  var valsKnown=[a,b,c], unknown=valsKnown.filter(v=>v===null).length;
+  if(unknown===0){var e=evalLineInt(a,o1,b,o2,c);return e.ok&&e.v2===target;}
+  /* Try only the missing cells of this line. This keeps the guide responsive. */
+  var idxs=[];for(var i=0;i<3;i++)if(valsKnown[i]===null)idxs.push(i);
+  function rec(pos,arr){
+    if(pos===idxs.length){var e=evalLineInt(arr[0],o1,arr[1],o2,arr[2]);return e.ok&&e.v2===target;}
+    var used={};for(var z=0;z<3;z++)if(arr[z]!==null)used[arr[z]]=true;
+    for(var j=0;j<domain.length;j++){var n=domain[j];if(used[n])continue;arr[idxs[pos]]=n;if(rec(pos+1,arr))return true;arr[idxs[pos]]=null;}
+    return false;
+  }
+  return rec(0,valsKnown.slice());
+}
+function hasAnyCompletion(grid){
+  /* Stronger guided check: every accepted entry must leave at least one
+     complete 9-cell solution. This prevents a series of individually
+     reasonable guesses from creating a dead end later. */
+  var domain=currentRange.slice();
+  function linePossible(a,b,c,o1,o2,target){
+    return partialLinePossible(a,b,c,o1,o2,target,domain);
+  }
+  function validState(g){
+    for(var r=0;r<3;r++){
+      if(!linePossible(g[r*3],g[r*3+1],g[r*3+2],rowOps[r][0],rowOps[r][1],rowT[r])) return false;
+    }
+    for(var c=0;c<3;c++){
+      if(!linePossible(g[c],g[3+c],g[6+c],colOps[c][0],colOps[c][1],colT[c])) return false;
+    }
+    return true;
+  }
+  function rec(g){
+    if(!validState(g)) return false;
+    var best=-1,bestScore=-1;
+    for(var i=0;i<9;i++) if(g[i]===null){
+      var r=Math.floor(i/3),c=i%3,score=0;
+      for(var k=0;k<3;k++){ if(g[r*3+k]!==null) score++; if(g[k*3+c]!==null) score++; }
+      if(score>bestScore){bestScore=score;best=i;}
+    }
+    if(best===-1) return true;
+    var used={};
+    for(var i=0;i<9;i++) if(g[i]!==null) used[g[i]]=true;
+    for(var j=0;j<domain.length;j++){
+      var n=domain[j]; if(used[n]) continue;
+      g[best]=n;
+      if(rec(g)) return true;
+      g[best]=null;
+    }
+    g[best]=null;
+    return false;
+  }
+  return rec(grid.slice());
+}
+function choiceStillPossible(index,candidate){
+  var grid=inputs.map(function(i){return i.value?parseInt(i.value,10):null;});
+  grid[index]=candidate;
+  if(!isAllowed(candidate))return false;
+  var seen={};
+  for(var i=0;i<9;i++){
+    if(grid[i]!==null){if(seen[grid[i]])return false;seen[grid[i]]=true;}
+  }
+  return hasAnyCompletion(grid);
+}
+function backOne(){
+  if(isWatching)return;
+  if(!sel){
+    var last=inputs.slice().reverse().find(function(i){return !!i.value;});
+    if(last){sel=last;last.parentElement.classList.add('selected');}
+    else return;
+  }
+  var el=sel;
+  /* Like a normal keyboard Backspace: delete one entry at a time.
+     If the auto-advance has left the next box selected and it is empty,
+     step back to the previous filled box so the player can undo sequentially. */
+  if(el.value.length>1){
+    el.value=el.value.slice(0,-1);
+  }else if(el.value.length===1){
+    el.value='';
+  }else{
+    var idx=inputs.indexOf(el);
+    for(var i=idx-1;i>=0;i--){
+      if(inputs[i].value){
+        document.querySelectorAll('.cell').forEach(function(x){x.classList.remove('selected');});
+        sel=inputs[i];
+        sel.parentElement.classList.add('selected');
+        sel.value=sel.value.length>1?sel.value.slice(0,-1):'';
+        break;
+      }
+    }
+  }
+  document.querySelectorAll('.cell.guidedWrong').forEach(function(c){c.classList.remove('guidedWrong');});
+  check();
+  updateWatchState();
+  ccSaveProgress();
+}
+function showGuidedWrong(inp){ ccBeep(180,.14);
+  if(!guidedMode()||isWatching)return;
+  clearTimeout(guidedAlertTimer);
+  document.querySelectorAll('.cell.guidedWrong').forEach(function(c){c.classList.remove('guidedWrong');});
+  if(inp&&inp.parentElement) inp.parentElement.classList.add('guidedWrong');
+  updateSana('guidedWrong');
+  guidedAlertTimer=setTimeout(function(){if(inp&&inp.parentElement)inp.parentElement.classList.remove('guidedWrong');},1400);
+}
+function check(){ var rowState=[null,null,null],colState=[null,null,null]; for(var r=0;r<3;r++){var a=getVal(r,0),b=getVal(r,1),c=getVal(r,2); if(a!==null&&b!==null&&c!==null){var ev=evalLineInt(a,rowOps[r][0],b,rowOps[r][1],c); rowState[r]=ev.ok&&ev.v2===rowT[r];}} for(var c=0;c<3;c++){var a=getVal(0,c),b=getVal(1,c),cv=getVal(2,c); if(a!==null&&b!==null&&cv!==null){var ev=evalLineInt(a,colOps[c][0],b,colOps[c][1],cv); colState[c]=ev.ok&&ev.v2===colT[c];}} if(!isWatching){ inputs.forEach(inp=>{var r=parseInt(inp.dataset.r,10),c=parseInt(inp.dataset.c,10);var v=getVal(r,c);if(inp&&inp.parentElement){inp.parentElement.classList.remove('ok'); if(v!==null&&rowState[r]===true&&colState[c]===true) inp.parentElement.classList.add('ok');}}); document.querySelectorAll('[data-row-result]').forEach(rc=>{var r=parseInt(rc.dataset.rowResult,10); rc.classList.remove('ok','wrong','conflictBoth'); if(rowState[r]===null) return; if(rowState[r]===true){var conflict=false; for(var c=0;c<3;c++){if(colState[c]===false&&getVal(r,c)!==null) conflict=true;} if(conflict){rc.classList.add('conflictBoth'); for(var c=0;c<3;c++){if(colState[c]===false){var colEl=document.querySelector('[data-col-result="'+c+'"]'); if(colEl) colEl.classList.add('conflictBoth');}}} else rc.classList.add('ok');} else {rc.classList.add('wrong'); for(var c=0;c<3;c++){if(colState[c]===true){var colEl=document.querySelector('[data-col-result="'+c+'"]'); if(colEl){colEl.classList.remove('ok'); colEl.classList.add('conflictBoth');}}}}}); document.querySelectorAll('[data-col-result]').forEach(cc=>{var c=parseInt(cc.dataset.colResult,10); if(cc.classList.contains('conflictBoth')) return; cc.classList.remove('ok','wrong','conflictBoth'); if(colState[c]===null) return; if(colState[c]===true){var conflict=false; for(var r=0;r<3;r++){if(rowState[r]===false&&getVal(r,c)!==null) conflict=true;} if(conflict) cc.classList.add('conflictBoth'); else cc.classList.add('ok');} else cc.classList.add('wrong');}); } var filled=inputs.filter(i=>i.value).length; if(isSolvedGrid()){ccTimerFinish(); ccSaveProgress(); ccBeep(880,.18); updateSana('solved');} else if(!isWatching){var hasConflict=document.querySelectorAll('.conflictBoth').length>0; var hasWrong=document.querySelectorAll('.resCell.wrong').length>0; var hasOk=document.querySelectorAll('.resCell.ok').length>0; if(hasConflict) updateSana('conflict'); else if(hasWrong) updateSana('wrong'); else if(hasOk) updateSana('correctRow'); else if(filled>0) updateSana('partial');} updateWatchState(); }
+var dockIdleTimer=null;
+var DOCK_IDLE_MS=30000;
+function resetDockIdle(){ if(dockIdleTimer) clearTimeout(dockIdleTimer); dockIdleTimer=setTimeout(()=>{ if(!isWatching&&!calcOpen) hideDock(); },DOCK_IDLE_MS); }
+function showDock(){var dock=document.getElementById('ccmDock'); var bg=document.getElementById('ccmBackdrop'); var showBtn=document.getElementById('ccmShowKeyBtn'); if(dock) dock.classList.remove('hiddenDock'); if(bg) bg.classList.remove('hidden'); if(showBtn) showBtn.classList.add('hidden'); resetDockIdle();}
+function hideDock(){if(dockIdleTimer) {clearTimeout(dockIdleTimer); dockIdleTimer=null;} var dock=document.getElementById('ccmDock'); var bg=document.getElementById('ccmBackdrop'); var showBtn=document.getElementById('ccmShowKeyBtn'); if(dock) dock.classList.add('hiddenDock'); if(bg) bg.classList.add('hidden'); if(showBtn) showBtn.classList.remove('hidden'); if(sel){sel.blur(); document.querySelectorAll('.cell').forEach(x=>x.classList.remove('selected')); sel=null;} document.body.style.paddingBottom=''; document.documentElement.style.setProperty('--kbd-height','0px'); sysKeyboardVisible=false; }
+function isSolvedGrid(){
+  if(inputs.length!==9) return false;
+  var seen={};
+  for(var i=0;i<inputs.length;i++){
+    if(!inputs[i].value) return false;
+    var n=parseInt(inputs[i].value,10);
+    if(!Number.isInteger(n)||!isAllowed(n)||seen[n]) return false;
+    seen[n]=true;
+  }
+  for(var r=0;r<3;r++){
+    var er=evalLineInt(getVal(r,0),rowOps[r][0],getVal(r,1),rowOps[r][1],getVal(r,2));
+    if(!er.ok||er.v2!==rowT[r]) return false;
+  }
+  for(var c=0;c<3;c++){
+    var ec=evalLineInt(getVal(0,c),colOps[c][0],getVal(1,c),colOps[c][1],getVal(2,c));
+    if(!ec.ok||ec.v2!==colT[c]) return false;
+  }
+  return true;
+}
+function stopWatch(){ if(watchTimer){ clearInterval(watchTimer); watchTimer=null; } isWatching=false; var btn=document.getElementById('watchTopBtn'); if(btn) btn.classList.remove('watching'); }
+function updateWatchState(){ var btn=document.getElementById('watchTopBtn'); if(!btn) return; var bi=btn.querySelector('i'),bs=btn.querySelector('span'); if(isWatching){ btn.classList.add('watching'); if(bi)bi.textContent='⏳'; if(bs)bs.textContent='WATCHING...'; return; } var filled=inputs.filter(i=>i.value).length; var allSolved=isSolvedGrid(); if(allSolved){ btn.classList.add('inactive'); btn.classList.remove('watching'); if(bi)bi.textContent='✅'; if(bs)bs.textContent='SOLVED'; } else { btn.classList.remove('inactive','watching'); if(bi)bi.textContent='👁️'; if(bs)bs.textContent='WATCH'; } }
+function startWatch(){ var btn=document.getElementById('watchTopBtn'); if(!btn) return; if(btn.classList.contains('inactive')||isWatching) return; hideDock(); isWatching=true; updateWatchState(); var idx=0; inputs.forEach(i=>{i.value=''; if(i.parentElement) i.parentElement.classList.remove('ok','selected');}); document.querySelectorAll('.resCell').forEach(rc=>rc.classList.remove('ok','wrong','conflictBoth')); document.querySelectorAll('.cell').forEach(c=>c.classList.remove('selected')); sel=null; updateSana('watch'); watchTimer=setInterval(()=>{ if(idx>=9){ clearInterval(watchTimer); watchTimer=null; isWatching=false; inputs.forEach(inp=>{ if(inp.parentElement) inp.parentElement.classList.add('ok'); }); document.querySelectorAll('.resCell').forEach(rc=>{ rc.classList.remove('wrong','conflictBoth'); rc.classList.add('ok'); }); updateSana('solved'); updateWatchState(); hideDock(); return; } var r=Math.floor(idx/3), c=idx%3; var inp=inputs[r*3+c]; if(inp){ inp.value=vals[r*3+c]; if(inp.parentElement) inp.parentElement.classList.add('ok'); } var filled=inputs.filter(i=>i.value).length; var bubble=document.getElementById('sanaBubble'); if(bubble) bubble.innerHTML='👁️ Watch '+filled+'/9 — filling... <span class="'+getLevelColorClass()+'">'+getLevelLabel()+'</span><span class="sanaOps">'+getOpsHtml()+'</span>'; idx++; },500); }
+function setKeyboardMode(isApp){ appKeyboard=isApp; var inAppBtn=document.getElementById('inAppBtn'); var sysBtn=document.getElementById('sysBtn'); var keypadMode=document.getElementById('ccmKeypadMode'); if(isApp){ if(inAppBtn){ inAppBtn.classList.add('activeMode','appMode'); inAppBtn.classList.remove('sysMode'); } if(sysBtn){ sysBtn.classList.remove('activeMode'); sysBtn.classList.add('sysMode'); sysBtn.classList.remove('appMode'); } if(keypadMode) keypadMode.classList.remove('hidden'); inputs.forEach(inp=>{ inp.readOnly=true; inp.inputMode='none'; }); showDock(); autoSlideForAppAndCalc(); if(sel) sel.blur(); document.body.style.paddingBottom=''; document.documentElement.style.setProperty('--kbd-height','0px'); sysKeyboardVisible=false; } else { if(sysBtn){ sysBtn.classList.add('activeMode','sysMode'); sysBtn.classList.remove('appMode'); } if(inAppBtn){ inAppBtn.classList.remove('activeMode'); inAppBtn.classList.add('appMode'); inAppBtn.classList.remove('sysMode'); } if(keypadMode) keypadMode.classList.add('hidden'); if(!sel){ var firstEmpty = inputs.find(i=>!i.value) || inputs[0]; if(firstEmpty){ document.querySelectorAll('.cell').forEach(x=>x.classList.remove('selected')); firstEmpty.parentElement.classList.add('selected'); sel=firstEmpty; } } inputs.forEach(inp=>{ inp.readOnly=false; inp.inputMode='numeric'; }); showDock(); if(sel){ setTimeout(()=>{ try{ sel.readOnly=false; sel.focus(); autoSlideForSys(); }catch(e){}},120); } } }
+if(window.visualViewport){ window.visualViewport.addEventListener('resize',()=>{ var curH=window.visualViewport.height; var diff=window.innerHeight-curH; if(!appKeyboard&&diff>100){ sysKeyboardVisible=true; document.documentElement.style.setProperty('--kbd-height',diff+'px'); document.body.style.paddingBottom=(140+diff)+'px'; autoSlideForSys(); } else if(sysKeyboardVisible&&diff<100){ sysKeyboardVisible=false; document.body.style.paddingBottom=''; document.documentElement.style.setProperty('--kbd-height','0px'); } }); }
+document.querySelectorAll('.ccmLevelBtn').forEach(function(tab){
+  tab.addEventListener('click',function(e){
+    e.stopPropagation();
+    document.querySelectorAll('.ccmLevelBtn').forEach(function(b){b.classList.remove('active');});
+    tab.classList.add('active');
+    currentOps=tab.dataset.ops;
+    if(tab.classList.contains('easy')) currentDifficulty='easy';
+    else if(tab.classList.contains('med')) currentDifficulty='med';
+    else currentDifficulty='hard';
+    currentRange=[1,2,3,4,5,6,7,8,9];
+    gen(true);
+    showDock();
+    autoSlideForAppAndCalc();
+  });
+});
+
+document.getElementById('ccmNewBtn').addEventListener('click',e=>{e.stopPropagation(); gen(true);}); document.getElementById('ccmClearBtn').addEventListener('click',e=>{e.stopPropagation(); clearAll();});
+var expr='';function renderCalc(){var el=document.getElementById('calcVal'); if(el) el.textContent=expr||'0';} function evalCalc(){var safe=expr.replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-');if(!/^[0-9+\-*/().\s]*$/.test(safe)||!safe){expr='Error';renderCalc();return;}try{var r=Function('"use strict";return ('+safe+')')();if(typeof r!=='number'||!isFinite(r))throw 0;expr=String(Math.round(r*1e6)/1e6);}catch(e){expr='Error';}renderCalc();}
+document.querySelectorAll('.ccmCalcDock button').forEach(btn=>{btn.addEventListener('click',e=>{e.preventDefault(); e.stopPropagation(); var k=btn.dataset.k;if(k==='C')expr='';else if(k==='del')expr=expr.slice(0,-1);else if(k==='='){evalCalc();return;}else{if(expr==='Error')expr='';expr+=k;}renderCalc();});});
+function openCalc(){ calcOpen=true; var k=document.getElementById('ccmKeypadMode'); var c=document.getElementById('ccmCalcMode'); var appHead=document.getElementById('appToggleHead'); var calcHead=document.getElementById('calcToggleHead'); if(k) k.classList.add('hidden'); if(c) c.classList.remove('hidden'); if(appHead) appHead.classList.add('hidden'); if(calcHead) calcHead.classList.remove('hidden'); expr='';renderCalc(); showDock(); autoSlideForAppAndCalc(); }
+function closeCalc(){ calcOpen=false; var k=document.getElementById('ccmKeypadMode'); var c=document.getElementById('ccmCalcMode'); var appHead=document.getElementById('appToggleHead'); var calcHead=document.getElementById('calcToggleHead'); if(k) k.classList.remove('hidden'); if(c) c.classList.add('hidden'); if(appHead) appHead.classList.remove('hidden'); if(calcHead) calcHead.classList.add('hidden'); showDock(); }
+document.getElementById('ccmCalcOpenBtn').addEventListener('click',e=>{e.stopPropagation(); if(calcOpen) closeCalc(); else openCalc();});
+document.getElementById('ccmCalcCloseBtn2').addEventListener('click',e=>{e.stopPropagation(); closeCalc();});
+document.getElementById('ccmBackdrop').addEventListener('click',e=>{e.stopPropagation(); if(calcOpen) closeCalc(); else hideDock(); document.querySelectorAll('.ccmSubLevels').forEach(s=>s.classList.remove('open'));});
+document.getElementById('ccmShowKeyBtn').addEventListener('click',e=>{e.stopPropagation(); showDock(); if(appKeyboard) autoSlideForAppAndCalc(); else autoSlideForSys();});
+document.getElementById('ccmDock').addEventListener('touchstart',()=>{ if(!isWatching) resetDockIdle(); },{passive:true});
+document.getElementById('inAppBtn').addEventListener('click',e=>{e.stopPropagation(); setKeyboardMode(true);});
+document.getElementById('sysBtn').addEventListener('click',e=>{e.stopPropagation(); setKeyboardMode(false);});
+document.body.addEventListener('click',e=>{if(e.target.closest('.cell')||e.target.closest('.ccmDock')||e.target.closest('.ccmBtns')||e.target.closest('.ccmLevels')||e.target.closest('#ccmShowKeyBtn')||e.target.closest('.sanaRow')||e.target.closest('.ccmBar')) return; if(!calcOpen) hideDock(); document.querySelectorAll('.ccmSubLevels').forEach(s=>s.classList.remove('open'));});
+var logicModal=document.getElementById('logicModal');
+document.getElementById('logicBtn').addEventListener('click',e=>{e.stopPropagation(); currentLogicView='beginners'; document.querySelectorAll('.logicTab').forEach(t=>t.classList.remove('active')); var lt=document.querySelector('.logicTab.beginners'); if(lt) lt.classList.add('active'); renderLogic(); logicModal.classList.remove('hidden');});
+document.getElementById('watchTopBtn').addEventListener('click',e=>{e.stopPropagation(); startWatch();});
+document.getElementById('logicClose').addEventListener('click',e=>{e.stopPropagation(); logicModal.classList.add('hidden');});
+logicModal.addEventListener('click',e=>{if(e.target===logicModal) logicModal.classList.add('hidden');});
+document.querySelectorAll('.logicTab').forEach(tab=>{ tab.addEventListener('click',e=>{ e.stopPropagation(); document.querySelectorAll('.logicTab').forEach(t=>t.classList.remove('active')); tab.classList.add('active'); currentLogicView=tab.dataset.view; renderLogic(); }); });
+document.getElementById('ccmBack').addEventListener('click',e=>{e.stopPropagation(); window.location.href='./beta.html';});
+document.getElementById('ccmSoundBtn').addEventListener('click',e=>{e.stopPropagation(); openCCSound();});
+document.getElementById('ccmSoundClose').addEventListener('click',e=>{e.stopPropagation(); closeCCSound();});
+document.getElementById('ccmSoundOverlay').addEventListener('click',e=>{e.stopPropagation(); closeCCSound();});
+document.getElementById('ccmSoundMaster').addEventListener('click',e=>{e.stopPropagation(); ccSyncSoundState(); ccSoundOn=!ccSoundOn; localStorage.setItem('mmSound',ccSoundOn?'on':'off'); refreshCCSound(); if(ccSoundOn){ccEnsureAudio();ccBeep(660,.10);if(ccMusicOn)ccEnsureMusic();}else{ccStopMusic();}});
+document.getElementById('ccmMusicToggle').addEventListener('click',e=>{e.stopPropagation(); ccSyncSoundState(); if(!ccSoundOn)return; ccMusicOn=!ccMusicOn;localStorage.setItem('mmMusic',ccMusicOn?'on':'off');refreshCCSound();if(ccMusicOn)ccEnsureMusic();else{if(ccBgm){ccMusicFade(0);setTimeout(function(){if(ccBgm&&!ccMusicOn)ccStopBgmBuffer();},900);}}});
+refreshCCSound();
+function ccUnlockOnUserGesture(ev){
+  var t=ev&&ev.target;
+  var inSoundUI=t&&t.closest&&t.closest('#ccmSoundBtn,#ccmSoundSheet,#ccmSoundOverlay');
+  if(ccFirstUsePending && !inSoundUI){
+    ccFirstUsePending=false; ccSoundOn=true; localStorage.setItem('mmSound','on'); refreshCCSound();
+  }
+  if(!ccSoundOn) return;
+  try{
+    var ok=ccEnsureAudio();
+    if(ok && ccAudioCtx && ccAudioCtx.state==='suspended'){
+      ccAudioCtx.resume().then(function(){ if(ccSoundOn && ccMusicOn) ccEnsureMusic(); }).catch(function(){});
+    }else if(ok && ccMusicOn){ ccEnsureMusic(); }
+  }catch(e){}
+}
+// First-time users see the Sound control as muted. Their first normal interaction
+// turns Sound ON and keeps that choice. Existing saved ON/OFF preferences are never changed.
+['pointerdown','touchstart','keydown'].forEach(function(evt){
+  document.addEventListener(evt,function(e){ ccUnlockOnUserGesture(e); },{passive:true,capture:true});
+});
+window.addEventListener('pagehide',function(){ ccTimerPause(); ccSaveProgress(); });
+window.addEventListener('pageshow',function(){ if(!ccTimerSolved && inputs.some(function(i){return !!i.value;})) ccTimerStart(); });
+document.getElementById('ccmSoundBtn').addEventListener('click',function(){
+  ccSyncSoundState(); refreshCCSound(); ccUnlockOnUserGesture();
+},true);
+ccTimerLoad(); gen(false); setKeyboardMode(true);
+})();
+</script>
+</body></html>
