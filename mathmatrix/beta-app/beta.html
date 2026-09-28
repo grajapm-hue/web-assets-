@@ -15396,17 +15396,19 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
 // PWA: register a service worker so "Get App"/install can be a real, distinct
 // action instead of always falling back to the same manual instructions.
-/* This file now lives in its own beta-app/ subfolder, separate from
-   KidsMathsMatrixPuzzle.html and the real sw.js (which registers with NO
-   explicit scope, so it defaults to claiming the whole mathmatrix/ folder).
-   Scoping beta-sw.js to './' here means "this subfolder only" — a longer,
-   more specific match than the real app's folder-wide scope, so the two
-   can never collide no matter what either one does. This also lets
-   beta-sw.js finally cover Criss-Cross (a separate page, not just
-   beta.html), which a single-file scope could never intercept. */
+/* Raja, after three rounds landing on the same wall without one: build the
+   real thing now. The worry the old comment here raised was real — a
+   DEFAULT-scoped registration of beta-sw.js would claim the whole
+   mathmatrix/ directory (a service worker's default scope is its own
+   folder) and genuinely fight the real app's sw.js for the same pages. The
+   fix is an explicit narrow scope, not going without one forever:
+   beta-sw.js registers scoped to exactly './beta.html' — matching
+   beta-manifest.json's own scope — so it can only ever control beta.html
+   itself, never touches KidsMathsMatrixPuzzle.html or the real sw.js's own
+   cache namespace ('mathmatrix-v*' vs this file's 'mathmatrix-beta-v*'). */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function () {
-    navigator.serviceWorker.register('beta-sw.js', { scope: './' }).catch(function(){});
+    navigator.serviceWorker.register('beta-sw.js', { scope: './beta.html' }).catch(function(){});
   });
 }
 
@@ -15465,15 +15467,11 @@ if (navigator.storage && navigator.storage.persist) {
      value instead of catching it — it now asserts the two AGREE.) */
   window.BETA_VER = BUILD_VER.split(' ')[0];   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
-  // Cosmetic-only marker for this beta-app subfolder build, so testers running
-  // both the old mathmatrix/beta.html and this one side by side can tell them
-  // apart at a glance. Does not touch BUILD_VER/BETA_VER or the beacon above —
-  // those stay exactly what the update-checker and old installs expect.
-  if (verEl) verEl.textContent = 'Beta255Plus';
+  if (verEl) verEl.textContent = 'Beta 255+';
   // same short form again at the bottom of the puzzle table, past Coming
   // Soon — so it is still checkable after scrolling through the whole list
   var footVer = document.getElementById('verFooter');
-  if (footVer) footVer.textContent = 'Beta255Plus';
+  if (footVer) footVer.textContent = window.BETA_VER;
 
   /* ── AUTO ONLINE REFRESH ──
      Raja asked for this in as many words — "auto forced app online refresh" —
