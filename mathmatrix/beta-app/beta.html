@@ -15465,11 +15465,15 @@ if (navigator.storage && navigator.storage.persist) {
      value instead of catching it — it now asserts the two AGREE.) */
   window.BETA_VER = BUILD_VER.split(' ')[0];   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
-  if (verEl) verEl.textContent = 'Beta 255+';
+  // Cosmetic-only marker for this beta-app subfolder build, so testers running
+  // both the old mathmatrix/beta.html and this one side by side can tell them
+  // apart at a glance. Does not touch BUILD_VER/BETA_VER or the beacon above —
+  // those stay exactly what the update-checker and old installs expect.
+  if (verEl) verEl.textContent = 'Beta255Plus';
   // same short form again at the bottom of the puzzle table, past Coming
   // Soon — so it is still checkable after scrolling through the whole list
   var footVer = document.getElementById('verFooter');
-  if (footVer) footVer.textContent = window.BETA_VER;
+  if (footVer) footVer.textContent = 'Beta255Plus';
 
   /* ── AUTO ONLINE REFRESH ──
      Raja asked for this in as many words — "auto forced app online refresh" —
