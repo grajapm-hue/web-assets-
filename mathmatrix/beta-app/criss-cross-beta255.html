@@ -692,7 +692,7 @@ document.getElementById('watchTopBtn').addEventListener('click',e=>{e.stopPropag
 document.getElementById('logicClose').addEventListener('click',e=>{e.stopPropagation(); logicModal.classList.add('hidden');});
 logicModal.addEventListener('click',e=>{if(e.target===logicModal) logicModal.classList.add('hidden');});
 document.querySelectorAll('.logicTab').forEach(tab=>{ tab.addEventListener('click',e=>{ e.stopPropagation(); document.querySelectorAll('.logicTab').forEach(t=>t.classList.remove('active')); tab.classList.add('active'); currentLogicView=tab.dataset.view; renderLogic(); }); });
-document.getElementById('ccmBack').addEventListener('click',e=>{e.stopPropagation(); try { if (document.referrer && /grajapm-hue\.github\.io\/web-assets-\/mathmatrix\/beta\.html(?:$|[?#])/.test(document.referrer) && window.history.length > 1) { window.history.back(); return; } } catch(err) {} window.location.href='./beta.html';});
+document.getElementById('ccmBack').addEventListener('click',e=>{e.stopPropagation(); try { if (document.referrer && /\/beta\.html(?:$|[?#])/.test(document.referrer) && window.history.length > 1) { window.history.back(); return; } } catch(err) {} window.location.href='./beta.html';});
 document.getElementById('ccmSoundBtn').addEventListener('click',e=>{e.stopPropagation(); openCCSound();});
 document.getElementById('ccmSoundClose').addEventListener('click',e=>{e.stopPropagation(); closeCCSound();});
 document.getElementById('ccmSoundOverlay').addEventListener('click',e=>{e.stopPropagation(); closeCCSound();});
