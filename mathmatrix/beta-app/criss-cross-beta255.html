@@ -325,6 +325,21 @@ function ccLoadProgress(){
   }catch(e){ return false; }
 }
 function ccClearProgress(){ try{localStorage.removeItem(ccSaveKey());}catch(e){} }
+var CC_LAST_LEVEL_KEY='mm.save.crisscross.lastLevel';
+function ccSaveLastLevel(){ try{ localStorage.setItem(CC_LAST_LEVEL_KEY, JSON.stringify({difficulty:currentDifficulty, ops:currentOps})); }catch(e){} }
+function ccRestoreLastLevel(){
+  try{
+    var raw=localStorage.getItem(CC_LAST_LEVEL_KEY); if(!raw) return;
+    var o=JSON.parse(raw); if(!o||!o.difficulty||!o.ops) return;
+    if(o.difficulty!=='easy'&&o.difficulty!=='med'&&o.difficulty!=='hard') return;
+    currentDifficulty=o.difficulty; currentOps=o.ops;
+    document.querySelectorAll('.ccmLevelBtn').forEach(function(b){
+      b.classList.remove('active');
+      var isMatch=(o.difficulty==='easy'&&b.classList.contains('easy'))||(o.difficulty==='med'&&b.classList.contains('med'))||(o.difficulty==='hard'&&b.classList.contains('hard'));
+      if(isMatch) b.classList.add('active');
+    });
+  }catch(e){}
+}
 function gen(forceNew){
   ccTimerPause(); hideDock();
   if(!forceNew && ccLoadProgress()){ renderLogic(); updateWatchState(); return; }
@@ -667,7 +682,8 @@ document.querySelectorAll('.ccmLevelBtn').forEach(function(tab){
     else if(tab.classList.contains('med')) currentDifficulty='med';
     else currentDifficulty='hard';
     currentRange=[1,2,3,4,5,6,7,8,9];
-    gen(true);
+    ccSaveLastLevel();
+    gen(false);
     showDock();
     autoSlideForAppAndCalc();
   });
@@ -723,7 +739,7 @@ window.addEventListener('pageshow',function(){ if(!ccTimerSolved && inputs.some(
 document.getElementById('ccmSoundBtn').addEventListener('click',function(){
   ccSyncSoundState(); refreshCCSound(); ccUnlockOnUserGesture();
 },true);
-ccTimerLoad(); gen(false); setKeyboardMode(true);
+ccRestoreLastLevel(); ccTimerLoad(); gen(false); setKeyboardMode(true);
 })();
 </script>
 </body></html>
