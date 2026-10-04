@@ -4157,7 +4157,7 @@ body{ background:#C9A87C !important; }
   Advance saw nothing light up — there was no entry carrying data-np="binary2"
   for the highlighter to find. Two entries now, numbered as Raja asked and
   carrying the card names so the two agree.
---><span class="np" data-np="binary">🔢 Guess My Number L1 · Junior</span> · <span class="np" data-np="binary2">L2 · Advance</span> · ➕ Criss-Cross · ⚙️ 7 Logic Gates · 🔀 Slide 1-15 · A-Z · A-Z+1-9 · 🧩 Sudoku 3×3 · 9×9 · 🐚 Pallanguzhi <span style="color:#9fb0d0; font-weight:600;">(each its own one puzzle)</span></span><br><!-- The "New here? Tap ▶ Watch Me Solve … then pick any level in the table
+--><span class="np" data-np="binary">🔢 Guess My Number L1 · Junior</span> · <span class="np" data-np="binary2">L2 · Advance</span> · ➕ Criss-Cross · ⚙️ 7 Logic Gates · 🔀 Slide 1-15 · A-Z · A-Z+1-9 · 🧩 Sudoku 3×3 · 4×4 · 9×9 · 🐚 Pallanguzhi <span style="color:#9fb0d0; font-weight:600;">(each its own one puzzle)</span></span><br><!-- The "New here? Tap ▶ Watch Me Solve … then pick any level in the table
        below" line is gone. This card is only ever seen inside the About sheet
        now, where there is no level table to point at, and Watch has its own
        named button in the bar — so it was directing a child to something that
@@ -4866,6 +4866,10 @@ body{ background:#C9A87C !important; }
       <button class="toggleBtn lvCard" id="sudMiniTab" type="button" data-sud-level="mini" data-name="🧩 Sudoku 3×3" style="color:#f87171; border-color:#ef4444; --c1:#fecaca; --c2:#f87171;">
         <span class="lvGlyph" aria-hidden="true">🧩</span>
         <span class="lvText"><b class="lvName">Sudoku 3×3</b><span class="lvDiff">Easy · 1–3 · rows &amp; columns</span><span class="lvMeta">the beginner's way in — no boxes, no diagonals</span></span>
+      </button>
+      <button class="toggleBtn lvCard" id="sudMid4Tab" type="button" data-sud-level="mid4" data-name="🧩 Sudoku 4×4" style="color:#fbbf24; border-color:#f59e0b; --c1:#fde68a; --c2:#fbbf24;">
+        <span class="lvGlyph" aria-hidden="true">🧩</span>
+        <span class="lvText"><b class="lvName">Sudoku 4×4</b><span class="lvDiff">Intermediate · 1–4 · rows &amp; columns</span><span class="lvMeta">one step up from 3×3 — still no boxes, no diagonals</span></span>
       </button>
       <button class="toggleBtn lvCard" id="sudMediumTab" type="button" data-sud-level="medium" data-name="🧩 Sudoku 9×9" style="color:#fb923c; border-color:#f97316; --c1:#fed7aa; --c2:#fb923c;">
         <span class="lvGlyph" aria-hidden="true">🧩</span>
@@ -8684,6 +8688,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       mini:   { n: 3, bh: 0, bw: 0, diag: false, clues: 4,
                 title: '🧩 Sudoku Easy', name: '3×3',
                 goal: 'Every <b>row</b> and every <b>column</b> holds <b>1, 2 and 3</b> — each one once.' },
+      mid4:   { n: 4, bh: 0, bw: 0, diag: false, clues: 8,
+                title: '🧩 Sudoku Intermediate', name: '4×4',
+                goal: 'Every <b>row</b> and every <b>column</b> holds <b>1, 2, 3 and 4</b> — each one once. Still no boxes, no diagonals — just a bigger grid.' },
       medium: { n: 9, bh: 3, bw: 3, diag: true, clues: 45,
                 title: '🧩 Sudoku Medium', name: '9×9 Medium',
                 goal: 'Every <b>row</b>, <b>column</b>, <b>3×3 box</b> and <b>both shaded diagonals</b> hold <b>1 to 9</b> — each one once.' },
