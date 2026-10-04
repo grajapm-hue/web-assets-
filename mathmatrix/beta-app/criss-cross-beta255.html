@@ -767,7 +767,7 @@ function checkPortraitLock(){
 }
 window.addEventListener('resize', checkPortraitLock);
 window.addEventListener('orientationchange', function(){ setTimeout(checkPortraitLock, 250); });
-checkPortraitLock();
+setTimeout(checkPortraitLock, 250);
 
 ccRestoreLastLevel(); ccTimerLoad(); gen(false); setKeyboardMode(true);
 })();
