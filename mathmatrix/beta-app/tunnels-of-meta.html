@@ -108,7 +108,18 @@
     .start-person .sana-bubble { margin: 0; }
     .start-person .start-tag { margin-top: 2px; font-size: 10px; }
     .maze-actions { display: flex; flex: none; gap: 7px; }
-    .start-label { margin-left: auto; padding-right: 8px; color: var(--green); font-size: 11px; font-weight: 900; letter-spacing: .5px; white-space: nowrap; }
+    .start-label {
+      margin-left: auto;
+      padding-right: 8px;
+      color: var(--green);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .5px;
+      white-space: nowrap;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
     .sana-bubble {
       display: inline-flex;
       flex-direction: column;
@@ -144,7 +155,7 @@
     @keyframes sanaBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
     .start-tag { color: var(--green); }
     .finish-tag { color: var(--red); }
-    .maze-wrap { display: flex; justify-content: center; padding: 5px 10px; }
+    .maze-wrap { display: flex; justify-content: center; padding: 5px 10px 20px; }
     .maze-card {
       position: relative;
       width: min(100%, 500px);
@@ -187,6 +198,9 @@
       .app { padding-top: 8px; }
       .msg { font-size: 15px; }
       .start-row { padding-left: 11px; }
+    }
+    @media (max-width: 600px) and (orientation: portrait) {
+      .maze-card { width: min(100%, 500px, max(280px, calc(75dvh - 330px))); }
     }
     @media (prefers-reduced-motion: no-preference) {
       button { transition: transform .12s ease, filter .12s ease; }
