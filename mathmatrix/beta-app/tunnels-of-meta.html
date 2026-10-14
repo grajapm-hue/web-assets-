@@ -55,7 +55,7 @@
       border-radius: 17px;
       background: var(--card);
       box-shadow: 0 3px 0 rgba(94, 64, 32, .2);
-      font-size: 14px;
+      font-size: 16px;
       font-weight: 700;
       line-height: 1.4;
     }
@@ -86,7 +86,7 @@
       box-shadow: 0 1px 2px rgba(0,0,0,.2);
     }
     .swatch.picked { outline: 3px solid var(--brown-dark); outline-offset: 1px; }
-    .tag { text-align: center; font-size: 11px; font-weight: 900; letter-spacing: .6px; }
+    .tag { text-align: center; font-size: 13px; font-weight: 900; letter-spacing: .6px; }
     .start-row {
       display: flex;
       align-items: center;
@@ -106,20 +106,8 @@
       min-height: 72px;
     }
     .start-person .sana-bubble { margin: 0; }
-    .start-person .start-tag { margin-top: 2px; font-size: 10px; }
+    .start-person .start-tag { margin-top: 2px; }
     .maze-actions { display: flex; flex: none; gap: 7px; }
-    .start-label {
-      margin-left: auto;
-      padding-right: 8px;
-      color: var(--green);
-      font-size: 11px;
-      font-weight: 900;
-      letter-spacing: .5px;
-      white-space: nowrap;
-      -webkit-user-select: none;
-      user-select: none;
-      -webkit-touch-callout: none;
-    }
     .sana-bubble {
       display: inline-flex;
       flex-direction: column;
@@ -166,7 +154,14 @@
       box-shadow: 0 4px 0 rgba(74, 51, 26, .18);
     }
     #mazeSvg { display: block; width: 100%; height: auto; overflow: visible; touch-action: none; user-select: none; }
-    .hint { margin: 0 18px; color: #614522; text-align: center; font-size: 12px; line-height: 1.45; }
+    .hint {
+      margin: 0 18px;
+      color: #614522;
+      text-align: center;
+      font-size: clamp(14px, 3.8vw, 16px);
+      font-weight: 600;
+      line-height: 1.5;
+    }
     .win-overlay {
       position: fixed;
       z-index: 10;
@@ -196,7 +191,7 @@
     .win-overlay .win-clear-btn { color: #fff; background: #6b4a28; }
     @media (min-width: 700px) {
       .app { padding-top: 8px; }
-      .msg { font-size: 15px; }
+      .msg { font-size: 16px; }
       .start-row { padding-left: 11px; }
     }
     @media (max-width: 600px) and (orientation: portrait) {
@@ -246,7 +241,6 @@
         <button class="top-btn" id="newBtn" type="button" aria-label="Start a new maze">🔄 New</button>
         <button class="top-btn" id="clearBtn" type="button" aria-label="Clear your path">✖ Clear</button>
       </div>
-      <span class="start-label" aria-hidden="true">Find the way →</span>
     </div>
     <div class="maze-wrap">
       <div class="maze-card">
