@@ -35,21 +35,42 @@
     }
     button { font: inherit; }
     .app { width: min(100%, 720px); margin: 0 auto; padding-bottom: 18px; }
-    .bar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; }
+    .bar { display: flex; align-items: center; gap: 6px; padding: 8px 12px; }
     .back-btn, .top-btn {
-      flex: none;
       border: 0;
       color: #fff;
       background: #6b4a28;
       box-shadow: 0 3px 0 rgba(51, 34, 15, .2);
       font-weight: 800;
     }
-    .back-btn { width: 44px; height: 44px; border-radius: 14px; font-size: 22px; }
-    .title { flex: 1; min-width: 0; overflow: hidden; color: #1f5c3f; font-size: clamp(16px, 4vw, 20px); font-weight: 900; text-overflow: ellipsis; white-space: nowrap; }
-    .top-btn { min-height: 40px; padding: 8px 12px; border-radius: 13px; font-size: 13px; }
-    .watch-btn { background: #347db8; white-space: nowrap; }
-    .watch-btn[aria-pressed="true"] { background: #7c3aed; }
-    .logic-btn { background: #7c3aed; white-space: nowrap; }
+    .back-btn { flex: 0 0 44px; width: 44px; height: 44px; padding: 0; border-radius: 14px; font-size: 22px; }
+    .title { flex: 1; min-width: 0; overflow: hidden; color: #1f5c3f; font-size: clamp(14px, 3.8vw, 18px); font-weight: 900; text-overflow: ellipsis; white-space: nowrap; }
+    .top-actions { display: flex; flex: none; gap: 6px; }
+    .top-btn {
+      display: flex;
+      flex: 0 0 44px;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1px;
+      width: 44px;
+      height: 44px;
+      padding: 3px 1px;
+      border-radius: 13px;
+      cursor: pointer;
+      line-height: 1;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+    .top-icon { font-size: 17px; line-height: 1; }
+    .top-label { font-size: 8px; font-weight: 900; letter-spacing: .35px; line-height: 1; text-transform: uppercase; }
+    .watch-btn { background: linear-gradient(135deg, #2d6ca8, #4a90d9); }
+    .watch-btn[aria-pressed="true"] { background: #1e8e5a; }
+    .logic-btn { background: linear-gradient(135deg, #7b5ae0, #9b7aff); }
+    .sound-btn { background: #8a5e31; }
+    .sound-btn.off { opacity: 1; background: #8a5e31; }
+    .top-btn:focus-visible, .back-btn:focus-visible { outline: 3px solid #fbbf24; outline-offset: 2px; }
     .logic-dialog {
       width: min(calc(100% - 28px), 520px);
       max-width: 520px;
@@ -69,6 +90,30 @@
     .logic-content p, .logic-content li { font-size: 16px; line-height: 1.5; }
     .logic-content ul { padding-left: 22px; }
     .logic-close { min-height: 40px; padding: 8px 14px; border: 0; border-radius: 12px; color: #fff; background: #6b4a28; font-weight: 800; }
+    .sound-dialog {
+      position: fixed;
+      inset: auto 0 0;
+      width: min(100vw, 480px);
+      max-width: 480px;
+      max-height: min(78dvh, 620px);
+      margin: 0 auto;
+      padding: 0;
+      overflow: auto;
+      border: 2px solid var(--card-border);
+      border-bottom: 0;
+      border-radius: 20px 20px 0 0;
+      color: var(--brown-dark);
+      background: var(--card);
+      box-shadow: 0 -8px 28px rgba(51, 34, 15, .32);
+    }
+    .sound-dialog::backdrop { background: rgba(20, 12, 4, .52); }
+    .sound-content { padding: 18px 18px max(20px, var(--safe-bottom)); }
+    .sound-content p { margin: 10px 0; font-size: 14px; line-height: 1.45; }
+    .sound-options { display: flex; gap: 10px; margin: 14px 0; }
+    .sound-choice { flex: 1; min-height: 48px; border: 2px solid #f59e0b; border-radius: 11px; padding: 9px 7px; color: #fbbf24; background: #3b248c; font-weight: 900; }
+    .sound-choice:nth-child(2) { border-color: #22c55e; color: #4ade80; background: #176b4a; }
+    .sound-choice.is-off, .sound-choice:disabled { border-color: #888; color: #777; background: #eee; }
+    .sound-note { color: #5b4630; font-size: 12px !important; }
     .msg {
       margin: 0 12px 8px;
       padding: 9px 13px;
@@ -209,7 +254,14 @@
       .level-row, .color-row { gap: 7px; }
       .color-row { margin-bottom: 7px; }
       .start-row { width: min(calc(100% - 16px), 500px); }
-      .top-btn { padding-inline: 10px; }
+    }
+    @media (max-width: 389px) {
+      .bar { gap: 4px; padding-inline: 9px; }
+      .top-actions { gap: 4px; }
+      .back-btn, .top-btn { flex-basis: 42px; width: 42px; height: 42px; }
+      .title { font-size: 14px; }
+      .top-icon { font-size: 16px; }
+      .top-label { font-size: 7.5px; }
     }
     @media (max-height: 820px) {
       .bar { padding-block: 5px; }
@@ -230,6 +282,16 @@
     @media (prefers-reduced-motion: reduce) {
       .sana-face { animation: none; }
     }
+    @media (min-width: 540px) and (hover: hover) and (pointer: fine) {
+      html { background: #000; }
+      body {
+        width: min(100%, 480px);
+        max-width: 480px;
+        margin: 0 auto;
+        background: linear-gradient(180deg, var(--bg1), var(--bg2));
+      }
+      .app { width: 100%; max-width: none; }
+    }
   </style>
 </head>
 <body>
@@ -237,8 +299,17 @@
     <header class="bar">
       <button class="back-btn" id="backBtn" type="button" aria-label="Back to puzzles">←</button>
       <div class="title">🧭 Tunnels Of SaNa Maze</div>
-      <button class="top-btn logic-btn" id="logicBtn" type="button" aria-haspopup="dialog">💡 Logic</button>
-      <button class="top-btn watch-btn" id="watchBtn" type="button" aria-label="Watch a demonstration of this maze" aria-pressed="false">▶️ Watch</button>
+      <div class="top-actions">
+        <button class="top-btn logic-btn" id="logicBtn" type="button" aria-haspopup="dialog" aria-label="How to play">
+          <span class="top-icon" aria-hidden="true">💡</span><span class="top-label">Logic</span>
+        </button>
+        <button class="top-btn watch-btn" id="watchBtn" type="button" aria-label="Watch a demonstration of this maze" aria-pressed="false">
+          <span class="top-icon" aria-hidden="true">▶️</span><span class="top-label">Watch</span>
+        </button>
+        <button class="top-btn sound-btn" id="soundBtn" type="button" aria-haspopup="dialog" aria-label="Sound and music settings">
+          <span class="top-icon" id="soundIcon" aria-hidden="true">🔊</span><span class="top-label">Sound</span>
+        </button>
+      </div>
     </header>
 
     <div class="msg" id="message" role="status" aria-live="polite">🐒 Two tunnels leave Start. One reaches Finish. Drag to find it.</div>
@@ -292,6 +363,21 @@
     </div>
   </dialog>
 
+  <dialog class="sound-dialog" id="soundDialog" aria-labelledby="soundTitle">
+    <div class="sound-content">
+      <div class="logic-heading">
+        <h2 id="soundTitle">🔊 Sound &amp; Music</h2>
+        <button class="logic-close" id="soundClose" type="button">Close</button>
+      </div>
+      <p>Choose how SaNa’s maze sounds.</p>
+      <div class="sound-options">
+        <button class="sound-choice" id="soundMaster" type="button">🔊 Sound: ON</button>
+        <button class="sound-choice" id="musicToggle" type="button">🎵 Music: ON</button>
+      </div>
+      <p class="sound-note">Sound controls the maze taps and finish celebration. Music controls the MathMatrix background tune.</p>
+    </div>
+  </dialog>
+
   <section class="win-overlay" id="winOverlay" role="dialog" aria-modal="true" aria-labelledby="winTitle">
     <div class="big" aria-hidden="true">🎉</div>
     <strong id="winTitle">You found the way through!</strong>
@@ -337,6 +423,20 @@
     var logicBtn = document.getElementById('logicBtn');
     var logicDialog = document.getElementById('logicDialog');
     var logicClose = document.getElementById('logicClose');
+    var soundBtn = document.getElementById('soundBtn');
+    var soundDialog = document.getElementById('soundDialog');
+    var soundClose = document.getElementById('soundClose');
+    var soundMaster = document.getElementById('soundMaster');
+    var musicToggle = document.getElementById('musicToggle');
+    var soundIcon = document.getElementById('soundIcon');
+    var mazeSoundOn = localStorage.getItem('mmSound') !== 'off';
+    var mazeMusicOn = localStorage.getItem('mmMusic') !== 'off';
+    var audioContext = null;
+    var audioUnlocked = false;
+    var bgmAudio = new Audio('./bgm-monkeys.mp3');
+    bgmAudio.loop = true;
+    bgmAudio.preload = 'none';
+    bgmAudio.volume = .22;
     var mazeCard = document.querySelector('.maze-card');
     var mazeWrap = document.querySelector('.maze-wrap');
     var startControls = document.getElementById('startControls');
@@ -348,6 +448,86 @@
     var demoFrame = null;
     var demoCleanupTimeout = null;
     var demoRoute = null;
+
+    function ensureMazeAudio() {
+      try {
+        var AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return null;
+        if (!audioContext) audioContext = new AudioContextClass();
+        if (audioContext.state === 'suspended') audioContext.resume().catch(function () {});
+        if (!audioUnlocked) {
+          var silent = audioContext.createBuffer(1, 1, 22050);
+          var source = audioContext.createBufferSource();
+          source.buffer = silent;
+          source.connect(audioContext.destination);
+          source.start(0);
+          audioUnlocked = true;
+        }
+        return audioContext;
+      } catch (err) {
+        audioContext = null;
+        return null;
+      }
+    }
+    function mazeTone(frequency, duration, type, delay, peak) {
+      if (!mazeSoundOn) return;
+      var ctx = ensureMazeAudio();
+      if (!ctx) return;
+      try {
+        var start = ctx.currentTime + (delay || 0);
+        var oscillator = ctx.createOscillator();
+        var gain = ctx.createGain();
+        oscillator.type = type || 'sine';
+        oscillator.frequency.value = frequency;
+        gain.gain.setValueAtTime(.0001, start);
+        gain.gain.exponentialRampToValueAtTime(peak || .045, start + .012);
+        gain.gain.exponentialRampToValueAtTime(.0001, start + duration);
+        oscillator.connect(gain);
+        gain.connect(ctx.destination);
+        oscillator.start(start);
+        oscillator.stop(start + duration + .02);
+      } catch (err) {}
+    }
+    function mazeWinSound() {
+      [523, 659, 784, 1047].forEach(function (frequency, index) {
+        mazeTone(frequency, .16, 'sine', index * .13, .055);
+      });
+    }
+    function startMazeMusic() {
+      if (!mazeSoundOn || !mazeMusicOn || !audioUnlocked) return;
+      try {
+        var play = bgmAudio.play();
+        if (play && typeof play.catch === 'function') play.catch(function () {});
+      } catch (err) {}
+    }
+    function refreshSoundControls() {
+      if (!soundBtn) return;
+      soundIcon.textContent = mazeSoundOn ? '🔊' : '🔇';
+      soundBtn.classList.toggle('off', !mazeSoundOn);
+      soundBtn.setAttribute('aria-label', mazeSoundOn ? 'Sound and music settings, sound on' : 'Sound and music settings, sound off');
+      soundBtn.setAttribute('aria-pressed', String(mazeSoundOn));
+      soundMaster.textContent = mazeSoundOn ? '🔊 Sound: ON' : '🔇 Sound: OFF';
+      soundMaster.classList.toggle('is-off', !mazeSoundOn);
+      musicToggle.textContent = mazeMusicOn ? '🎵 Music: ON' : '🎵 Music: OFF';
+      musicToggle.classList.toggle('is-off', !mazeMusicOn);
+      musicToggle.disabled = !mazeSoundOn;
+      musicToggle.title = mazeSoundOn ? '' : 'Turn Sound ON first';
+      if (!mazeSoundOn || !mazeMusicOn) bgmAudio.pause();
+      else startMazeMusic();
+    }
+    function syncSoundPreferences() {
+      mazeSoundOn = localStorage.getItem('mmSound') !== 'off';
+      mazeMusicOn = localStorage.getItem('mmMusic') !== 'off';
+      refreshSoundControls();
+    }
+    function setWatchButton(watching) {
+      var icon = watchBtn.querySelector('.top-icon');
+      var label = watchBtn.querySelector('.top-label');
+      if (icon) icon.textContent = watching ? '⏹' : '▶️';
+      if (label) label.textContent = watching ? 'Stop' : 'Watch';
+      watchBtn.setAttribute('aria-pressed', String(watching));
+      watchBtn.setAttribute('aria-label', watching ? 'Stop the maze demonstration' : 'Watch a demonstration of this maze');
+    }
 
     function key(x, y) { return x + ',' + y; }
     function same(a, b) { return a.x === b.x && a.y === b.y; }
@@ -744,9 +924,7 @@
       demoActive = false;
       demoRoute = null;
       clearDemoDrawing();
-      watchBtn.textContent = '▶️ Watch';
-      watchBtn.setAttribute('aria-pressed', 'false');
-      watchBtn.setAttribute('aria-label', 'Watch a demonstration of this maze');
+      setWatchButton(false);
       if (resumeClock !== false) resumeDemoClock();
       else demoPausedClock = false;
       if (announcement) setMessage(announcement);
@@ -783,9 +961,7 @@
       demoActive = false;
       demoFrame = null;
       demoRoute = null;
-      watchBtn.textContent = '▶️ Watch';
-      watchBtn.setAttribute('aria-pressed', 'false');
-      watchBtn.setAttribute('aria-label', 'Watch a demonstration of this maze');
+      setWatchButton(false);
       setMessage('🐒 Demo complete! Now find the path yourself.');
       resumeDemoClock();
       demoCleanupTimeout = window.setTimeout(function () {
@@ -818,9 +994,7 @@
         saveGame();
       }
       demoActive = true;
-      watchBtn.textContent = '⏹ Stop';
-      watchBtn.setAttribute('aria-pressed', 'true');
-      watchBtn.setAttribute('aria-label', 'Stop the maze demonstration');
+      setWatchButton(true);
       setMessage('🐒 SaNa is showing one way to the finish...');
       var duration = Math.max(4200, Math.min(12000, (demoRoute.length - 1) * 180));
       var beganAt = performance.now();
@@ -1071,6 +1245,7 @@
         path.pop();
         drawPath();
         saveGame();
+        mazeTone(390, .055, 'sine', 0, .035);
         return true;
       }
       var dx = target.x - last.x, dy = target.y - last.y;
@@ -1078,7 +1253,10 @@
       var c = cells[last.y][last.x];
       var blocked = (dx === 1 && c.walls.right) || (dx === -1 && c.walls.left) ||
         (dy === 1 && c.walls.bottom) || (dy === -1 && c.walls.top);
-      if (blocked) return false;
+      if (blocked) {
+        mazeTone(175, .075, 'triangle', 0, .04);
+        return false;
+      }
       path.push(target);
       if (target.x === cols - 1 && target.y === rows - 1) {
         solved = true;
@@ -1087,8 +1265,9 @@
         winTime.textContent = formatElapsed(elapsedMs);
         winOverlay.classList.add('show');
         updateSanaPosition();
+        mazeWinSound();
         document.getElementById('winNewBtn').focus();
-      }
+      } else mazeTone(520 + Math.min(path.length, 12) * 16, .055, 'sine', 0, .04);
       drawPath();
       saveGame();
       return true;
@@ -1153,6 +1332,58 @@
       if (logicDialog && typeof logicDialog.close === 'function') logicDialog.close();
       else if (logicDialog) logicDialog.removeAttribute('open');
     });
+    soundBtn.addEventListener('click', function () {
+      syncSoundPreferences();
+      if (soundDialog && typeof soundDialog.showModal === 'function') soundDialog.showModal();
+      else if (soundDialog) soundDialog.setAttribute('open', '');
+    });
+    soundClose.addEventListener('click', function () {
+      if (soundDialog && typeof soundDialog.close === 'function') soundDialog.close();
+      else if (soundDialog) soundDialog.removeAttribute('open');
+    });
+    soundDialog.addEventListener('click', function (event) {
+      if (event.target === soundDialog && typeof soundDialog.close === 'function') soundDialog.close();
+    });
+    soundMaster.addEventListener('click', function () {
+      mazeSoundOn = !mazeSoundOn;
+      localStorage.setItem('mmSound', mazeSoundOn ? 'on' : 'off');
+      refreshSoundControls();
+      if (mazeSoundOn) {
+        ensureMazeAudio();
+        mazeTone(660, .1, 'sine', 0, .05);
+      } else if (audioContext && audioContext.state !== 'suspended') {
+        audioContext.suspend().catch(function () {});
+      }
+    });
+    musicToggle.addEventListener('click', function () {
+      if (!mazeSoundOn) return;
+      mazeMusicOn = !mazeMusicOn;
+      localStorage.setItem('mmMusic', mazeMusicOn ? 'on' : 'off');
+      refreshSoundControls();
+      if (mazeMusicOn) {
+        ensureMazeAudio();
+        startMazeMusic();
+      }
+    });
+    window.addEventListener('storage', function (event) {
+      if (event.key === 'mmSound' || event.key === 'mmMusic' || event.key === null) syncSoundPreferences();
+    });
+    document.addEventListener('pointerdown', function () {
+      if (!mazeSoundOn) return;
+      ensureMazeAudio();
+      startMazeMusic();
+    }, { capture: true, passive: true });
+    document.addEventListener('keydown', function () {
+      if (!mazeSoundOn) return;
+      ensureMazeAudio();
+      startMazeMusic();
+    }, { capture: true, passive: true });
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) bgmAudio.pause();
+      else if (audioUnlocked) startMazeMusic();
+    });
+    window.addEventListener('pagehide', function () { bgmAudio.pause(); });
+    refreshSoundControls();
     document.getElementById('newBtn').addEventListener('click', newMaze);
     document.getElementById('winNewBtn').addEventListener('click', newMaze);
     function clearPath() {
