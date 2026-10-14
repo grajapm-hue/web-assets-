@@ -1,7 +1,7 @@
 // MathMatrix Pro++ Service Worker — full offline support
 // Bump CACHE_VERSION whenever you update the game HTML so kids get the new version.
 
-const CACHE_VERSION = 'mathmatrix-v137';
+const CACHE_VERSION = 'mathmatrix-v138';
 
 const ASSETS = [
   './',
@@ -36,7 +36,7 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(
-        keys.filter((k) => k !== CACHE_VERSION).map((k) => caches.delete(k))
+      keys.filter((k) => k.startsWith('mathmatrix-v') && k !== CACHE_VERSION).map((k) => caches.delete(k))
       )
     )
   );

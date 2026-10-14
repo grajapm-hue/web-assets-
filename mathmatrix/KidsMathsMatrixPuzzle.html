@@ -2973,6 +2973,9 @@ body{ background:#C9A87C !important; }
 .offlinePromise{ background:#EAFBF1 !important; border:1.5px solid #22c55e !important;
   border-radius:9px !important; padding:7px 10px !important; margin:0 0 9px !important;
   color:#0E5A34 !important; font-weight:800 !important; font-size:12.5px !important; }
+.offlineCacheNote{ background:#FFF9ED !important; border-left:4px solid #347db8 !important;
+  border-radius:8px !important; padding:9px 11px !important; margin:0 0 12px !important;
+  color:#33220F !important; font-size:13px !important; line-height:1.45 !important; font-weight:700 !important; }
 
 /* ══ GATE LOGIC — a real Play-screen game (#gatePanel), not a sheet ══
    Raja: "as much possible choices of using gate logic which creates eager
@@ -3342,7 +3345,8 @@ body{ background:#C9A87C !important; }
        push the payoff line past where a quick skim stops. Lead with it
        instead, in its own banner so it still reads at a glance even if
        nobody scrolls the steps below. -->
-  <div class="offlinePromise">✅ Once added, tap the icon anytime to play — no internet needed!</div>
+  <div class="offlinePromise">✅ After the app loads online, it saves its game files on this device for offline play.</div>
+  <p class="offlineCacheNote">The home-screen app uses your browser’s local app cache for offline files. Clearing browser or site data can remove that cache even if the app icon remains. Reopen the app while online to rebuild its offline copy. Until then, you may see “You are offline.”</p>
   <b>iPhone / iPad (Safari):</b><br>
   1. Open this game in Safari<br>
   2. Tap the Share button (square with arrow ⬆️)<br>
@@ -10277,30 +10281,28 @@ if (navigator.storage && navigator.storage.persist) {
           z: lvl  ? lvl.getAttribute('data-size')    : ''
         }));
       } catch (e) {}
-      var jobs = [];
+      /* Ask this app's service worker to check for a new build. Keep its
+         registration and offline data in place; the previous handler removed
+         the wrong cache namespace on Main and then did a cacheable plain reload.
+         The unique query also bypasses an old browser HTTP-cache response. */
+      var updateTask = Promise.resolve();
       try {
-        // getRegistration() (singular, no scope arg) -- the registration that
-        // actually controls THIS document. Deliberately not getRegistrations()
-        // (plural): that returns every SW registered for the whole origin,
-        // which on a device that also has the beta preview installed would
-        // unregister beta's worker too. This button should only ever touch
-        // this app's own state.
         if ('serviceWorker' in navigator && navigator.serviceWorker.getRegistration){
-          jobs.push(navigator.serviceWorker.getRegistration().then(function(r){
-            return r ? r.unregister() : null;
-          }));
-        }
-        if (window.caches && caches.keys){
-          jobs.push(caches.keys().then(function(ks){
-            // Same reasoning: only this file's own 'mathmatrix-beta-*'
-            // namespace, never the real app's 'mathmatrix-v*' caches.
-            return Promise.all(ks.filter(function(k){ return k.indexOf('mathmatrix-beta-') === 0; })
-              .map(function(k){ return caches.delete(k); }));
-          }));
+          updateTask = navigator.serviceWorker.getRegistration().then(function(reg){
+            return reg && reg.update ? reg.update() : null;
+          }).catch(function(){ return null; });
         }
       } catch (e) {}
-      var reload = function(){ location.reload(); };
-      Promise.all(jobs).then(reload).catch(reload);
+      var navigated = false;
+      function loadFresh(){
+        if (navigated) return;
+        navigated = true;
+        var freshUrl = new URL(location.href);
+        freshUrl.searchParams.set('mm-update', String(Date.now()));
+        location.replace(freshUrl.href);
+      }
+      var fallbackTimer = setTimeout(loadFresh, 2200);
+      updateTask.then(function(){ clearTimeout(fallbackTimer); loadFresh(); }, function(){ clearTimeout(fallbackTimer); loadFresh(); });
     });
   }
 
