@@ -270,6 +270,7 @@
     ];
     var level = 'easy';
     var pickedColor = '#2563eb';
+    var lastFinishApproach = null;
     var cols, rows, cells, path, solved, dragging, previousPointerCell;
     var elapsedMs = 0;
     var timerStartedAt = null;
@@ -431,14 +432,17 @@
       return remaining === 0;
     }
 
-    function buildCandidate(c, r, settings, rng) {
+    function buildCandidate(c, r, settings, rng, requestedFinishApproach) {
       var grid = makeGrid(c, r);
       var start = { x: 0, y: 0 }, finish = { x: c - 1, y: r - 1 };
       var startExits = [{ x: 1, y: 0, dir: 'right' }, { x: 0, y: 1, dir: 'bottom' }];
       var trueExit = startExits[randomIndex(startExits.length, rng)];
       var decoyExit = startExits[0] === trueExit ? startExits[1] : startExits[0];
+      // The right-edge route reaches Finish from above; the bottom-edge route
+      // reaches it from the left. New mazes alternate these final approaches.
       var finishExits = [{ x: c - 1, y: r - 2 }, { x: c - 2, y: r - 1 }];
-      var trueFinishExit = finishExits[randomIndex(finishExits.length, rng)];
+      var trueFinishExit = requestedFinishApproach === 'right' ? finishExits[0] :
+        requestedFinishApproach === 'bottom' ? finishExits[1] : finishExits[randomIndex(finishExits.length, rng)];
       var decoyFinishExit = finishExits[0] === trueFinishExit ? finishExits[1] : finishExits[0];
       var forbidden = Object.create(null);
       forbidden[key(start.x, start.y)] = true;
@@ -474,16 +478,17 @@
         start: start, finish: finish,
         trueGate: { x: trueExit.x, y: trueExit.y },
         decoyGate: { x: decoyExit.x, y: decoyExit.y },
-        decoyEnd: decoyEnd
+        decoyEnd: decoyEnd,
+        finishApproach: trueFinishExit.x === c - 1 ? 'right' : 'bottom'
       };
     }
 
-    function generateMaze(levelName, rng) {
+    function generateMaze(levelName, rng, requestedFinishApproach) {
       var settings = LEVELS[levelName];
       rng = rng || Math.random;
       var best = null, bestScore = -Infinity;
       for (var attempt = 0; attempt < 240; attempt++) {
-        var maze = buildCandidate(settings.cols, settings.rows, settings, rng);
+        var maze = buildCandidate(settings.cols, settings.rows, settings, rng, requestedFinishApproach);
         if (!maze) continue;
         var a = auditMaze(maze);
         var score = Math.min(a.solutionSteps / settings.minSolutionSteps, a.solutionTurns / settings.minSolutionTurns) +
@@ -496,20 +501,33 @@
       if (best) return best;
       // This fallback is still a valid spanning tree with two Start branches;
       // it is retained only for unusually unlucky random streams.
-      return buildFallbackMaze(settings, rng);
+      return buildFallbackMaze(settings, rng, requestedFinishApproach);
     }
 
-    function buildFallbackMaze(settings, rng) {
+    function buildFallbackMaze(settings, rng, requestedFinishApproach) {
       // Retry with relaxed route lengths while preserving the near-miss structure.
       var relaxed = {
         minSolutionSteps: 1, minSolutionTurns: 0,
         minDecoySteps: 1, minDecoyTurns: 0
       };
       for (var i = 0; i < 500; i++) {
-        var maze = buildCandidate(settings.cols, settings.rows, relaxed, rng);
+        var maze = buildCandidate(settings.cols, settings.rows, relaxed, rng, requestedFinishApproach);
         if (maze) return maze;
       }
       throw new Error('Unable to create a connected maze.');
+    }
+
+    function finishApproachFromGrid(grid, c, r) {
+      var finishCell = grid[r - 1][c - 1];
+      if (!finishCell.walls.top) return 'right';
+      if (!finishCell.walls.left) return 'bottom';
+      return null;
+    }
+    function nextFinishApproach(last, rng) {
+      rng = rng || Math.random;
+      if (last === 'right') return 'bottom';
+      if (last === 'bottom') return 'right';
+      return rng() < .5 ? 'right' : 'bottom';
     }
 
     function graphNeighbors(maze, p) {
@@ -618,7 +636,9 @@
       window.__TUNNELS_META_TEST_API__ = {
         LEVELS: LEVELS,
         generateMaze: generateMaze,
-        auditMaze: auditMaze
+        auditMaze: auditMaze,
+        finishApproachFromGrid: finishApproachFromGrid,
+        nextFinishApproach: nextFinishApproach
       };
       return;
     }
@@ -892,6 +912,7 @@
       path = save.path.map(function (point) { return { x: point.x, y: point.y }; });
       elapsedMs = save.elapsedMs;
       solved = save.solved;
+      lastFinishApproach = finishApproachFromGrid(cells, cols, rows) || lastFinishApproach;
       dragging = false;
       previousPointerCell = null;
       timerStartedAt = solved || document.hidden ? null : Date.now();
@@ -930,7 +951,10 @@
       var settings = LEVELS[level];
       cols = settings.cols;
       rows = settings.rows;
-      cells = generateMaze(level).cells;
+      var requestedFinishApproach = nextFinishApproach(lastFinishApproach, Math.random);
+      var generatedMaze = generateMaze(level, Math.random, requestedFinishApproach);
+      cells = generatedMaze.cells;
+      lastFinishApproach = generatedMaze.finishApproach;
       path = [{ x: 0, y: 0 }];
       solved = false;
       dragging = false;
