@@ -35,7 +35,7 @@
     }
     button { font: inherit; }
     .app { width: min(100%, 720px); margin: 0 auto; padding-bottom: 18px; }
-    .bar { display: flex; align-items: center; gap: 9px; padding: 10px 12px; }
+    .bar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; }
     .back-btn, .top-btn {
       flex: none;
       border: 0;
@@ -49,15 +49,35 @@
     .top-btn { min-height: 40px; padding: 8px 12px; border-radius: 13px; font-size: 13px; }
     .watch-btn { background: #347db8; white-space: nowrap; }
     .watch-btn[aria-pressed="true"] { background: #7c3aed; }
+    .logic-btn { background: #7c3aed; white-space: nowrap; }
+    .logic-dialog {
+      width: min(calc(100% - 28px), 520px);
+      max-width: 520px;
+      max-height: min(78dvh, 620px);
+      padding: 0;
+      overflow: auto;
+      border: 2px solid var(--card-border);
+      border-radius: 18px;
+      color: var(--brown-dark);
+      background: var(--card);
+      box-shadow: 0 12px 36px rgba(51, 34, 15, .32);
+    }
+    .logic-dialog::backdrop { background: rgba(20, 12, 4, .55); }
+    .logic-content { padding: 18px 20px; }
+    .logic-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .logic-heading h2 { margin: 0; color: #1f5c3f; font-size: 20px; }
+    .logic-content p, .logic-content li { font-size: 16px; line-height: 1.5; }
+    .logic-content ul { padding-left: 22px; }
+    .logic-close { min-height: 40px; padding: 8px 14px; border: 0; border-radius: 12px; color: #fff; background: #6b4a28; font-weight: 800; }
     .msg {
-      margin: 0 12px 10px;
-      padding: 11px 14px;
+      margin: 0 12px 8px;
+      padding: 9px 13px;
       border-radius: 17px;
       background: var(--card);
       box-shadow: 0 3px 0 rgba(94, 64, 32, .2);
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 700;
-      line-height: 1.4;
+      line-height: 1.3;
     }
     .msg strong { color: #9a3412; }
     .level-row, .color-row { display: flex; justify-content: center; align-items: center; gap: 8px; margin: 0 12px 10px; }
@@ -90,11 +110,10 @@
     .start-row {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 12px;
       width: min(calc(100% - 20px), 500px);
-      min-height: 75px;
+      min-height: 66px;
       margin: 0 auto 7px;
-      padding-left: 3px;
     }
     .start-person {
       display: flex;
@@ -102,12 +121,12 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      width: 54px;
-      min-height: 72px;
+      width: 58px;
+      min-height: 62px;
     }
     .start-person .sana-bubble { margin: 0; }
     .start-person .start-tag { margin-top: 2px; }
-    .maze-actions { display: flex; flex: none; gap: 7px; }
+    .maze-actions { display: flex; flex: 1; justify-content: center; gap: 7px; }
     .sana-bubble {
       display: inline-flex;
       flex-direction: column;
@@ -143,7 +162,7 @@
     @keyframes sanaBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
     .start-tag { color: var(--green); }
     .finish-tag { color: var(--red); }
-    .maze-wrap { display: flex; justify-content: center; padding: 5px 10px 20px; }
+    .maze-wrap { display: flex; justify-content: center; padding: 3px 10px 8px; }
     .maze-card {
       position: relative;
       width: min(100%, 500px);
@@ -154,14 +173,6 @@
       box-shadow: 0 4px 0 rgba(74, 51, 26, .18);
     }
     #mazeSvg { display: block; width: 100%; height: auto; overflow: visible; touch-action: none; user-select: none; }
-    .hint {
-      margin: 0 18px;
-      color: #614522;
-      text-align: center;
-      font-size: clamp(14px, 3.8vw, 16px);
-      font-weight: 600;
-      line-height: 1.5;
-    }
     .win-overlay {
       position: fixed;
       z-index: 10;
@@ -195,7 +206,22 @@
       .start-row { padding-left: 11px; }
     }
     @media (max-width: 600px) and (orientation: portrait) {
-      .maze-card { width: min(100%, 500px, max(280px, calc(75dvh - 330px))); }
+      .level-row, .color-row { gap: 7px; }
+      .color-row { margin-bottom: 7px; }
+      .start-row { width: min(calc(100% - 16px), 500px); }
+      .top-btn { padding-inline: 10px; }
+    }
+    @media (max-height: 820px) {
+      .bar { padding-block: 5px; }
+      .msg { margin-bottom: 6px; padding-block: 7px; font-size: 14px; }
+      .level-row, .color-row { margin-bottom: 6px; }
+      .color-row { gap: 7px; }
+      .swatch { width: 27px; height: 27px; }
+      .start-row { min-height: 56px; margin-bottom: 3px; }
+      .start-person { min-height: 54px; }
+      .start-person .sana-face { width: 42px; height: 42px; font-size: 24px; }
+      .maze-wrap { padding-top: 1px; padding-bottom: 5px; }
+      .tag { font-size: 12px; }
     }
     @media (prefers-reduced-motion: no-preference) {
       button { transition: transform .12s ease, filter .12s ease; }
@@ -211,10 +237,11 @@
     <header class="bar">
       <button class="back-btn" id="backBtn" type="button" aria-label="Back to puzzles">←</button>
       <div class="title">🧭 Tunnels Of SaNa Maze</div>
+      <button class="top-btn logic-btn" id="logicBtn" type="button" aria-haspopup="dialog">💡 Logic</button>
       <button class="top-btn watch-btn" id="watchBtn" type="button" aria-label="Watch a demonstration of this maze" aria-pressed="false">▶️ Watch</button>
     </header>
 
-    <div class="msg" id="message" role="status" aria-live="polite">🐒 <strong>Two tunnels leave Start.</strong> One reaches Finish. The other winds close, then stops at a wall. Trace carefully.</div>
+    <div class="msg" id="message" role="status" aria-live="polite">🐒 Two tunnels leave Start. One reaches Finish. Drag to find it.</div>
 
     <div class="level-row" role="group" aria-label="Maze difficulty">
       <button class="level-btn active" data-level="easy" type="button" aria-pressed="true">Easy</button>
@@ -248,9 +275,22 @@
       </div>
     </div>
     <div class="tag finish-tag" id="finishTag">🏁 FINISH<span class="sana-bubble" id="finishSana" aria-hidden="true" hidden><span class="sana-face">🐒</span><span class="sana-name">SaNa</span></span></div>
-
-    <p class="hint">Drag from the green marker. Both tunnels twist toward the goal, but only one reaches it. You can retrace your steps or use the arrow keys. Tap Watch to see a demo.</p>
   </main>
+
+  <dialog class="logic-dialog" id="logicDialog" aria-labelledby="logicTitle">
+    <div class="logic-content">
+      <div class="logic-heading">
+        <h2 id="logicTitle">💡 How to play</h2>
+        <button class="logic-close" id="logicClose" type="button">Close</button>
+      </div>
+      <p>Two tunnels leave Start. One winds all the way to Finish; the other gets close, then ends at a wall. Follow the turns and use your own map in your mind.</p>
+      <ul>
+        <li>Drag the colored marker one cell at a time. Walls stop it.</li>
+        <li>Drag back to the previous cell to retrace your route.</li>
+        <li>Choose <b>New</b> for another maze, <b>Clear</b> to restart this one, or <b>Watch</b> for a demonstration.</li>
+      </ul>
+    </div>
+  </dialog>
 
   <section class="win-overlay" id="winOverlay" role="dialog" aria-modal="true" aria-labelledby="winTitle">
     <div class="big" aria-hidden="true">🎉</div>
@@ -294,6 +334,13 @@
     var startSana = document.getElementById('startSana');
     var finishSana = document.getElementById('finishSana');
     var watchBtn = document.getElementById('watchBtn');
+    var logicBtn = document.getElementById('logicBtn');
+    var logicDialog = document.getElementById('logicDialog');
+    var logicClose = document.getElementById('logicClose');
+    var mazeCard = document.querySelector('.maze-card');
+    var mazeWrap = document.querySelector('.maze-wrap');
+    var startControls = document.getElementById('startControls');
+    var finishTag = document.getElementById('finishTag');
     var cellSize = 0;
     var viewHeight = 0;
     var demoActive = false;
@@ -685,6 +732,10 @@
       demoPausedClock = false;
       if (!solved && !document.hidden && timerStartedAt === null) timerStartedAt = Date.now();
     }
+    function setMessage(text) {
+      message.textContent = text;
+      requestAnimationFrame(fitMazeToViewport);
+    }
     function stopDemo(announcement, resumeClock) {
       if (demoFrame !== null) cancelAnimationFrame(demoFrame);
       if (demoCleanupTimeout !== null) window.clearTimeout(demoCleanupTimeout);
@@ -698,7 +749,7 @@
       watchBtn.setAttribute('aria-label', 'Watch a demonstration of this maze');
       if (resumeClock !== false) resumeDemoClock();
       else demoPausedClock = false;
-      if (announcement) message.textContent = announcement;
+      if (announcement) setMessage(announcement);
     }
     function drawDemo(progress) {
       var pathLayer = document.getElementById('demoPathLayer');
@@ -735,7 +786,7 @@
       watchBtn.textContent = '▶️ Watch';
       watchBtn.setAttribute('aria-pressed', 'false');
       watchBtn.setAttribute('aria-label', 'Watch a demonstration of this maze');
-      message.textContent = '🐒 Demo complete! Now find the path yourself.';
+      setMessage('🐒 Demo complete! Now find the path yourself.');
       resumeDemoClock();
       demoCleanupTimeout = window.setTimeout(function () {
         demoCleanupTimeout = null;
@@ -748,7 +799,7 @@
         return;
       }
       if (solved) {
-        message.textContent = '🐒 You already found the way! Start a new maze to watch it.';
+        setMessage('🐒 You already found the way! Start a new maze to watch it.');
         return;
       }
       if (demoCleanupTimeout !== null) window.clearTimeout(demoCleanupTimeout);
@@ -757,7 +808,7 @@
       demoRoute = findPath({ cols: cols, rows: rows, cells: cells }, { x: 0, y: 0 }, { x: cols - 1, y: rows - 1 }, null);
       if (!demoRoute || demoRoute.length < 2) {
         demoRoute = null;
-        message.textContent = '🐒 This maze demo is unavailable. Try a new maze.';
+        setMessage('🐒 This maze demo is unavailable. Try a new maze.');
         return;
       }
       if (timerStartedAt !== null) {
@@ -770,7 +821,7 @@
       watchBtn.textContent = '⏹ Stop';
       watchBtn.setAttribute('aria-pressed', 'true');
       watchBtn.setAttribute('aria-label', 'Stop the maze demonstration');
-      message.textContent = '🐒 SaNa is showing one way to the finish...';
+      setMessage('🐒 SaNa is showing one way to the finish...');
       var duration = Math.max(4200, Math.min(12000, (demoRoute.length - 1) * 180));
       var beganAt = performance.now();
       drawDemo(0);
@@ -792,6 +843,21 @@
       var targetCenter = svgRect.left + svgRect.width / (2 * cols);
       var currentCenter = personRect.left + personRect.width / 2;
       startPerson.style.transform = 'translateX(' + (targetCenter - currentCenter) + 'px)';
+    }
+    function fitMazeToViewport() {
+      if (!cols || !rows || !mazeCard || !mazeWrap || !finishTag) return;
+      var viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+      var wrapTop = Math.max(0, mazeWrap.getBoundingClientRect().top);
+      var safeBottom = parseFloat(getComputedStyle(document.body).paddingBottom) || 0;
+      var appBottom = parseFloat(getComputedStyle(document.querySelector('.app')).paddingBottom) || 0;
+      var remaining = viewportHeight - wrapTop - 3 - 8 - finishTag.getBoundingClientRect().height - 10 - safeBottom - appBottom;
+      var cardChrome = 22;
+      var widthByHeight = Math.max(0, remaining - cardChrome) * cols / rows + cardChrome;
+      var widthByScreen = Math.max(220, mazeWrap.clientWidth - 20);
+      var cardWidth = Math.max(220, Math.min(500, widthByScreen, widthByHeight));
+      mazeCard.style.width = cardWidth + 'px';
+      if (startControls) startControls.style.width = cardWidth + 'px';
+      alignSaNaWithStart();
     }
     function updateSanaPosition() {
       startSana.hidden = !!solved;
@@ -926,7 +992,7 @@
       timerStartedAt = solved || document.hidden ? null : Date.now();
       winOverlay.classList.toggle('show', solved);
       if (solved) winTime.textContent = formatElapsed(elapsedMs);
-      else message.innerHTML = '🐒 <strong>Two tunnels leave Start.</strong> One reaches Finish. The other winds close, then stops at a wall. Trace carefully.';
+      else setMessage('🐒 Two tunnels leave Start. One reaches Finish. Drag to find it.');
       syncSelections();
       render();
       updateSanaPosition();
@@ -952,7 +1018,7 @@
         '<g id="demoPathLayer" pointer-events="none"></g><g id="demoDotLayer" pointer-events="none"></g>';
       drawPath();
       updateSanaPosition();
-      alignSaNaWithStart();
+      fitMazeToViewport();
     }
     function newMaze() {
       stopDemo('', false);
@@ -970,7 +1036,7 @@
       elapsedMs = 0;
       timerStartedAt = Date.now();
       winOverlay.classList.remove('show');
-      message.innerHTML = '🐒 <strong>Two tunnels leave Start.</strong> One reaches Finish. The other winds close, then stops at a wall. Trace carefully.';
+      setMessage('🐒 Two tunnels leave Start. One reaches Finish. Drag to find it.');
       syncSelections();
       render();
       saveGame();
@@ -1079,6 +1145,14 @@
       });
     });
     watchBtn.addEventListener('click', startDemo);
+    logicBtn.addEventListener('click', function () {
+      if (logicDialog && typeof logicDialog.showModal === 'function') logicDialog.showModal();
+      else if (logicDialog) logicDialog.setAttribute('open', '');
+    });
+    logicClose.addEventListener('click', function () {
+      if (logicDialog && typeof logicDialog.close === 'function') logicDialog.close();
+      else if (logicDialog) logicDialog.removeAttribute('open');
+    });
     document.getElementById('newBtn').addEventListener('click', newMaze);
     document.getElementById('winNewBtn').addEventListener('click', newMaze);
     function clearPath() {
@@ -1132,7 +1206,8 @@
     });
     window.addEventListener('pagehide', pauseAndSave);
     window.addEventListener('pageshow', resumeTimer);
-    window.addEventListener('resize', alignSaNaWithStart);
+    window.addEventListener('resize', fitMazeToViewport);
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', fitMazeToViewport);
 
     var savedLevel = readSavedLevels();
     if (savedLevel && savedLevels[savedLevel]) restoreGame(savedLevels[savedLevel]); else newMaze();
