@@ -51,7 +51,7 @@ window.onerror = function(msg, src, line, col, err){
 <link rel="apple-touch-icon" href="icon-192.png">
 <!-- without this the browser asks for /favicon.ico, 404s, and the tab sits blank -->
 <link rel="icon" href="icon-192.png" type="image/png">
-<title>🐒🎲 MathMatrix Pro++ — Magic Square Puzzles (3×3 · 4×4 · 5×5 · 3³ …)</title>
+<title>🐒🎲 MathMatrix Pro++ — Beta V173Plus (Magic Square Puzzles)</title>
 
 <!-- Raja: the copy icon in Android's share sheet copies something that will
      not open in a fresh browser, while every other channel works.
@@ -5002,12 +5002,8 @@ body{ background:#C9A87C !important; }
        the BETA flag up top — so it's still checkable after scrolling all the
        way through the list. Same #flagVer/#verLabel source, so it can never
        disagree with the top of the page. -->
-  <!-- No literal "v" here. The span is filled with window.BETA_VER, which
-       already carries its own prefix ("v133", "beta-129"), so the hardcoded
-       one doubled it: the live app has been showing "vv132" and then "vv133",
-       and beta "vbeta-128". Long-standing -- the pre-promotion live file
-       carries the same markup -- and it matters more than it looks, because
-       this footer is the thing you read to check which build you are on. -->
+  <!-- The version is supplied by the Beta build label so it is easy to tell
+       this preview apart from the public app, including after scrolling. -->
   <div class="verFooter"><span id="verFooter">…</span></div>
 </div>
 
@@ -15547,7 +15543,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'v173 (V165 tablet portrait rotation reference)';
+  var BUILD_VER = 'V173Plus';
   /* ── BEACON FOR APPS INSTALLED LONG AGO ─────────────────────────────────
      Raja's iPhone sat on v139 and would not come forward, however many times
      he tapped Online Update.
@@ -15572,7 +15568,7 @@ if (navigator.storage && navigator.storage.persist) {
      rejects). check-update-beacon.js keeps it equal to BUILD_VER, because a
      beacon that goes stale strands people exactly as thoroughly as no beacon.
 
-     window.BETA_VER = 'v152+'
+     window.BETA_VER = 'V173Plus'
      ───────────────────────────────────────────────────────────────────── */
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
@@ -15582,14 +15578,15 @@ if (navigator.storage && navigator.storage.persist) {
      value instead of catching it — it now asserts the two AGREE.) */
   window.BETA_VER = BUILD_VER.split(' ')[0];   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
-  if (verEl) verEl.textContent = BUILD_VER;
-  // the short form on the BETA flag, where it is seen without looking for it
+  var betaDisplayVer = 'Beta ' + window.BETA_VER;
+  if (verEl) verEl.textContent = betaDisplayVer;
+  // Mark the Beta flag and footer so they are distinct from the public app.
   var flagVer = document.getElementById('flagVer');
-  if (flagVer) flagVer.textContent = window.BETA_VER;
+  if (flagVer) flagVer.textContent = betaDisplayVer;
   // same short form again at the bottom of the puzzle table, past Coming
   // Soon — so it is still checkable after scrolling through the whole list
   var footVer = document.getElementById('verFooter');
-  if (footVer) footVer.textContent = window.BETA_VER;
+  if (footVer) footVer.textContent = betaDisplayVer;
 
   /* ── AUTO ONLINE REFRESH ──
      Raja asked for this in as many words — "auto forced app online refresh" —
