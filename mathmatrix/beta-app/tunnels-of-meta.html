@@ -1,0 +1,899 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#d9b888">
+  <title>Tunnels Of Sa Na Maze</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg1: #d9b888;
+      --bg2: #c9a26e;
+      --card: #fff8ec;
+      --card-border: #c4a277;
+      --brown: #4a331a;
+      --brown-dark: #33220f;
+      --green: #16a34a;
+      --red: #dc2626;
+      --gold: #fbbf24;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-right: env(safe-area-inset-right, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-left: env(safe-area-inset-left, 0px);
+    }
+    * { box-sizing: border-box; }
+    html { min-height: 100%; background: var(--bg2); }
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      margin: 0;
+      padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
+      color: var(--brown-dark);
+      background: linear-gradient(180deg, var(--bg1), var(--bg2));
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    button { font: inherit; }
+    .app { width: min(100%, 720px); margin: 0 auto; padding-bottom: 18px; }
+    .bar { display: flex; align-items: center; gap: 9px; padding: 10px 12px; }
+    .back-btn, .top-btn {
+      flex: none;
+      border: 0;
+      color: #fff;
+      background: #6b4a28;
+      box-shadow: 0 3px 0 rgba(51, 34, 15, .2);
+      font-weight: 800;
+    }
+    .back-btn { width: 44px; height: 44px; border-radius: 14px; font-size: 22px; }
+    .title { flex: 1; min-width: 0; color: #1f5c3f; font-size: clamp(16px, 4vw, 20px); font-weight: 900; }
+    .top-btn { min-height: 40px; padding: 8px 12px; border-radius: 13px; font-size: 13px; }
+    .msg {
+      margin: 0 12px 10px;
+      padding: 11px 14px;
+      border-radius: 17px;
+      background: var(--card);
+      box-shadow: 0 3px 0 rgba(94, 64, 32, .2);
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+    .msg strong { color: #9a3412; }
+    .level-row, .color-row { display: flex; justify-content: center; align-items: center; gap: 8px; margin: 0 12px 10px; }
+    .level-btn {
+      flex: 1;
+      max-width: 150px;
+      min-height: 40px;
+      border: 0;
+      border-radius: 999px;
+      color: #fff;
+      font-weight: 900;
+      opacity: .58;
+    }
+    .level-btn.active { opacity: 1; box-shadow: 0 3px 0 rgba(0, 0, 0, .2); }
+    .level-btn[data-level="easy"] { background: #16a34a; }
+    .level-btn[data-level="medium"] { background: #2563eb; }
+    .level-btn[data-level="hard"] { background: #ea580c; }
+    .color-row { flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+    .color-label { color: var(--brown); font-size: 12px; font-weight: 900; }
+    .swatch {
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      border: 3px solid rgba(255,255,255,.75);
+      border-radius: 50%;
+      box-shadow: 0 1px 2px rgba(0,0,0,.2);
+    }
+    .swatch.picked { outline: 3px solid var(--brown-dark); outline-offset: 1px; }
+    .tag { text-align: center; font-size: 11px; font-weight: 900; letter-spacing: .6px; }
+    .sana-bubble {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin: 0 5px 4px;
+      padding: 4px 9px;
+      border: 2px solid #fbbf24;
+      border-radius: 999px;
+      color: #4a331a;
+      background: #fff8ec;
+      box-shadow: 0 2px 0 rgba(74, 51, 26, .18);
+      font-size: 12px;
+      letter-spacing: 0;
+      vertical-align: middle;
+    }
+    .sana-bubble[hidden] { display: none; }
+    .start-tag { color: var(--green); }
+    .finish-tag { color: var(--red); }
+    .maze-wrap { display: flex; justify-content: center; padding: 5px 10px; }
+    .maze-card {
+      width: min(100%, 500px);
+      padding: 9px;
+      border: 2px solid var(--card-border);
+      border-radius: 17px;
+      background: #f3e4c9;
+      box-shadow: 0 4px 0 rgba(74, 51, 26, .18);
+    }
+    #mazeSvg { display: block; width: 100%; height: auto; overflow: visible; touch-action: none; user-select: none; }
+    .controls { display: flex; justify-content: center; gap: 9px; margin: 12px; }
+    .ctrl-btn {
+      min-height: 42px;
+      padding: 9px 17px;
+      border: 2px solid var(--card-border);
+      border-radius: 999px;
+      color: var(--brown-dark);
+      background: var(--card);
+      font-weight: 900;
+    }
+    .hint { margin: 0 18px; color: #614522; text-align: center; font-size: 12px; line-height: 1.45; }
+    .win-overlay {
+      position: fixed;
+      z-index: 10;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 12px;
+      padding: 24px;
+      background: rgba(20, 12, 4, .58);
+      text-align: center;
+    }
+    .win-overlay.show { display: flex; }
+    .win-overlay .big { font-size: 52px; }
+    .win-overlay strong { color: #fde68a; font-size: 22px; }
+    .win-overlay span { color: #fff; font-size: 14px; }
+    .win-overlay button {
+      margin-top: 6px;
+      padding: 11px 22px;
+      border: 0;
+      border-radius: 999px;
+      color: #3b2200;
+      background: var(--gold);
+      font-weight: 900;
+    }
+    .win-overlay .win-clear-btn { color: #fff; background: #6b4a28; }
+    @media (min-width: 700px) {
+      .app { padding-top: 8px; }
+      .msg { font-size: 15px; }
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      button { transition: transform .12s ease, filter .12s ease; }
+      button:active { transform: translateY(1px) scale(.98); filter: brightness(.96); }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="bar">
+      <button class="back-btn" id="backBtn" type="button" aria-label="Back to puzzles">←</button>
+      <div class="title">🧭 Tunnels Of Sa Na Maze</div>
+      <button class="top-btn" id="newBtn" type="button">🔄 New</button>
+    </header>
+
+    <div class="msg" id="message" role="status" aria-live="polite">🐒 <strong>Two tunnels leave Start.</strong> One reaches Finish. The other winds close, then stops at a wall. Trace carefully.</div>
+
+    <div class="level-row" role="group" aria-label="Maze difficulty">
+      <button class="level-btn active" data-level="easy" type="button" aria-pressed="true">Easy</button>
+      <button class="level-btn" data-level="medium" type="button" aria-pressed="false">Medium</button>
+      <button class="level-btn" data-level="hard" type="button" aria-pressed="false">Hard</button>
+    </div>
+
+    <div class="color-row" role="group" aria-label="Choose path color">
+      <span class="color-label">Path color:</span>
+      <button class="swatch picked" data-color="#2563eb" style="background:#2563eb" type="button" aria-label="Blue path" aria-pressed="true"></button>
+      <button class="swatch" data-color="#dc2626" style="background:#dc2626" type="button" aria-label="Red path" aria-pressed="false"></button>
+      <button class="swatch" data-color="#16a34a" style="background:#16a34a" type="button" aria-label="Green path" aria-pressed="false"></button>
+      <button class="swatch" data-color="#f59e0b" style="background:#f59e0b" type="button" aria-label="Orange path" aria-pressed="false"></button>
+      <button class="swatch" data-color="#9333ea" style="background:#9333ea" type="button" aria-label="Purple path" aria-pressed="false"></button>
+      <button class="swatch" data-color="#ec4899" style="background:#ec4899" type="button" aria-label="Pink path" aria-pressed="false"></button>
+    </div>
+
+    <div class="tag start-tag" id="startTag"><span class="sana-bubble" id="startSana" aria-hidden="true">🐒 SaNa</span>⬇ START</div>
+    <div class="maze-wrap">
+      <div class="maze-card">
+        <svg id="mazeSvg" viewBox="0 0 100 133.333" role="img" aria-label="Interactive maze. Drag from the green Start marker to the red Finish marker."></svg>
+      </div>
+    </div>
+    <div class="tag finish-tag" id="finishTag">🏁 FINISH<span class="sana-bubble" id="finishSana" aria-hidden="true" hidden>🐒 SaNa</span></div>
+
+    <div class="controls">
+      <button class="ctrl-btn" id="clearBtn" type="button">✖ Clear path</button>
+    </div>
+    <p class="hint">Drag from the green marker. Both tunnels twist toward the goal, but only one reaches it. You can retrace your steps or use the arrow keys.</p>
+  </main>
+
+  <section class="win-overlay" id="winOverlay" role="dialog" aria-modal="true" aria-labelledby="winTitle">
+    <div class="big" aria-hidden="true">🎉</div>
+    <strong id="winTitle">You found the way through!</strong>
+    <span id="winTime">Solved in 0:00</span>
+    <button id="winNewBtn" type="button">Try a new maze</button>
+    <button id="winClearBtn" class="win-clear-btn" type="button">Clear this maze</button>
+  </section>
+
+  <script>
+  (function () {
+    'use strict';
+
+    var LEVELS = {
+      easy:   { cols: 9,  rows: 12, minSolutionSteps: 18, minSolutionTurns: 5, minDecoySteps: 14, minDecoyTurns: 4 },
+      medium: { cols: 13, rows: 17, minSolutionSteps: 28, minSolutionTurns: 7, minDecoySteps: 22, minDecoyTurns: 5 },
+      hard:   { cols: 17, rows: 22, minSolutionSteps: 38, minSolutionTurns: 8, minDecoySteps: 30, minDecoyTurns: 6 }
+    };
+    var OPP = { top: 'bottom', right: 'left', bottom: 'top', left: 'right' };
+    var DIRECTIONS = [
+      { name: 'top', dx: 0, dy: -1 },
+      { name: 'right', dx: 1, dy: 0 },
+      { name: 'bottom', dx: 0, dy: 1 },
+      { name: 'left', dx: -1, dy: 0 }
+    ];
+    var level = 'easy';
+    var pickedColor = '#2563eb';
+    var cols, rows, cells, path, solved, dragging, previousPointerCell;
+    var elapsedMs = 0;
+    var timerStartedAt = null;
+    var SAVE_KEY = 'mmTunnelsOfSaNaSave';
+    var SAVE_VERSION = 1;
+    var PATH_COLORS = ['#2563eb', '#dc2626', '#16a34a', '#f59e0b', '#9333ea', '#ec4899'];
+    var svg = document.getElementById('mazeSvg');
+    var message = document.getElementById('message');
+    var winOverlay = document.getElementById('winOverlay');
+    var winTime = document.getElementById('winTime');
+    var startSana = document.getElementById('startSana');
+    var finishSana = document.getElementById('finishSana');
+    var cellSize = 0;
+    var viewHeight = 0;
+
+    function key(x, y) { return x + ',' + y; }
+    function same(a, b) { return a.x === b.x && a.y === b.y; }
+    function distance(a, b) { return Math.abs(a.x - b.x) + Math.abs(a.y - b.y); }
+    function randomIndex(length, rng) { return Math.floor(rng() * length); }
+    function shuffle(items, rng) {
+      var out = items.slice();
+      for (var i = out.length - 1; i > 0; i--) {
+        var j = randomIndex(i + 1, rng);
+        var tmp = out[i]; out[i] = out[j]; out[j] = tmp;
+      }
+      return out;
+    }
+    function makeGrid(c, r) {
+      var grid = [];
+      for (var y = 0; y < r; y++) {
+        var row = [];
+        for (var x = 0; x < c; x++) {
+          row.push({ x: x, y: y, visited: false, walls: { top: true, right: true, bottom: true, left: true } });
+        }
+        grid.push(row);
+      }
+      return grid;
+    }
+    function neighbors(c, r, x, y) {
+      var out = [];
+      for (var i = 0; i < DIRECTIONS.length; i++) {
+        var d = DIRECTIONS[i], nx = x + d.dx, ny = y + d.dy;
+        if (nx >= 0 && ny >= 0 && nx < c && ny < r) out.push({ x: nx, y: ny, dir: d.name });
+      }
+      return out;
+    }
+    function carve(grid, a, b, dir) {
+      grid[a.y][a.x].walls[dir] = false;
+      grid[b.y][b.x].walls[OPP[dir]] = false;
+    }
+    function carvePath(grid, route) {
+      for (var i = 0; i < route.length; i++) grid[route[i].y][route[i].x].visited = true;
+      for (var j = 1; j < route.length; j++) {
+        var a = route[j - 1], b = route[j], dx = b.x - a.x, dy = b.y - a.y;
+        var dir = dx === 1 ? 'right' : dx === -1 ? 'left' : dy === 1 ? 'bottom' : 'top';
+        carve(grid, a, b, dir);
+      }
+    }
+
+    // Randomized DFS orders the grid before returning its tree path to a target.
+    // Search-only branches are not carved; only the returned route becomes a tunnel.
+    function randomizedDfsPath(c, r, start, target, forbidden, rng) {
+      var startKey = key(start.x, start.y), targetKey = key(target.x, target.y);
+      if (forbidden[startKey] || forbidden[targetKey]) return null;
+      var seen = Object.create(null), parent = Object.create(null);
+      var stack = [start];
+      seen[startKey] = true;
+      parent[startKey] = null;
+      while (stack.length) {
+        var current = stack[stack.length - 1], currentKey = key(current.x, current.y);
+        if (currentKey === targetKey) {
+          var route = [], cursor = targetKey;
+          while (cursor !== null) {
+            var bits = cursor.split(',');
+            route.push({ x: Number(bits[0]), y: Number(bits[1]) });
+            cursor = parent[cursor];
+          }
+          route.reverse();
+          return route;
+        }
+        var options = shuffle(neighbors(c, r, current.x, current.y), rng).filter(function (n) {
+          var k = key(n.x, n.y);
+          return !seen[k] && !forbidden[k];
+        });
+        if (options.length) {
+          var next = options[0], nextKey = key(next.x, next.y);
+          seen[nextKey] = true;
+          parent[nextKey] = currentKey;
+          stack.push({ x: next.x, y: next.y });
+        } else {
+          stack.pop();
+        }
+      }
+      return null;
+    }
+
+    function turns(route) {
+      var count = 0, lastDx = 0, lastDy = 0;
+      for (var i = 1; i < route.length; i++) {
+        var dx = route[i].x - route[i - 1].x, dy = route[i].y - route[i - 1].y;
+        if (i > 1 && (dx !== lastDx || dy !== lastDy)) count++;
+        lastDx = dx; lastDy = dy;
+      }
+      return count;
+    }
+    function quality(route) { return { steps: route.length - 1, turns: turns(route) }; }
+    function meets(route, minSteps, minTurns) {
+      var q = quality(route);
+      return q.steps >= minSteps && q.turns >= minTurns;
+    }
+
+    // Attach each remaining cell to the carved tree with one edge. The Finish
+    // and the decoy endpoint stay leaves, so the near-miss really ends at a wall.
+    function fillRemaining(grid, c, r, protectedLeaves, rng) {
+      var remaining = c * r;
+      for (var y = 0; y < r; y++) for (var x = 0; x < c; x++) if (grid[y][x].visited) remaining--;
+      var guard = c * r * 3;
+      while (remaining > 0 && guard-- > 0) {
+        var frontier = [];
+        for (var fy = 0; fy < r; fy++) {
+          for (var fx = 0; fx < c; fx++) {
+            var cell = grid[fy][fx];
+            if (cell.visited) continue;
+            var attachable = neighbors(c, r, fx, fy).filter(function (n) {
+              var nk = key(n.x, n.y);
+              return grid[n.y][n.x].visited && !protectedLeaves[nk];
+            });
+            if (attachable.length) frontier.push({ cell: { x: fx, y: fy }, attachable: attachable });
+          }
+        }
+        if (!frontier.length) return false;
+        var entry = frontier[randomIndex(frontier.length, rng)];
+        var parent = entry.attachable[randomIndex(entry.attachable.length, rng)];
+        carve(grid, entry.cell, parent, parent.dir);
+        grid[entry.cell.y][entry.cell.x].visited = true;
+        remaining--;
+        var stack = [entry.cell];
+        while (stack.length) {
+          var current = stack[stack.length - 1];
+          var options = shuffle(neighbors(c, r, current.x, current.y), rng).filter(function (n) {
+            return !grid[n.y][n.x].visited && !protectedLeaves[key(n.x, n.y)];
+          });
+          if (!options.length) { stack.pop(); continue; }
+          var next = options[0];
+          carve(grid, current, next, next.dir);
+          grid[next.y][next.x].visited = true;
+          remaining--;
+          stack.push({ x: next.x, y: next.y });
+        }
+      }
+      return remaining === 0;
+    }
+
+    function buildCandidate(c, r, settings, rng) {
+      var grid = makeGrid(c, r);
+      var start = { x: 0, y: 0 }, finish = { x: c - 1, y: r - 1 };
+      var startExits = [{ x: 1, y: 0, dir: 'right' }, { x: 0, y: 1, dir: 'bottom' }];
+      var trueExit = startExits[randomIndex(startExits.length, rng)];
+      var decoyExit = startExits[0] === trueExit ? startExits[1] : startExits[0];
+      var finishExits = [{ x: c - 1, y: r - 2 }, { x: c - 2, y: r - 1 }];
+      var trueFinishExit = finishExits[randomIndex(finishExits.length, rng)];
+      var decoyFinishExit = finishExits[0] === trueFinishExit ? finishExits[1] : finishExits[0];
+      var forbidden = Object.create(null);
+      forbidden[key(start.x, start.y)] = true;
+      forbidden[key(decoyExit.x, decoyExit.y)] = true;
+      forbidden[key(decoyFinishExit.x, decoyFinishExit.y)] = true;
+
+      var trueRoute = randomizedDfsPath(c, r, { x: trueExit.x, y: trueExit.y }, trueFinishExit, forbidden, rng);
+      if (!trueRoute) return null;
+      trueRoute.unshift(start);
+      trueRoute.push(finish);
+      if (!meets(trueRoute, settings.minSolutionSteps, settings.minSolutionTurns)) return null;
+
+      var trueCells = Object.create(null);
+      trueRoute.forEach(function (p) { trueCells[key(p.x, p.y)] = true; });
+      var decoyForbidden = Object.create(null);
+      Object.keys(trueCells).forEach(function (k) { decoyForbidden[k] = true; });
+
+      var bestDecoy = randomizedDfsPath(c, r, { x: decoyExit.x, y: decoyExit.y }, decoyFinishExit, decoyForbidden, rng);
+      if (!bestDecoy) return null;
+      bestDecoy.unshift(start);
+      if (!meets(bestDecoy, settings.minDecoySteps, settings.minDecoyTurns)) return null;
+
+      var decoyEnd = bestDecoy[bestDecoy.length - 1];
+      carvePath(grid, trueRoute);
+      carvePath(grid, bestDecoy);
+      var protectedLeaves = Object.create(null);
+      protectedLeaves[key(finish.x, finish.y)] = true;
+      protectedLeaves[key(decoyEnd.x, decoyEnd.y)] = true;
+      if (!fillRemaining(grid, c, r, protectedLeaves, rng)) return null;
+
+      return {
+        cols: c, rows: r, cells: grid,
+        start: start, finish: finish,
+        trueGate: { x: trueExit.x, y: trueExit.y },
+        decoyGate: { x: decoyExit.x, y: decoyExit.y },
+        decoyEnd: decoyEnd
+      };
+    }
+
+    function generateMaze(levelName, rng) {
+      var settings = LEVELS[levelName];
+      rng = rng || Math.random;
+      var best = null, bestScore = -Infinity;
+      for (var attempt = 0; attempt < 240; attempt++) {
+        var maze = buildCandidate(settings.cols, settings.rows, settings, rng);
+        if (!maze) continue;
+        var a = auditMaze(maze);
+        var score = Math.min(a.solutionSteps / settings.minSolutionSteps, a.solutionTurns / settings.minSolutionTurns) +
+          Math.min(a.decoySteps / settings.minDecoySteps, a.decoyTurns / settings.minDecoyTurns);
+        if (a.decoyEndDistance > 2 || !a.isTree || a.startOpenings !== 2 || a.finishRouteCount !== 1) continue;
+        if (score > bestScore) { best = maze; bestScore = score; }
+        if (meets(a.solutionRoute, settings.minSolutionSteps, settings.minSolutionTurns) &&
+            meets(a.decoyRoute, settings.minDecoySteps, settings.minDecoyTurns)) return maze;
+      }
+      if (best) return best;
+      // This fallback is still a valid spanning tree with two Start branches;
+      // it is retained only for unusually unlucky random streams.
+      return buildFallbackMaze(settings, rng);
+    }
+
+    function buildFallbackMaze(settings, rng) {
+      // Retry with relaxed route lengths while preserving the near-miss structure.
+      var relaxed = {
+        minSolutionSteps: 1, minSolutionTurns: 0,
+        minDecoySteps: 1, minDecoyTurns: 0
+      };
+      for (var i = 0; i < 500; i++) {
+        var maze = buildCandidate(settings.cols, settings.rows, relaxed, rng);
+        if (maze) return maze;
+      }
+      throw new Error('Unable to create a connected maze.');
+    }
+
+    function graphNeighbors(maze, p) {
+      var result = [];
+      var cell = maze.cells[p.y][p.x];
+      for (var i = 0; i < DIRECTIONS.length; i++) {
+        var d = DIRECTIONS[i], nx = p.x + d.dx, ny = p.y + d.dy;
+        if (!cell.walls[d.name] && nx >= 0 && ny >= 0 && nx < maze.cols && ny < maze.rows) result.push({ x: nx, y: ny });
+      }
+      return result;
+    }
+    function findPath(maze, from, to, blockedKey) {
+      var todo = [from], parent = Object.create(null), fromKey = key(from.x, from.y), toKey = key(to.x, to.y);
+      parent[fromKey] = null;
+      for (var head = 0; head < todo.length; head++) {
+        var p = todo[head], pk = key(p.x, p.y);
+        if (pk === toKey) break;
+        graphNeighbors(maze, p).forEach(function (n) {
+          var nk = key(n.x, n.y);
+          if (nk === blockedKey || Object.prototype.hasOwnProperty.call(parent, nk)) return;
+          parent[nk] = pk;
+          todo.push(n);
+        });
+      }
+      if (!Object.prototype.hasOwnProperty.call(parent, toKey)) return null;
+      var route = [], cursor = toKey;
+      while (cursor !== null) {
+        var bits = cursor.split(',');
+        route.push({ x: Number(bits[0]), y: Number(bits[1]) });
+        cursor = parent[cursor];
+      }
+      return route.reverse();
+    }
+    function countPathsToFinish(maze) {
+      var count = 0, stack = [{ p: maze.start, seen: Object.create(null) }];
+      stack[0].seen[key(maze.start.x, maze.start.y)] = true;
+      while (stack.length && count < 2) {
+        var item = stack.pop();
+        if (same(item.p, maze.finish)) { count++; continue; }
+        graphNeighbors(maze, item.p).forEach(function (n) {
+          var nk = key(n.x, n.y);
+          if (item.seen[nk]) return;
+          var seen = Object.assign(Object.create(null), item.seen);
+          seen[nk] = true;
+          stack.push({ p: n, seen: seen });
+        });
+      }
+      return count;
+    }
+    function auditMaze(maze) {
+      var edgeCount = 0, cellCount = maze.cols * maze.rows;
+      for (var y = 0; y < maze.rows; y++) {
+        for (var x = 0; x < maze.cols; x++) {
+          var cell = maze.cells[y][x];
+          if (x < maze.cols - 1 && !cell.walls.right) edgeCount++;
+          if (y < maze.rows - 1 && !cell.walls.bottom) edgeCount++;
+        }
+      }
+      var connected = Object.create(null), queue = [maze.start];
+      connected[key(maze.start.x, maze.start.y)] = true;
+      for (var head = 0; head < queue.length; head++) {
+        graphNeighbors(maze, queue[head]).forEach(function (n) {
+          var nk = key(n.x, n.y);
+          if (connected[nk]) return;
+          connected[nk] = true;
+          queue.push(n);
+        });
+      }
+      var startOpenings = graphNeighbors(maze, maze.start).length;
+      var solutionRoute = findPath(maze, maze.start, maze.finish, null) || [];
+      var decoyRoute = findPath(maze, maze.start, maze.decoyEnd, null) || [];
+      var decoyReach = [maze.decoyGate], decoySeen = Object.create(null);
+      decoySeen[key(maze.start.x, maze.start.y)] = true;
+      decoySeen[key(maze.decoyGate.x, maze.decoyGate.y)] = true;
+      for (var dh = 0; dh < decoyReach.length; dh++) {
+        graphNeighbors(maze, decoyReach[dh]).forEach(function (n) {
+          var nk = key(n.x, n.y);
+          if (decoySeen[nk]) return;
+          decoySeen[nk] = true;
+          decoyReach.push(n);
+        });
+      }
+      var minDistance = Infinity;
+      decoyReach.forEach(function (p) { minDistance = Math.min(minDistance, distance(p, maze.finish)); });
+      var solutionQ = quality(solutionRoute), decoyQ = quality(decoyRoute);
+      return {
+        allCellsConnected: queue.length === cellCount,
+        isTree: queue.length === cellCount && edgeCount === cellCount - 1,
+        startOpenings: startOpenings,
+        finishRouteCount: countPathsToFinish(maze),
+        decoyCanReachFinish: !!decoySeen[key(maze.finish.x, maze.finish.y)],
+        decoyNearestDistance: minDistance,
+        decoyEndDistance: distance(maze.decoyEnd, maze.finish),
+        decoyEndOpenings: graphNeighbors(maze, maze.decoyEnd).length,
+        finishOpenings: graphNeighbors(maze, maze.finish).length,
+        solutionSteps: solutionQ.steps,
+        solutionTurns: solutionQ.turns,
+        decoySteps: decoyQ.steps,
+        decoyTurns: decoyQ.turns,
+        solutionRoute: solutionRoute,
+        decoyRoute: decoyRoute
+      };
+    }
+
+    if (window.__TUNNELS_META_TEST_MODE__) {
+      window.__TUNNELS_META_TEST_API__ = {
+        LEVELS: LEVELS,
+        generateMaze: generateMaze,
+        auditMaze: auditMaze
+      };
+      return;
+    }
+
+    function line(x1, y1, x2, y2, width) {
+      return '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 +
+        '" stroke="#4a331a" stroke-width="' + width + '" stroke-linecap="round"/>';
+    }
+    function circle(cx, cy, radius, fill, opacity, stroke, strokeWidth) {
+      return '<circle cx="' + cx + '" cy="' + cy + '" r="' + radius + '" fill="' + fill +
+        '" fill-opacity="' + opacity + '" stroke="' + (stroke || 'none') + '" stroke-width="' + (strokeWidth || 0) + '"/>';
+    }
+    function drawPath() {
+      var pathLayer = document.getElementById('pathLayer'), dotLayer = document.getElementById('dotLayer');
+      if (!pathLayer || !dotLayer || !path.length) return;
+      var d = '';
+      path.forEach(function (p, i) {
+        d += (i ? 'L' : 'M') + ((p.x + .5) * cellSize) + ' ' + ((p.y + .5) * cellSize) + ' ';
+      });
+      pathLayer.innerHTML = path.length > 1
+        ? '<path d="' + d + '" fill="none" stroke="' + pickedColor + '" stroke-width="' + (cellSize * .17) +
+          '" stroke-linecap="round" stroke-linejoin="round" opacity=".92"/>'
+        : '';
+      var last = path[path.length - 1];
+      var cx = (last.x + .5) * cellSize, cy = (last.y + .5) * cellSize;
+      dotLayer.innerHTML = circle(cx, cy, cellSize * .29, pickedColor, 1, '#fff', cellSize * .055);
+    }
+    function updateSanaPosition() {
+      startSana.hidden = !!solved;
+      finishSana.hidden = !solved;
+    }
+    function currentElapsedMs() {
+      return elapsedMs + (timerStartedAt === null ? 0 : Math.max(0, Date.now() - timerStartedAt));
+    }
+    function formatElapsed(ms) {
+      var seconds = Math.round(ms / 1000);
+      return 'Solved in ' + Math.floor(seconds / 60) + ':' + String(seconds % 60).padStart(2, '0');
+    }
+    function syncSelections() {
+      document.querySelectorAll('.level-btn').forEach(function (button) {
+        var active = button.dataset.level === level;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+      document.querySelectorAll('.swatch').forEach(function (button) {
+        var active = button.dataset.color === pickedColor;
+        button.classList.toggle('picked', active);
+        button.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+    }
+    function saveGame() {
+      if (!cells || !path || !path.length) return;
+      var save = {
+        v: SAVE_VERSION,
+        level: level,
+        pickedColor: pickedColor,
+        cols: cols,
+        rows: rows,
+        cells: cells.map(function (row) {
+          return row.map(function (cell) {
+            return { x: cell.x, y: cell.y, walls: {
+              top: !!cell.walls.top, right: !!cell.walls.right,
+              bottom: !!cell.walls.bottom, left: !!cell.walls.left
+            } };
+          });
+        }),
+        path: path.map(function (point) { return { x: point.x, y: point.y }; }),
+        elapsedMs: currentElapsedMs(),
+        solved: !!solved
+      };
+      try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (err) {}
+    }
+    function validSave(save) {
+      if (!save || save.v !== SAVE_VERSION || !LEVELS[save.level] || PATH_COLORS.indexOf(save.pickedColor) < 0) return false;
+      var settings = LEVELS[save.level];
+      if (save.cols !== settings.cols || save.rows !== settings.rows || !Array.isArray(save.cells) || save.cells.length !== save.rows) return false;
+      for (var y = 0; y < save.rows; y++) {
+        if (!Array.isArray(save.cells[y]) || save.cells[y].length !== save.cols) return false;
+        for (var x = 0; x < save.cols; x++) {
+          var cell = save.cells[y][x], walls = cell && cell.walls;
+          if (!walls || cell.x !== x || cell.y !== y ||
+              ['top', 'right', 'bottom', 'left'].some(function (side) { return typeof walls[side] !== 'boolean'; })) return false;
+          if ((y === 0 && !walls.top) || (x === 0 && !walls.left) ||
+              (y === save.rows - 1 && !walls.bottom) || (x === save.cols - 1 && !walls.right)) return false;
+          if (x < save.cols - 1 && walls.right !== save.cells[y][x + 1].walls.left) return false;
+          if (y < save.rows - 1 && walls.bottom !== save.cells[y + 1][x].walls.top) return false;
+        }
+      }
+      if (!Array.isArray(save.path) || !save.path.length || save.path.length > save.cols * save.rows ||
+          !Number.isFinite(save.elapsedMs) || save.elapsedMs < 0 || typeof save.solved !== 'boolean') return false;
+      var seen = Object.create(null);
+      for (var i = 0; i < save.path.length; i++) {
+        var point = save.path[i];
+        if (!point || !Number.isInteger(point.x) || !Number.isInteger(point.y) ||
+            point.x < 0 || point.y < 0 || point.x >= save.cols || point.y >= save.rows) return false;
+        var pointKey = key(point.x, point.y);
+        if (seen[pointKey]) return false;
+        seen[pointKey] = true;
+        if (i === 0) {
+          if (point.x !== 0 || point.y !== 0) return false;
+        } else {
+          var previous = save.path[i - 1], dx = point.x - previous.x, dy = point.y - previous.y;
+          if (Math.abs(dx) + Math.abs(dy) !== 1) return false;
+          var previousCell = save.cells[previous.y][previous.x], nextCell = save.cells[point.y][point.x];
+          if ((dx === 1 && (previousCell.walls.right || nextCell.walls.left)) ||
+              (dx === -1 && (previousCell.walls.left || nextCell.walls.right)) ||
+              (dy === 1 && (previousCell.walls.bottom || nextCell.walls.top)) ||
+              (dy === -1 && (previousCell.walls.top || nextCell.walls.bottom))) return false;
+        }
+      }
+      var last = save.path[save.path.length - 1];
+      var atFinish = last.x === save.cols - 1 && last.y === save.rows - 1;
+      return save.solved === atFinish;
+    }
+    function readSave() {
+      try {
+        var raw = localStorage.getItem(SAVE_KEY);
+        if (!raw) return null;
+        var save = JSON.parse(raw);
+        if (validSave(save)) return save;
+        localStorage.removeItem(SAVE_KEY);
+      } catch (err) {}
+      return null;
+    }
+    function restoreGame(save) {
+      level = save.level;
+      pickedColor = save.pickedColor;
+      cols = save.cols;
+      rows = save.rows;
+      cells = save.cells.map(function (row) {
+        return row.map(function (cell) { return { x: cell.x, y: cell.y, visited: true, walls: cell.walls }; });
+      });
+      path = save.path.map(function (point) { return { x: point.x, y: point.y }; });
+      elapsedMs = save.elapsedMs;
+      solved = save.solved;
+      dragging = false;
+      previousPointerCell = null;
+      timerStartedAt = solved || document.hidden ? null : Date.now();
+      winOverlay.classList.toggle('show', solved);
+      if (solved) winTime.textContent = formatElapsed(elapsedMs);
+      else message.innerHTML = '🐒 <strong>Two tunnels leave Start.</strong> One reaches Finish. The other winds close, then stops at a wall. Trace carefully.';
+      syncSelections();
+      render();
+      updateSanaPosition();
+    }
+    function render() {
+      cellSize = 100 / cols;
+      viewHeight = cellSize * rows;
+      svg.setAttribute('viewBox', '0 0 100 ' + viewHeight);
+      var parts = ['<rect x="0" y="0" width="100" height="' + viewHeight + '" fill="#fff8ec"/>'];
+      for (var y = 0; y < rows; y++) {
+        for (var x = 0; x < cols; x++) {
+          var c = cells[y][x], x0 = x * cellSize, y0 = y * cellSize, x1 = x0 + cellSize, y1 = y0 + cellSize;
+          var wallWidth = cellSize * .085;
+          if (c.walls.top) parts.push(line(x0, y0, x1, y0, wallWidth));
+          if (c.walls.left) parts.push(line(x0, y0, x0, y1, wallWidth));
+          if (x === cols - 1 && c.walls.right) parts.push(line(x1, y0, x1, y1, wallWidth));
+          if (y === rows - 1 && c.walls.bottom) parts.push(line(x0, y1, x1, y1, wallWidth));
+        }
+      }
+      parts.push(circle(cellSize * .5, cellSize * .5, cellSize * .31, '#16a34a', .22, '#15803d', cellSize * .07));
+      parts.push(circle((cols - .5) * cellSize, (rows - .5) * cellSize, cellSize * .31, '#dc2626', .25, '#b91c1c', cellSize * .07));
+      svg.innerHTML = parts.join('') + '<g id="pathLayer"></g><g id="dotLayer"></g>';
+      drawPath();
+      updateSanaPosition();
+    }
+    function newMaze() {
+      var settings = LEVELS[level];
+      cols = settings.cols;
+      rows = settings.rows;
+      cells = generateMaze(level).cells;
+      path = [{ x: 0, y: 0 }];
+      solved = false;
+      dragging = false;
+      previousPointerCell = null;
+      elapsedMs = 0;
+      timerStartedAt = Date.now();
+      winOverlay.classList.remove('show');
+      message.innerHTML = '🐒 <strong>Two tunnels leave Start.</strong> One reaches Finish. The other winds close, then stops at a wall. Trace carefully.';
+      syncSelections();
+      render();
+      saveGame();
+    }
+    function cellAt(clientX, clientY) {
+      var rect = svg.getBoundingClientRect();
+      if (!rect.width || !rect.height) return null;
+      var localX = (clientX - rect.left) / rect.width * 100;
+      var localY = (clientY - rect.top) / rect.height * viewHeight;
+      var x = Math.floor(localX / cellSize), y = Math.floor(localY / cellSize);
+      if (x < 0 || y < 0 || x >= cols || y >= rows) return null;
+      return { x: x, y: y };
+    }
+    function tryMoveTo(target) {
+      if (!target || solved) return false;
+      var last = path[path.length - 1];
+      if (same(target, last)) return true;
+      if (path.length > 1 && same(target, path[path.length - 2])) {
+        path.pop();
+        drawPath();
+        saveGame();
+        return true;
+      }
+      var dx = target.x - last.x, dy = target.y - last.y;
+      if (Math.abs(dx) + Math.abs(dy) !== 1) return false;
+      var c = cells[last.y][last.x];
+      var blocked = (dx === 1 && c.walls.right) || (dx === -1 && c.walls.left) ||
+        (dy === 1 && c.walls.bottom) || (dy === -1 && c.walls.top);
+      if (blocked) return false;
+      path.push(target);
+      if (target.x === cols - 1 && target.y === rows - 1) {
+        solved = true;
+        elapsedMs = currentElapsedMs();
+        timerStartedAt = null;
+        winTime.textContent = formatElapsed(elapsedMs);
+        winOverlay.classList.add('show');
+        updateSanaPosition();
+        document.getElementById('winNewBtn').focus();
+      }
+      drawPath();
+      saveGame();
+      return true;
+    }
+    function followSegment(from, to) {
+      if (!from || !to) return;
+      var x = from.x, y = from.y, dx = to.x - x, dy = to.y - y;
+      var nx = Math.abs(dx), ny = Math.abs(dy), sx = dx < 0 ? -1 : 1, sy = dy < 0 ? -1 : 1;
+      var ix = 0, iy = 0;
+      while ((ix < nx || iy < ny) && !solved) {
+        var old = { x: x, y: y };
+        if (ix >= nx) { y += sy; iy++; }
+        else if (iy >= ny) { x += sx; ix++; }
+        else if ((1 + 2 * ix) * ny < (1 + 2 * iy) * nx) { x += sx; ix++; }
+        else { y += sy; iy++; }
+        if (!tryMoveTo({ x: x, y: y })) return;
+        old = null;
+      }
+    }
+    svg.addEventListener('pointerdown', function (event) {
+      if (solved) return;
+      var at = cellAt(event.clientX, event.clientY), last = path[path.length - 1];
+      if (!at || !same(at, last)) return;
+      dragging = true;
+      previousPointerCell = at;
+      if (svg.setPointerCapture) svg.setPointerCapture(event.pointerId);
+      event.preventDefault();
+    });
+    svg.addEventListener('pointermove', function (event) {
+      if (!dragging) return;
+      var at = cellAt(event.clientX, event.clientY);
+      if (!at) return;
+      followSegment(previousPointerCell, at);
+      previousPointerCell = at;
+      event.preventDefault();
+    });
+    function stopDragging() { dragging = false; previousPointerCell = null; }
+    window.addEventListener('pointerup', stopDragging);
+    window.addEventListener('pointercancel', stopDragging);
+
+    document.querySelectorAll('.level-btn').forEach(function (button) {
+      button.addEventListener('click', function () {
+        level = button.dataset.level;
+        newMaze();
+      });
+    });
+    document.querySelectorAll('.swatch').forEach(function (button) {
+      button.addEventListener('click', function () {
+        pickedColor = button.dataset.color;
+        syncSelections();
+        drawPath();
+        saveGame();
+      });
+    });
+    document.getElementById('newBtn').addEventListener('click', newMaze);
+    document.getElementById('winNewBtn').addEventListener('click', newMaze);
+    function clearPath() {
+      path = [{ x: 0, y: 0 }];
+      solved = false;
+      elapsedMs = 0;
+      timerStartedAt = Date.now();
+      winOverlay.classList.remove('show');
+      updateSanaPosition();
+      drawPath();
+      saveGame();
+    }
+    document.getElementById('clearBtn').addEventListener('click', clearPath);
+    document.getElementById('winClearBtn').addEventListener('click', clearPath);
+    document.getElementById('backBtn').addEventListener('click', function () {
+      try {
+        if (document.referrer && document.referrer.indexOf(location.origin) === 0 && window.history.length > 1) {
+          window.history.back();
+          return;
+        }
+      } catch (err) {}
+      window.location.href = './';
+    });
+    window.addEventListener('keydown', function (event) {
+      if (solved || winOverlay.classList.contains('show')) return;
+      var moves = {
+        ArrowUp: { x: 0, y: -1 }, ArrowRight: { x: 1, y: 0 },
+        ArrowDown: { x: 0, y: 1 }, ArrowLeft: { x: -1, y: 0 }
+      };
+      var move = moves[event.key];
+      if (!move) return;
+      event.preventDefault();
+      var last = path[path.length - 1];
+      tryMoveTo({ x: last.x + move.x, y: last.y + move.y });
+    });
+    function pauseAndSave() {
+      if (timerStartedAt !== null) {
+        elapsedMs = currentElapsedMs();
+        timerStartedAt = null;
+      }
+      saveGame();
+    }
+    function resumeTimer() {
+      if (!solved && timerStartedAt === null) timerStartedAt = Date.now();
+    }
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) pauseAndSave(); else resumeTimer();
+    });
+    window.addEventListener('pagehide', pauseAndSave);
+    window.addEventListener('pageshow', resumeTimer);
+
+    var savedGame = readSave();
+    if (savedGame) restoreGame(savedGame); else newMaze();
+  })();
+  </script>
+</body>
+</html>

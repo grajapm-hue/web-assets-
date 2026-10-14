@@ -1,11 +1,12 @@
 // MathMatrix Pro++ Beta Service Worker — Beta V173Plus offline package.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v173plus';
+const CACHE_VERSION = 'mathmatrix-beta-v173plus-sa-na-maze-progress-v2';
 
 const ASSETS = [
   './index.html',
   './beta.html',
   './criss-cross.html',
+  './tunnels-of-meta.html',
   './MultiplyMagic3.html',
   './sound-lab.html',
   './bgm-monkeys.mp3',
