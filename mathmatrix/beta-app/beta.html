@@ -46,12 +46,7 @@ window.onerror = function(msg, src, line, col, err){
   return false;
 };
 </script>
-<!-- Raja, after three rounds landing on the same wall: "install"/"download" can
-     only ever fall back to the same manual instructions without a real manifest
-     — so, deliberately, build the real thing now. beta-manifest.json is its OWN
-     manifest (own name, own start_url, own scope), never the shared manifest.json
-     production uses, so an installed beta icon can never collide with or shadow
-     the real app's. -->
+<!-- Beta keeps its install identity in beta-manifest.json. -->
 <link rel="manifest" href="beta-manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <!-- without this the browser asks for /favicon.ico, 404s, and the tab sits blank -->
@@ -86,6 +81,21 @@ window.onerror = function(msg, src, line, col, err){
 <meta name="twitter:title" content="🐒🎲 MathMatrix Pro++ — Magic Square Puzzles for Kids">
 <meta name="twitter:description" content="Magic squares 3×3 to 10×10, 3³ Multiply Magic, Sudoku, Logic Gates, Slide puzzles and more. Free, works offline, no ads.">
 <meta name="twitter:image" content="https://kidsmathsmatrixpuzzle.github.io/icon-512.png">
+<script>
+(function(){
+  var root=document.documentElement;
+  var touch=('ontouchstart' in window)||(navigator.maxTouchPoints>0);
+  if(!touch)return;
+  root.classList.add('touchViewport');
+  var landscape=window.innerWidth>window.innerHeight;
+  if(!landscape)return;
+  var angle=(screen.orientation&&typeof screen.orientation.angle==='number')
+    ? screen.orientation.angle
+    : (typeof window.orientation==='number'?window.orientation:90);
+  angle=((angle%360)+360)%360;
+  root.classList.add(angle===90?'lockRotateCCW':'lockRotateCW');
+})();
+</script>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html, body { height:100%; width:100%; touch-action:manipulation; }  /* manipulation = normal taps/scroll but no double-tap zoom */
@@ -1183,13 +1193,13 @@ window.onerror = function(msg, src, line, col, err){
   }
   @media (orientation:portrait){ #rotateHint.show { display:block; } }
 
-  /* Phone-class devices only (see isPhoneClass()): rotating during play
+  /* Phones AND tablets now (see isRotatable()): rotating during play
      leaves no room for the board once the header and keypad claim their
      share of a short landscape screen — measured at 2px free on a
      390px-tall phone. The board would silently collapse to nothing and
      taps would land on the keypad underneath it instead of the cell.
-     Tablets and laptops have height to spare in landscape, so they are
-     left alone — that gate is in JS, this is just the blocking screen. */
+     Laptops/desktops can't physically rotate, so they stay exempt —
+     that gate is in JS, this is just the blocking screen. */
   #portraitLock {
     display:none; position:fixed; inset:0; z-index:9999;
     background:rgba(20,12,4,.94); color:#FFF6E7;
@@ -1202,6 +1212,21 @@ window.onerror = function(msg, src, line, col, err){
   #portraitLock span { font-size:13.5px; opacity:.85; max-width:280px; }
   @keyframes rotNudge { 0%,100% { transform:rotate(0deg); } 50% { transform:rotate(-90deg); } }
   @media (prefers-reduced-motion:reduce){ #portraitLock .rotIcon { animation:none; } }
+
+  /* True visual portrait lock for touch devices (phone/tablet): instead of
+     blocking play with a warning when rotated, the whole page is rotated
+     back so it keeps showing in portrait shape no matter which way the
+     device is physically turned — same idea as a native OS orientation
+     lock, done in CSS since that level of lock isn't available to a page
+     running in a plain browser tab (only to an installed, standalone app).
+     Two classes because a device can be turned either direction into
+     landscape, and each needs the opposite correction to end up upright —
+     JS sets whichever one actually matches, using the real rotation angle. */
+  html.lockRotateCW, html.lockRotateCCW{
+    width:100vh; height:100vw; overflow-x:hidden; position:absolute; left:0; top:0;
+  }
+  html.lockRotateCW{ transform:rotate(90deg); transform-origin:top left; top:0; left:100%; }
+  html.lockRotateCCW{ transform:rotate(-90deg); transform-origin:top left; top:100%; left:0; }
 
 </style>
 <style>
@@ -1374,6 +1399,11 @@ body{ background:var(--gr) !important; color:var(--bink) !important; }
   font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:10.5px; color:var(--bink2);
   white-space:pre-wrap; word-break:break-word; box-shadow:var(--sunk); }
 .fbDiag.on{ display:block; }
+.betaFlag{ width:100%; max-width:560px; margin:9px auto 0; padding:8px 12px; box-sizing:border-box;
+  background:color-mix(in srgb,var(--gold) 17%,transparent); border-radius:13px;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--gold) 42%,transparent);
+  font-size:11px; font-weight:700; color:var(--bink2); text-align:center; }
+.betaFlag b{ color:var(--gold); }
 
 @media(prefers-reduced-motion:reduce){ .sanaFace,.sanaBub{ animation:none !important; } }
 </style>
@@ -1459,15 +1489,45 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
    line — four times a readable measure. So cap the app and centre it: above
    this width everything inside is the phone layout that is already tested.
 
-   The min-height guard matters. A phone held sideways is 844x390 — wide
-   enough to trip a width-only query, but capping it there would letterbox the
-   game into a narrow strip. Landscape keeps the full width it needs.        */
-@media (min-width: 540px) and (min-height: 600px){
-  body{ background:radial-gradient(120% 65% at 50% 0%, #241A5C 0%, #0C0828 72%) !important; }
+   Keep the phone-style column centered on wide screens. On touch devices,
+   the outer canvas follows Criss-Cross's sandalwood color; laptop margins
+   remain black. Puzzle boards keep their own proportions.                  */
+@media (min-width: 540px){
+  /* Desktop margin; touch screens override this below. */
+  html body{ background:#000 !important; }
   /* the long-hand pair first: margin-inline is Safari 14.1+, and without it the
      app would sit hard left on an older iPad instead of centred */
   .appShell{ max-width:480px; margin-left:auto; margin-right:auto; margin-inline:auto;
     box-shadow:0 0 0 1px rgba(255,255,255,.07), 0 18px 60px rgba(0,0,0,.55); }
+}
+/* Match Criss-Cross on tablet and other wide touch screens without widening
+   the phone-sized app column or stretching puzzle boards. */
+@media (min-width: 540px){
+  html.touchViewport body{ background:#d8b98c !important; }
+}
+/* Portrait tablets use the room they have instead of keeping the phone-width
+   column. The page stays real HTML/CSS (not a scaled screenshot), so text and
+   the puzzle cards keep their crisp, individual styling. Phones and laptops
+   retain the V164 layout. */
+@media (min-width: 560px) and (orientation: portrait){
+  html.touchViewport .appShell{
+    width:calc(100% - 32px);
+    max-width:960px;
+  }
+}
+/* While visually rotation-locked, window.innerWidth still reads the real,
+   pre-rotation (landscape) measurement, so the narrow-column rule above
+   would double up with the rotation itself and leave blank gaps — the
+   'semi rotation' look. Switch it off during the lock; the rotation alone
+   already gives the portrait-shaped frame, nothing more is needed. */
+html.lockRotateCW .appShell, html.lockRotateCCW .appShell{
+  max-width:none !important; margin-left:0 !important; margin-right:0 !important;
+}
+/* The html box is turned into portrait dimensions with 100vh × 100vw. The
+   app shell must use that same long dimension: 100svh still means the short,
+   unrotated landscape height and would leave a blank strip after rotation. */
+html.lockRotateCW .appShell, html.lockRotateCCW .appShell{
+  height:100vw !important; max-height:100vw !important;
 }
 
 /* 56px, not 46: Raja asked for the top-area tabs bigger, and dropping the
@@ -1594,6 +1654,8 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
   border-radius:13px !important; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;
   overflow:hidden; max-width:64ch; }
 .sanaBub::before{ top:14px !important; }
+.betaFlag{ flex:none; margin:0 0 6px !important; padding:5px 10px !important; font-size:9.5px !important;
+  border-radius:10px !important; max-width:none !important; }
 
 /* ── HOME: compact level list that fits ── */
 .titleCard{ display:none !important; }          /* moved into the About sheet, not deleted */
@@ -2120,6 +2182,8 @@ body.hideKeys #keypad{ display:none !important; }
   background:var(--sf2); color:var(--bink2); font-family:inherit; font-size:9.5px; font-weight:800;
   padding:5px 12px; box-shadow:var(--clay); cursor:pointer; }
 body.hideKeys .keysChip{ display:block; }
+/* the beta banner belongs on Home, not stealing height from the board */
+body.onPlay .betaFlag{ display:none !important; }
 /* This is the rule that was actually rendering live: a later !important on the
    same specificity wins on source order, and this one used to shrink the
    progress sentence to 9px regardless of the 11.5px set above it. Matched to
@@ -3611,6 +3675,9 @@ body{ background:#C9A87C !important; }
   box-shadow:0 2px 0 rgba(94,64,32,.30) !important; }
 .sanaBub::before{ border-right-color:#FFF6E7 !important; }
 .sanaBub b{ color:#9A3412 !important; }
+.betaFlag{ background:rgba(255,246,231,.72) !important; color:#4A331A !important;
+  box-shadow:inset 0 0 0 1px rgba(94,64,32,.35) !important; }
+.betaFlag b{ color:#9A3412 !important; }
 
 /* the puzzle list */
 .modeHead b{ color:#5E3D1C !important; }
@@ -4157,7 +4224,7 @@ body{ background:#C9A87C !important; }
   Advance saw nothing light up — there was no entry carrying data-np="binary2"
   for the highlighter to find. Two entries now, numbered as Raja asked and
   carrying the card names so the two agree.
---><span class="np" data-np="binary">🔢 Guess My Number L1 · Junior</span> · <span class="np" data-np="binary2">L2 · Advance</span> · ➕ Criss-Cross · ⚙️ 7 Logic Gates · 🔀 Slide 1-15 · A-Z · A-Z+1-9 · 🧩 Sudoku 3×3 · 4×4 · 9×9 · 🐚 Pallanguzhi <span style="color:#9fb0d0; font-weight:600;">(each its own one puzzle)</span></span><br><!-- The "New here? Tap ▶ Watch Me Solve … then pick any level in the table
+--><span class="np" data-np="binary">🔢 Guess My Number L1 · Junior</span> · <span class="np" data-np="binary2">L2 · Advance</span> · ➕ Criss-Cross · ⚙️ 7 Logic Gates · 🔀 Slide 1-15 · A-Z · A-Z+1-9 · 🧩 Sudoku 3×3 · 4×4 · 9×9 · 🐚 Pallanguzhi · 🎲 Thayam 5×5 · 7×7 <span style="color:#9fb0d0; font-weight:600;">(each its own one puzzle)</span></span><br><!-- The "New here? Tap ▶ Watch Me Solve … then pick any level in the table
        below" line is gone. This card is only ever seen inside the About sheet
        now, where there is no level table to point at, and Watch has its own
        named button in the bar — so it was directing a child to something that
@@ -4587,7 +4654,6 @@ body{ background:#C9A87C !important; }
        instead, in its own banner so it still reads at a glance even if
        nobody scrolls the steps below. -->
   <div class="offlinePromise">✅ Once added, tap the icon anytime to play — no internet needed!</div>
-  <div class="offlinePromise" style="background:color-mix(in srgb,var(--gold) 12%,transparent);">🌐 Tip: right after adding it, open it once while still online (just a few seconds is enough) — that's what lets it save everything it needs for offline play. One thing to know: if you ever clear your browser's history/cache (or your phone does it automatically to free up space), it'll need that same one-time online visit again before offline play works — just open it once with internet on, then it's good to go offline again.</div>
   <b>iPhone / iPad (Safari):</b><br>
   1. Open this game in Safari<br>
   2. Tap the Share button (square with arrow ⬆️)<br>
@@ -4669,12 +4735,18 @@ body{ background:#C9A87C !important; }
     <span class="diffLabel">Choose Difficulty</span>
   </div>
 
+  <!-- New players landing on a long list sometimes do not realise there is
+       more below the fold and stop at the first group. One line, shown
+       once per visit, pointing that out. -->
+  <div style="text-align:center; margin:0 0 9px;"><span style="display:inline-block; background:#F3E4C9; border:2px solid #C4A277; border-radius:999px; padding:5px 14px; font-size:13px; font-weight:800; color:#9A3412;">⬇️ Scroll down to see every puzzle — there are lots!</span></div>
+
   <!-- ➕ ADD MODE — the six size puzzles, an easy→hard ladder -->
   <div class="modeGroup">
     <div class="modeHead" style="--m1:#7dd3fc; --m2:#38bdf8;">
       <span class="mIco">➕</span>
-      <span><b>Add Magic</b><i>every row, column and diagonal adds up to the same total</i></span>
+      <span><b>Add Magic</b></span>
     </div>
+    <div style="background:#F3E4C9; border:2px solid #C4A277; border-radius:10px; padding:5px 10px; margin:0 0 7px; font-size:12px; font-weight:800; color:#9A3412; text-align:center;">All rows, columns &amp; diagonal: total the same</div>
     <div class="toggleSwitch">
       <button class="toggleBtn lvCard active" data-size="3x3" data-name="3×3 Easy" style="color:#60a5fa; border-color:#3b82f6; --c1:#9ec7ff; --c2:#60a5fa;">
         <span class="lvGrid" style="--n:3" aria-hidden="true"></span>
@@ -4721,13 +4793,13 @@ body{ background:#C9A87C !important; }
 
   <!-- Triangle Magic removed from the visible list (kept dormant below in
        CSS/PUZZLES/JS — see .board.sizetriangle, PUZZLES.triangle, and
-       NEXT_SIZE_MAP for the untouched original code). This seat uses the
-       existing .lvSoon "announced but not built yet" pattern so nothing
-       shifts and a future puzzle can drop straight into this slot later. -->
+       NEXT_SIZE_MAP for the untouched original code). This seat, previously
+       "Reserved/Coming Soon", now carries Criss-Cross — tested separately
+       as a beta feature first, then brought in once proven stable. -->
   <div class="modeGroup">
-    <div class="modeHead" style="--m1:#d9cdb8; --m2:#8a7a5c;">
-      <span class="mIco">⭐</span>
-      <span><b>Reserved</b><i>a new puzzle is on its way for this seat</i></span>
+    <div class="modeHead" style="--m1:#f6d08a; --m2:#c97b2e;">
+      <span class="mIco">✚</span>
+      <span><b>Criss-Cross</b><i>a guided math puzzle — fill the grid, check every row and column</i></span>
     </div>
     <div class="toggleSwitch">
       <button class="toggleBtn lvCard" id="crissCrossTab" data-size="crisscross" data-name="Criss-Cross" style="color:#f59e0b; border-color:#c97b2e; --c1:#f6d08a; --c2:#f59e0b;">
@@ -4927,9 +4999,9 @@ body{ background:#C9A87C !important; }
     </div>
   </div>
   <!-- Raja: keep the version at the bottom of the puzzle table too, not just
-       in the About sheet — so it's still checkable after scrolling all the
-       way through the list. Same #verLabel source, so it can never
-       disagree with the About page. -->
+       the BETA flag up top — so it's still checkable after scrolling all the
+       way through the list. Same #flagVer/#verLabel source, so it can never
+       disagree with the top of the page. -->
   <!-- No literal "v" here. The span is filled with window.BETA_VER, which
        already carries its own prefix ("v133", "beta-129"), so the hardcoded
        one doubled it: the live app has been showing "vv132" and then "vv133",
@@ -4954,9 +5026,8 @@ body{ background:#C9A87C !important; }
 <div class="credit">
   <!-- moved here from its own row on Home -- Raja: "remove beta feedback
        long tab here... hence placed this in About" -->
-  <span style="color:#9A3412; font-weight:800;">BETA</span> — tell us what breaks
-  on the 💬 Feedback tab.<br>
-  Created by G.RajaPathamuthu · Kids Puzzle Library<br>Guided by : JNT<br>Code Coordinated by : AI Assistances<br>
+  <span style="color:#9A3412; font-weight:800;">Found something odd?</span> Tell us on the 💬 Feedback tab.<br>
+  Created by G.RajaPathamuthu · Kids Puzzle Library<br>Guided by : JNT<br>Code Coordinated by :  AI-Assistances<br>
   <i style="opacity:.85;">(What we get is all we ask for.)</i><br>
   Mail To : <a href="mailto:grajapm@gmail.com?subject=MathMatrix%20Feedback%20%26%20Suggestion" style="color:#8ab4f8; text-decoration:underline;">✉️ Feedback &amp; Suggestion</a><br>
   <span style="opacity:.7; font-size:12px;">App <span id="verLabel">…</span></span><br>
@@ -5273,9 +5344,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   var useSysKb = false;   // false = custom in-page keypad (OS keyboard suppressed); true = system keyboard
 
   // ---- Sound FX: playful/arcade tones generated in-code (WebAudio, no files, offline-safe) ----
-  var soundStored = localStorage.getItem('mmSound');
-  var soundOn = (soundStored === null) ? false : (soundStored !== 'off');   // first install shows muted; saved choice wins
-  var soundFirstUsePending = (soundStored === null);
+  var soundOn = (localStorage.getItem('mmSound') !== 'off');   // default ON
   var audioCtx = null;
   var audioUnlocked = false;
   function ensureAudio(){
@@ -5391,12 +5460,15 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         break;
     }
   }
-  // ---- Background music: WebAudio buffer playback (no HTMLMediaElement) ----
-  // Uses the same level/ducking target as Criss-Cross. Keeping the music inside
-  // WebAudio avoids creating a browser media-playback element/notification card.
-  var musicOn = (localStorage.getItem('mmMusic') !== 'off');
+  // ---- Background music: "Monkeys Spinning Monkeys" by Kevin MacLeod (CC BY 3.0, incompetech.com) ----
+  // Plays softly while the child thinks; fades down while they enter numbers so the
+  // puzzle sounds stay clear, then rises again after a short pause.
+  // WebAudio buffer playback (no HTMLMediaElement): avoids creating a browser
+  // media-playback element/notification card that would otherwise appear when
+  // swiping down the notification shade — proven in the beta build first.
+  var musicOn = (localStorage.getItem('mmMusic') !== 'off');   // default ON
   var bgm = null, bgmFadeIv = null, bgmDuckTimer = null;
-  var BGM_IDLE = 0.24, BGM_DUCK = 0.07;
+  var BGM_IDLE = 0.20, BGM_DUCK = 0.06;
   var bgmLoading = false, bgmTipShown = false;
 
   function fadeMusicTo(target){
@@ -5437,7 +5509,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   }
 
   function ensureMusic(){
-    if (!musicOn || !soundOn) return;
+    if (!musicOn || !soundOn) return;   // 🔊 Sound is the MASTER: off = total silence (night play)
     ensureAudio(); if(!audioCtx) return;
     if (!bgm){ bgm={buffer:null,source:null,gain:null,pan:null,lfo:null,playing:false}; }
     if (bgm.buffer){ startBgmBuffer(); return; }
@@ -5467,7 +5539,6 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     bgm.source=null; bgm.gain=null; bgm.pan=null; bgm.lfo=null; bgm.playing=false;
     clearInterval(bgmFadeIv); bgmFadeIv=null;
   }
-
   function refreshMusicBtn(){
     var b = document.getElementById('musicBtn');
     if (!b) return;
@@ -5511,16 +5582,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   // number only fires an 'input' event, which may NOT count as user-activation on
   // phones — so without this the place-pop stays silent until some other tap.
   ['pointerdown','touchstart','keydown'].forEach(function(evt){
-    document.addEventListener(evt, function(e){
-      var t=e&&e.target;
-      var inSoundUI=t&&t.closest&&t.closest('#soundBtn,#musicBtn,#barMore');
-      if (soundFirstUsePending && !inSoundUI){
-        soundFirstUsePending=false; soundOn=true; localStorage.setItem('mmSound','on');
-        refreshSoundBtn(); refreshMusicBtn();
-      }
+    document.addEventListener(evt, function(){
       if (soundOn) ensureAudio();
-      if (soundOn && musicOn) ensureMusic();
-    }, { passive:true, capture:true });
+      if (musicOn) ensureMusic();   // autoplay is only allowed from a real gesture
+    }, { passive:true });
   });
 
   // Celebration burst on a win — emoji fly out + a quick flash. Works even when muted.
@@ -5656,9 +5721,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       if (cm && cm.style.display === 'flex') cm.style.display = 'none';
       var newSize = this.dataset.size;
       if (newSize === 'crisscross') {
-        // Safe Beta-255 integration trial: keep Criss-Cross as its own tested page.
-        // This avoids modifying the mature MathMatrix puzzle engine during validation.
-        window.location.href = 'criss-cross-beta255.html';
+        // Criss-Cross: its own tested page, kept separate from the magic-square
+        // engine (same reasoning Gate Logic uses for its own dedicated handler).
+        window.location.href = 'criss-cross.html';
         return;
       }
       document.querySelectorAll('.toggleBtn').forEach(function(b){ b.classList.remove('active'); });
@@ -6440,29 +6505,38 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     fitBadges();   // the ring re-fits with the board, not only on a new entry
   }
 
-  /* Tablet/laptop landscape has height to spare for the board even after
-     the header and keypad take their share — a phone in landscape does
-     not (measured: 2px left on a 390px-tall screen). screen.width/height,
-     not innerWidth/innerHeight: they track the device's fixed physical
-     dimensions across rotation, so this reads the same in portrait and
-     landscape. 600 sits between the widest common phones (~430–480 CSS
-     px) and the narrowest tablets (iPad mini: 744). */
-  function isPhoneClass(){
-    var s = window.screen || {};
-    var short = Math.min(s.width || 9999, s.height || 9999);
-    return short < 600;
+  /* Touch capability, not screen size, is what separates "can physically
+     be turned" (phone/tablet) from "can't" (laptop/desktop mouse/trackpad
+     use, whose naturally-wide window must stay exempt from any of this). */
+  function isRotatable(){
+    return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
   }
-  // Blocks play on a phone rotated to landscape instead of leaving it to
-  // silently collapse (see isPhoneClass()). Cancels any running Watch demo
-  // so nothing keeps animating, unseen, behind the block.
-  function checkPortraitLock(){
-    var lock = document.getElementById('portraitLock');
-    if (!lock) return;
-    var onPlay = !!document.querySelector('[data-screen="scPlay"].on');
+  // No more warning-and-block on rotation: the page is visually rotated
+  // back to portrait instead, so there's nothing to "turn back" from — it
+  // simply never leaves portrait shape on screen. Needs the actual angle,
+  // not just landscape/portrait, since a device can be turned either way
+  // into landscape and each needs the opposite correction to end upright.
+  function applyRotationLock(){
+    var root = document.documentElement;
+    root.classList.remove('lockRotateCW', 'lockRotateCCW');
+    if (!isRotatable()) return;
     var landscape = window.innerWidth > window.innerHeight;
-    var show = onPlay && isPhoneClass() && landscape;
-    lock.classList.toggle('show', show);
-    if (show && watchIv){ clearInterval(watchIv); watchIv = null; }
+    if (!landscape) return;
+    var angle = (screen.orientation && typeof screen.orientation.angle === 'number')
+      ? screen.orientation.angle
+      : (typeof window.orientation === 'number' ? window.orientation : 90);
+    angle = ((angle % 360) + 360) % 360;
+    if (angle === 90) root.classList.add('lockRotateCCW');
+    else root.classList.add('lockRotateCW'); // covers 0 and 270-degree landscape orientations
+  }
+  // Kept as a no-op shell (still referenced at a few call sites below) so
+  // nothing needs to change there — the warning div it used to toggle
+  // just never shows any more, since applyRotationLock() replaces its job.
+  function checkPortraitLock(){
+    applyRotationLock();
+    if (watchIv && window.innerWidth > window.innerHeight && isRotatable()){
+      clearInterval(watchIv); watchIv = null;
+    }
   }
 
   // Auto-shrink each cell's font by its digit count so 1–4 digit numbers fit uniformly (no horizontal overflow)
@@ -13671,19 +13745,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
   // Sound on/off toggle (remembered across visits; the tap itself unlocks WebAudio)
   refreshSoundBtn();
-  // First real interaction unlocks WebAudio without changing the saved Sound state.
-  // The Sound menu remains the only control that changes mmSound.
-  ['pointerdown','touchstart','keydown'].forEach(function(evt){
-    document.addEventListener(evt, function(){
-      if (!soundOn) return;
-      try {
-        ensureAudio();
-        if (musicOn) ensureMusic();
-      } catch(e) {}
-    }, {passive:true, capture:true});
-  });
   document.getElementById('soundBtn').addEventListener('click', function(){
-    soundFirstUsePending=false;
     soundOn = !soundOn;
     localStorage.setItem('mmSound', soundOn ? 'on' : 'off');
     refreshSoundBtn();
@@ -13829,6 +13891,12 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   window.addEventListener('orientationchange', function(){ setTimeout(fitBoard, 250); });
   window.addEventListener('resize', checkPortraitLock);
   window.addEventListener('orientationchange', function(){ setTimeout(checkPortraitLock, 250); });
+  if (screen.orientation && screen.orientation.addEventListener){
+    screen.orientation.addEventListener('change', function(){ setTimeout(checkPortraitLock, 100); });
+  }
+  if (window.visualViewport){
+    window.visualViewport.addEventListener('resize', function(){ setTimeout(checkPortraitLock, 100); });
+  }
 
   /* ══════════════════════════════════════════════════════════════════
      BETA ADDITIONS — SaNa the mascot, diagonal arrows, feedback.
@@ -14059,9 +14127,45 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
      be — the list may shrink as puzzles are added, but never below what Raja
      already has today. Past that it scrolls; illegible beats nothing to read. */
   var LV_MIN = 0.92, LV_MAX = 1.75;
+  function installRotatedListSwipe(bar){
+    if (bar.__rotatedListSwipeBound) return;
+    bar.__rotatedListSwipeBound = true;
+    var root = document.documentElement, drag = null;
+    function rotated(){
+      return root.classList.contains('lockRotateCW') || root.classList.contains('lockRotateCCW');
+    }
+    bar.addEventListener('touchstart', function(e){
+      if (!rotated() || !e.touches || e.touches.length !== 1){ drag = null; return; }
+      var t = e.touches[0];
+      drag = {
+        x: t.clientX,
+        y: t.clientY,
+        top: bar.scrollTop,
+        direction: root.classList.contains('lockRotateCW') ? 1 : -1,
+        axis: null
+      };
+    }, {passive:true});
+    bar.addEventListener('touchmove', function(e){
+      if (!drag || !rotated() || !e.touches || e.touches.length !== 1) return;
+      var t = e.touches[0], dx = t.clientX - drag.x, dy = t.clientY - drag.y;
+      if (!drag.axis){
+        if (Math.max(Math.abs(dx), Math.abs(dy)) < 8) return;
+        drag.axis = Math.abs(dx) > Math.abs(dy) * 1.12 ? 'horizontal' : 'other';
+      }
+      if (drag.axis !== 'horizontal') return;
+      if (e.cancelable) e.preventDefault();
+      var max = Math.max(0, bar.scrollHeight - bar.clientHeight);
+      bar.scrollTop = Math.max(0, Math.min(max, drag.top + dx * drag.direction));
+    }, {passive:false});
+    function clearDrag(){ drag = null; }
+    bar.addEventListener('touchend', clearDrag, {passive:true});
+    bar.addEventListener('touchcancel', clearDrag, {passive:true});
+  }
+  
   function fitHome(){
     var bar = document.querySelector('.difficultyBar');
     if (!bar || !bar.clientHeight) return;
+    installRotatedListSwipe(bar);
 
     // Measure the list top-to-bottom, not the gap underneath it. The list is
     // centred now, so the slack is split above and below — reading only the
@@ -14072,6 +14176,18 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       for (var i = 0; i < k.length; i++) if (k[i].offsetHeight){ first = k[i]; break; }
       for (var j = k.length - 1; j >= 0; j--) if (k[j].offsetHeight){ last = k[j]; break; }
       if (!first || !last) return 0;
+      var root=document.documentElement;
+      if (root.classList.contains('lockRotateCW') || root.classList.contains('lockRotateCCW')){
+        // A 90-degree root transform turns viewport rectangles sideways. Sum
+        // the list items in layout coordinates so tablet fitting sees portrait height.
+        var total=0, count=0, gap=parseFloat(window.getComputedStyle(bar).rowGap)||0;
+        for (var n=0; n<k.length; n++) if (k[n].offsetHeight){
+          var itemStyle=window.getComputedStyle(k[n]);
+          total += k[n].offsetHeight + (parseFloat(itemStyle.marginTop)||0) + (parseFloat(itemStyle.marginBottom)||0);
+          count++;
+        }
+        return total + Math.max(0,count-1)*gap;
+      }
       return last.getBoundingClientRect().bottom - first.getBoundingClientRect().top;
     }
 
@@ -14367,12 +14483,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     function derive(){
       var cw = Math.floor((box.clientWidth - gap * (tracks - 1)) / tracks);
       var ch = Math.floor((box.clientHeight - gap * (tracks - 1)) / tracks);
-      /* The ceiling was 74, which left a 3x3 using only 75% of its area on a
-         430px phone — the biggest, easiest cells were the ones being capped.
-         It exists to stop a small board looking absurd on a wide screen, but
-         the shell is now capped at 480px anyway, so width already bounds it.
-         96 lets a 3x3 breathe and still cannot run away. */
-      return Math.min(cw, ch, 96);
+      /* The 96px ceiling keeps the phone layout compact. A portrait tablet has
+         a wider shell now, so allow its cells to grow to 124px; cw and ch
+         still keep every board inside its real available space. */
+      var root = document.documentElement;
+      var tabletPortrait = root.classList.contains('touchViewport') &&
+        root.clientWidth >= 560 && root.clientHeight >= root.clientWidth;
+      return Math.min(cw, ch, tabletPortrait ? 124 : 96);
     }
     var cell = derive();
     // A big board on a short phone cannot fit AND keep a keypad. Rather than let the
@@ -15132,7 +15249,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
            through 1990s spreadsheets to today, the credit, the contact address
            and the music licences. One way in, not a second copy. */
         /* No "who made it" out here. It is a team effort — Raja, JNT and
-           Claude — and naming that on the front door reads as a byline.
+           AI-Assistances — and naming that on the front door reads as a byline.
            The credits are inside, where they belong. */
         '<button class="splashAbout" type="button" id="splashAbout">' +
           '📜 About this project</button>' +
@@ -15402,19 +15519,11 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   applyTheme(); // Apply colors and diagonal guide
 })();
 
-// PWA: register a service worker so "Get App"/install can be a real, distinct
-// action instead of always falling back to the same manual instructions.
-/* This file now lives in its own beta-app/ subfolder, separate from
-   KidsMathsMatrixPuzzle.html and the real sw.js (which registers with NO
-   explicit scope, so it defaults to claiming the whole mathmatrix/ folder).
-   Scoping beta-sw.js to './' here means "this subfolder only" — a longer,
-   more specific match than the real app's folder-wide scope, so the two
-   can never collide no matter what either one does. This also lets
-   beta-sw.js finally cover Criss-Cross (a separate page, not just
-   beta.html), which a single-file scope could never intercept. */
+// Beta registers its own worker at this subfolder scope for offline play.
+// The Beta cache namespace is separate from the public app on this origin.
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function () {
-    navigator.serviceWorker.register('beta-sw.js', { scope: './' }).catch(function(){});
+    navigator.serviceWorker.register('beta-sw.js').catch(function(){});
   });
 }
 
@@ -15438,7 +15547,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'beta-255 (the warm-up picture cards are shuffled now — the right answer used to sit top-left in 59 of 62 questions, so tapping the same corner scored 95% without reading)';
+  var BUILD_VER = 'v173 (V165 tablet portrait rotation reference)';
   /* ── BEACON FOR APPS INSTALLED LONG AGO ─────────────────────────────────
      Raja's iPhone sat on v139 and would not come forward, however many times
      he tapped Online Update.
@@ -15463,7 +15572,7 @@ if (navigator.storage && navigator.storage.persist) {
      rejects). check-update-beacon.js keeps it equal to BUILD_VER, because a
      beacon that goes stale strands people exactly as thoroughly as no beacon.
 
-     window.BETA_VER = 'beta-255'
+     window.BETA_VER = 'v152+'
      ───────────────────────────────────────────────────────────────────── */
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
@@ -15473,15 +15582,14 @@ if (navigator.storage && navigator.storage.persist) {
      value instead of catching it — it now asserts the two AGREE.) */
   window.BETA_VER = BUILD_VER.split(' ')[0];   // global: the feedback panel lives in the other IIFE
   var verEl = document.getElementById('verLabel');
-  // Cosmetic-only marker for this beta-app subfolder build, so testers running
-  // both the old mathmatrix/beta.html and this one side by side can tell them
-  // apart at a glance. Does not touch BUILD_VER/BETA_VER or the beacon above —
-  // those stay exactly what the update-checker and old installs expect.
-  if (verEl) verEl.textContent = 'Beta255Plus';
+  if (verEl) verEl.textContent = BUILD_VER;
+  // the short form on the BETA flag, where it is seen without looking for it
+  var flagVer = document.getElementById('flagVer');
+  if (flagVer) flagVer.textContent = window.BETA_VER;
   // same short form again at the bottom of the puzzle table, past Coming
   // Soon — so it is still checkable after scrolling through the whole list
   var footVer = document.getElementById('verFooter');
-  if (footVer) footVer.textContent = 'Beta255Plus';
+  if (footVer) footVer.textContent = window.BETA_VER;
 
   /* ── AUTO ONLINE REFRESH ──
      Raja asked for this in as many words — "auto forced app online refresh" —
@@ -15613,11 +15721,11 @@ if (navigator.storage && navigator.storage.persist) {
       var jobs = [];
       try {
         // getRegistration() (singular, no scope arg) -- the registration that
-        // actually controls THIS document, i.e. beta-sw.js only. Deliberately
-        // not getRegistrations() (plural): that returns every SW registered
-        // for the whole origin, which would also unregister the real app's
-        // own sw.js if both happen to be installed on the same device --
-        // this button should only ever touch beta's own state.
+        // actually controls THIS document. Deliberately not getRegistrations()
+        // (plural): that returns every SW registered for the whole origin,
+        // which on a device that also has the beta preview installed would
+        // unregister beta's worker too. This button should only ever touch
+        // this app's own state.
         if ('serviceWorker' in navigator && navigator.serviceWorker.getRegistration){
           jobs.push(navigator.serviceWorker.getRegistration().then(function(r){
             return r ? r.unregister() : null;
@@ -15625,8 +15733,7 @@ if (navigator.storage && navigator.storage.persist) {
         }
         if (window.caches && caches.keys){
           jobs.push(caches.keys().then(function(ks){
-            // Same reasoning: only this file's own 'mathmatrix-beta-*'
-            // namespace, never the real app's 'mathmatrix-v*' caches.
+            // Clear only this Beta app's own cache namespace.
             return Promise.all(ks.filter(function(k){ return k.indexOf('mathmatrix-beta-') === 0; })
               .map(function(k){ return caches.delete(k); }));
           }));
@@ -15675,6 +15782,5 @@ if (navigator.storage && navigator.storage.persist) {
   })();
 })();
 </script>
-<!-- Criss-Cross beta-255 safe integration trial: card routes to separate tested page. -->
 </body>
 </html>

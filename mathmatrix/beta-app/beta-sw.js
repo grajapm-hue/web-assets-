@@ -1,14 +1,15 @@
-// MathMatrix Pro++ BETA Service Worker — own cache namespace, own scope.
-// Now lives in its own beta-app/ subfolder, scoped to './' (the whole
-// subfolder), which is why Criss-Cross can finally be precached and served
-// offline too — a single-file scope could never intercept a second page.
-const CACHE_VERSION = 'mathmatrix-beta-v256';
+// MathMatrix Pro++ Beta Service Worker — v173 offline package.
+// This worker and cache stay inside beta-app on the shared GitHub Pages origin.
+const CACHE_VERSION = 'mathmatrix-beta-v173';
 
 const ASSETS = [
+  './index.html',
   './beta.html',
-  './beta-manifest.json',
-  './criss-cross-beta255.html',
+  './criss-cross.html',
+  './MultiplyMagic3.html',
+  './sound-lab.html',
   './bgm-monkeys.mp3',
+  './beta-manifest.json',
   './cheat-3x3.png',
   './cheat-4x4.png',
   './cheat-5x5.png',
@@ -34,10 +35,8 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((k) =>
-            k.startsWith('mathmatrix-beta-') && k !== CACHE_VERSION
-          )
-          .map((k) => caches.delete(k))
+          .filter((key) => key.startsWith('mathmatrix-beta-') && key !== CACHE_VERSION)
+          .map((key) => caches.delete(key))
       )
     )
   );
@@ -54,18 +53,16 @@ self.addEventListener('fetch', (event) => {
   if (isPage) {
     event.respondWith(
       (async () => {
-        const cached = await caches
-          .match(req)
-          .then((c) => c || caches.match('./beta.html'));
+        const cache = await caches.open(CACHE_VERSION);
+        const cached =
+          await cache.match(req) ||
+          await cache.match('./beta.html') ||
+          await cache.match('./index.html');
 
         const controller =
-          typeof AbortController !== 'undefined'
-            ? new AbortController()
-            : null;
+          typeof AbortController !== 'undefined' ? new AbortController() : null;
         const timer = setTimeout(() => {
-          try {
-            if (controller) controller.abort();
-          } catch (e) {}
+          try { if (controller) controller.abort(); } catch (e) {}
         }, 2500);
 
         try {
@@ -75,10 +72,7 @@ self.addEventListener('fetch', (event) => {
           );
           clearTimeout(timer);
           if (response && response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE_VERSION).then((cache) =>
-              cache.put(req, copy)
-            );
+            cache.put(req, response.clone()).catch(() => {});
           }
           return response;
         } catch (e) {
@@ -91,19 +85,18 @@ self.addEventListener('fetch', (event) => {
   }
 
   event.respondWith(
-    caches.match(req).then((cached) => {
+    (async () => {
+      const cache = await caches.open(CACHE_VERSION);
+      const cached = await cache.match(req);
       const networkFetch = fetch(req)
         .then((response) => {
           if (response && response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE_VERSION).then((cache) =>
-              cache.put(req, copy)
-            );
+            cache.put(req, response.clone()).catch(() => {});
           }
           return response;
         })
-        .catch(() => cached);
+        .catch(() => cached || Response.error());
       return cached || networkFetch;
-    })
+    })()
   );
 });
