@@ -45,8 +45,10 @@
       font-weight: 800;
     }
     .back-btn { width: 44px; height: 44px; border-radius: 14px; font-size: 22px; }
-    .title { flex: 1; min-width: 0; color: #1f5c3f; font-size: clamp(16px, 4vw, 20px); font-weight: 900; }
+    .title { flex: 1; min-width: 0; overflow: hidden; color: #1f5c3f; font-size: clamp(16px, 4vw, 20px); font-weight: 900; text-overflow: ellipsis; white-space: nowrap; }
     .top-btn { min-height: 40px; padding: 8px 12px; border-radius: 13px; font-size: 13px; }
+    .watch-btn { background: #347db8; white-space: nowrap; }
+    .watch-btn[aria-pressed="true"] { background: #7c3aed; }
     .msg {
       margin: 0 12px 10px;
       padding: 11px 14px;
@@ -85,6 +87,28 @@
     }
     .swatch.picked { outline: 3px solid var(--brown-dark); outline-offset: 1px; }
     .tag { text-align: center; font-size: 11px; font-weight: 900; letter-spacing: .6px; }
+    .start-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: min(calc(100% - 20px), 500px);
+      min-height: 75px;
+      margin: 0 auto 7px;
+      padding-left: 3px;
+    }
+    .start-person {
+      display: flex;
+      flex: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 54px;
+      min-height: 72px;
+    }
+    .start-person .sana-bubble { margin: 0; }
+    .start-person .start-tag { margin-top: 2px; font-size: 10px; }
+    .maze-actions { display: flex; flex: none; gap: 7px; }
+    .start-label { margin-left: auto; padding-right: 8px; color: var(--green); font-size: 11px; font-weight: 900; letter-spacing: .5px; white-space: nowrap; }
     .sana-bubble {
       display: inline-flex;
       flex-direction: column;
@@ -122,6 +146,7 @@
     .finish-tag { color: var(--red); }
     .maze-wrap { display: flex; justify-content: center; padding: 5px 10px; }
     .maze-card {
+      position: relative;
       width: min(100%, 500px);
       padding: 9px;
       border: 2px solid var(--card-border);
@@ -130,16 +155,6 @@
       box-shadow: 0 4px 0 rgba(74, 51, 26, .18);
     }
     #mazeSvg { display: block; width: 100%; height: auto; overflow: visible; touch-action: none; user-select: none; }
-    .controls { display: flex; justify-content: center; gap: 9px; margin: 12px; }
-    .ctrl-btn {
-      min-height: 42px;
-      padding: 9px 17px;
-      border: 2px solid var(--card-border);
-      border-radius: 999px;
-      color: var(--brown-dark);
-      background: var(--card);
-      font-weight: 900;
-    }
     .hint { margin: 0 18px; color: #614522; text-align: center; font-size: 12px; line-height: 1.45; }
     .win-overlay {
       position: fixed;
@@ -171,6 +186,7 @@
     @media (min-width: 700px) {
       .app { padding-top: 8px; }
       .msg { font-size: 15px; }
+      .start-row { padding-left: 11px; }
     }
     @media (prefers-reduced-motion: no-preference) {
       button { transition: transform .12s ease, filter .12s ease; }
@@ -186,7 +202,7 @@
     <header class="bar">
       <button class="back-btn" id="backBtn" type="button" aria-label="Back to puzzles">←</button>
       <div class="title">🧭 Tunnels Of SaNa Maze</div>
-      <button class="top-btn" id="newBtn" type="button">🔄 New</button>
+      <button class="top-btn watch-btn" id="watchBtn" type="button" aria-label="Watch a demonstration of this maze" aria-pressed="false">▶️ Watch</button>
     </header>
 
     <div class="msg" id="message" role="status" aria-live="polite">🐒 <strong>Two tunnels leave Start.</strong> One reaches Finish. The other winds close, then stops at a wall. Trace carefully.</div>
@@ -207,7 +223,17 @@
       <button class="swatch" data-color="#ec4899" style="background:#ec4899" type="button" aria-label="Pink path" aria-pressed="false"></button>
     </div>
 
-    <div class="tag start-tag" id="startTag"><span class="sana-bubble" id="startSana" aria-hidden="true"><span class="sana-face">🐒</span><span class="sana-name">SaNa</span></span>⬇ START</div>
+    <div class="start-row" id="startControls">
+      <div class="start-person" id="startPerson">
+        <span class="sana-bubble" id="startSana" aria-hidden="true"><span class="sana-face">🐒</span><span class="sana-name">SaNa</span></span>
+        <span class="tag start-tag" id="startTag">↓ START</span>
+      </div>
+      <div class="maze-actions">
+        <button class="top-btn" id="newBtn" type="button" aria-label="Start a new maze">🔄 New</button>
+        <button class="top-btn" id="clearBtn" type="button" aria-label="Clear your path">✖ Clear</button>
+      </div>
+      <span class="start-label" aria-hidden="true">Find the way →</span>
+    </div>
     <div class="maze-wrap">
       <div class="maze-card">
         <svg id="mazeSvg" viewBox="0 0 100 133.333" role="img" aria-label="Interactive maze. Drag from the green Start marker to the red Finish marker."></svg>
@@ -215,10 +241,7 @@
     </div>
     <div class="tag finish-tag" id="finishTag">🏁 FINISH<span class="sana-bubble" id="finishSana" aria-hidden="true" hidden><span class="sana-face">🐒</span><span class="sana-name">SaNa</span></span></div>
 
-    <div class="controls">
-      <button class="ctrl-btn" id="clearBtn" type="button">✖ Clear path</button>
-    </div>
-    <p class="hint">Drag from the green marker. Both tunnels twist toward the goal, but only one reaches it. You can retrace your steps or use the arrow keys.</p>
+    <p class="hint">Drag from the green marker. Both tunnels twist toward the goal, but only one reaches it. You can retrace your steps or use the arrow keys. Tap Watch to see a demo.</p>
   </main>
 
   <section class="win-overlay" id="winOverlay" role="dialog" aria-modal="true" aria-labelledby="winTitle">
@@ -261,8 +284,14 @@
     var winTime = document.getElementById('winTime');
     var startSana = document.getElementById('startSana');
     var finishSana = document.getElementById('finishSana');
+    var watchBtn = document.getElementById('watchBtn');
     var cellSize = 0;
     var viewHeight = 0;
+    var demoActive = false;
+    var demoPausedClock = false;
+    var demoFrame = null;
+    var demoCleanupTimeout = null;
+    var demoRoute = null;
 
     function key(x, y) { return x + ',' + y; }
     function same(a, b) { return a.x === b.x && a.y === b.y; }
@@ -617,6 +646,125 @@
       var cx = (last.x + .5) * cellSize, cy = (last.y + .5) * cellSize;
       dotLayer.innerHTML = circle(cx, cy, cellSize * .29, pickedColor, 1, '#fff', cellSize * .055);
     }
+    function clearDemoDrawing() {
+      var pathLayer = document.getElementById('demoPathLayer');
+      var dotLayer = document.getElementById('demoDotLayer');
+      if (pathLayer) pathLayer.innerHTML = '';
+      if (dotLayer) dotLayer.innerHTML = '';
+    }
+    function resumeDemoClock() {
+      if (!demoPausedClock) return;
+      demoPausedClock = false;
+      if (!solved && !document.hidden && timerStartedAt === null) timerStartedAt = Date.now();
+    }
+    function stopDemo(announcement, resumeClock) {
+      if (demoFrame !== null) cancelAnimationFrame(demoFrame);
+      if (demoCleanupTimeout !== null) window.clearTimeout(demoCleanupTimeout);
+      demoFrame = null;
+      demoCleanupTimeout = null;
+      demoActive = false;
+      demoRoute = null;
+      clearDemoDrawing();
+      watchBtn.textContent = '▶️ Watch';
+      watchBtn.setAttribute('aria-pressed', 'false');
+      watchBtn.setAttribute('aria-label', 'Watch a demonstration of this maze');
+      if (resumeClock !== false) resumeDemoClock();
+      else demoPausedClock = false;
+      if (announcement) message.textContent = announcement;
+    }
+    function drawDemo(progress) {
+      var pathLayer = document.getElementById('demoPathLayer');
+      var dotLayer = document.getElementById('demoDotLayer');
+      if (!pathLayer || !dotLayer || !demoRoute || !demoRoute.length) return;
+      var steps = demoRoute.length - 1;
+      var position = Math.min(steps, Math.max(0, progress * steps));
+      var wholeSteps = Math.floor(position);
+      var fraction = position - wholeSteps;
+      var points = demoRoute.slice(0, wholeSteps + 1);
+      var last = demoRoute[wholeSteps];
+      var cx = (last.x + .5) * cellSize, cy = (last.y + .5) * cellSize;
+      if (wholeSteps < steps) {
+        var next = demoRoute[wholeSteps + 1];
+        cx += (next.x - last.x) * cellSize * fraction;
+        cy += (next.y - last.y) * cellSize * fraction;
+        if (fraction > 0) points.push({ x: last.x + (next.x - last.x) * fraction, y: last.y + (next.y - last.y) * fraction });
+      }
+      var d = '';
+      points.forEach(function (point, index) {
+        d += (index ? 'L' : 'M') + ((point.x + .5) * cellSize) + ' ' + ((point.y + .5) * cellSize) + ' ';
+      });
+      var width = cellSize * .2;
+      pathLayer.innerHTML = d
+        ? '<path d="' + d + '" fill="none" stroke="#fff" stroke-width="' + (width * 1.5) + '" stroke-linecap="round" stroke-linejoin="round" opacity=".95"/>' +
+          '<path d="' + d + '" fill="none" stroke="#ec4899" stroke-width="' + width + '" stroke-linecap="round" stroke-linejoin="round" opacity=".96"/>'
+        : '';
+      dotLayer.innerHTML = circle(cx, cy, cellSize * .28, '#ec4899', 1, '#fff', cellSize * .07);
+    }
+    function finishDemo() {
+      demoActive = false;
+      demoFrame = null;
+      demoRoute = null;
+      watchBtn.textContent = '▶️ Watch';
+      watchBtn.setAttribute('aria-pressed', 'false');
+      watchBtn.setAttribute('aria-label', 'Watch a demonstration of this maze');
+      message.textContent = '🐒 Demo complete! Now find the path yourself.';
+      resumeDemoClock();
+      demoCleanupTimeout = window.setTimeout(function () {
+        demoCleanupTimeout = null;
+        clearDemoDrawing();
+      }, 1100);
+    }
+    function startDemo() {
+      if (demoActive) {
+        stopDemo('🐒 Demo stopped. Your saved path is ready.');
+        return;
+      }
+      if (solved) {
+        message.textContent = '🐒 You already found the way! Start a new maze to watch it.';
+        return;
+      }
+      if (demoCleanupTimeout !== null) window.clearTimeout(demoCleanupTimeout);
+      demoCleanupTimeout = null;
+      clearDemoDrawing();
+      demoRoute = findPath({ cols: cols, rows: rows, cells: cells }, { x: 0, y: 0 }, { x: cols - 1, y: rows - 1 }, null);
+      if (!demoRoute || demoRoute.length < 2) {
+        demoRoute = null;
+        message.textContent = '🐒 This maze demo is unavailable. Try a new maze.';
+        return;
+      }
+      if (timerStartedAt !== null) {
+        elapsedMs = currentElapsedMs();
+        timerStartedAt = null;
+        demoPausedClock = true;
+        saveGame();
+      }
+      demoActive = true;
+      watchBtn.textContent = '⏹ Stop';
+      watchBtn.setAttribute('aria-pressed', 'true');
+      watchBtn.setAttribute('aria-label', 'Stop the maze demonstration');
+      message.textContent = '🐒 SaNa is showing one way to the finish...';
+      var duration = Math.max(4200, Math.min(12000, (demoRoute.length - 1) * 180));
+      var beganAt = performance.now();
+      drawDemo(0);
+      function animate(now) {
+        if (!demoActive) return;
+        var progress = Math.min(1, (now - beganAt) / duration);
+        drawDemo(progress);
+        if (progress >= 1) finishDemo();
+        else demoFrame = requestAnimationFrame(animate);
+      }
+      demoFrame = requestAnimationFrame(animate);
+    }
+    function alignSaNaWithStart() {
+      var startPerson = document.getElementById('startPerson');
+      if (!startPerson || !cols || !svg.getBoundingClientRect().width) return;
+      startPerson.style.transform = 'none';
+      var svgRect = svg.getBoundingClientRect();
+      var personRect = startPerson.getBoundingClientRect();
+      var targetCenter = svgRect.left + svgRect.width / (2 * cols);
+      var currentCenter = personRect.left + personRect.width / 2;
+      startPerson.style.transform = 'translateX(' + (targetCenter - currentCenter) + 'px)';
+    }
     function updateSanaPosition() {
       startSana.hidden = !!solved;
       finishSana.hidden = !solved;
@@ -771,11 +919,14 @@
       }
       parts.push(circle(cellSize * .5, cellSize * .5, cellSize * .31, '#16a34a', .22, '#15803d', cellSize * .07));
       parts.push(circle((cols - .5) * cellSize, (rows - .5) * cellSize, cellSize * .31, '#dc2626', .25, '#b91c1c', cellSize * .07));
-      svg.innerHTML = parts.join('') + '<g id="pathLayer"></g><g id="dotLayer"></g>';
+      svg.innerHTML = parts.join('') + '<g id="pathLayer" pointer-events="none"></g><g id="dotLayer" pointer-events="none"></g>' +
+        '<g id="demoPathLayer" pointer-events="none"></g><g id="demoDotLayer" pointer-events="none"></g>';
       drawPath();
       updateSanaPosition();
+      alignSaNaWithStart();
     }
     function newMaze() {
+      stopDemo('', false);
       var settings = LEVELS[level];
       cols = settings.cols;
       rows = settings.rows;
@@ -794,6 +945,7 @@
     }
     function selectLevel(nextLevel) {
       if (!LEVELS[nextLevel] || nextLevel === level) return;
+      stopDemo('', false);
       saveGame();
       level = nextLevel;
       var saved = savedLevels[level];
@@ -862,6 +1014,7 @@
       if (solved) return;
       var at = cellAt(event.clientX, event.clientY), last = path[path.length - 1];
       if (!at || !same(at, last)) return;
+      if (demoActive || demoCleanupTimeout !== null) stopDemo('🐒 Your turn! Continue from your saved position.');
       dragging = true;
       previousPointerCell = at;
       if (svg.setPointerCapture) svg.setPointerCapture(event.pointerId);
@@ -886,15 +1039,18 @@
     });
     document.querySelectorAll('.swatch').forEach(function (button) {
       button.addEventListener('click', function () {
+        if (demoActive || demoCleanupTimeout !== null) stopDemo('🐒 Your turn! Continue from your saved position.');
         pickedColor = button.dataset.color;
         syncSelections();
         drawPath();
         saveGame();
       });
     });
+    watchBtn.addEventListener('click', startDemo);
     document.getElementById('newBtn').addEventListener('click', newMaze);
     document.getElementById('winNewBtn').addEventListener('click', newMaze);
     function clearPath() {
+      stopDemo('', false);
       path = [{ x: 0, y: 0 }];
       solved = false;
       elapsedMs = 0;
@@ -924,10 +1080,12 @@
       var move = moves[event.key];
       if (!move) return;
       event.preventDefault();
+      if (demoActive || demoCleanupTimeout !== null) stopDemo('🐒 Your turn! Continue from your saved position.');
       var last = path[path.length - 1];
       tryMoveTo({ x: last.x + move.x, y: last.y + move.y });
     });
     function pauseAndSave() {
+      stopDemo('', false);
       if (timerStartedAt !== null) {
         elapsedMs = currentElapsedMs();
         timerStartedAt = null;
@@ -942,6 +1100,7 @@
     });
     window.addEventListener('pagehide', pauseAndSave);
     window.addEventListener('pageshow', resumeTimer);
+    window.addEventListener('resize', alignSaNaWithStart);
 
     var savedLevel = readSavedLevels();
     if (savedLevel && savedLevels[savedLevel]) restoreGame(savedLevels[savedLevel]); else newMaze();
