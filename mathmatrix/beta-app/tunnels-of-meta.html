@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#d9b888">
-  <title>Tunnels Of Sa Na Maze</title>
+  <title>Tunnels Of SaNa Maze</title>
   <style>
     :root {
       color-scheme: light;
@@ -87,20 +87,37 @@
     .tag { text-align: center; font-size: 11px; font-weight: 900; letter-spacing: .6px; }
     .sana-bubble {
       display: inline-flex;
+      flex-direction: column;
       align-items: center;
-      gap: 4px;
+      gap: 1px;
+      width: 54px;
       margin: 0 5px 4px;
-      padding: 4px 9px;
-      border: 2px solid #fbbf24;
-      border-radius: 999px;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
       color: #4a331a;
-      background: #fff8ec;
-      box-shadow: 0 2px 0 rgba(74, 51, 26, .18);
-      font-size: 12px;
-      letter-spacing: 0;
+      background: transparent;
+      box-shadow: none;
+      font-size: 10px;
+      line-height: 1;
+      letter-spacing: .5px;
       vertical-align: middle;
     }
     .sana-bubble[hidden] { display: none; }
+    .sana-face {
+      display: grid;
+      place-items: center;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: linear-gradient(160deg, #ffd675, #fbbf24);
+      box-shadow: 0 3px 0 rgba(74, 51, 26, .24);
+      font-size: 28px;
+      line-height: 1;
+      animation: sanaBob 3s cubic-bezier(.2, .8, .2, 1) infinite;
+    }
+    .sana-name { font-size: 10px; font-weight: 900; line-height: 1; }
+    @keyframes sanaBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
     .start-tag { color: var(--green); }
     .finish-tag { color: var(--red); }
     .maze-wrap { display: flex; justify-content: center; padding: 5px 10px; }
@@ -159,13 +176,16 @@
       button { transition: transform .12s ease, filter .12s ease; }
       button:active { transform: translateY(1px) scale(.98); filter: brightness(.96); }
     }
+    @media (prefers-reduced-motion: reduce) {
+      .sana-face { animation: none; }
+    }
   </style>
 </head>
 <body>
   <main class="app">
     <header class="bar">
       <button class="back-btn" id="backBtn" type="button" aria-label="Back to puzzles">←</button>
-      <div class="title">🧭 Tunnels Of Sa Na Maze</div>
+      <div class="title">🧭 Tunnels Of SaNa Maze</div>
       <button class="top-btn" id="newBtn" type="button">🔄 New</button>
     </header>
 
@@ -187,13 +207,13 @@
       <button class="swatch" data-color="#ec4899" style="background:#ec4899" type="button" aria-label="Pink path" aria-pressed="false"></button>
     </div>
 
-    <div class="tag start-tag" id="startTag"><span class="sana-bubble" id="startSana" aria-hidden="true">🐒 SaNa</span>⬇ START</div>
+    <div class="tag start-tag" id="startTag"><span class="sana-bubble" id="startSana" aria-hidden="true"><span class="sana-face">🐒</span><span class="sana-name">SaNa</span></span>⬇ START</div>
     <div class="maze-wrap">
       <div class="maze-card">
         <svg id="mazeSvg" viewBox="0 0 100 133.333" role="img" aria-label="Interactive maze. Drag from the green Start marker to the red Finish marker."></svg>
       </div>
     </div>
-    <div class="tag finish-tag" id="finishTag">🏁 FINISH<span class="sana-bubble" id="finishSana" aria-hidden="true" hidden>🐒 SaNa</span></div>
+    <div class="tag finish-tag" id="finishTag">🏁 FINISH<span class="sana-bubble" id="finishSana" aria-hidden="true" hidden><span class="sana-face">🐒</span><span class="sana-name">SaNa</span></span></div>
 
     <div class="controls">
       <button class="ctrl-btn" id="clearBtn" type="button">✖ Clear path</button>
@@ -232,6 +252,8 @@
     var timerStartedAt = null;
     var SAVE_KEY = 'mmTunnelsOfSaNaSave';
     var SAVE_VERSION = 1;
+    var SAVE_STORE_VERSION = 2;
+    var savedLevels = Object.create(null);
     var PATH_COLORS = ['#2563eb', '#dc2626', '#16a34a', '#f59e0b', '#9333ea', '#ec4899'];
     var svg = document.getElementById('mazeSvg');
     var message = document.getElementById('message');
@@ -638,7 +660,14 @@
         elapsedMs: currentElapsedMs(),
         solved: !!solved
       };
-      try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (err) {}
+      savedLevels[level] = save;
+      try {
+        localStorage.setItem(SAVE_KEY, JSON.stringify({
+          v: SAVE_STORE_VERSION,
+          activeLevel: level,
+          levels: savedLevels
+        }));
+      } catch (err) {}
     }
     function validSave(save) {
       if (!save || save.v !== SAVE_VERSION || !LEVELS[save.level] || PATH_COLORS.indexOf(save.pickedColor) < 0) return false;
@@ -682,12 +711,24 @@
       var atFinish = last.x === save.cols - 1 && last.y === save.rows - 1;
       return save.solved === atFinish;
     }
-    function readSave() {
+    function readSavedLevels() {
       try {
         var raw = localStorage.getItem(SAVE_KEY);
         if (!raw) return null;
         var save = JSON.parse(raw);
-        if (validSave(save)) return save;
+        if (validSave(save)) {
+          savedLevels[save.level] = save;
+          return save.level;
+        }
+        if (save && save.v === SAVE_STORE_VERSION && save.levels && typeof save.levels === 'object') {
+          Object.keys(LEVELS).forEach(function (name) {
+            var levelSave = save.levels[name];
+            if (levelSave && levelSave.level === name && validSave(levelSave)) savedLevels[name] = levelSave;
+          });
+          if (LEVELS[save.activeLevel] && savedLevels[save.activeLevel]) return save.activeLevel;
+          var restoredLevels = Object.keys(savedLevels);
+          if (restoredLevels.length) return restoredLevels[0];
+        }
         localStorage.removeItem(SAVE_KEY);
       } catch (err) {}
       return null;
@@ -750,6 +791,18 @@
       syncSelections();
       render();
       saveGame();
+    }
+    function selectLevel(nextLevel) {
+      if (!LEVELS[nextLevel] || nextLevel === level) return;
+      saveGame();
+      level = nextLevel;
+      var saved = savedLevels[level];
+      if (saved && validSave(saved)) {
+        restoreGame(saved);
+        saveGame();
+      } else {
+        newMaze();
+      }
     }
     function cellAt(clientX, clientY) {
       var rect = svg.getBoundingClientRect();
@@ -828,8 +881,7 @@
 
     document.querySelectorAll('.level-btn').forEach(function (button) {
       button.addEventListener('click', function () {
-        level = button.dataset.level;
-        newMaze();
+        selectLevel(button.dataset.level);
       });
     });
     document.querySelectorAll('.swatch').forEach(function (button) {
@@ -891,8 +943,8 @@
     window.addEventListener('pagehide', pauseAndSave);
     window.addEventListener('pageshow', resumeTimer);
 
-    var savedGame = readSave();
-    if (savedGame) restoreGame(savedGame); else newMaze();
+    var savedLevel = readSavedLevels();
+    if (savedLevel && savedLevels[savedLevel]) restoreGame(savedLevels[savedLevel]); else newMaze();
   })();
   </script>
 </body>
