@@ -1,8 +1,8 @@
 {
   "id": "./beta-app/beta.html",
-  "name": "MathMatrix Pro++ Beta V173Plus",
-  "short_name": "Beta V173Plus",
-  "description": "MathMatrix Pro++ Beta V173Plus preview — new puzzles and features being tested before they ship to the real app.",
+  "name": "MathMatrix Pro++ Beta V180 Unified",
+  "short_name": "Beta V180",
+  "description": "MathMatrix Pro++ Beta V180 Unified preview — new puzzles and features being tested before they ship to the real app.",
   "start_url": "./beta.html",
   "scope": "./",
   "display": "standalone",

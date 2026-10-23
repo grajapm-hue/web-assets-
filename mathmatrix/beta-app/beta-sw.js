@@ -1,6 +1,6 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V173Plus offline package.
+// MathMatrix Pro++ Beta Service Worker — Beta V180 Unified D-pad offline package.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v173plus-unified-device-sound-v10';
+const CACHE_VERSION = 'mathmatrix-beta-v180-unified-dpad';
 
 const ASSETS = [
   './index.html',
@@ -9,6 +9,7 @@ const ASSETS = [
   './tunnels-of-meta.html',
   './MultiplyMagic3.html',
   './sound-lab.html',
+  './qrcode.min.js',
   './bgm-monkeys.mp3',
   './beta-manifest.json',
   './cheat-3x3.png',
@@ -26,7 +27,7 @@ const ASSETS = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_VERSION).then((cache) => cache.addAll(ASSETS))
+    caches.open(CACHE_VERSION).then((cache) => cache.addAll(ASSETS.map((asset) => new Request(asset, { cache: 'reload' }))))
   );
   self.skipWaiting();
 });

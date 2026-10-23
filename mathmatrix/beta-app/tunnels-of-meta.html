@@ -4,7 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#8b5cf6">
-  <title>Tunnels Of SaNa Maze</title>
+  <meta name="description" content="Tunnels Of SaNa Maze — trace two winding tunnels and find the one that reaches Finish.">
+  <link rel="manifest" href="beta-manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <title>Tunnels Of SaNa Maze — MathMatrix Pro++ Beta</title>
   <style>
     :root {
       color-scheme: light;
@@ -208,6 +211,34 @@
     .start-tag { color: var(--green); }
     .finish-tag { color: var(--red); }
     .maze-wrap { display: flex; justify-content: center; padding: 3px 10px 8px; }
+    .maze-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      width: min(calc(100% - 20px), 500px);
+      margin: 0 auto;
+    }
+    .maze-dpad { display: flex; flex: none; gap: 6px; }
+    .dpad-btn {
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      border: 0;
+      border-radius: 12px;
+      color: #fff;
+      background: #6b4a28;
+      box-shadow: 0 3px 0 rgba(51, 34, 15, .2);
+      font-size: 25px;
+      font-weight: 900;
+      line-height: 1;
+      cursor: pointer;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .dpad-btn:focus-visible { outline: 3px solid #fbbf24; outline-offset: 2px; }
+    .maze-footer .finish-tag { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; }
     .maze-card {
       position: relative;
       width: min(100%, 500px);
@@ -345,7 +376,15 @@
         <svg id="mazeSvg" viewBox="0 0 100 133.333" role="img" aria-label="Interactive maze. Drag from the green Start marker to the red Finish marker."></svg>
       </div>
     </div>
-    <div class="tag finish-tag" id="finishTag">🏁 FINISH<span class="sana-bubble" id="finishSana" aria-hidden="true" hidden><span class="sana-face">🐒</span><span class="sana-name">SaNa</span></span></div>
+    <div class="maze-footer" id="mazeFooter">
+      <div class="maze-dpad" role="group" aria-label="Maze movement">
+        <button class="dpad-btn" data-dx="-1" data-dy="0" type="button" aria-label="Move left" title="Move left">←</button>
+        <button class="dpad-btn" data-dx="0" data-dy="-1" type="button" aria-label="Move up" title="Move up">↑</button>
+        <button class="dpad-btn" data-dx="0" data-dy="1" type="button" aria-label="Move down" title="Move down">↓</button>
+        <button class="dpad-btn" data-dx="1" data-dy="0" type="button" aria-label="Move right" title="Move right">→</button>
+      </div>
+      <div class="tag finish-tag" id="finishTag">🏁 FINISH<span class="sana-bubble" id="finishSana" aria-hidden="true" hidden><span class="sana-face">🐒</span><span class="sana-name">SaNa</span></span></div>
+    </div>
   </main>
 
   <dialog class="logic-dialog" id="logicDialog" aria-labelledby="logicTitle">
@@ -369,12 +408,13 @@
         <h2 id="soundTitle">🔊 Sound &amp; Music</h2>
         <button class="logic-close" id="soundClose" type="button">Close</button>
       </div>
-      <p>Choose how SaNa’s maze sounds.</p>
+      <p>Tap a button below to change it.</p>
       <div class="sound-options">
         <button class="sound-choice" id="soundMaster" type="button">🔊 Sound: ON</button>
         <button class="sound-choice" id="musicToggle" type="button">🎵 Music: ON</button>
       </div>
-      <p class="sound-note">Sound controls the maze taps and finish celebration. Music controls the MathMatrix background tune.</p>
+      <p class="sound-note">🔊 <b>Sound</b> is the master switch. Turning it OFF stops both the maze music and maze tones.</p>
+      <p class="sound-note">🎵 <b>Music</b> controls only the monkey background tune. Turning Music OFF keeps the maze tones working while Sound remains ON.</p>
     </div>
   </dialog>
 
@@ -433,14 +473,16 @@
     var mazeMusicOn = localStorage.getItem('mmMusic') !== 'off';
     var audioContext = null;
     var audioUnlocked = false;
-    var bgmAudio = new Audio('./bgm-monkeys.mp3');
-    bgmAudio.loop = true;
-    bgmAudio.preload = 'none';
-    bgmAudio.volume = .22;
+    // Use a decoded Web Audio buffer so the looping score does not expose OS media controls.
+    var mazeMusicBuffer = null;
+    var mazeMusicSource = null;
+    var mazeMusicGain = null;
+    var mazeMusicLoading = false;
     var mazeCard = document.querySelector('.maze-card');
     var mazeWrap = document.querySelector('.maze-wrap');
     var startControls = document.getElementById('startControls');
     var finishTag = document.getElementById('finishTag');
+    const mazeFooter = document.getElementById('mazeFooter');
     var cellSize = 0;
     var viewHeight = 0;
     var demoActive = false;
@@ -493,12 +535,63 @@
         mazeTone(frequency, .16, 'sine', index * .13, .055);
       });
     }
-    function startMazeMusic() {
-      if (!mazeSoundOn || !mazeMusicOn || !audioUnlocked) return;
+    function stopMazeMusic() {
+      var source = mazeMusicSource;
+      var gain = mazeMusicGain;
+      mazeMusicSource = null;
+      mazeMusicGain = null;
+      if (source) {
+        source.onended = null;
+        try { source.stop(); } catch (err) {}
+        try { source.disconnect(); } catch (err) {}
+      }
+      if (gain) {
+        try { gain.disconnect(); } catch (err) {}
+      }
+    }
+    async function startMazeMusic() {
+      if (!mazeSoundOn || !mazeMusicOn || !audioUnlocked || !audioContext) return;
+      var context = audioContext;
+      if (context.state === 'suspended') context.resume().catch(function () {});
+      if (mazeMusicSource) return;
+      if (!mazeMusicBuffer) {
+        if (mazeMusicLoading) return;
+        mazeMusicLoading = true;
+        try {
+          var response = await fetch('./bgm-monkeys.mp3');
+          if (!response.ok) throw new Error('Could not load background music.');
+          var encodedTrack = await response.arrayBuffer();
+          mazeMusicBuffer = await new Promise(function (resolve, reject) {
+            var decoded = context.decodeAudioData(encodedTrack, resolve, reject);
+            if (decoded && typeof decoded.then === 'function') decoded.then(resolve, reject);
+          });
+        } catch (err) {
+          mazeMusicBuffer = null;
+        } finally {
+          mazeMusicLoading = false;
+        }
+        if (context !== audioContext || !mazeSoundOn || !mazeMusicOn) return;
+      }
       try {
-        var play = bgmAudio.play();
-        if (play && typeof play.catch === 'function') play.catch(function () {});
-      } catch (err) {}
+        var source = context.createBufferSource();
+        var gain = context.createGain();
+        source.buffer = mazeMusicBuffer;
+        source.loop = true;
+        gain.gain.value = .22;
+        source.connect(gain);
+        gain.connect(context.destination);
+        mazeMusicSource = source;
+        mazeMusicGain = gain;
+        source.onended = function () {
+          if (mazeMusicSource === source) {
+            mazeMusicSource = null;
+            mazeMusicGain = null;
+          }
+        };
+        source.start(0);
+      } catch (err) {
+        stopMazeMusic();
+      }
     }
     function refreshSoundControls() {
       if (!soundBtn) return;
@@ -512,7 +605,7 @@
       musicToggle.classList.toggle('is-off', !mazeMusicOn);
       musicToggle.disabled = !mazeSoundOn;
       musicToggle.title = mazeSoundOn ? '' : 'Turn Sound ON first';
-      if (!mazeSoundOn || !mazeMusicOn) bgmAudio.pause();
+      if (!mazeSoundOn || !mazeMusicOn) stopMazeMusic();
       else startMazeMusic();
     }
     function syncSoundPreferences() {
@@ -1024,12 +1117,13 @@
       var wrapTop = Math.max(0, mazeWrap.getBoundingClientRect().top);
       var safeBottom = parseFloat(getComputedStyle(document.body).paddingBottom) || 0;
       var appBottom = parseFloat(getComputedStyle(document.querySelector('.app')).paddingBottom) || 0;
-      var remaining = viewportHeight - wrapTop - 3 - 8 - finishTag.getBoundingClientRect().height - 10 - safeBottom - appBottom;
+      var remaining = viewportHeight - wrapTop - 3 - 8 - mazeFooter.getBoundingClientRect().height - 10 - safeBottom - appBottom;
       var cardChrome = 22;
       var widthByHeight = Math.max(0, remaining - cardChrome) * cols / rows + cardChrome;
       var widthByScreen = Math.max(220, mazeWrap.clientWidth - 20);
       var cardWidth = Math.max(220, Math.min(500, widthByScreen, widthByHeight));
       mazeCard.style.width = cardWidth + 'px';
+      mazeFooter.style.width = Math.min(widthByScreen, Math.max(284, cardWidth)) + 'px';
       if (startControls) startControls.style.width = cardWidth + 'px';
       alignSaNaWithStart();
     }
@@ -1309,6 +1403,16 @@
     window.addEventListener('pointerup', stopDragging);
     window.addEventListener('pointercancel', stopDragging);
 
+    document.querySelectorAll('.dpad-btn').forEach((button) => {
+      button.addEventListener('click', () => {
+        if (solved || winOverlay.classList.contains('show')) return;
+        stopDragging();
+        if (demoActive || demoCleanupTimeout !== null) stopDemo('🐒 Your turn! Continue from your saved position.');
+        const last = path[path.length - 1];
+        tryMoveTo({ x: last.x + Number(button.dataset.dx), y: last.y + Number(button.dataset.dy) });
+      });
+    });
+
     document.querySelectorAll('.level-btn').forEach(function (button) {
       button.addEventListener('click', function () {
         selectLevel(button.dataset.level);
@@ -1350,6 +1454,7 @@
       refreshSoundControls();
       if (mazeSoundOn) {
         ensureMazeAudio();
+        startMazeMusic();
         mazeTone(660, .1, 'sine', 0, .05);
       } else if (audioContext && audioContext.state !== 'suspended') {
         audioContext.suspend().catch(function () {});
@@ -1379,10 +1484,16 @@
       startMazeMusic();
     }, { capture: true, passive: true });
     document.addEventListener('visibilitychange', function () {
-      if (document.hidden) bgmAudio.pause();
-      else if (audioUnlocked) startMazeMusic();
+      if (document.hidden) {
+        if (audioContext && audioContext.state !== 'suspended') audioContext.suspend().catch(function () {});
+      } else if (audioUnlocked && mazeSoundOn) {
+        ensureMazeAudio();
+        startMazeMusic();
+      }
     });
-    window.addEventListener('pagehide', function () { bgmAudio.pause(); });
+    window.addEventListener('pagehide', function () {
+      if (audioContext && audioContext.state !== 'suspended') audioContext.suspend().catch(function () {});
+    });
     refreshSoundControls();
     document.getElementById('newBtn').addEventListener('click', newMaze);
     document.getElementById('winNewBtn').addEventListener('click', newMaze);
@@ -1406,7 +1517,7 @@
           return;
         }
       } catch (err) {}
-      window.location.href = './';
+      window.location.href = './beta.html';
     });
     window.addEventListener('keydown', function (event) {
       if (solved || winOverlay.classList.contains('show')) return;
@@ -1436,13 +1547,26 @@
       if (document.hidden) pauseAndSave(); else resumeTimer();
     });
     window.addEventListener('pagehide', pauseAndSave);
-    window.addEventListener('pageshow', resumeTimer);
+    window.addEventListener('pageshow', function () {
+      resumeTimer();
+      if (!document.hidden && audioUnlocked && mazeSoundOn) {
+        ensureMazeAudio();
+        startMazeMusic();
+      }
+    });
     window.addEventListener('resize', fitMazeToViewport);
     if (window.visualViewport) window.visualViewport.addEventListener('resize', fitMazeToViewport);
 
     var savedLevel = readSavedLevels();
     if (savedLevel && savedLevels[savedLevel]) restoreGame(savedLevels[savedLevel]); else newMaze();
   })();
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('beta-sw.js').catch(function () {});
+      });
+    }
   </script>
 </body>
 </html>
