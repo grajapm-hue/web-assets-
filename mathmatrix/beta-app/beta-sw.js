@@ -1,6 +1,6 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V180 Unified D-pad offline package.
+// MathMatrix Pro++ Beta Service Worker — Beta V181 Unified D-pad offline package.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v180-unified-dpad';
+const CACHE_VERSION = 'mathmatrix-beta-v181-unified-dpad';
 
 const ASSETS = [
   './index.html',

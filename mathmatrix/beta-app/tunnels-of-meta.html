@@ -38,6 +38,11 @@
     }
     button { font: inherit; }
     .app { width: min(100%, 720px); margin: 0 auto; padding-bottom: 18px; }
+    .app, .app * {
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
     .bar { display: flex; align-items: center; gap: 6px; padding: 8px 12px; }
     .back-btn, .top-btn {
       border: 0;
