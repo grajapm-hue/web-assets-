@@ -4825,6 +4825,7 @@ body{ background:#C9A87C !important; }
 
   <!-- 🧭 TUNNELS OF SA NA MAZE — a standalone maze page so Beta can be tested
        independently before the puzzle is copied into the public app. -->
+  <div class="modePair" id="mazePuzzlePair">
   <div class="modeGroup">
     <div class="modeHead" style="--m1:#bbf7d0; --m2:#16a34a;">
       <span class="mIco">🧭</span>
@@ -4850,6 +4851,8 @@ body{ background:#C9A87C !important; }
       </button>
     </div>
   </div>
+
+  </div><!-- /#mazePuzzlePair -->
 
   <!-- Sir Ramanujan pairs with Gate Logic, which moved up from below Binary to
        fill the seat beside him — the shift Raja drew an arrow for. -->
@@ -15614,9 +15617,9 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'Beta - V.182 Unified';
+  var BUILD_VER = 'Beta - V.183 Unified';
   /* Legacy update beacon: older installed versions scan for this literal.
-   window.BETA_VER = 'v182'
+   window.BETA_VER = 'v183'
    Runtime code below derives the same token from BUILD_VER. */
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told

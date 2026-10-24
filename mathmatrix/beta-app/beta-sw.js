@@ -1,6 +1,6 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V182 Cave Treasure Hunt offline package.
+// MathMatrix Pro++ Beta Service Worker — Beta V183 paired maze cards offline package.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v182-cave-v61';
+const CACHE_VERSION = 'mathmatrix-beta-v183-maze-pair';
 
 const ASSETS = [
   './index.html',
