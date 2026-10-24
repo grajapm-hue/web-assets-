@@ -1,6 +1,6 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V183 paired maze cards offline package.
+// MathMatrix Pro++ Beta Service Worker — Beta V184 Watch reset controls offline package.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v183-maze-pair';
+const CACHE_VERSION = 'mathmatrix-beta-v184-watch-reset';
 
 const ASSETS = [
   './index.html',
