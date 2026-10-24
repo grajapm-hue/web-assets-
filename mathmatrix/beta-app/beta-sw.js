@@ -1,12 +1,13 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V181 Unified D-pad offline package.
+// MathMatrix Pro++ Beta Service Worker — Beta V182 Cave Treasure Hunt offline package.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v181-unified-dpad';
+const CACHE_VERSION = 'mathmatrix-beta-v182-cave-v61';
 
 const ASSETS = [
   './index.html',
   './beta.html',
   './criss-cross.html',
   './tunnels-of-meta.html',
+  './cave-treasure-hunt.html',
   './MultiplyMagic3.html',
   './sound-lab.html',
   './qrcode.min.js',

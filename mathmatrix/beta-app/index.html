@@ -4838,6 +4838,19 @@ body{ background:#C9A87C !important; }
     </div>
   </div>
 
+  <div class="modeGroup">
+    <div class="modeHead" style="--m1:#fde68a; --m2:#b45309;">
+      <span class="mIco">🗝️</span>
+      <span><b>Cave Treasure Hunt</b><i>collect shields and treasure, then find the cave exit</i></span>
+    </div>
+    <div class="toggleSwitch">
+      <button class="toggleBtn lvCard" id="caveTreasureHuntTab" type="button" data-size="cave-treasure" data-name="Cave Treasure Hunt" style="color:#b45309; border-color:#b45309; --c1:#fde68a; --c2:#d97706;">
+        <span class="lvGlyph" aria-hidden="true">🗝️</span>
+        <span class="lvText"><b class="lvName">Cave Treasure Hunt</b><span class="lvDiff">Ten checkpoints · one adventure</span><span class="lvMeta">Collect, retrace, and guide SaNa safely out</span><span class="lvNow">PLAYING</span></span>
+      </button>
+    </div>
+  </div>
+
   <!-- Sir Ramanujan pairs with Gate Logic, which moved up from below Binary to
        fill the seat beside him — the shift Raja drew an arrow for. -->
   <div class="modePair">
@@ -5751,6 +5764,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         // Criss-Cross: its own tested page, kept separate from the magic-square
         // engine (same reasoning Gate Logic uses for its own dedicated handler).
         window.location.href = 'criss-cross.html';
+        return;
+      }
+      if (newSize === 'cave-treasure') {
+        window.location.href = 'cave-treasure-hunt.html';
         return;
       }
       if (newSize === 'tunnels') {
@@ -15597,9 +15614,9 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'Beta - V.181 Unified';
+  var BUILD_VER = 'Beta - V.182 Unified';
   /* Legacy update beacon: older installed versions scan for this literal.
-   window.BETA_VER = 'v181'
+   window.BETA_VER = 'v182'
    Runtime code below derives the same token from BUILD_VER. */
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told
