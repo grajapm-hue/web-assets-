@@ -1,6 +1,6 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V184 Watch reset controls offline package.
+// MathMatrix Pro++ Beta Service Worker — Beta V185 Watch reset controls and visible-viewport package.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v184-watch-reset';
+const CACHE_VERSION = 'mathmatrix-beta-v185-visible-viewport';
 
 const ASSETS = [
   './index.html',
