@@ -1,6 +1,6 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V197 SaNa popup images.
+// MathMatrix Pro++ Beta Service Worker — Beta V198 SaNa Watch Rest Room.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v197-sana-popup-images';
+const CACHE_VERSION = 'mathmatrix-beta-v198-sana-watch-rest-room';
 
 const ASSETS = [
   './index.html',
@@ -9,6 +9,7 @@ const ASSETS = [
   './tunnels-of-meta.html',
   './cave-treasure-hunt.html',
   './treasure-hunt-landscape-prototype/index.html',
+  './treasure-hunt-landscape-prototype/assets/interactive-treasure-hunt-maze-original/14-explorers-tired.webp',
   './MultiplyMagic3.html',
   './sound-lab.html',
   './qrcode.min.js',
