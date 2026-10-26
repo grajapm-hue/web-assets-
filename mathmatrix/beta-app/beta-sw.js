@@ -1,6 +1,6 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V187 SaNa Treasure Hunt Interactive.
+// MathMatrix Pro++ Beta Service Worker — Beta V188 SaNa Treasure Hunt Interactive Gradient.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v187-sana-treasure-interactive';
+const CACHE_VERSION = 'mathmatrix-beta-v188-sana-treasure-interactive-gradient';
 
 const ASSETS = [
   './index.html',
