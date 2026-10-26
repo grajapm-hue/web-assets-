@@ -1,6 +1,6 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V199 SaNa Watch Rest Room.
+// MathMatrix Pro++ Beta Service Worker — Beta V200 SaNa Watch Rest Room.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v199-sana-watch-rest-room';
+const CACHE_VERSION = 'mathmatrix-beta-v200-sana-watch-rest-room';
 
 const ASSETS = [
   './index.html',
