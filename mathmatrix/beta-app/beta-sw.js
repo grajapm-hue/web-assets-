@@ -1,6 +1,6 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V191 Thayam White Cells.
+// MathMatrix Pro++ Beta Service Worker — Beta V192 Thayam Medium Dividers.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v191-thayam-white-cells';
+const CACHE_VERSION = 'mathmatrix-beta-v192-thayam-medium-grid';
 
 const ASSETS = [
   './index.html',
