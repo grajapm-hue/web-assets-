@@ -718,7 +718,7 @@ refreshSoundControls();render();
 // Keep this trial separate while allowing a return to the Beta puzzle list.
 document.getElementById('backToBeta').addEventListener('click', function () {
   if (document.referrer && new URL(document.referrer).origin === location.origin && history.length > 1) history.back();
-  else location.href = './mathmatrix/beta-app/index.html';
+  else location.href = '../beta.html';
 });
 </script>
 </body>
