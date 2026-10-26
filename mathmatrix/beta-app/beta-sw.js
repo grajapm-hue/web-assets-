@@ -1,6 +1,6 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V193 Thayam X-Cell Tint.
+// MathMatrix Pro++ Beta Service Worker — Beta V194 Pallanguzhi 4P Blue Frame.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v193-thayam-x-cell-tint';
+const CACHE_VERSION = 'mathmatrix-beta-v194-pallanguzhi4-white-board';
 
 const ASSETS = [
   './index.html',
