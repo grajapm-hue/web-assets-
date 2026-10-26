@@ -1,6 +1,6 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V185 Watch reset controls and visible-viewport package.
+// MathMatrix Pro++ Beta Service Worker — Beta V186 SaNa Treasure Hunt app entry.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v185-visible-viewport';
+const CACHE_VERSION = 'mathmatrix-beta-v186-sana-treasure-hunt';
 
 const ASSETS = [
   './index.html',
@@ -8,6 +8,7 @@ const ASSETS = [
   './criss-cross.html',
   './tunnels-of-meta.html',
   './cave-treasure-hunt.html',
+  './treasure-hunt-landscape-prototype/index.html',
   './MultiplyMagic3.html',
   './sound-lab.html',
   './qrcode.min.js',

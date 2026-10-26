@@ -4852,6 +4852,19 @@ body{ background:#C9A87C !important; }
     </div>
   </div>
 
+  <div class="modeGroup">
+    <div class="modeHead" style="--m1:#bbf7d0; --m2:#15803d;">
+      <span class="mIco">🐒</span>
+      <span><b>SaNa Treasure Hunt</b><i>guide SaNa through the illustrated cave maze</i></span>
+    </div>
+    <div class="toggleSwitch">
+      <button class="toggleBtn lvCard" id="sanaTreasureHuntTab" type="button" data-size="sana-treasure-hunt" data-name="SaNa Treasure Hunt" style="color:#15803d; border-color:#15803d; --c1:#bbf7d0; --c2:#22c55e;">
+        <span class="lvGlyph" aria-hidden="true">🧭</span>
+        <span class="lvText"><b class="lvName">SaNa Treasure Hunt</b><span class="lvDiff">Nine checkpoints · one story</span><span class="lvMeta">Find the key, shields, treasure, and cave exit</span><span class="lvNow">BETA</span></span>
+      </button>
+    </div>
+  </div>
+
   </div><!-- /#mazePuzzlePair -->
 
   <!-- Sir Ramanujan pairs with Gate Logic, which moved up from below Binary to
@@ -5771,6 +5784,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       }
       if (newSize === 'cave-treasure') {
         window.location.href = 'cave-treasure-hunt.html';
+        return;
+      }
+      if (newSize === 'sana-treasure-hunt') {
+        window.location.href = 'treasure-hunt-landscape-prototype/index.html';
         return;
       }
       if (newSize === 'tunnels') {
@@ -15617,7 +15634,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'Beta - V.185 Unified';
+  var BUILD_VER = 'Beta - V.186 Unified';
   /* Legacy update beacon: older installed versions scan for this literal.
    window.BETA_VER = 'v185'
    Runtime code below derives the same token from BUILD_VER. */
