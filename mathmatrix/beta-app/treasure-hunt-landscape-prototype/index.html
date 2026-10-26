@@ -378,6 +378,10 @@ function crossStages(from,to){
   var stage=STAGES[i];if(watchActive&&(watchLessonPhase==='shield1Miss'&&stage.id==='leaf'||watchLessonPhase==='shield2Miss'&&stage.id==='mesh'))continue;if(stageDone(stage.id)||!stage.point)continue;
   var alternate=stage.id==='tribes'?{x:177.6,y:757.9487179487179}:null;
   const atTribesDecoy=alternate&&segmentDistance(alternate,from,to)<=9;
+  if(atTribesDecoy&&watchActive&&watchLessonPhase==='shield1Miss'&&!state.items.leaf){
+   if(segmentDistance(alternate,from,to)<=5&&!watchDecoysShown.shield1){watchDecoysShown.shield1=true;say('Cross the Shield 1 decoy.');}
+   continue;
+  }
   if(atTribesDecoy&&state.items.leaf)return block('Tribes decoy 5 is blocked. Go back and cross the Tribes path properly using Shield 1 (plant leaf shield).');
   if(segmentDistance(stage.point,from,to)<=9||atTribesDecoy){
    var old={x:state.pos.x,y:state.pos.y},before=checkpointSnapshot();state.pos={x:to.x,y:to.y};
