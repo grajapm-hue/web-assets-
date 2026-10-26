@@ -51,7 +51,7 @@ window.onerror = function(msg, src, line, col, err){
 <link rel="apple-touch-icon" href="icon-192.png">
 <!-- without this the browser asks for /favicon.ico, 404s, and the tab sits blank -->
 <link rel="icon" href="icon-192.png" type="image/png">
-<title>🐒🎲 MathMatrix Pro++ — Beta - V.188 Unified</title>
+<title>🐒🎲 MathMatrix Pro++ — Beta - V.189 Unified</title>
 
 <!-- Raja: the copy icon in Android's share sheet copies something that will
      not open in a fresh browser, while every other channel works.
@@ -4107,10 +4107,15 @@ body{ background:#C9A87C !important; }
    rgba(0,0,0,.22) fill turned to murky brown on wood while their text stayed
    near-white.
 
-   The BOARD itself deliberately stays dark: it is a game board, it reads as
-   its own object against the wood the way a real one does, and Raja confirmed
-   that half already looks right. Only the chrome around it moves to the
-   theme's own dark-text-on-cream convention. */
+   White Thayam spaces make the route and player pieces easier to read. The
+   safe marks stay slate, the centre stays warm and gold, and player colours
+   keep their identity. This shared grid styling covers both 5x5 and 7x7. */
+#thayamGrid{ background:#fff; border-color:#94a3b8; }
+#thayamGrid .thCell{ background:#fff; border-color:#cbd5e1; }
+#thayamGrid .thCell.thSafe{ background:#f5f7fa; }
+#thayamGrid .thCell.thSafe::before, #thayamGrid .thCell.thSafe::after{ background:rgba(51,38,140,.38); }
+#thayamGrid .thCell.thCenter{ background:radial-gradient(circle,#fff8e7,#f2e4c5); }
+.thPiece{ outline:1px solid rgba(36,23,8,.5); }
 .thTitle{ color:#241708; }
 /* Deeper than the #9A3412 used for accents on cream: measured on THIS ground
    that lighter red only reaches 3.26:1, and the title is 17px -- under the
@@ -15634,7 +15639,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'Beta - V.188 Unified';
+  var BUILD_VER = 'Beta - V.189 Unified';
   /* Legacy update beacon: older installed versions scan for this literal.
    window.BETA_VER = 'v185'
    Runtime code below derives the same token from BUILD_VER. */
