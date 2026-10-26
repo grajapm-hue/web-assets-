@@ -1,6 +1,6 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V190 Thayam Black Board.
+// MathMatrix Pro++ Beta Service Worker — Beta V191 Thayam White Cells.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v190-thayam-blue-frame';
+const CACHE_VERSION = 'mathmatrix-beta-v191-thayam-white-cells';
 
 const ASSETS = [
   './index.html',
