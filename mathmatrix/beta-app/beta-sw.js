@@ -1,6 +1,6 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V194 Pallanguzhi 4P Blue Frame.
+// MathMatrix Pro++ Beta Service Worker — Beta V195 Pallanguzhi 4P Player Cups.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v194-pallanguzhi4-white-board';
+const CACHE_VERSION = 'mathmatrix-beta-v195-pallanguzhi4-player-cup-colors';
 
 const ASSETS = [
   './index.html',
