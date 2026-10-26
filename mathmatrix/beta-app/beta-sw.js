@@ -1,6 +1,6 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V195 Pallanguzhi 4P Player Cups.
+// MathMatrix Pro++ Beta Service Worker — Beta V196 Pallanguzhi 4P Larger Counts.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v195-pallanguzhi4-player-cup-colors';
+const CACHE_VERSION = 'mathmatrix-beta-v196-pallanguzhi4-larger-counts';
 
 const ASSETS = [
   './index.html',
