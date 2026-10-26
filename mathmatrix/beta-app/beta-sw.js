@@ -1,6 +1,6 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V196 Pallanguzhi 4P Larger Counts.
+// MathMatrix Pro++ Beta Service Worker — Beta V197 SaNa popup images.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v196-pallanguzhi4-larger-counts';
+const CACHE_VERSION = 'mathmatrix-beta-v197-sana-popup-images';
 
 const ASSETS = [
   './index.html',
