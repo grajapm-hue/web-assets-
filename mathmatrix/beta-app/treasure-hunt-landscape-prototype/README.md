@@ -6,7 +6,7 @@ A fixed cave maze with nine ordered checkpoints: Start, Key, Map, Leaf Shield, T
 
 This GitHub Pages build is served from `mathmatrix/beta-app/treasure-hunt-landscape-prototype/`. Open `index.html` in a modern browser. For offline use, keep the `assets/interactive-treasure-hunt-maze-original/` folder beside it. Choose a player color and press **START**.
 
-In the MathMatrix Beta app, choose **SaNa Treasure Hunt** immediately after **Cave Treasure Hunt**. The app opens this maze in its own game view; use **Back to puzzles** to return to Beta.
+In the MathMatrix Beta app, choose **SaNa Treasure Hunt Interactive** immediately after **Cave Treasure Hunt**. Story images pop up at checkpoints. The app opens this maze in its own game view; use **Back to puzzles** to return to Beta.
 
 ## Follow the route
 
