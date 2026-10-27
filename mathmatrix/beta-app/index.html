@@ -51,7 +51,7 @@ window.onerror = function(msg, src, line, col, err){
 <link rel="apple-touch-icon" href="icon-192.png">
 <!-- without this the browser asks for /favicon.ico, 404s, and the tab sits blank -->
 <link rel="icon" href="icon-192.png" type="image/png">
-<title>🐒🎲 MathMatrix Pro++ — Beta - V.197 Unified</title>
+<title>🐒🎲 MathMatrix Pro++ — Beta - V.198 Unified</title>
 
 <!-- Raja: the copy icon in Android's share sheet copies something that will
      not open in a fresh browser, while every other channel works.
@@ -5092,8 +5092,6 @@ body{ background:#C9A87C !important; }
   <span style="color:#9A3412; font-weight:800;">Found something odd?</span> Tell us on the 💬 Feedback tab.<br>
   Mail To : <a href="mailto:grajapm@gmail.com?subject=MathMatrix%20Feedback%20%26%20Suggestion" style="color:#8ab4f8; text-decoration:underline;">✉️ Feedback &amp; Suggestion</a><br>
   <span style="opacity:.7; font-size:12px;">App <span id="verLabel">…</span></span><br>
-  <span style="opacity:.75; font-size:11.5px; line-height:1.6;">🎵 Music: “Monkeys Spinning Monkeys” by Kevin MacLeod · <a href="https://incompetech.com/" style="color:#8ab4f8;">incompetech.com</a><br>
-  Promoted by <a href="https://www.chosic.com/free-music/all/" style="color:#8ab4f8;">Chosic</a> · <a href="https://creativecommons.org/licenses/by/3.0/" style="color:#8ab4f8;">CC BY 3.0</a> — thanks for sharing! 🙏</span>
 </div>
 
 </section>
@@ -5523,7 +5521,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         break;
     }
   }
-  // ---- Background music: "Monkeys Spinning Monkeys" by Kevin MacLeod (CC BY 3.0, incompetech.com) ----
+  // ---- Background music: Beyond the Stone Gate (continuous app soundtrack) ----
   // Plays softly while the child thinks; fades down while they enter numbers so the
   // puzzle sounds stay clear, then rises again after a short pause.
   // WebAudio buffer playback (no HTMLMediaElement): avoids creating a browser
@@ -5578,7 +5576,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     if (bgm.buffer){ startBgmBuffer(); return; }
     if (bgmLoading) return;
     bgmLoading=true;
-    fetch(ASSET('bgm-monkeys.mp3')).then(function(r){
+    fetch(ASSET('bgm-beyond-stone-gate.mp3')).then(function(r){
       if(!r.ok) throw new Error('music load '+r.status); return r.arrayBuffer();
     }).then(function(ab){
       return new Promise(function(resolve,reject){ audioCtx.decodeAudioData(ab,resolve,reject); });
@@ -15641,7 +15639,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'Beta - V.197 Unified';
+  var BUILD_VER = 'Beta - V.198 Unified';
   /* Legacy update beacon: older installed versions scan for this literal.
    window.BETA_VER = 'v185'
    Runtime code below derives the same token from BUILD_VER. */
