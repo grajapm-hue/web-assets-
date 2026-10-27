@@ -1405,16 +1405,43 @@
       event.preventDefault();
     });
     function stopDragging() { dragging = false; previousPointerCell = null; }
-    window.addEventListener('pointerup', stopDragging);
-    window.addEventListener('pointercancel', stopDragging);
+    let dpadHoldTimer = null;
+    function stopDpadHold() {
+      if (dpadHoldTimer !== null) {
+        clearTimeout(dpadHoldTimer);
+        clearInterval(dpadHoldTimer);
+        dpadHoldTimer = null;
+      }
+    }
+    function moveDpad(button) {
+      if (solved || winOverlay.classList.contains('show')) return false;
+      stopDragging();
+      if (demoActive || demoCleanupTimeout !== null) stopDemo('🐒 Your turn! Continue from your saved position.');
+      const last = path[path.length - 1];
+      return tryMoveTo({ x: last.x + Number(button.dataset.dx), y: last.y + Number(button.dataset.dy) });
+    }
+    window.addEventListener('pointerup', function () { stopDragging(); stopDpadHold(); });
+    window.addEventListener('pointercancel', function () { stopDragging(); stopDpadHold(); });
+    window.addEventListener('blur', stopDpadHold);
 
     document.querySelectorAll('.dpad-btn').forEach((button) => {
-      button.addEventListener('click', () => {
+      button.addEventListener('pointerdown', (event) => {
         if (solved || winOverlay.classList.contains('show')) return;
-        stopDragging();
-        if (demoActive || demoCleanupTimeout !== null) stopDemo('🐒 Your turn! Continue from your saved position.');
-        const last = path[path.length - 1];
-        tryMoveTo({ x: last.x + Number(button.dataset.dx), y: last.y + Number(button.dataset.dy) });
+        event.preventDefault();
+        stopDpadHold();
+        if (button.setPointerCapture && event.pointerId !== undefined) {
+          try { button.setPointerCapture(event.pointerId); } catch (_) {}
+        }
+        if (!moveDpad(button)) return;
+        dpadHoldTimer = setTimeout(() => {
+          dpadHoldTimer = setInterval(() => {
+            if (!moveDpad(button)) stopDpadHold();
+          }, 50);
+        }, 125);
+      });
+      ['pointerup', 'pointercancel', 'lostpointercapture'].forEach((type) => button.addEventListener(type, stopDpadHold));
+      button.addEventListener('click', (event) => {
+        if (event.detail === 0) moveDpad(button);
       });
     });
 
