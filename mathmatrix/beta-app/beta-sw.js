@@ -1,6 +1,6 @@
 // MathMatrix Pro++ Beta Service Worker — Beta V203 SaNa Watch Rest Room.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v210-faster-maze-dpad';
+const CACHE_VERSION = 'mathmatrix-beta-v211-tunnels-dpad-hold';
 
 const ASSETS = [
   './index.html',
