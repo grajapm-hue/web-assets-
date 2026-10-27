@@ -503,7 +503,7 @@ function alignStoppedWatch(){
  function clear(a,b){var steps=Math.max(1,Math.ceil(dist(a,b)));for(var i=0;i<=steps;i++)if(!standable(a.x+(b.x-a.x)*i/steps,a.y+(b.y-a.y)*i/steps))return false;return true;}
  for(var i=0;i<corners.length;i++)if(clear(from,corners[i])&&clear(corners[i],to)){state.pos={x:to.x,y:to.y};return;}
 }
-function moveLaneDir(dir,amount){
+function moveLaneDir(dir,amount,stepOnly){
  if(stageReveal)return false;
  if(!laneGrid){if(!wallData){say('The cave is still loading. Try again in a moment.');return false;}return moveDir(dir,amount);}
  if(watchActive&&!watchDriving||state.mode!=='playing'&&state.mode!=='won'||state.resting)return false;
@@ -547,11 +547,21 @@ function moveLaneDir(dir,amount){
   var travelled=dist(before,state.pos);moved=moved||travelled>epsilon;remaining-=travelled;
   if(Math.abs(travelled-available)<=epsilon&&!state.redX&&!state.resting&&state.mode==='playing'){
    state.pos={x:target.x,y:target.y};state.trail[state.trail.length-1]={x:target.x,y:target.y};
-   if(!watchDriving&&stepDir===dir)break;
+   if(!watchDriving&&(stepDir===dir||stepOnly))break;
   }
   if(travelled<take-epsilon||state.resting||state.mode!=='playing'||state.redX)break;
  }
  return moved;
+}
+function moveLanePadStep(dir){
+ if(!laneGrid)return moveLaneDir(dir,40,true);
+ var delta={up:[0,-1],right:[1,0],down:[0,1],left:[-1,0]}[dir];
+ if(!delta)return false;
+ var cell={x:nearestLane(laneGrid.xs,state.pos.x),y:nearestLane(laneGrid.ys,state.pos.y)},center=lanePoint(cell),targetCell={x:cell.x+delta[0],y:cell.y+delta[1]};
+ if(dist(state.pos,center)>.65)return moveLaneDir(dir,40,true);
+ if(!openLane(cell,targetCell))return moveLaneDir(dir,40,true);
+ var target=lanePoint(targetCell),distance=dist(state.pos,target);
+ return moveLaneDir(dir,distance+.001,true);
 }
 function retraceLaneCell(cell,dx,dy){
  var point=lanePoint(cell),index=-1,epsilon=.00001;
@@ -720,9 +730,9 @@ var dialog=document.getElementById('logicDialog');document.getElementById('logic
 svg.addEventListener('pointerdown',function(e){if(watchActive||state.mode!=='playing'&&state.mode!=='won'||e.button!==undefined&&e.button!==0)return;var p=mapPoint(e.clientX,e.clientY);if(!p||dist(p,state.pos)>23)return;dragging=true;dragFineControl=false;dragRetracing=false;dragRetraceForward=0;dragDirectionIntent=0;dragBlockedAxis=null;dragBlockedGap=0;dragPointer=e.pointerId;dragOffset={x:state.pos.x-p.x,y:state.pos.y-p.y};dragLast={x:state.pos.x,y:state.pos.y};dragAxis=null;dragTurn=0;dragPendingX=0;dragPendingY=0;dragRemainder=0;if(svg.setPointerCapture)svg.setPointerCapture(e.pointerId);e.preventDefault();});
 svg.addEventListener('pointermove',function(e){if(!dragging||e.pointerId!==dragPointer)return;var p=mapPoint(e.clientX,e.clientY);if(!p)return;dragToward({x:p.x+dragOffset.x,y:p.y+dragOffset.y});e.preventDefault();});
 function stopDrag(){dragging=false;dragFineControl=false;dragRetracing=false;dragRetraceForward=0;dragDirectionIntent=0;dragPointer=null;dragLast=null;dragOffset={x:0,y:0};dragBlockedAxis=null;dragBlockedGap=0;dragAxis=null;dragTurn=0;dragPendingX=0;dragPendingY=0;dragRemainder=0;}window.addEventListener('pointerup',stopDrag);window.addEventListener('pointercancel',stopDrag);
-function stopPadHold(){if(holdTimer){clearTimeout(holdTimer);clearInterval(holdTimer);holdTimer=null;}}document.querySelectorAll('.pad').forEach(function(b){var dir=b.dataset.dir;b.addEventListener('pointerdown',function(e){if(b.disabled)return;e.preventDefault();stopPadHold();if(b.setPointerCapture&&e.pointerId!==undefined){try{b.setPointerCapture(e.pointerId);}catch(_){}}moveLaneDir(dir,80);holdTimer=setTimeout(function(){holdTimer=setInterval(function(){if(!moveLaneDir(dir,80))stopPadHold();},50);},125);});['pointerup','pointercancel','lostpointercapture'].forEach(function(type){b.addEventListener(type,stopPadHold);});b.addEventListener('click',function(e){if(e.detail===0)moveLaneDir(dir,80);});});
+function stopPadHold(){if(holdTimer){clearTimeout(holdTimer);clearInterval(holdTimer);holdTimer=null;}}document.querySelectorAll('.pad').forEach(function(b){var dir=b.dataset.dir;b.addEventListener('pointerdown',function(e){if(b.disabled)return;e.preventDefault();stopPadHold();if(b.setPointerCapture&&e.pointerId!==undefined){try{b.setPointerCapture(e.pointerId);}catch(_){}}moveLanePadStep(dir);holdTimer=setTimeout(function(){holdTimer=setInterval(function(){if(!moveLanePadStep(dir))stopPadHold();},50);},125);});['pointerup','pointercancel','lostpointercapture'].forEach(function(type){b.addEventListener(type,stopPadHold);});b.addEventListener('click',function(e){if(e.detail===0)moveLanePadStep(dir);});});
 window.addEventListener('pointerup',stopPadHold);window.addEventListener('blur',function(){stopPadHold();stopDrag();if(watchActive)stopWatch(true);});
-window.addEventListener('keydown',function(e){var k=e.key.toLowerCase(),d=k==='arrowup'||k==='w'?'up':k==='arrowright'||k==='d'?'right':k==='arrowdown'||k==='s'?'down':k==='arrowleft'||k==='a'?'left':null;if(d){e.preventDefault();moveLaneDir(d,1);}else if(k==='enter'&&state.mode==='ready'){beginRun();}});
+window.addEventListener('keydown',function(e){var k=e.key.toLowerCase(),d=k==='arrowup'||k==='w'?'up':k==='arrowright'||k==='d'?'right':k==='arrowdown'||k==='s'?'down':k==='arrowleft'||k==='a'?'left':null;if(d){e.preventDefault();moveLanePadStep(d);}else if(k==='enter'&&state.mode==='ready'){beginRun();}});
 art.onload=function(){maskCanvas.width=W;maskCanvas.height=H;maskCtx.drawImage(art,0,0,W,H);wallData=maskCtx.getImageData(0,0,W,H);laneGrid=buildLaneGrid();render();};art.onerror=function(){say('The fixed maze image could not load. Reopen this standalone HTML file.');};art.src=COLLISION_MAP;
 refreshSoundControls();render();
 })();

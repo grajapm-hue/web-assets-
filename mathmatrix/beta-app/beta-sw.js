@@ -1,6 +1,6 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V203 SaNa Watch Rest Room.
+// MathMatrix Pro++ Beta Service Worker — Beta V204 stepwise D-pad movement.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v212-full-cell-dpad';
+const CACHE_VERSION = 'mathmatrix-beta-v213-stepwise-lane-dpad';
 
 const ASSETS = [
   './index.html',
