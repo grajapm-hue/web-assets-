@@ -419,7 +419,7 @@
         <button class="sound-choice" id="musicToggle" type="button">🎵 Music: ON</button>
       </div>
       <p class="sound-note">🔊 <b>Sound</b> is the master switch. Turning it OFF stops both the maze music and maze tones.</p>
-      <p class="sound-note">🎵 <b>Music</b> controls only the monkey background tune. Turning Music OFF keeps the maze tones working while Sound remains ON.</p>
+      <p class="sound-note">🎵 <b>Music</b> controls the background music. Turning Music OFF keeps the maze tones working while Sound remains ON.</p>
     </div>
   </dialog>
 
@@ -563,7 +563,7 @@
         if (mazeMusicLoading) return;
         mazeMusicLoading = true;
         try {
-          var response = await fetch('./bgm-monkeys.mp3');
+          var response = await fetch('./bgm-beyond-stone-gate.mp3');
           if (!response.ok) throw new Error('Could not load background music.');
           var encodedTrack = await response.arrayBuffer();
           mazeMusicBuffer = await new Promise(function (resolve, reject) {
