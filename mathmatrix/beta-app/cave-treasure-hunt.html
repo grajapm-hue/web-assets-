@@ -540,6 +540,17 @@ function moveLaneDir(dir,amount){
  }
  return moved;
 }
+// Match Tunnels of SaNa Maze: each physical key repeat advances one full lane cell.
+function moveLanePadStep(dir){
+ if(!laneGrid)return moveLaneDir(dir,40);
+ var delta={up:[0,-1],right:[1,0],down:[0,1],left:[-1,0]}[dir];
+ if(!delta)return false;
+ var cell={x:nearestLane(laneGrid.xs,state.pos.x),y:nearestLane(laneGrid.ys,state.pos.y)},center=lanePoint(cell),targetCell={x:cell.x+delta[0],y:cell.y+delta[1]};
+ if(dist(state.pos,center)>.65)return moveLaneDir(dir,40);
+ if(!openLane(cell,targetCell))return moveLaneDir(dir,40);
+ var target=lanePoint(targetCell),distance=dist(state.pos,target);
+ return moveLaneDir(dir,distance+.001);
+}
 function retraceLaneCell(cell,dx,dy){
  var point=lanePoint(cell),index=-1,epsilon=.00001;
  for(var i=state.trail.length-1;i>=0;i--)if(dist(state.trail[i],point)<=epsilon){index=i;break;}
@@ -713,7 +724,7 @@ svg.addEventListener('pointermove',function(e){if(!dragging||e.pointerId!==dragP
 function stopDrag(){dragging=false;dragFineControl=false;dragRetracing=false;dragRetraceForward=0;dragDirectionIntent=0;dragPointer=null;dragLast=null;dragOffset={x:0,y:0};dragBlockedAxis=null;dragBlockedGap=0;dragAxis=null;dragTurn=0;dragPendingX=0;dragPendingY=0;dragRemainder=0;}window.addEventListener('pointerup',stopDrag);window.addEventListener('pointercancel',stopDrag);
 function stopPadHold(){if(holdTimer){clearTimeout(holdTimer);clearInterval(holdTimer);holdTimer=null;}}document.querySelectorAll('.pad').forEach(function(b){var dir=b.dataset.dir;b.addEventListener('pointerdown',function(e){if(b.disabled)return;e.preventDefault();stopPadHold();if(b.setPointerCapture&&e.pointerId!==undefined){try{b.setPointerCapture(e.pointerId);}catch(_){}}moveLaneDir(dir,80);holdTimer=setTimeout(function(){holdTimer=setInterval(function(){if(!moveLaneDir(dir,80))stopPadHold();},50);},125);});['pointerup','pointercancel','lostpointercapture'].forEach(function(type){b.addEventListener(type,stopPadHold);});b.addEventListener('click',function(e){if(e.detail===0)moveLaneDir(dir,80);});});
 window.addEventListener('pointerup',stopPadHold);window.addEventListener('blur',function(){stopPadHold();stopDrag();if(watchActive)stopWatch(true);});
-window.addEventListener('keydown',function(e){var k=e.key.toLowerCase(),d=k==='arrowup'||k==='w'?'up':k==='arrowright'||k==='d'?'right':k==='arrowdown'||k==='s'?'down':k==='arrowleft'||k==='a'?'left':null;if(d){e.preventDefault();moveLaneDir(d,1);}else if(k==='enter'&&state.mode==='ready'){beginRun();}});
+window.addEventListener('keydown',function(e){var k=e.key.toLowerCase(),d=k==='arrowup'||k==='w'?'up':k==='arrowright'||k==='d'?'right':k==='arrowdown'||k==='s'?'down':k==='arrowleft'||k==='a'?'left':null;if(d){e.preventDefault();moveLanePadStep(d);}else if(k==='enter'&&state.mode==='ready'){beginRun();}});
 art.onload=function(){maskCanvas.width=W;maskCanvas.height=H;maskCtx.drawImage(art,0,0,W,H);wallData=maskCtx.getImageData(0,0,W,H);laneGrid=buildLaneGrid();render();};art.onerror=function(){say('The fixed maze image could not load. Reopen this standalone HTML file.');};art.src=COLLISION_MAP;
 refreshSoundControls();render();
 })();

@@ -1,6 +1,6 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V204 stepwise D-pad movement.
+// MathMatrix Pro++ Beta Service Worker — Beta V205 full-cell keyboard movement.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v213-stepwise-lane-dpad';
+const CACHE_VERSION = 'mathmatrix-beta-v214-physical-key-parity';
 
 const ASSETS = [
   './index.html',
