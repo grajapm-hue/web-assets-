@@ -1,6 +1,6 @@
 // MathMatrix Pro++ Beta Service Worker — Beta V203 SaNa Watch Rest Room.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v208-beyond-stone-gate-puzzles';
+const CACHE_VERSION = 'mathmatrix-beta-v209-beyond-stone-gate-all-mazes';
 
 const ASSETS = [
   './index.html',
