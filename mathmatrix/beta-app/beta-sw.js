@@ -1,6 +1,6 @@
 // MathMatrix Pro++ Beta Service Worker — Beta V203 SaNa Watch Rest Room.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v205-sana-rest-decoy-gate';
+const CACHE_VERSION = 'mathmatrix-beta-v206-sana-rest-return';
 
 const ASSETS = [
   './index.html',
