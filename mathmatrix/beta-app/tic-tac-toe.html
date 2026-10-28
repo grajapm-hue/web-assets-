@@ -20,7 +20,15 @@
     .sizebar,.scorebar,.actions{width:100%;display:flex;justify-content:center;align-items:center;gap:9px;flex-wrap:wrap}
     .size{min-width:82px;min-height:40px;border:2px solid #bba17d;border-radius:10px;padding:7px 14px;background:#f5e8d1;color:#523a23;font-weight:900;box-shadow:0 3px 0 #b29670}
     .size[aria-pressed="true"]{border-color:#2563eb;background:#e7f0ff;color:#1748a3;box-shadow:0 3px 0 #8daee9}
-    .status{width:100%;min-height:46px;display:flex;justify-content:center;align-items:center;text-align:center;padding:8px 10px;border:2px solid #c4a277;border-radius:16px;background:var(--cream);font-size:clamp(16px,3.6vw,21px);font-weight:900;box-shadow:0 3px 0 #bd9b70}
+    .sanaRow{display:flex;align-items:flex-start;gap:9px;width:100%;margin:0 0 3px}
+    .sanaAvatar{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#ffd54f,#ffca28);display:flex;align-items:center;justify-content:center;font-size:24px;border:2px solid #fff;flex-shrink:0;animation:sanaBob 3s ease-in-out infinite;transform-origin:50% 72%}
+    @keyframes sanaBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+    @media(prefers-reduced-motion:reduce){.sanaAvatar{animation:none}}
+    .sanaName{font-size:9px;font-weight:800;text-align:center;margin-top:3px}
+    .sanaBubble{--bubble:#fff;flex:1;min-width:0;background:var(--bubble);border-radius:18px 18px 18px 4px;padding:12px 14px;box-shadow:0 3px 10px #0003;font-size:14px;font-weight:700;position:relative;min-height:48px;line-height:1.45}
+    .sanaBubble::before{content:'';position:absolute;left:-9px;top:15px;width:0;height:0;border-top:7px solid transparent;border-bottom:7px solid transparent;border-right:11px solid var(--bubble)}
+    .sanaState{display:block;font-size:15px;font-weight:900;color:#0a4527;margin-bottom:2px}
+    .sanaBubble.watching{--bubble:#edf6ff}.sanaBubble.solved{--bubble:#f0fbe7}.sanaBubble.warning{--bubble:#fff6dc}.sanaBubble.warning .sanaState{color:#8a4b0a}
     .scorebar{gap:6px}.score{padding:5px 10px;border-radius:10px;background:#fff8eb;border:1px solid #c4a277;text-align:center;font-size:13px;font-weight:800}.score b{font-size:16px;margin-left:3px}.score.x{color:var(--blue)}.score.o{color:var(--pink)}
     .board-wrap{width:min(100%,calc(100vh - 330px),480px);width:min(100%,calc(100dvh - 330px),480px);min-width:180px;aspect-ratio:1;padding:8px;border:4px solid #352619;border-radius:18px;background:#fff8eb;box-shadow:0 5px 0 #9b7751}
     .board{width:100%;height:100%;display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));grid-template-rows:repeat(var(--n),minmax(0,1fr));gap:5px}
@@ -32,7 +40,7 @@
     dialog{border:2px solid #b58c5f;border-radius:20px;padding:0;width:calc(100% - 24px);max-width:480px;max-height:85vh;max-height:85dvh;background:#fff6e4;color:var(--ink);box-shadow:0 12px 40px #0004}dialog::backdrop{background:#0008}
     .dialog-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#e8d3a8;gap:10px}.dialog-head h2{font-size:18px;margin:0}.close{border:0;border-radius:12px;width:44px;height:44px;background:var(--brown);color:white;font-size:22px}.dialog-body{padding:4px 18px 18px;line-height:1.6;font-size:15px}.dialog-body li{margin:9px 0}.dialog-body ol{padding-left:22px}.sound-choices{display:flex;gap:10px;margin-top:16px}.sound-choice{flex:1;min-height:48px;border:2px solid #8a5e31;border-radius:10px;padding:8px;font-weight:850;background:#fff1ce;color:#51371e}.sound-choice[aria-pressed="true"]{background:#176b4a;color:white;border-color:#176b4a}.sound-choice:disabled{opacity:.55}
     @media(max-width:389px){header{gap:6px}.top-actions{gap:5px}.sub{font-size:10px}main{padding-top:10px;gap:8px}.board-wrap{padding:6px}.board{gap:3px}.cell{border-radius:7px}}
-    @media(max-height:600px) and (orientation:landscape){main{padding-top:8px}.board-wrap{width:220px}.status{min-height:38px}}
+    @media(max-height:600px) and (orientation:landscape){main{padding-top:8px}.board-wrap{width:220px}}
   </style>
 </head>
 <body>
@@ -46,12 +54,18 @@
     </div>
   </header>
   <main>
+    <div class="sanaRow">
+      <div aria-hidden="true"><div class="sanaAvatar">🐒</div><div class="sanaName">SaNa</div></div>
+      <div class="sanaBubble" id="sanaBubble" role="status" aria-label="SaNa notifications" aria-live="polite" aria-atomic="true">
+        <b class="sanaState" id="status">X’s turn · get 3 in a row</b>
+        <span id="sanaMessage">Hello! I’m SaNa. X starts — tap any empty square.</span>
+      </div>
+    </div>
     <div class="sizebar" role="group" aria-label="Board size">
       <button class="size" type="button" data-size="3" aria-pressed="false">3×3</button>
       <button class="size" type="button" data-size="4" aria-pressed="false">4×4</button>
       <button class="size" type="button" data-size="5" aria-pressed="false">5×5</button>
     </div>
-    <div class="status" id="status" aria-live="polite">X’s turn · get 3 in a row</div>
     <div class="scorebar" aria-label="Round scores">
       <span class="score x">X wins <b id="scoreX">0</b></span>
       <span class="score">Draws <b id="scoreDraw">0</b></span>
@@ -140,8 +154,8 @@
       if (restore && savedRound) ({board,turn,finished,winning,demo} = savedRound);
       savedRound = null;
     }
-    function freshRound() {
-      stopWatch(); demo = false; board = Array(size*size).fill(''); turn = 'X'; finished = false; winning = []; render();
+    function freshRound(notice = 'new') {
+      stopWatch(); demo = false; board = Array(size*size).fill(''); turn = 'X'; finished = false; winning = []; render(notice);
     }
     function hasWin(index,mark) {
       const row = Math.floor(index/size), col = index%size;
@@ -156,7 +170,8 @@
       return [];
     }
     function play(index,fromWatch = false) {
-      if (finished || board[index] || (watching && !fromWatch) || (demo && !fromWatch)) return;
+      if (finished || (watching && !fromWatch) || (demo && !fromWatch)) return;
+      if (board[index]) { render('occupied'); return; }
       board[index] = turn; tone(turn);
       winning = hasWin(index,turn);
       if (winning.length) { finished = true; if (!demo) scores[turn]++; }
@@ -164,7 +179,7 @@
       else turn = turn === 'X' ? 'O' : 'X';
       render();
     }
-    function render() {
+    function render(notice = '') {
       const focusIndex = get('board').contains(document.activeElement) ? document.activeElement.dataset.index : null;
       get('board').style.setProperty('--n',size);
       get('board').setAttribute('aria-label',`${size} by ${size} Tic-Tac-Toe board`);
@@ -194,17 +209,33 @@
       get('watchBtn').setAttribute('aria-label',watching ? 'Stop Watch' : 'Watch');
       get('watchBtn').querySelector('span').textContent = watching ? 'Stop' : 'Watch';
       get('logicSize').textContent = `${size}×${size}: get ${size} in a row.`;
+      get('sanaBubble').className = 'sanaBubble';
       if (watching) {
         get('status').textContent = `Watch · ${board.filter(Boolean).length}/${size*2-1} moves · ${size} in a row`;
+        get('sanaBubble').classList.add('watching');
+        get('sanaMessage').textContent = 'I’m showing X and O taking turns. Stop returns to your game.';
         get('hint').textContent = 'Example round · Stop returns to your game · scores stay unchanged.';
       } else if (demo) {
         get('status').textContent = `Watch · ${turn} wins with ${size} in a row!`;
+        get('sanaBubble').classList.add('solved');
+        get('sanaMessage').textContent = `See the green line? ${turn} completed ${size} marks in a row. Tap New to try!`;
         get('hint').textContent = 'Example complete · choose New to play your own round.';
       } else if (finished) {
         get('status').textContent = winning.length ? turn+' wins!' : 'It’s a draw!';
+        get('sanaBubble').classList.add('solved');
+        get('sanaMessage').textContent = winning.length ? `Well played! ${turn} completed a line. Tap New for another round.` : 'Every square is filled and no one has a line. Great game — try another round!';
         get('hint').textContent = 'Choose New to play again, or Clear to reset the scores too.';
       } else {
         get('status').textContent = `${turn}’s turn · get ${size} in a row`;
+        const messages = {
+          welcome: 'Hello! I’m SaNa. X starts — tap any empty square.',
+          new: 'New round! X starts; your scores are kept.',
+          clear: 'Cleared! Board and scores reset. X starts again.',
+          size: `${size}×${size} selected! X starts. Complete a whole row, column, or diagonal.`,
+          occupied: 'That square is already taken. Choose an empty square.'
+        };
+        get('sanaMessage').textContent = messages[notice] ?? `${turn}, tap an empty square. Look for your line and block your friend’s!`;
+        if (notice === 'occupied') get('sanaBubble').classList.add('warning');
         get('hint').textContent = 'Complete a row, column, or diagonal to win.';
       }
     }
@@ -227,11 +258,11 @@
     document.querySelectorAll('.size').forEach(button => button.addEventListener('click',() => {
       const next = Number(button.dataset.size);
       if (next === size) return;
-      size = next; scores = {X:0,O:0,draw:0}; freshRound();
+      size = next; scores = {X:0,O:0,draw:0}; freshRound('size');
       const url = new URL(location.href); url.searchParams.set('size',String(size)); history.replaceState(null,'',url);
     }));
-    get('newRound').addEventListener('click',freshRound);
-    get('clearBoard').addEventListener('click',() => { scores = {X:0,O:0,draw:0}; freshRound(); });
+    get('newRound').addEventListener('click',() => freshRound('new'));
+    get('clearBoard').addEventListener('click',() => { scores = {X:0,O:0,draw:0}; freshRound('clear'); });
     get('watchBtn').addEventListener('click',startWatch);
     for (const [button,id] of [['logicBtn','logicDialog'],['soundBtn','soundDialog']]) {
       const dialog = get(id);
@@ -251,7 +282,7 @@
     });
     document.addEventListener('visibilitychange',() => { if (document.hidden && watching) { stopWatch(true); render(); } void syncAudio(); });
     window.addEventListener('pagehide',() => { stopWatch(); music.pause(); });
-    freshRound(); void syncAudio();
+    freshRound('welcome'); void syncAudio();
   })();
   </script>
 </body>
