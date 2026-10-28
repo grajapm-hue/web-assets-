@@ -88,7 +88,7 @@
         <li>Look for your next winning move, and block your friend’s line before it is complete.</li>
         <li>If the board fills with no winning line, the round is a draw.</li>
       </ol>
-      <p><b>Watch</b> shows an example winning line without adding to the scores. Tap Stop to return to your round.</p>
+      <p><b>Watch</b> varies the winning row, column, or diagonal and the order of moves, without adding to the scores. Tap Stop to return to your round.</p>
       <p><b>New</b> starts an empty round and keeps the scores. <b>Clear</b> empties the board and resets all scores. Changing size starts a fresh set of scores.</p>
     </div>
   </dialog>
@@ -109,6 +109,7 @@
     let size = allowed.includes(requested) ? requested : 3;
     let board = [], turn = 'X', finished = false, winning = [], scores = {X:0,O:0,draw:0};
     let watching = false, demo = false, watchTimer = null, savedRound = null;
+    const previousWatchLines = new Map();
     let audioContext = null;
     const music = new Audio('bgm-beyond-stone-gate.mp3');
     music.loop = true; music.volume = .18; music.preload = 'none';
@@ -239,13 +240,35 @@
         get('hint').textContent = 'Complete a row, column, or diagonal to win.';
       }
     }
+    function shuffled(values) {
+      const result = [...values];
+      for (let i=result.length-1;i>0;i--) {
+        const j = Math.floor(Math.random()*(i+1));
+        [result[i],result[j]] = [result[j],result[i]];
+      }
+      return result;
+    }
+    function createWatchMoves() {
+      const lines = [];
+      for (let i=0;i<size;i++) {
+        lines.push(Array.from({length:size},(_,col) => i*size+col));
+        lines.push(Array.from({length:size},(_,row) => row*size+i));
+      }
+      lines.push(Array.from({length:size},(_,i) => i*size+i));
+      lines.push(Array.from({length:size},(_,i) => i*size+size-1-i));
+      const choices = lines.filter(line => line.join(',') !== previousWatchLines.get(size));
+      const line = choices[Math.floor(Math.random()*choices.length)];
+      previousWatchLines.set(size,line.join(','));
+      const xMoves = shuffled(line);
+      const oMoves = shuffled(Array.from({length:size*size},(_,i) => i).filter(index => !line.includes(index))).slice(0,size-1);
+      // O has fewer than size marks, so only X's final move can complete a line.
+      return xMoves.flatMap((index,i) => i<oMoves.length ? [index,oMoves[i]] : [index]);
+    }
     function startWatch() {
       if (watching) { stopWatch(true); render(); return; }
       savedRound = {board:[...board],turn,finished,winning:[...winning],demo};
       demo = true; watching = true; board = Array(size*size).fill(''); turn = 'X'; finished = false; winning = [];
-      // X completes the top row while O takes the row below, one turn at a time.
-      const moves = [];
-      for (let col=0;col<size;col++) { moves.push(col); if (col<size-1) moves.push(size+col); }
+      const moves = createWatchMoves();
       let step = 0;
       const advance = () => {
         if (!watching) return;
