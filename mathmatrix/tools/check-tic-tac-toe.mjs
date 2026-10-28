@@ -100,6 +100,53 @@ try {
     }
     await page.getByRole('button', { name: 'New', exact: true }).click();
   }
+  // A fixed seed makes variety checks reproducible without depending on luck.
+  await page.evaluate(() => {
+    let seed = 2048;
+    Math.random = () => { seed = (Math.imul(seed,1664525)+1013904223) >>> 0; return seed / 4294967296; };
+  });
+  for (const size of [3,4,5]) {
+    await page.getByRole('button', { name: `${size}×${size}`, exact: true }).click();
+    await page.getByRole('button', { name: 'Clear', exact: true }).click();
+    const lines = new Set(), orders = new Set(), kinds = new Set();
+    let previous = '';
+    for (let round=0;round<16;round++) {
+      await page.getByRole('button', { name: 'Watch', exact: true }).click();
+      let before = [];
+      const order = [];
+      for (let step=0;step<2*size-1;step++) {
+        await page.clock.runFor(700);
+        const after = await page.locator('#board button').evaluateAll(cells => cells.map(cell => cell.dataset.mark || ''));
+        const changed = after.flatMap((mark,index) => mark && !before[index] ? [index] : []);
+        assert.equal(changed.length,1,'Each Watch step adds exactly one mark');
+        assert.equal(after[changed[0]],step%2 === 0 ? 'X' : 'O','Watch alternates players');
+        order.push(changed[0]); before = after;
+        if (step<2*size-2) await expect(page.getByRole('button', { name: 'Stop Watch', exact: true })).toBeVisible();
+      }
+      const winner = await page.locator('#board .winner').evaluateAll(cells => cells.map(cell => Number(cell.dataset.index)));
+      assert.equal(winner.length,size,'Watch finishes with a full winning line');
+      const rows = winner.map(index => Math.floor(index/size)), columns = winner.map(index => index%size);
+      let kind;
+      if (rows.every(row => row===rows[0])) kind = 'row';
+      else if (columns.every(column => column===columns[0])) kind = 'column';
+      else { assert(winner.every(index => Math.floor(index/size)===index%size) || winner.every(index => Math.floor(index/size)+index%size===size-1)); kind = 'diagonal'; }
+      if (size===5 && !kinds.has(kind)) {
+        await page.setViewportSize({width:768,height:1024});
+        await page.screenshot({path:resolve(shots,`watch-${kind}.png`),fullPage:true});
+        await page.setViewportSize({width:390,height:844});
+      }
+      kinds.add(kind);
+      const key = winner.join(',');
+      assert.notEqual(key,previous,'Consecutive demonstrations use different winning lines');
+      previous = key; lines.add(key); orders.add(order.join(','));
+      await expect(page.locator('#scoreX')).toHaveText('0');
+    }
+    assert(lines.size>3,'Watch varies the winning line');
+    assert(orders.size>3,'Watch varies placement order');
+    assert.deepEqual([...kinds].sort(),['column','diagonal','row'],'Watch covers rows, columns, and diagonals');
+    checks++;
+    await page.getByRole('button', { name: 'New', exact: true }).click();
+  }
   await page.getByRole('button', { name: '3×3', exact: true }).click();
   await cell(3,3).click();
   await page.getByRole('button', { name: 'Watch', exact: true }).click();

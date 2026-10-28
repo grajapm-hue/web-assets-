@@ -1,6 +1,6 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V208 Tic-Tac-Toe SaNa notifications.
+// MathMatrix Pro++ Beta Service Worker — Beta V209 varied Tic-Tac-Toe Watch.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v217-tic-tac-toe-sana';
+const CACHE_VERSION = 'mathmatrix-beta-v218-tic-tac-toe-varied-watch';
 
 const ASSETS = [
   './index.html',
