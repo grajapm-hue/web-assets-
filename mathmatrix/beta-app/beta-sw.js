@@ -1,11 +1,12 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V205 full-cell keyboard movement.
+// MathMatrix Pro++ Beta Service Worker — Beta V206 Tic-Tac-Toe.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v214-physical-key-parity';
+const CACHE_VERSION = 'mathmatrix-beta-v215-tic-tac-toe';
 
 const ASSETS = [
   './index.html',
   './beta.html',
   './criss-cross.html',
+  './tic-tac-toe.html',
   './tunnels-of-meta.html',
   './cave-treasure-hunt.html',
   './treasure-hunt-landscape-prototype/index.html',

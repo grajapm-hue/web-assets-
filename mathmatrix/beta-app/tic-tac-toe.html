@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#8b5cf6">
+  <title>Tic-Tac-Toe · MathMatrix Beta</title>
+  <style>
+    :root{color-scheme:light;--ink:#3f2b19;--brown:#6b4628;--sand:#dec092;--cream:#fff8eb;--line:#8b6240;--blue:#2563eb;--pink:#db2777}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;min-height:100dvh;background:linear-gradient(145deg,#ead2a7,#d6b27c);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;display:flex;flex-direction:column}
+    header{display:flex;align-items:center;gap:12px;padding:12px max(14px,env(safe-area-inset-left));background:#d8ba8c;border-bottom:3px solid #b58c5f;box-shadow:0 3px 0 #b58c5f}
+    .back{display:grid;place-items:center;flex:0 0 52px;height:52px;border:0;border-radius:18px;background:var(--brown);color:#fff8eb;font-size:25px;text-decoration:none;box-shadow:0 4px 0 #4d321d}
+    h1{margin:0;font-size:clamp(20px,4vw,30px);line-height:1.1;font-weight:950}
+    .sub{font-size:13px;font-weight:750;color:#68482b;margin-top:3px}
+    main{width:min(100%,720px);margin:0 auto;padding:16px 14px 28px;display:flex;flex-direction:column;align-items:center;gap:13px;flex:1}
+    .sizebar,.scorebar,.actions{width:100%;display:flex;justify-content:center;align-items:center;gap:9px;flex-wrap:wrap}
+    button{font:inherit;cursor:pointer;touch-action:manipulation}
+    .size{min-width:92px;border:3px solid #bba17d;border-radius:15px;padding:8px 14px;background:#f5e8d1;color:#523a23;font-weight:900;box-shadow:0 3px 0 #b29670}
+    .size[aria-pressed="true"]{border-color:#2563eb;background:#e7f0ff;color:#1748a3;box-shadow:0 3px 0 #8daee9}
+    .status{width:100%;min-height:56px;display:flex;justify-content:center;align-items:center;text-align:center;padding:10px 15px;border:2px solid #d6bd96;border-radius:18px;background:var(--cream);font-size:clamp(17px,4vw,22px);font-weight:900;box-shadow:0 4px 0 #bd9b70}
+    .scorebar{gap:8px}
+    .score{min-width:110px;padding:6px 12px;border-radius:13px;background:#fff8eb;border:2px solid #d6bd96;text-align:center;font-size:14px;font-weight:850}
+    .score b{font-size:18px;margin-left:4px}
+    .score.x{color:var(--blue)}.score.o{color:var(--pink)}
+    .board-wrap{width:min(100%,min(66vh,520px));width:min(100%,min(66dvh,520px));aspect-ratio:1;padding:9px;border:4px solid #352619;border-radius:19px;background:#fff8eb;box-shadow:0 6px 0 #9b7751}
+    .board{width:100%;height:100%;display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));grid-template-rows:repeat(var(--n),minmax(0,1fr));gap:5px}
+    .cell{min-width:0;min-height:0;border:2px solid #896641;border-radius:10px;background:#fffaf0;color:#49341f;font-size:clamp(22px,13vw,70px);font-weight:1000;line-height:1;display:grid;place-items:center;box-shadow:0 2px 0 #c9ab7e}
+    .cell[data-mark="X"]{color:var(--blue)}.cell[data-mark="O"]{color:var(--pink)}
+    .cell:focus-visible,.size:focus-visible,.action:focus-visible,.back:focus-visible{outline:4px solid #facc15;outline-offset:2px;z-index:1}
+    .cell.winner{background:#d9f99d;border-color:#4d7c0f}
+    .actions{margin-top:1px}
+    .action{border:2px solid #6b4628;border-radius:14px;padding:10px 17px;background:#80572f;color:#fff8eb;font-weight:900;box-shadow:0 4px 0 #4d321d}
+    .action.secondary{background:#fff4dd;color:#51371e}
+    .hint{margin:0;text-align:center;font-size:13px;font-weight:700;color:#65472a}
+    @media(max-height:680px){main{gap:9px;padding-top:10px}.board-wrap{width:min(100%,min(56vh,470px));width:min(100%,min(56dvh,470px))}.status{min-height:46px}.score{padding:3px 9px}}
+    @media(max-width:380px){header{gap:9px;padding-top:9px;padding-bottom:9px}.back{flex-basis:46px;height:46px}.size{min-width:78px;padding:7px 9px;font-size:14px}.board-wrap{padding:6px}.board{gap:3px}.cell{border-radius:7px}}
+  </style>
+</head>
+<body>
+  <header>
+    <a class="back" href="beta.html" aria-label="Back to puzzles">‹</a>
+    <div><h1>⭕ Tic-Tac-Toe</h1><div class="sub">Two players · take turns on one screen</div></div>
+  </header>
+  <main>
+    <div class="sizebar" role="group" aria-label="Board size">
+      <button class="size" type="button" data-size="3" aria-pressed="false">3×3</button>
+      <button class="size" type="button" data-size="4" aria-pressed="false">4×4</button>
+      <button class="size" type="button" data-size="5" aria-pressed="false">5×5</button>
+    </div>
+    <div class="status" id="status" aria-live="polite">X’s turn · get 3 in a row</div>
+    <div class="scorebar" aria-label="Round scores">
+      <span class="score x">X wins <b id="scoreX">0</b></span>
+      <span class="score">Draws <b id="scoreDraw">0</b></span>
+      <span class="score o">O wins <b id="scoreO">0</b></span>
+    </div>
+    <div class="board-wrap"><div class="board" id="board" role="group" aria-label="Tic-Tac-Toe board"></div></div>
+    <div class="actions">
+      <button class="action" type="button" id="newRound">↻ New round</button>
+      <button class="action secondary" type="button" id="resetScores">Clear scores</button>
+    </div>
+    <p class="hint" id="hint">Complete a row, column, or diagonal to win.</p>
+  </main>
+  <script>
+  (function(){
+    'use strict';
+    var allowed=[3,4,5];
+    var params=new URLSearchParams(location.search);
+    var size=allowed.indexOf(Number(params.get('size')))!==-1?Number(params.get('size')):3;
+    var board=[],turn='X',finished=false,winning=[],scores={X:0,O:0,draw:0};
+    var boardEl=document.getElementById('board'),statusEl=document.getElementById('status');
+    var hintEl=document.getElementById('hint'),scoreX=document.getElementById('scoreX');
+    var scoreO=document.getElementById('scoreO'),scoreDraw=document.getElementById('scoreDraw');
+    var cellButtons=[];
+
+    function freshRound(){board=Array(size*size).fill('');turn='X';finished=false;winning=[];render();}
+    function hasWin(index,mark){
+      var row=Math.floor(index/size),col=index%size;
+      var dirs=[[0,1],[1,0],[1,1],[1,-1]];
+      for(var d=0;d<dirs.length;d++){
+        var dr=dirs[d][0],dc=dirs[d][1],line=[index];
+        for(var sign=-1;sign<=1;sign+=2){
+          var r=row+dr*sign,c=col+dc*sign;
+          while(r>=0&&r<size&&c>=0&&c<size&&board[r*size+c]===mark){line.push(r*size+c);r+=dr*sign;c+=dc*sign;}
+        }
+        if(line.length>=size)return line;
+      }
+      return [];
+    }
+    function play(index){
+      if(finished||board[index])return;
+      board[index]=turn;
+      winning=hasWin(index,turn);
+      if(winning.length){finished=true;scores[turn]++;}
+      else if(board.every(Boolean)){finished=true;scores.draw++;}
+      else turn=turn==='X'?'O':'X';
+      render();
+    }
+    function render(){
+      boardEl.style.setProperty('--n',size);
+      boardEl.setAttribute('aria-label',size+' by '+size+' Tic-Tac-Toe board');
+      boardEl.replaceChildren();cellButtons=[];
+      board.forEach(function(mark,index){
+        var cell=document.createElement('button'),row=Math.floor(index/size)+1,col=index%size+1;
+        cell.type='button';cell.className='cell';cell.dataset.index=index;
+        if(mark)cell.dataset.mark=mark;
+        if(winning.indexOf(index)!==-1)cell.classList.add('winner');
+        cell.setAttribute('aria-label','Row '+row+', column '+col+(mark?', '+mark:' empty'));
+        cell.textContent=mark;cell.addEventListener('click',function(){play(index);});
+        cell.addEventListener('keydown',function(e){
+          var delta={ArrowUp:[-1,0],ArrowDown:[1,0],ArrowLeft:[0,-1],ArrowRight:[0,1]}[e.key];
+          if(!delta)return;e.preventDefault();
+          var nextRow=Math.max(0,Math.min(size-1,row-1+delta[0]));
+          var nextCol=Math.max(0,Math.min(size-1,col-1+delta[1]));
+          cellButtons[nextRow*size+nextCol].focus();
+        });
+        cellButtons.push(cell);boardEl.appendChild(cell);
+      });
+      document.querySelectorAll('.size').forEach(function(button){button.setAttribute('aria-pressed',Number(button.dataset.size)===size?'true':'false');});
+      scoreX.textContent=scores.X;scoreO.textContent=scores.O;scoreDraw.textContent=scores.draw;
+      if(finished&&winning.length){statusEl.textContent=turn+' wins!';hintEl.textContent='Great game! Choose New round to play again.';}
+      else if(finished){statusEl.textContent='It’s a draw!';hintEl.textContent='No spaces left. Start a new round and try again.';}
+      else{statusEl.textContent=turn+'’s turn · get '+size+' in a row';hintEl.textContent='Complete a row, column, or diagonal to win.';}
+    }
+    document.querySelectorAll('.size').forEach(function(button){button.addEventListener('click',function(){
+      var next=Number(button.dataset.size);if(next===size)return;size=next;scores={X:0,O:0,draw:0};freshRound();
+      history.replaceState(null,'',location.pathname+'?size='+size);
+    });});
+    document.getElementById('newRound').addEventListener('click',freshRound);
+    document.getElementById('resetScores').addEventListener('click',function(){scores={X:0,O:0,draw:0};freshRound();});
+    freshRound();
+  })();
+  </script>
+</body>
+</html>
