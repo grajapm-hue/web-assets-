@@ -1,6 +1,6 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V210 Treasure Hunt SaNa bob.
+// MathMatrix Pro++ Beta Service Worker — Beta V211 Tic-Tac-Toe level colors.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v219-sana-bob';
+const CACHE_VERSION = 'mathmatrix-beta-v220-tic-tac-toe-level-colors';
 
 const ASSETS = [
   './index.html',
