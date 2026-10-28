@@ -47,12 +47,24 @@ try {
   const now = new Date();
   await page.clock.install({ time: now });
   await page.clock.pauseAt(now);
+  const notifications = page.getByRole('status', { name: 'SaNa notifications' });
+  await expect(notifications).toBeVisible();
+  await expect(notifications).toContainText('Hello! I’m SaNa'); checks++;
+  await expect(page.getByText('SaNa', { exact: true })).toBeVisible(); checks++;
   await expect(page.getByRole('button', { name: 'Logic', exact: true })).toBeVisible(); checks++;
   await page.getByRole('button', { name: 'Logic', exact: true }).click();
   await expect(page.getByRole('dialog', { name: /Logic/ })).toContainText('3 in a row');
   await page.getByRole('button', { name: 'Close logic' }).click(); checks++;
   const cell = (row, column) => page.getByRole('button', { name: new RegExp(`^Row ${row}, column ${column}(?:,| )`) });
   const marks = () => page.locator('#board [data-mark]').count();
+  await cell(1,1).click();
+  await expect(notifications).toContainText('O, tap an empty square');
+  await cell(1,1).click();
+  await expect(notifications).toContainText('already taken');
+  assert.equal(await marks(), 1);
+  await expect(page.locator('#status')).toContainText('O’s turn'); checks++;
+  await page.getByRole('button', { name: 'Clear', exact: true }).click();
+  await expect(notifications).toContainText('Board and scores reset'); checks++;
   for (const size of [3, 4, 5]) {
     await page.getByRole('button', { name: `${size}×${size}`, exact: true }).click();
     await expect(page.getByRole('group', { name: `${size} by ${size} Tic-Tac-Toe board` }).getByRole('button')).toHaveCount(size * size);
@@ -61,14 +73,17 @@ try {
       if (column < size) await cell(2, column).click();
     }
     await expect(page.locator('#status')).toHaveText('X wins!');
+    await expect(notifications).toContainText('Well played'); checks++;
     assert.equal(await page.locator('.winner').count(), size); checks++;
     await cell(size, size).click();
     assert.equal(await marks(), 2 * size - 1, 'Finished game rejects moves'); checks++;
     await page.getByRole('button', { name: 'New', exact: true }).click();
     assert.equal(await marks(), 0);
     await expect(page.locator('#scoreX')).toHaveText('1'); checks++;
+    await expect(notifications).toContainText('scores are kept'); checks++;
     await page.getByRole('button', { name: 'Watch', exact: true }).click();
     await expect(page.locator('#status')).toContainText('Watch');
+    await expect(notifications).toContainText('showing X and O'); checks++;
     await page.getByRole('button', { name: 'Clear', exact: true }).click();
     await page.clock.runFor(10000);
     assert.equal(await marks(), 0, 'Clear cancels pending Watch moves');
@@ -76,7 +91,13 @@ try {
     await page.getByRole('button', { name: 'Watch', exact: true }).click();
     await page.clock.runFor(10000);
     await expect(page.locator('#status')).toContainText('X wins');
+    await expect(notifications).toContainText('green line'); checks++;
     await expect(page.locator('#scoreX')).toHaveText('0'); checks++;
+    if (size === 5) {
+      await page.setViewportSize({width:768,height:1024});
+      await page.screenshot({path:resolve(shots,'watch-with-sana.png'),fullPage:true});
+      await page.setViewportSize({width:390,height:844});
+    }
     await page.getByRole('button', { name: 'New', exact: true }).click();
   }
   await page.getByRole('button', { name: '3×3', exact: true }).click();
@@ -95,6 +116,7 @@ try {
   // A full board without a line is a draw.
   for (const [row, column] of [[1,1],[1,2],[1,3],[2,2],[2,1],[2,3],[3,2],[3,1],[3,3]]) await cell(row, column).click();
   await expect(page.locator('#status')).toHaveText('It’s a draw!'); checks++;
+  await expect(notifications).toContainText('Every square is filled'); checks++;
   await page.getByRole('button', { name: 'Sound & Music settings' }).click();
   const musicLoaded = page.waitForResponse(response => response.url().endsWith('bgm-beyond-stone-gate.mp3') && response.ok());
   await page.getByRole('button', { name: 'Sound: OFF', exact: true }).click();
@@ -123,6 +145,7 @@ try {
   for (const [width,height] of [[360,740],[768,1024],[1440,900]]) {
     await page.setViewportSize({width,height});
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, `No overflow at ${width}`);
+    await expect(notifications).toBeInViewport();
     await expect(page.getByRole('button', { name: 'Clear', exact: true })).toBeInViewport();
     await page.screenshot({ path: resolve(shots, `game-${width}.png`), fullPage: true }); checks++;
   }
