@@ -61,7 +61,8 @@ button{font:inherit;touch-action:manipulation}
 .run-toolbar{height:42px;min-height:42px;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:5px;padding:0 4px;color:#583d25;font-weight:850;font-size:11px}.run-toolbar>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.run-progress{text-align:right}
 .player-row{min-height:50px;display:flex;align-items:center;gap:7px;padding:0 2px}
 .player-badge{width:51px;flex:0 0 51px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#68492c;font-size:9px;font-weight:900;line-height:1}
-.player-face{width:38px;height:38px;border-radius:50%;background:#f2bd3e;display:grid;place-items:center;font-size:25px;box-shadow:0 2px 0 #bd8125}
+.player-face{width:38px;height:38px;border-radius:50%;background:#f2bd3e;display:grid;place-items:center;font-size:25px;box-shadow:0 2px 0 #bd8125;animation:sanaBob 3s ease-in-out infinite;transform-origin:50% 72%}
+@keyframes sanaBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
 .player-name{margin-top:3px;font-size:9px;font-weight:950}
 .palette-wrap{flex:1;min-width:0}.palette-label{display:block;margin:0 0 3px 3px;font-size:11px;font-weight:850;color:#68492c}
 .palette{display:flex;align-items:center;justify-content:space-around;gap:4px}
@@ -110,7 +111,7 @@ html.lockRotateCW #soundDialog[open]{left:0;transform:rotate(90deg) translate(-5
 html.lockRotateCCW #soundDialog[open]{left:100vw;left:100dvw;transform:rotate(-90deg) translate(-50%,-100%)}
 html.lockRotateCW .sound-body{padding-bottom:max(20px,env(safe-area-inset-left))}
 html.lockRotateCCW .sound-body{padding-bottom:max(20px,env(safe-area-inset-right))}
-@media(prefers-reduced-motion:reduce){.banner.pop{animation:none}}
+@media(prefers-reduced-motion:reduce){.banner.pop,.player-face{animation:none}}
 </style>
 </head>
 <body>
