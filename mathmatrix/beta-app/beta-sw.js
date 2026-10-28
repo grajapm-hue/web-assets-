@@ -1,6 +1,6 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V206 Tic-Tac-Toe.
+// MathMatrix Pro++ Beta Service Worker — Beta V207 unified Tic-Tac-Toe controls.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v215-tic-tac-toe';
+const CACHE_VERSION = 'mathmatrix-beta-v216-tic-tac-toe-controls';
 
 const ASSETS = [
   './index.html',
@@ -61,8 +61,11 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       (async () => {
         const cache = await caches.open(CACHE_VERSION);
+        // Board size lives in the query string; the cached game handles every size.
+        const boardPage = new URL(req.url).pathname === new URL('./tic-tac-toe.html', self.location).pathname;
         const cached =
           await cache.match(req) ||
+          (boardPage ? await cache.match('./tic-tac-toe.html') : null) ||
           await cache.match('./beta.html') ||
           await cache.match('./index.html');
 

@@ -51,7 +51,7 @@ window.onerror = function(msg, src, line, col, err){
 <link rel="apple-touch-icon" href="icon-192.png">
 <!-- without this the browser asks for /favicon.ico, 404s, and the tab sits blank -->
 <link rel="icon" href="icon-192.png" type="image/png">
-<title>🐒🎲 MathMatrix Pro++ — Beta - V.200 Unified</title>
+<title>🐒🎲 MathMatrix Pro++ — Beta - V.207 Unified</title>
 
 <!-- Raja: the copy icon in Android's share sheet copies something that will
      not open in a fresh browser, while every other channel works.
@@ -4237,7 +4237,7 @@ body{ background:#C9A87C !important; }
 <section class="screen on" data-screen="scHome">
 <div class="titleCard">
   <h1>🐒🎲 MathMatrix Pro++</h1>
-  <div style="text-align:center; font-size:12px; font-weight:700; margin-top:4px; letter-spacing:.4px; line-height:1.5;">🐒 Kids Puzzle · for 5th grade &amp; up<br><span class="tagline">“Maths and monkeys — neither sits in one direction.”</span><br><span style="color:#4ade80;">Puzzles :</span><span id="nowPlaying" style="color:#8ab4f8;"><span class="np" data-np="3x3">3×3</span> · <span class="np" data-np="4x4">4×4</span> · <span class="np" data-np="5x5">5×5</span> · <span class="np" data-np="6x6">6×6</span> · <span class="np" data-np="8x8">8×8</span> · <span class="np" data-np="10x10">10×10</span> · <span class="np" data-np="3cube">3³</span> <span style="color:#fbbf24;">(🔄 rotate or mirror any solution — 8 twins — for endless new puzzles!)</span> · ➕ Criss-Cross · 🧭 Tunnels Of SaNa Maze · <span class="np" data-np="ramanujan">🎂 Sir Ramanujan MathMagic</span> · ⚙️ 7 Logic Gates · <span class="np" data-np="binary">🔢 Guess My Number L1 · Junior</span> · <span class="np" data-np="binary2">L2 · Advance</span> · 🔀 Slide 1-15 · A-Z · A-Z+1-9 · 🧩 Sudoku 3×3 · 4×4 · 9×9 · 🐚 Pallanguzhi · 🎲 Thayam 5×5 · 7×7 <span style="color:#9fb0d0; font-weight:600;">(each its own one puzzle)</span></span><br><!-- The "New here? Tap ▶ Watch Me Solve … then pick any level in the table
+  <div style="text-align:center; font-size:12px; font-weight:700; margin-top:4px; letter-spacing:.4px; line-height:1.5;">🐒 Kids Puzzle · for 5th grade &amp; up<br><span class="tagline">“Maths and monkeys — neither sits in one direction.”</span><br><span style="color:#4ade80;">Puzzles :</span><span id="nowPlaying" style="color:#8ab4f8;"><span class="np" data-np="3x3">3×3</span> · <span class="np" data-np="4x4">4×4</span> · <span class="np" data-np="5x5">5×5</span> · <span class="np" data-np="6x6">6×6</span> · <span class="np" data-np="8x8">8×8</span> · <span class="np" data-np="10x10">10×10</span> · <span class="np" data-np="3cube">3³</span> <span style="color:#fbbf24;">(🔄 rotate or mirror any solution — 8 twins — for endless new puzzles!)</span> · ➕ Criss-Cross · 🧭 Tunnels Of SaNa Maze · <span class="np" data-np="ramanujan">🎂 Sir Ramanujan MathMagic</span> · ⚙️ 7 Logic Gates · <span class="np" data-np="binary">🔢 Guess My Number L1 · Junior</span> · <span class="np" data-np="binary2">L2 · Advance</span> · 🔀 Slide 1-15 · A-Z · A-Z+1-9 · 🧩 Sudoku 3×3 · 4×4 · 9×9 · ⭕ Tic-Tac-Toe 3×3 · 4×4 · 5×5 · 🐚 Pallanguzhi · 🎲 Thayam 5×5 · 7×7 <span style="color:#9fb0d0; font-weight:600;">(each its own one puzzle)</span></span><br><!-- The "New here? Tap ▶ Watch Me Solve … then pick any level in the table
        below" line is gone. This card is only ever seen inside the About sheet
        now, where there is no level table to point at, and Watch has its own
        named button in the bar — so it was directing a child to something that
@@ -5022,6 +5022,20 @@ body{ background:#C9A87C !important; }
     </div>
   </div>
 
+  <!-- ✖️ TIC-TAC-TOE — choose the board size inside the game. -->
+  <div class="modeGroup">
+    <div class="modeHead" style="--m1:#93c5fd; --m2:#2563eb;">
+      <span class="mIco">✖️</span>
+      <span><b>Tic-Tac-Toe</b><i>take turns with a friend — complete a line to win</i></span>
+    </div>
+    <div class="toggleSwitch">
+      <button class="toggleBtn lvCard lvWide" type="button" data-size="tic-tac-toe" data-name="Tic-Tac-Toe" style="color:#2563eb; border-color:#2563eb; --c1:#bfdbfe; --c2:#60a5fa;">
+        <span class="lvGlyph" aria-hidden="true">✖️⭕</span>
+        <span class="lvText"><b class="lvName">Tic-Tac-Toe</b><span class="lvDiff">3×3 · 4×4 · 5×5 · 2 players</span><span class="lvMeta">choose your board inside · Logic · Watch</span></span>
+      </button>
+    </div>
+  </div>
+
   <!-- 🫘 PALLANGUZHI — the traditional Tamil sowing game, two rows of seven.
        ONE card, not a difficulty ladder: every other entry here is a puzzle
        that can be made harder by giving less away, and this is a game between
@@ -5785,6 +5799,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         // Criss-Cross: its own tested page, kept separate from the magic-square
         // engine (same reasoning Gate Logic uses for its own dedicated handler).
         window.location.href = 'criss-cross.html';
+        return;
+      }
+      if (newSize === 'tic-tac-toe') {
+        window.location.href = 'tic-tac-toe.html';
         return;
       }
       if (newSize === 'cave-treasure') {
@@ -15639,7 +15657,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'Beta - V.200 Unified';
+  var BUILD_VER = 'Beta - V.207 Unified';
   /* Legacy update beacon: older installed versions scan for this literal.
    window.BETA_VER = 'v185'
    Runtime code below derives the same token from BUILD_VER. */

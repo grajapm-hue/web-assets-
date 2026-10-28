@@ -51,7 +51,7 @@ window.onerror = function(msg, src, line, col, err){
 <link rel="apple-touch-icon" href="icon-192.png">
 <!-- without this the browser asks for /favicon.ico, 404s, and the tab sits blank -->
 <link rel="icon" href="icon-192.png" type="image/png">
-<title>🐒🎲 MathMatrix Pro++ — Beta - V.206 Unified</title>
+<title>🐒🎲 MathMatrix Pro++ — Beta - V.207 Unified</title>
 
 <!-- Raja: the copy icon in Android's share sheet copies something that will
      not open in a fresh browser, while every other channel works.
@@ -5022,24 +5022,16 @@ body{ background:#C9A87C !important; }
     </div>
   </div>
 
-  <!-- ✖️ TIC-TAC-TOE — a two-player game with one size-matched winning line. -->
+  <!-- ✖️ TIC-TAC-TOE — choose the board size inside the game. -->
   <div class="modeGroup">
     <div class="modeHead" style="--m1:#93c5fd; --m2:#2563eb;">
       <span class="mIco">✖️</span>
       <span><b>Tic-Tac-Toe</b><i>take turns with a friend — complete a line to win</i></span>
     </div>
     <div class="toggleSwitch">
-      <button class="toggleBtn lvCard" type="button" data-size="tic-tac-toe" data-tictactoe-size="3" data-name="Tic-Tac-Toe 3×3" style="color:#2563eb; border-color:#2563eb; --c1:#bfdbfe; --c2:#60a5fa;">
-        <span class="lvGlyph" aria-hidden="true">✖️</span>
-        <span class="lvText"><b class="lvName">Tic-Tac-Toe 3×3</b><span class="lvDiff">Easy · 2 players</span><span class="lvMeta">get 3 in a row</span></span>
-      </button>
-      <button class="toggleBtn lvCard" type="button" data-size="tic-tac-toe" data-tictactoe-size="4" data-name="Tic-Tac-Toe 4×4" style="color:#7c3aed; border-color:#7c3aed; --c1:#ddd6fe; --c2:#a78bfa;">
-        <span class="lvGlyph" aria-hidden="true">⭕</span>
-        <span class="lvText"><b class="lvName">Tic-Tac-Toe 4×4</b><span class="lvDiff">Medium · 2 players</span><span class="lvMeta">get 4 in a row</span></span>
-      </button>
-      <button class="toggleBtn lvCard" type="button" data-size="tic-tac-toe" data-tictactoe-size="5" data-name="Tic-Tac-Toe 5×5" style="color:#15803d; border-color:#15803d; --c1:#bbf7d0; --c2:#4ade80;">
-        <span class="lvGlyph" aria-hidden="true">❎</span>
-        <span class="lvText"><b class="lvName">Tic-Tac-Toe 5×5</b><span class="lvDiff">Challenge · 2 players</span><span class="lvMeta">get 5 in a row</span></span>
+      <button class="toggleBtn lvCard lvWide" type="button" data-size="tic-tac-toe" data-name="Tic-Tac-Toe" style="color:#2563eb; border-color:#2563eb; --c1:#bfdbfe; --c2:#60a5fa;">
+        <span class="lvGlyph" aria-hidden="true">✖️⭕</span>
+        <span class="lvText"><b class="lvName">Tic-Tac-Toe</b><span class="lvDiff">3×3 · 4×4 · 5×5 · 2 players</span><span class="lvMeta">choose your board inside · Logic · Watch</span></span>
       </button>
     </div>
   </div>
@@ -5810,8 +5802,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         return;
       }
       if (newSize === 'tic-tac-toe') {
-        var tttSize = this.dataset.tictactoeSize || '3';
-        window.location.href = 'tic-tac-toe.html?size=' + encodeURIComponent(tttSize);
+        window.location.href = 'tic-tac-toe.html';
         return;
       }
       if (newSize === 'cave-treasure') {
@@ -15666,7 +15657,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'Beta - V.206 Unified';
+  var BUILD_VER = 'Beta - V.207 Unified';
   /* Legacy update beacon: older installed versions scan for this literal.
    window.BETA_VER = 'v185'
    Runtime code below derives the same token from BUILD_VER. */
