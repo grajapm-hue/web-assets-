@@ -3,44 +3,47 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#8b5cf6">
+  <meta name="theme-color" content="#d8b98c">
+  <link rel="manifest" href="./beta-manifest.json">
+  <link rel="icon" href="icon-192.png" type="image/png">
   <title>Tic-Tac-Toe · MathMatrix Beta</title>
   <style>
-    :root{color-scheme:light;--ink:#3f2b19;--brown:#6b4628;--sand:#dec092;--cream:#fff8eb;--line:#8b6240;--blue:#2563eb;--pink:#db2777}
-    *{box-sizing:border-box}
-    body{margin:0;min-height:100vh;min-height:100dvh;background:linear-gradient(145deg,#ead2a7,#d6b27c);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;display:flex;flex-direction:column}
-    header{display:flex;align-items:center;gap:12px;padding:12px max(14px,env(safe-area-inset-left));background:#d8ba8c;border-bottom:3px solid #b58c5f;box-shadow:0 3px 0 #b58c5f}
-    .back{display:grid;place-items:center;flex:0 0 52px;height:52px;border:0;border-radius:18px;background:var(--brown);color:#fff8eb;font-size:25px;text-decoration:none;box-shadow:0 4px 0 #4d321d}
-    h1{margin:0;font-size:clamp(20px,4vw,30px);line-height:1.1;font-weight:950}
-    .sub{font-size:13px;font-weight:750;color:#68482b;margin-top:3px}
-    main{width:min(100%,720px);margin:0 auto;padding:16px 14px 28px;display:flex;flex-direction:column;align-items:center;gap:13px;flex:1}
+    :root{color-scheme:light;--ink:#3a2415;--brown:#8a5e31;--cream:#fff8eb;--blue:#2563eb;--pink:#db2777}
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    body{margin:0;min-height:100vh;min-height:100dvh;background:#d8b98c;color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+    button,a{touch-action:manipulation}button{font:inherit;cursor:pointer}button:disabled{cursor:default}
+    header{display:flex;align-items:center;gap:9px;padding:8px max(10px,env(safe-area-inset-right)) 8px max(10px,env(safe-area-inset-left));padding-top:max(8px,env(safe-area-inset-top));background:#c9a77b;border-bottom:2px solid #b58c5f}
+    .back,.top{width:46px;height:46px;flex:0 0 46px;border:0;border-radius:13px;background:var(--brown);color:#fff6e7;box-shadow:0 3px 0 #76512b;text-decoration:none;display:flex;align-items:center;justify-content:center}
+    .back{font-size:25px}.title{flex:1;min-width:0}h1{margin:0;font-size:clamp(14px,2.4vw,22px);line-height:1.15;color:#0a4527;font-weight:900}.sub{font-size:11px;margin-top:3px;font-weight:700}
+    .top-actions{display:flex;gap:6px}.top{flex-direction:column;gap:2px;font-weight:900}.top i{font-style:normal;font-size:17px}.top span{font-size:10px;text-transform:uppercase;letter-spacing:.3px}.logic{background:linear-gradient(135deg,#7b5ae0,#9b7aff)}.watch{background:linear-gradient(135deg,#2d6ca8,#4a90d9)}.watch[aria-pressed="true"]{background:#1e8e5a}
+    main{width:min(100%,640px);margin:auto;padding:12px 14px 18px;display:flex;flex-direction:column;align-items:center;gap:9px}
     .sizebar,.scorebar,.actions{width:100%;display:flex;justify-content:center;align-items:center;gap:9px;flex-wrap:wrap}
-    button{font:inherit;cursor:pointer;touch-action:manipulation}
-    .size{min-width:92px;border:3px solid #bba17d;border-radius:15px;padding:8px 14px;background:#f5e8d1;color:#523a23;font-weight:900;box-shadow:0 3px 0 #b29670}
+    .size{min-width:82px;min-height:40px;border:2px solid #bba17d;border-radius:10px;padding:7px 14px;background:#f5e8d1;color:#523a23;font-weight:900;box-shadow:0 3px 0 #b29670}
     .size[aria-pressed="true"]{border-color:#2563eb;background:#e7f0ff;color:#1748a3;box-shadow:0 3px 0 #8daee9}
-    .status{width:100%;min-height:56px;display:flex;justify-content:center;align-items:center;text-align:center;padding:10px 15px;border:2px solid #d6bd96;border-radius:18px;background:var(--cream);font-size:clamp(17px,4vw,22px);font-weight:900;box-shadow:0 4px 0 #bd9b70}
-    .scorebar{gap:8px}
-    .score{min-width:110px;padding:6px 12px;border-radius:13px;background:#fff8eb;border:2px solid #d6bd96;text-align:center;font-size:14px;font-weight:850}
-    .score b{font-size:18px;margin-left:4px}
-    .score.x{color:var(--blue)}.score.o{color:var(--pink)}
-    .board-wrap{width:min(100%,min(66vh,520px));width:min(100%,min(66dvh,520px));aspect-ratio:1;padding:9px;border:4px solid #352619;border-radius:19px;background:#fff8eb;box-shadow:0 6px 0 #9b7751}
+    .status{width:100%;min-height:46px;display:flex;justify-content:center;align-items:center;text-align:center;padding:8px 10px;border:2px solid #c4a277;border-radius:16px;background:var(--cream);font-size:clamp(16px,3.6vw,21px);font-weight:900;box-shadow:0 3px 0 #bd9b70}
+    .scorebar{gap:6px}.score{padding:5px 10px;border-radius:10px;background:#fff8eb;border:1px solid #c4a277;text-align:center;font-size:13px;font-weight:800}.score b{font-size:16px;margin-left:3px}.score.x{color:var(--blue)}.score.o{color:var(--pink)}
+    .board-wrap{width:min(100%,calc(100vh - 330px),480px);width:min(100%,calc(100dvh - 330px),480px);min-width:180px;aspect-ratio:1;padding:8px;border:4px solid #352619;border-radius:18px;background:#fff8eb;box-shadow:0 5px 0 #9b7751}
     .board{width:100%;height:100%;display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));grid-template-rows:repeat(var(--n),minmax(0,1fr));gap:5px}
-    .cell{min-width:0;min-height:0;border:2px solid #896641;border-radius:10px;background:#fffaf0;color:#49341f;font-size:clamp(22px,13vw,70px);font-weight:1000;line-height:1;display:grid;place-items:center;box-shadow:0 2px 0 #c9ab7e}
-    .cell[data-mark="X"]{color:var(--blue)}.cell[data-mark="O"]{color:var(--pink)}
-    .cell:focus-visible,.size:focus-visible,.action:focus-visible,.back:focus-visible{outline:4px solid #facc15;outline-offset:2px;z-index:1}
-    .cell.winner{background:#d9f99d;border-color:#4d7c0f}
-    .actions{margin-top:1px}
-    .action{border:2px solid #6b4628;border-radius:14px;padding:10px 17px;background:#80572f;color:#fff8eb;font-weight:900;box-shadow:0 4px 0 #4d321d}
-    .action.secondary{background:#fff4dd;color:#51371e}
-    .hint{margin:0;text-align:center;font-size:13px;font-weight:700;color:#65472a}
-    @media(max-height:680px){main{gap:9px;padding-top:10px}.board-wrap{width:min(100%,min(56vh,470px));width:min(100%,min(56dvh,470px))}.status{min-height:46px}.score{padding:3px 9px}}
-    @media(max-width:380px){header{gap:9px;padding-top:9px;padding-bottom:9px}.back{flex-basis:46px;height:46px}.size{min-width:78px;padding:7px 9px;font-size:14px}.board-wrap{padding:6px}.board{gap:3px}.cell{border-radius:7px}}
+    .cell{min-width:0;min-height:0;border:2px solid #896641;border-radius:10px;background:#fffaf0;color:#49341f;font-size:clamp(22px,8vw,64px);font-weight:950;line-height:1;display:grid;place-items:center;box-shadow:0 2px 0 #c9ab7e}
+    .cell[data-mark="X"]{color:var(--blue)}.cell[data-mark="O"]{color:var(--pink)}.cell:disabled{opacity:1}.cell.winner{background:#d9f99d;border-color:#4d7c0f}
+    :is(button,a):focus-visible{outline:4px solid #1748a3;outline-offset:3px;z-index:1}
+    .actions{margin-top:2px}.action{min-width:90px;min-height:44px;border:0;border-radius:10px;padding:10px 17px;background:#c97b2e;color:white;font-weight:900;font-size:14px;box-shadow:0 3px 0 #9b6024}.action.clear{background:#c0392b;box-shadow:0 3px 0 #8f2e25}
+    .hint{margin:0;text-align:center;font-size:12px;font-weight:700;color:#54361e;line-height:1.4;max-width:100%}
+    dialog{border:2px solid #b58c5f;border-radius:20px;padding:0;width:calc(100% - 24px);max-width:480px;max-height:85vh;max-height:85dvh;background:#fff6e4;color:var(--ink);box-shadow:0 12px 40px #0004}dialog::backdrop{background:#0008}
+    .dialog-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#e8d3a8;gap:10px}.dialog-head h2{font-size:18px;margin:0}.close{border:0;border-radius:12px;width:44px;height:44px;background:var(--brown);color:white;font-size:22px}.dialog-body{padding:4px 18px 18px;line-height:1.6;font-size:15px}.dialog-body li{margin:9px 0}.dialog-body ol{padding-left:22px}.sound-choices{display:flex;gap:10px;margin-top:16px}.sound-choice{flex:1;min-height:48px;border:2px solid #8a5e31;border-radius:10px;padding:8px;font-weight:850;background:#fff1ce;color:#51371e}.sound-choice[aria-pressed="true"]{background:#176b4a;color:white;border-color:#176b4a}.sound-choice:disabled{opacity:.55}
+    @media(max-width:389px){header{gap:6px}.top-actions{gap:5px}.sub{font-size:10px}main{padding-top:10px;gap:8px}.board-wrap{padding:6px}.board{gap:3px}.cell{border-radius:7px}}
+    @media(max-height:600px) and (orientation:landscape){main{padding-top:8px}.board-wrap{width:220px}.status{min-height:38px}}
   </style>
 </head>
 <body>
   <header>
-    <a class="back" href="beta.html" aria-label="Back to puzzles">‹</a>
-    <div><h1>⭕ Tic-Tac-Toe</h1><div class="sub">Two players · take turns on one screen</div></div>
+    <a class="back" href="beta.html" aria-label="Back to puzzles">←</a>
+    <div class="title"><h1>Tic-Tac-Toe</h1><div class="sub">2 players · one screen</div></div>
+    <div class="top-actions">
+      <button class="top logic" id="logicBtn" type="button" aria-label="Logic"><i aria-hidden="true">💡</i><span>Logic</span></button>
+      <button class="top watch" id="watchBtn" type="button" aria-label="Watch" aria-pressed="false"><i aria-hidden="true">👁️</i><span>Watch</span></button>
+      <button class="top" id="soundBtn" type="button" aria-label="Sound &amp; Music settings"><i id="soundIcon" aria-hidden="true">🔇</i><span>Sound</span></button>
+    </div>
   </header>
   <main>
     <div class="sizebar" role="group" aria-label="Board size">
@@ -56,79 +59,199 @@
     </div>
     <div class="board-wrap"><div class="board" id="board" role="group" aria-label="Tic-Tac-Toe board"></div></div>
     <div class="actions">
-      <button class="action" type="button" id="newRound">↻ New round</button>
-      <button class="action secondary" type="button" id="resetScores">Clear scores</button>
+      <button class="action" type="button" id="newRound" aria-label="New">↻ New</button>
+      <button class="action clear" type="button" id="clearBoard">Clear</button>
     </div>
     <p class="hint" id="hint">Complete a row, column, or diagonal to win.</p>
   </main>
+  <dialog id="logicDialog" aria-labelledby="logicTitle">
+    <div class="dialog-head"><h2 id="logicTitle">💡 Tic-Tac-Toe Logic</h2><button class="close" type="button" aria-label="Close logic">×</button></div>
+    <div class="dialog-body">
+      <p><b id="logicSize">3×3: get 3 in a row.</b> Two players take turns on the same screen.</p>
+      <ol>
+        <li>X starts. Tap an empty square to place your mark, then pass to O.</li>
+        <li>Complete a whole row, column, or diagonal to win. A 4×4 board needs 4 in a row; a 5×5 board needs 5.</li>
+        <li>Look for your next winning move, and block your friend’s line before it is complete.</li>
+        <li>If the board fills with no winning line, the round is a draw.</li>
+      </ol>
+      <p><b>Watch</b> shows an example winning line without adding to the scores. Tap Stop to return to your round.</p>
+      <p><b>New</b> starts an empty round and keeps the scores. <b>Clear</b> empties the board and resets all scores. Changing size starts a fresh set of scores.</p>
+    </div>
+  </dialog>
+  <dialog id="soundDialog" aria-labelledby="soundTitle">
+    <div class="dialog-head"><h2 id="soundTitle">🔊 Sound &amp; Music</h2><button class="close" type="button" aria-label="Close sound settings">×</button></div>
+    <div class="dialog-body">
+      <div class="sound-choices"><button class="sound-choice" id="soundMaster" type="button" aria-pressed="false">Sound: OFF</button><button class="sound-choice" id="musicToggle" type="button" aria-pressed="true">Music: ON</button></div>
+      <p><b>Sound</b> is the master switch for move tones and music. Turn <b>Music</b> off to keep only the move tones.</p>
+      <p>These settings are shared with your other MathMatrix puzzles.</p>
+    </div>
+  </dialog>
   <script>
-  (function(){
+  (() => {
     'use strict';
-    var allowed=[3,4,5];
-    var params=new URLSearchParams(location.search);
-    var size=allowed.indexOf(Number(params.get('size')))!==-1?Number(params.get('size')):3;
-    var board=[],turn='X',finished=false,winning=[],scores={X:0,O:0,draw:0};
-    var boardEl=document.getElementById('board'),statusEl=document.getElementById('status');
-    var hintEl=document.getElementById('hint'),scoreX=document.getElementById('scoreX');
-    var scoreO=document.getElementById('scoreO'),scoreDraw=document.getElementById('scoreDraw');
-    var cellButtons=[];
+    const get = id => document.getElementById(id);
+    const allowed = [3,4,5];
+    const requested = Number(new URLSearchParams(location.search).get('size'));
+    let size = allowed.includes(requested) ? requested : 3;
+    let board = [], turn = 'X', finished = false, winning = [], scores = {X:0,O:0,draw:0};
+    let watching = false, demo = false, watchTimer = null, savedRound = null;
+    let audioContext = null;
+    const music = new Audio('bgm-beyond-stone-gate.mp3');
+    music.loop = true; music.volume = .18; music.preload = 'none';
+    const readSetting = key => { try { return localStorage.getItem(key); } catch { return null; } };
+    const writeSetting = (key,value) => { try { localStorage.setItem(key,value); } catch { /* Play remains available without storage. */ } };
+    let soundOn = readSetting('mmSound') !== null && readSetting('mmSound') !== 'off';
+    let musicOn = readSetting('mmMusic') !== 'off';
 
-    function freshRound(){board=Array(size*size).fill('');turn='X';finished=false;winning=[];render();}
-    function hasWin(index,mark){
-      var row=Math.floor(index/size),col=index%size;
-      var dirs=[[0,1],[1,0],[1,1],[1,-1]];
-      for(var d=0;d<dirs.length;d++){
-        var dr=dirs[d][0],dc=dirs[d][1],line=[index];
-        for(var sign=-1;sign<=1;sign+=2){
-          var r=row+dr*sign,c=col+dc*sign;
-          while(r>=0&&r<size&&c>=0&&c<size&&board[r*size+c]===mark){line.push(r*size+c);r+=dr*sign;c+=dc*sign;}
+    async function syncAudio() {
+      get('soundIcon').textContent = soundOn ? '🔊' : '🔇';
+      get('soundMaster').textContent = 'Sound: ' + (soundOn ? 'ON' : 'OFF');
+      get('musicToggle').textContent = 'Music: ' + (musicOn ? 'ON' : 'OFF');
+      get('soundMaster').setAttribute('aria-pressed', String(soundOn));
+      get('musicToggle').setAttribute('aria-pressed', String(musicOn));
+      get('musicToggle').disabled = !soundOn;
+      if (!soundOn || document.hidden) {
+        music.pause();
+        try { if (audioContext?.state === 'running') await audioContext.suspend(); } catch { /* Audio is optional. */ }
+      } else {
+        try { if (audioContext?.state === 'suspended') await audioContext.resume(); } catch { /* Audio is optional. */ }
+        if (musicOn) { try { await music.play(); } catch { /* The next gesture can enable browser audio. */ } }
+        else music.pause();
+      }
+    }
+    function tone(mark) {
+      if (!soundOn || document.hidden) return;
+      try {
+        const AudioAPI = window.AudioContext || window.webkitAudioContext;
+        if (!AudioAPI) return;
+        audioContext ??= new AudioAPI();
+        if (audioContext.state === 'suspended') audioContext.resume().catch(() => {});
+        const oscillator = audioContext.createOscillator(), gain = audioContext.createGain();
+        oscillator.frequency.value = mark === 'X' ? 523.25 : 659.25;
+        gain.gain.setValueAtTime(.055,audioContext.currentTime);
+        gain.gain.exponentialRampToValueAtTime(.001,audioContext.currentTime + .12);
+        oscillator.connect(gain); gain.connect(audioContext.destination);
+        oscillator.onended = () => { oscillator.disconnect(); gain.disconnect(); };
+        oscillator.start(); oscillator.stop(audioContext.currentTime + .13);
+      } catch { /* Play remains available when audio is unsupported. */ }
+    }
+    function stopWatch(restore = false) {
+      clearTimeout(watchTimer); watchTimer = null; watching = false;
+      if (restore && savedRound) ({board,turn,finished,winning,demo} = savedRound);
+      savedRound = null;
+    }
+    function freshRound() {
+      stopWatch(); demo = false; board = Array(size*size).fill(''); turn = 'X'; finished = false; winning = []; render();
+    }
+    function hasWin(index,mark) {
+      const row = Math.floor(index/size), col = index%size;
+      for (const [dr,dc] of [[0,1],[1,0],[1,1],[1,-1]]) {
+        const line = [index];
+        for (const sign of [-1,1]) {
+          let r = row + dr*sign, c = col + dc*sign;
+          while (r>=0 && r<size && c>=0 && c<size && board[r*size+c] === mark) { line.push(r*size+c); r+=dr*sign; c+=dc*sign; }
         }
-        if(line.length>=size)return line;
+        if (line.length === size) return line;
       }
       return [];
     }
-    function play(index){
-      if(finished||board[index])return;
-      board[index]=turn;
-      winning=hasWin(index,turn);
-      if(winning.length){finished=true;scores[turn]++;}
-      else if(board.every(Boolean)){finished=true;scores.draw++;}
-      else turn=turn==='X'?'O':'X';
+    function play(index,fromWatch = false) {
+      if (finished || board[index] || (watching && !fromWatch) || (demo && !fromWatch)) return;
+      board[index] = turn; tone(turn);
+      winning = hasWin(index,turn);
+      if (winning.length) { finished = true; if (!demo) scores[turn]++; }
+      else if (board.every(Boolean)) { finished = true; if (!demo) scores.draw++; }
+      else turn = turn === 'X' ? 'O' : 'X';
       render();
     }
-    function render(){
-      boardEl.style.setProperty('--n',size);
-      boardEl.setAttribute('aria-label',size+' by '+size+' Tic-Tac-Toe board');
-      boardEl.replaceChildren();cellButtons=[];
-      board.forEach(function(mark,index){
-        var cell=document.createElement('button'),row=Math.floor(index/size)+1,col=index%size+1;
-        cell.type='button';cell.className='cell';cell.dataset.index=index;
-        if(mark)cell.dataset.mark=mark;
-        if(winning.indexOf(index)!==-1)cell.classList.add('winner');
-        cell.setAttribute('aria-label','Row '+row+', column '+col+(mark?', '+mark:' empty'));
-        cell.textContent=mark;cell.addEventListener('click',function(){play(index);});
-        cell.addEventListener('keydown',function(e){
-          var delta={ArrowUp:[-1,0],ArrowDown:[1,0],ArrowLeft:[0,-1],ArrowRight:[0,1]}[e.key];
-          if(!delta)return;e.preventDefault();
-          var nextRow=Math.max(0,Math.min(size-1,row-1+delta[0]));
-          var nextCol=Math.max(0,Math.min(size-1,col-1+delta[1]));
-          cellButtons[nextRow*size+nextCol].focus();
+    function render() {
+      const focusIndex = get('board').contains(document.activeElement) ? document.activeElement.dataset.index : null;
+      get('board').style.setProperty('--n',size);
+      get('board').setAttribute('aria-label',`${size} by ${size} Tic-Tac-Toe board`);
+      get('board').replaceChildren();
+      board.forEach((mark,index) => {
+        const cell = document.createElement('button'), row = Math.floor(index/size)+1, col = index%size+1;
+        cell.type = 'button'; cell.className = 'cell'; cell.dataset.index = index; cell.disabled = watching;
+        if (mark) cell.dataset.mark = mark;
+        if (winning.includes(index)) cell.classList.add('winner');
+        cell.setAttribute('aria-label',`Row ${row}, column ${col}${mark ? ', '+mark : ' empty'}`);
+        cell.textContent = mark;
+        cell.addEventListener('click',() => { void syncAudio(); play(index); });
+        cell.addEventListener('keydown',event => {
+          const delta = {ArrowUp:[-1,0],ArrowDown:[1,0],ArrowLeft:[0,-1],ArrowRight:[0,1]}[event.key];
+          if (!delta) return;
+          event.preventDefault();
+          const nextRow = Math.max(0,Math.min(size-1,row-1+delta[0]));
+          const nextCol = Math.max(0,Math.min(size-1,col-1+delta[1]));
+          get('board').children[nextRow*size+nextCol].focus();
         });
-        cellButtons.push(cell);boardEl.appendChild(cell);
+        get('board').appendChild(cell);
       });
-      document.querySelectorAll('.size').forEach(function(button){button.setAttribute('aria-pressed',Number(button.dataset.size)===size?'true':'false');});
-      scoreX.textContent=scores.X;scoreO.textContent=scores.O;scoreDraw.textContent=scores.draw;
-      if(finished&&winning.length){statusEl.textContent=turn+' wins!';hintEl.textContent='Great game! Choose New round to play again.';}
-      else if(finished){statusEl.textContent='It’s a draw!';hintEl.textContent='No spaces left. Start a new round and try again.';}
-      else{statusEl.textContent=turn+'’s turn · get '+size+' in a row';hintEl.textContent='Complete a row, column, or diagonal to win.';}
+      if (focusIndex !== null && !watching) get('board').children[Number(focusIndex)]?.focus();
+      document.querySelectorAll('.size').forEach(button => button.setAttribute('aria-pressed',String(Number(button.dataset.size) === size)));
+      get('scoreX').textContent = scores.X; get('scoreO').textContent = scores.O; get('scoreDraw').textContent = scores.draw;
+      get('watchBtn').setAttribute('aria-pressed',String(watching));
+      get('watchBtn').setAttribute('aria-label',watching ? 'Stop Watch' : 'Watch');
+      get('watchBtn').querySelector('span').textContent = watching ? 'Stop' : 'Watch';
+      get('logicSize').textContent = `${size}×${size}: get ${size} in a row.`;
+      if (watching) {
+        get('status').textContent = `Watch · ${board.filter(Boolean).length}/${size*2-1} moves · ${size} in a row`;
+        get('hint').textContent = 'Example round · Stop returns to your game · scores stay unchanged.';
+      } else if (demo) {
+        get('status').textContent = `Watch · ${turn} wins with ${size} in a row!`;
+        get('hint').textContent = 'Example complete · choose New to play your own round.';
+      } else if (finished) {
+        get('status').textContent = winning.length ? turn+' wins!' : 'It’s a draw!';
+        get('hint').textContent = 'Choose New to play again, or Clear to reset the scores too.';
+      } else {
+        get('status').textContent = `${turn}’s turn · get ${size} in a row`;
+        get('hint').textContent = 'Complete a row, column, or diagonal to win.';
+      }
     }
-    document.querySelectorAll('.size').forEach(function(button){button.addEventListener('click',function(){
-      var next=Number(button.dataset.size);if(next===size)return;size=next;scores={X:0,O:0,draw:0};freshRound();
-      history.replaceState(null,'',location.pathname+'?size='+size);
-    });});
-    document.getElementById('newRound').addEventListener('click',freshRound);
-    document.getElementById('resetScores').addEventListener('click',function(){scores={X:0,O:0,draw:0};freshRound();});
-    freshRound();
+    function startWatch() {
+      if (watching) { stopWatch(true); render(); return; }
+      savedRound = {board:[...board],turn,finished,winning:[...winning],demo};
+      demo = true; watching = true; board = Array(size*size).fill(''); turn = 'X'; finished = false; winning = [];
+      // X completes the top row while O takes the row below, one turn at a time.
+      const moves = [];
+      for (let col=0;col<size;col++) { moves.push(col); if (col<size-1) moves.push(size+col); }
+      let step = 0;
+      const advance = () => {
+        if (!watching) return;
+        play(moves[step++],true);
+        if (step === moves.length) { watching = false; watchTimer = null; savedRound = null; render(); }
+        else watchTimer = setTimeout(advance,700);
+      };
+      render(); void syncAudio(); watchTimer = setTimeout(advance,700);
+    }
+    document.querySelectorAll('.size').forEach(button => button.addEventListener('click',() => {
+      const next = Number(button.dataset.size);
+      if (next === size) return;
+      size = next; scores = {X:0,O:0,draw:0}; freshRound();
+      const url = new URL(location.href); url.searchParams.set('size',String(size)); history.replaceState(null,'',url);
+    }));
+    get('newRound').addEventListener('click',freshRound);
+    get('clearBoard').addEventListener('click',() => { scores = {X:0,O:0,draw:0}; freshRound(); });
+    get('watchBtn').addEventListener('click',startWatch);
+    for (const [button,id] of [['logicBtn','logicDialog'],['soundBtn','soundDialog']]) {
+      const dialog = get(id);
+      get(button).addEventListener('click',() => dialog.showModal());
+      dialog.querySelector('.close').addEventListener('click',() => dialog.close());
+      dialog.addEventListener('click',event => {
+        const rect = dialog.getBoundingClientRect();
+        if (event.target === dialog && (event.clientX<rect.left || event.clientX>rect.right || event.clientY<rect.top || event.clientY>rect.bottom)) dialog.close();
+      });
+    }
+    get('soundMaster').addEventListener('click',() => { soundOn = !soundOn; writeSetting('mmSound',soundOn ? 'on' : 'off'); void syncAudio(); });
+    get('musicToggle').addEventListener('click',() => { musicOn = !musicOn; writeSetting('mmMusic',musicOn ? 'on' : 'off'); void syncAudio(); });
+    window.addEventListener('storage',event => {
+      if (event.key === 'mmSound' || event.key === 'mmMusic' || event.key === null) {
+        soundOn = readSetting('mmSound') !== null && readSetting('mmSound') !== 'off'; musicOn = readSetting('mmMusic') !== 'off'; void syncAudio();
+      }
+    });
+    document.addEventListener('visibilitychange',() => { if (document.hidden && watching) { stopWatch(true); render(); } void syncAudio(); });
+    window.addEventListener('pagehide',() => { stopWatch(); music.pause(); });
+    freshRound(); void syncAudio();
   })();
   </script>
 </body>
