@@ -1,0 +1,102 @@
+/* V215: a fitted category page, followed by the original puzzle choices. */
+.categoryChooser.difficultyBar {
+  display:flex; flex-direction:column; justify-content:flex-start; gap:7px;
+  overflow:hidden; --lvScale:1;
+}
+.categoryChooser [hidden] { display:none !important; }
+.categoryHeading { display:flex; align-items:center; gap:9px; flex:none; padding:1px 2px; }
+.categoryHeadingCopy { min-width:0; }
+.categoryTitle { margin:0; color:#33220F; font:800 20px/1.15 "Trebuchet MS",sans-serif; }
+.categoryTitle:focus { outline:none; }
+.categoryHint { margin:4px 0 0; color:#664C2C; font:600 11px/1.25 "Trebuchet MS",sans-serif; }
+.categoryGrid { display:grid; flex:1 1 0; min-height:0; min-width:0; gap:6px;
+  grid-template-columns:repeat(var(--category-columns,2),minmax(0,1fr));
+  grid-template-rows:repeat(var(--category-rows,7),minmax(0,1fr)); }
+.categoryCard { display:flex; align-items:center; justify-content:flex-start; gap:8px;
+  min-height:0; min-width:0; width:100%; margin:0; padding:5px 8px;
+  border:2px solid var(--category-edge); border-bottom-width:4px; border-radius:13px;
+  background:var(--category-fill); color:#283C30; cursor:pointer; text-align:left;
+  font-family:"Trebuchet MS",sans-serif; box-sizing:border-box; overflow:hidden;
+  box-shadow:none; }
+.categoryCard:active { border-bottom-width:2px; transform:translateY(1px); }
+.categoryCard:focus-visible,#navBack:focus-visible { outline:3px solid #164D66; outline-offset:1px; }
+.categoryPicture { display:grid; place-items:center; flex:0 0 auto; width:1.28em; height:1.28em;
+  font-size:var(--category-icon,25px); line-height:1; }
+.categoryCardCopy { display:flex; flex-direction:column; min-width:0; gap:3px; }
+.categoryName { display:block; font-size:var(--category-font,14px); font-weight:800; line-height:1.13;
+  overflow-wrap:normal; }
+.categoryCount { font-size:10px; line-height:1.1; color:#4D5844; }
+.categoryCompact .categoryCount { display:none; }
+.categoryCompact .categoryCard { gap:5px; padding:3px 6px; border-radius:10px; }
+.categoryCompact .categoryPicture { width:1.15em; }
+.categoryOptions { display:flex; flex:1 1 0; min-height:0; flex-direction:column; overflow:auto; }
+.categoryOptions > .modeGroup { display:flex; flex:1; min-height:0; margin:0 !important;
+  flex-direction:column; width:100%; }
+.categoryOptions .modeHead { display:none !important; }
+.categoryOptions .toggleSwitch { display:grid; grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:9px; margin:4px 0 !important; align-content:start; }
+.categoryOptions .toggleBtn.lvCard { min-width:0; min-height:66px; height:auto !important;
+  margin:0 !important; padding:10px 9px !important; gap:8px !important; }
+.categoryOptions .lvName { font-size:14px !important; line-height:1.2 !important; }
+.categoryOptions .lvDiff { font-size:11px !important; line-height:1.25 !important; }
+.categoryOptions .lvGrid,.categoryOptions .lvGlyph { flex:none; width:29px !important; height:29px !important; font-size:23px !important; }
+.categoryFooter { display:flex; align-items:center; justify-content:space-between; flex:none; gap:5px;
+  padding:2px 1px 4px; min-height:31px; }
+.categoryFooter #diffTip { display:grid; place-items:center; flex:none; width:30px; height:30px;
+  padding:0 !important; margin:0; border:0 !important; font-size:0 !important; background:transparent !important; }
+.categoryFooter #diffTip::before { content:'📴'; font-size:19px; }
+.categoryFooter .diffShare { position:relative; margin:0 !important; min-height:30px;
+  padding:4px 9px !important; font-size:10px !important; line-height:1.1; white-space:nowrap; }
+.categoryFooter .diffShare::after { display:none !important; }
+.categoryVersion { font:700 10px/1.1 "Trebuchet MS",sans-serif; color:#664C2C; white-space:nowrap; }
+.categoryHome .sanaBub { font-size:12px !important; -webkit-line-clamp:2; }
+.categoryHome .sanaGuide { flex:none; }
+.categoryHome:not(.categoryOpen) #navBack { display:none !important; }
+.categoryHome.categoryOpen #appBarChip { display:none !important; }
+.categoryHome .appBarTitle { white-space:normal !important; overflow:visible !important;
+  text-overflow:clip !important; font-size:13px !important; line-height:1.1 !important; }
+@media(min-width:540px) {
+  body.categoryHome .appShell { width:100%; max-width:960px; }
+}
+@media(min-width:600px) and (max-height:500px) {
+  .categoryHome .sana { display:none !important; }
+  .categoryHome .appBar { min-height:46px !important; padding-top:0 !important; padding-bottom:0 !important; }
+  .categoryHome .barBtn { height:38px !important; }
+  .categoryHome .tabBar { min-height:44px !important; height:44px !important; }
+  .categoryHome .categoryHeading { padding:0; }
+  .categoryHome .categoryTitle { font-size:17px; }
+  .categoryHome .categoryHint { font-size:10px; margin-top:2px; }
+}
+.categoryShort .categoryHeading { padding:0; }
+.categoryShort .categoryTitle { font-size:17px; }
+.categoryShort .categoryHint { margin-top:2px; font-size:10px; }
+.categoryShort.categoryChooser { gap:5px; }
+@media(max-width:359px) {
+  .categoryHome .appBarTitle { font-size:12px !important; }
+  .categoryHome .barBtn.barWord { min-width:37px !important; padding:0 5px !important; }
+  .categoryHome .barBtn.barWord span { font-size:8px !important; }
+  .categoryHome #appBarChip { font-size:10px !important; padding:5px 7px !important; }
+  .categoryOptions .toggleSwitch { gap:6px; }
+  .categoryOptions .lvName { font-size:12px !important; }
+  .categoryOptions .lvGlyph,.categoryOptions .lvGrid { width:24px !important; height:24px !important; }
+}
+@media(prefers-reduced-motion:reduce) { .categoryCard { transition:none; } }
+
+/* Browsing has no selected puzzle: only Sound belongs in its toolbar. */
+.categoryHome #barLearn,.categoryHome #barWatch { display:none !important; }
+.categoryHome .appBar {
+  display:grid !important;
+  grid-template-columns:minmax(72px,1fr) minmax(0,4fr) minmax(72px,1fr);
+  column-gap:8px;
+}
+.categoryHome #navBack,.categoryHome #appBarChip { grid-column:1; grid-row:1; justify-self:start; }
+.categoryHome #appBarChip { max-width:100%; box-sizing:border-box; padding:5px 6px !important; }
+.categoryHome #barMore { grid-column:3; grid-row:1; justify-self:end; min-height:44px; height:46px !important; }
+.categoryHome .appBarTitle {
+  grid-column:2; grid-row:1; width:100%; box-sizing:border-box;
+  padding:2px 4px; text-align:center; overflow-wrap:anywhere;
+  font-size:clamp(13px,3.6vw,18px) !important; line-height:1.4 !important;
+}
+.categoryHeading { justify-content:center; text-align:center; padding:3px 12px !important; }
+.categoryHeadingCopy { width:100%; }
+.categoryTitle { padding:1px 4px; overflow-wrap:anywhere; }

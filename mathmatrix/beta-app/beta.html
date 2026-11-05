@@ -51,7 +51,7 @@ window.onerror = function(msg, src, line, col, err){
 <link rel="apple-touch-icon" href="icon-192.png">
 <!-- without this the browser asks for /favicon.ico, 404s, and the tab sits blank -->
 <link rel="icon" href="icon-192.png" type="image/png">
-<title>🐒🎲 MathMatrix Pro++ — Beta - V.211 Unified</title>
+<title>🐒🎲 MathMatrix Pro++ — Beta - V.215 Unified</title>
 
 <!-- Raja: the copy icon in Android's share sheet copies something that will
      not open in a fresh browser, while every other channel works.
@@ -4211,6 +4211,8 @@ body{ background:#C9A87C !important; }
 .shareQrCopy p{margin:0;font-size:13px;line-height:1.45;font-weight:700;color:#715437;overflow-wrap:anywhere}
 @media(max-width:380px){.shareQrCard{gap:10px;padding:9px}.shareQrCode{flex-basis:118px;width:118px;height:118px;padding:8px}.shareQrCode canvas,.shareQrCode img{width:100px!important;height:100px!important}.shareQrCopy h3{font-size:14px}.shareQrCopy p{font-size:11.5px}}
 </style>
+<link rel="stylesheet" href="category-chooser.css">
+<script src="category-chooser.js"></script>
 </head>
 <body>
 <div id="portraitLock" role="alert">
@@ -4830,48 +4832,28 @@ body{ background:#C9A87C !important; }
   </div>
   </div><!-- /.modePair -->
 
-  <!-- 🧭 TUNNELS OF SA NA MAZE — a standalone maze page so Beta can be tested
-       independently before the puzzle is copied into the public app. -->
+  <!-- SaNaMaze keeps all three original maze choices and their handlers. -->
   <div class="modePair" id="mazePuzzlePair">
   <div class="modeGroup">
     <div class="modeHead" style="--m1:#bbf7d0; --m2:#16a34a;">
       <span class="mIco">🧭</span>
-      <span><b>Tunnels Of SaNa Maze</b><i>trace two winding tunnels; only one reaches the Finish</i></span>
+      <span><b>SaNaMaze</b><i>explore tunnels, caves, and an illustrated treasure story</i></span>
     </div>
     <div class="toggleSwitch">
       <button class="toggleBtn lvCard" id="tunnelsOfMetaTab" type="button" data-size="tunnels" data-name="Tunnels Of SaNa Maze" style="color:#16a34a; border-color:#16a34a; --c1:#bbf7d0; --c2:#22c55e;">
         <span class="lvGlyph" aria-hidden="true">🧭</span>
         <span class="lvText"><b class="lvName">Tunnels Of SaNa Maze</b><span class="lvDiff">Two paths · one true way</span><span class="lvMeta">Follow the turns; the decoy stops near the goal</span><span class="lvNow">PLAYING</span></span>
       </button>
-    </div>
-  </div>
-
-  <div class="modeGroup">
-    <div class="modeHead" style="--m1:#fde68a; --m2:#b45309;">
-      <span class="mIco">🗝️</span>
-      <span><b>Cave Treasure Hunt</b><i>collect shields and treasure, then find the cave exit</i></span>
-    </div>
-    <div class="toggleSwitch">
       <button class="toggleBtn lvCard" id="caveTreasureHuntTab" type="button" data-size="cave-treasure" data-name="Cave Treasure Hunt" style="color:#b45309; border-color:#b45309; --c1:#fde68a; --c2:#d97706;">
         <span class="lvGlyph" aria-hidden="true">🗝️</span>
         <span class="lvText"><b class="lvName">Cave Treasure Hunt</b><span class="lvDiff">Ten checkpoints · one adventure</span><span class="lvMeta">Collect, retrace, and guide SaNa safely out</span><span class="lvNow">PLAYING</span></span>
       </button>
-    </div>
-  </div>
-
-  <div class="modeGroup">
-    <div class="modeHead" style="--m1:#bbf7d0; --m2:#15803d;">
-      <span class="mIco">🐒</span>
-      <span><b>SaNa Treasure Hunt · Interactive</b><i>story images pop up at checkpoints</i></span>
-    </div>
-    <div class="toggleSwitch">
       <button class="toggleBtn lvCard" id="sanaTreasureHuntTab" type="button" data-size="sana-treasure-hunt" data-name="SaNa Treasure Hunt Interactive" style="color:#15803d; border-color:#15803d; --c1:#bbf7d0; --c2:#22c55e;">
         <span class="lvGlyph" aria-hidden="true">🧭</span>
         <span class="lvText"><b class="lvName">SaNa Treasure Hunt Interactive</b><span class="lvDiff">Image popups · 9 checkpoints</span><span class="lvMeta">Follow the story from Key to Treasure</span><span class="lvNow">BETA</span></span>
       </button>
     </div>
   </div>
-
   </div><!-- /#mazePuzzlePair -->
 
   <!-- Sir Ramanujan pairs with Gate Logic, which moved up from below Binary to
@@ -14113,6 +14095,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   goScreen = function(id){
     _goScreen(id);
     document.body.classList.toggle('onPlay', id === 'scPlay');
+    if (categoryChooser) categoryChooser.screenChanged(id);
     setTimeout(function(){
       try { fitBoard(); } catch(e){}
       if (id === 'scHome') try { fitHome(); } catch(e){}
@@ -14272,7 +14255,9 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     bar.addEventListener('touchcancel', clearDrag, {passive:true});
   }
   
+  var categoryChooser;
   function fitHome(){
+    if (categoryChooser) { categoryChooser.fit(); return; }
     var bar = document.querySelector('.difficultyBar');
     if (!bar || !bar.clientHeight) return;
     installRotatedListSwipe(bar);
@@ -14535,7 +14520,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     return !!m && getComputedStyle(m).display !== 'none';
   }
   function backLayers(){
-    return cheatOpen() || !!sheetOpenKey || demoRunning() || openScreen() !== 'scHome';
+    return cheatOpen() || !!sheetOpenKey || demoRunning() || openScreen() !== 'scHome' || !!(categoryChooser && categoryChooser.isOpen());
   }
   function peelOne(){
     /* The diagram is the top layer, and now that the formula sheet opens
@@ -14550,6 +14535,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     if (sheetOpenKey){ closeSheet(); return true; }
     if (demoRunning()){ try { stopDemos(); } catch(e){} return true; }
     if (openScreen() !== 'scHome'){ goScreen('scHome'); return true; }
+    if (categoryChooser && categoryChooser.isOpen()){ categoryChooser.showCategories(true); return true; }
     return false;
   }
   function armBack(){
@@ -15627,6 +15613,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   // Init with 3x3
   initBoard();
   applyTheme(); // Apply colors and diagonal guide
+  categoryChooser = window.createMathMatrixCategoryChooser({
+    screen: openScreen,
+    announce: function(message){ sana(message, null); }
+  });
 })();
 
 // Beta registers its own worker at this subfolder scope for offline play.
@@ -15657,7 +15647,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'Beta - V.211 Unified';
+  var BUILD_VER = 'Beta - V.215 Unified';
   /* Legacy update beacon: older installed versions scan for this literal.
    window.BETA_VER = 'v185'
    Runtime code below derives the same token from BUILD_VER. */

@@ -1,10 +1,12 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V211 Tic-Tac-Toe level colors.
+// MathMatrix Pro++ Beta Service Worker — Beta V212 category chooser.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v220-tic-tac-toe-level-colors';
+const CACHE_VERSION = 'mathmatrix-beta-v224-sound-centered';
 
 const ASSETS = [
   './index.html',
   './beta.html',
+  './category-chooser.css',
+  './category-chooser.js',
   './criss-cross.html',
   './tic-tac-toe.html',
   './tunnels-of-meta.html',
