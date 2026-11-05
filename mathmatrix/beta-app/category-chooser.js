@@ -8,6 +8,11 @@
     var current = null, lastCategory = null, directReturn = false;
     var entries = [];
     var returnKey = 'mathmatrix-book-return:' + location.pathname.replace(/[^/]*$/, '');
+    var pendingReturn = null;
+    function cancelReturn() {
+      pendingReturn = null;
+      try { sessionStorage.removeItem(returnKey); } catch (e) {}
+    }
     var palette = [
       ['#D9EECF', '#6A9757'], ['#FFE6A0', '#B69033'],
       ['#CDE9F1', '#639DB0'], ['#D9EBD7', '#6C9868'],
@@ -121,6 +126,7 @@
         }
         choice.querySelector('.lvText').appendChild(element('span', 'bookNote', choiceNote(choice)));
         choice.addEventListener('click', function () {
+          cancelReturn();
           entry.lastChoice = choice;
           if (['criss-cross', 'tic-tac-toe', 'tunnels', 'cave-treasure', 'sana-treasure-hunt'].indexOf(choice.dataset.size) !== -1) {
             try {
@@ -131,6 +137,7 @@
         }, true);
       });
       button.addEventListener('click', function () {
+        cancelReturn();
         lastCategory = button;
         directReturn = count === 1;
         current = count === 1 ? null : entry;
@@ -251,11 +258,16 @@
       if (focus && lastCategory) lastCategory.focus({ preventScroll: true });
       options.announce('Choose a puzzle book. Single puzzles open straight away.');
     }
-    function restoreReturn(consume) {
+    function takeReturn() {
       try {
         var saved = JSON.parse(sessionStorage.getItem(returnKey) || 'null');
-        if (!saved) return;
-        if (consume) sessionStorage.removeItem(returnKey);
+        sessionStorage.removeItem(returnKey);
+        return saved;
+      } catch (e) { return null; }
+    }
+    function restoreReturn(saved) {
+      if (!saved) return;
+      try {
         var entry = entries.find(function (item) { return item.name === saved.name; });
         if (!entry) return;
         lastCategory = entry.button;
@@ -266,7 +278,7 @@
         requestAnimationFrame(function () { (saved.direct ? entry.button : entry.lastChoice).focus({ preventScroll: true }); });
       } catch (e) {}
     }
-    document.getElementById('tab-scHome').addEventListener('click', function () { showCategories(false); });
+    document.getElementById('tab-scHome').addEventListener('click', function () { cancelReturn(); showCategories(false); });
     bar.addEventListener('keydown', function (event) {
       if (event.key === 'Escape' && current) {
         event.preventDefault(); event.stopPropagation(); showCategories(true);
@@ -274,10 +286,20 @@
     });
     if (window.ResizeObserver) new ResizeObserver(fit).observe(bar);
     window.addEventListener('resize', fit);
-    window.addEventListener('pageshow', function () { setTimeout(function () { restoreReturn(true); }, 0); });
+    document.addEventListener('pointerdown', cancelReturn, true);
+    document.addEventListener('keydown', cancelReturn, true);
+    window.addEventListener('pageshow', function (event) {
+      if (event.persisted) pendingReturn = takeReturn();
+      setTimeout(function () {
+        var saved = pendingReturn;
+        pendingReturn = null;
+        restoreReturn(saved);
+      }, 0);
+    });
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
     render(false);
-    restoreReturn(false);
+    pendingReturn = takeReturn();
+    restoreReturn(pendingReturn);
     return {
       fit: fit,
       isOpen: function () { return !!current; },
