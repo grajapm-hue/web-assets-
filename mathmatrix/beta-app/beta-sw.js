@@ -1,12 +1,14 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V216 direct puzzle books and fitted choices.
+// MathMatrix Pro++ Beta Service Worker — Beta V217 fitted Gate Logic and shared portrait games.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v225-book-layout-r3';
+const CACHE_VERSION = 'mathmatrix-beta-v226-game-fit';
 
 const ASSETS = [
   './index.html',
   './beta.html',
   './category-chooser.css',
   './category-chooser.js',
+  './game-layout.css',
+  './game-layout.js',
   './criss-cross.html',
   './tic-tac-toe.html',
   './tunnels-of-meta.html',

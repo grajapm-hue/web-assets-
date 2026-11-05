@@ -90,7 +90,7 @@
       var node = document.getElementById(id);
       if (node) footer.appendChild(node);
     });
-    var version = element('span', 'categoryVersion', 'Beta V.216');
+    var version = element('span', 'categoryVersion', 'Beta V.217');
     footer.appendChild(version);
     groups.forEach(function (group, index) {
       var name = group.querySelector('.modeHead b').textContent.trim();

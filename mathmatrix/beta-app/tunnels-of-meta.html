@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="portraitGame">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -329,6 +329,8 @@
       .app { width: 100%; max-width: none; }
     }
   </style>
+<link rel="stylesheet" href="game-layout.css">
+<script src="game-layout.js"></script>
 </head>
 <body>
   <main class="app">
@@ -1106,27 +1108,39 @@
       }
       demoFrame = requestAnimationFrame(animate);
     }
+    function logicalRect(element) {
+      var rect = element.getBoundingClientRect();
+      var root = document.documentElement;
+      var viewport = window.visualViewport;
+      var width = viewport ? viewport.width : window.innerWidth;
+      var height = viewport ? viewport.height : window.innerHeight;
+      if (root.classList.contains('lockRotateCW')) return {left:rect.top, top:width-rect.right, width:rect.height, height:rect.width};
+      if (root.classList.contains('lockRotateCCW')) return {left:height-rect.bottom, top:rect.left, width:rect.height, height:rect.width};
+      return rect;
+    }
     function alignSaNaWithStart() {
       var startPerson = document.getElementById('startPerson');
       if (!startPerson || !cols || !svg.getBoundingClientRect().width) return;
       startPerson.style.transform = 'none';
-      var svgRect = svg.getBoundingClientRect();
-      var personRect = startPerson.getBoundingClientRect();
+      var svgRect = logicalRect(svg);
+      var personRect = logicalRect(startPerson);
       var targetCenter = svgRect.left + svgRect.width / (2 * cols);
       var currentCenter = personRect.left + personRect.width / 2;
       startPerson.style.transform = 'translateX(' + (targetCenter - currentCenter) + 'px)';
     }
     function fitMazeToViewport() {
       if (!cols || !rows || !mazeCard || !mazeWrap || !finishTag) return;
-      var viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-      var wrapTop = Math.max(0, mazeWrap.getBoundingClientRect().top);
+      var viewport = window.visualViewport;
+      var rotated = document.documentElement.matches('.lockRotateCW,.lockRotateCCW');
+      var viewportHeight = rotated ? (viewport ? viewport.width : window.innerWidth) : (viewport ? viewport.height : window.innerHeight);
+      var wrapTop = Math.max(0, logicalRect(mazeWrap).top);
       var safeBottom = parseFloat(getComputedStyle(document.body).paddingBottom) || 0;
       var appBottom = parseFloat(getComputedStyle(document.querySelector('.app')).paddingBottom) || 0;
-      var remaining = viewportHeight - wrapTop - 3 - 8 - mazeFooter.getBoundingClientRect().height - 10 - safeBottom - appBottom;
+      var remaining = viewportHeight - wrapTop - 3 - 8 - logicalRect(mazeFooter).height - 10 - safeBottom - appBottom;
       var cardChrome = 22;
       var widthByHeight = Math.max(0, remaining - cardChrome) * cols / rows + cardChrome;
       var widthByScreen = Math.max(220, mazeWrap.clientWidth - 20);
-      var cardWidth = Math.max(220, Math.min(500, widthByScreen, widthByHeight));
+      var cardWidth = Math.max(180, Math.min(500, widthByScreen, widthByHeight));
       mazeCard.style.width = cardWidth + 'px';
       mazeFooter.style.width = Math.min(widthByScreen, Math.max(284, cardWidth)) + 'px';
       if (startControls) startControls.style.width = cardWidth + 'px';
@@ -1328,10 +1342,12 @@
       }
     }
     function cellAt(clientX, clientY) {
-      var rect = svg.getBoundingClientRect();
-      if (!rect.width || !rect.height) return null;
-      var localX = (clientX - rect.left) / rect.width * 100;
-      var localY = (clientY - rect.top) / rect.height * viewHeight;
+      var matrix = svg.getScreenCTM();
+      if (!matrix) return null;
+      var point = svg.createSVGPoint();
+      point.x = clientX; point.y = clientY;
+      var local = point.matrixTransform(matrix.inverse());
+      var localX = local.x, localY = local.y;
       var x = Math.floor(localX / cellSize), y = Math.floor(localY / cellSize);
       if (x < 0 || y < 0 || x >= cols || y >= rows) return null;
       return { x: x, y: y };
@@ -1587,6 +1603,7 @@
       }
     });
     window.addEventListener('resize', fitMazeToViewport);
+    window.addEventListener('mathmatrixviewportchange', fitMazeToViewport);
     if (window.visualViewport) window.visualViewport.addEventListener('resize', fitMazeToViewport);
 
     var savedLevel = readSavedLevels();

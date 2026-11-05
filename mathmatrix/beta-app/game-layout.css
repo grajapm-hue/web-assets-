@@ -1,0 +1,61 @@
+/* Gate menus and question rooms share the available puzzle window. */
+body.gateMode #gatePanel{display:flex !important;flex-direction:column;width:100%;overflow:hidden;padding:2px 1px 4px}
+#gatePicker{flex:1;min-height:0;height:100%;width:100%}
+#gatePicker .learnRows{display:grid;grid-template-columns:repeat(calc(var(--gate-columns,1)*2),minmax(0,1fr));grid-template-rows:repeat(var(--gate-rows,7),minmax(0,1fr));gap:10px;height:100%;min-height:0;margin:0;padding:0}
+#gatePicker .learnRows.gateLevelGrid{grid-template-rows:44px repeat(var(--gate-rows,3),minmax(0,1fr))}
+#gatePicker .rowBtn{grid-column:span 2;height:100%;min-height:0;margin:0;padding:7px 10px;gap:9px;border-width:2px;border-bottom-width:4px;border-radius:16px;align-items:center}
+#gatePicker .rowBtn.gateLevelBack{grid-column:1/-1;justify-content:center;min-height:44px}
+#gatePicker .gateLastSingle .rowBtn:last-child:not(.gateLevelBack){grid-column:var(--gate-columns)/span 2}
+#gatePicker .rowBtn i{font-size:var(--gate-icon-size,32px);width:1.15em;height:1.15em;min-width:0;flex-shrink:0}
+#gatePicker .rowBtn.gateLevelBack i{font-size:18px}
+#gatePicker .rowBtn.gateLevelBack b{font-size:16px}
+#gatePicker .rowBtn.gateLevelBack small{display:none}
+#gatePicker .rowBtn span:last-child{min-width:0}
+#gatePicker .rowBtn b{font-size:var(--gate-title-size,18px);line-height:1.15}
+#gatePicker .rowBtn small{font-size:var(--gate-copy-size,12px);line-height:1.25}
+#gatePicker .gateTileGrid .rowBtn:not(.gateLevelBack){flex-direction:column;justify-content:center;text-align:center}
+#gateRoomWrap{flex:1;min-height:0;width:100%;height:100%}
+#gateRoomWrap .gateTopRow{height:44px;min-height:44px;margin:0 0 8px}
+#gateRoomWrap .gateTopRow button{min-height:44px}
+#gateRoom{display:flex;flex-direction:column;gap:8px;height:calc(100% - 52px);min-height:0}
+#gateRoom .gateProgress{flex:none;margin:0;font-size:12px}
+#gateRoom .gateTip{flex:none;margin:0;padding:8px 10px;font-size:var(--gate-tip-size,15px);line-height:1.3}
+#gateRoom .gateChoices{flex:1;min-height:0;margin:0;gap:8px;grid-template-rows:repeat(2,minmax(0,1fr))}
+#gateRoom .gateChoicesTwo{flex:none;height:var(--gate-answer-height,110px);grid-template-rows:minmax(0,1fr)}
+#gateRoom .gateChoiceBtn{min-height:0;height:100%;padding:5px 8px;gap:5px;font-size:var(--gate-choice-size,16px);line-height:1.15}
+#gateRoom .gateChoiceBtn .gateEmoji{width:var(--gate-emoji-size,54px);height:var(--gate-emoji-size,54px);font-size:var(--gate-emoji-size,54px);line-height:1;flex:none}
+#gateRoom .gateChoiceBtn .gateEmoji svg{width:78%;height:78%}
+#gateRoom .gateDiagram{flex:1;min-height:50px;max-height:none;margin:0;padding:9px 12px;line-height:1.4;overflow:auto}
+#gateRoom #gateFeedback{flex:none;min-height:24px;margin:0;font-size:13px}
+#gateRoom #gateFeedback:is(.gateFeedback-ok,.gateFeedback-bad){padding:6px 9px;font-size:14px}
+#gateRoom #gateNextBtn{min-height:44px}
+#gateRoom .gateWin{flex:1;display:flex;flex-direction:column;justify-content:center}
+#gatePanel.gateCompact #gateRoom{gap:4px}
+#gatePanel.gateCompact .gateProgress{font-size:10px;letter-spacing:.3px}
+#gatePanel.gateCompact .gateTip{padding:6px 8px;line-height:1.2}
+#gatePanel.gateCompact #gateFeedback{min-height:18px;font-size:11px}
+#gatePanel.gateCompact .gateDiagram{padding-top:6px;padding-bottom:6px}
+
+/* Standalone touch games follow the same portrait presentation as the main app. */
+html.portraitGame{width:var(--game-physical-width,100%);height:var(--game-physical-height,100dvh);overflow-x:hidden}
+html.portraitGame:is(.lockRotateCW,.lockRotateCCW){position:fixed;width:var(--game-logical-width);height:var(--game-logical-height);transform-origin:top left}
+html.portraitGame.lockRotateCW{left:var(--game-physical-width);top:0;transform:rotate(90deg)}
+html.portraitGame.lockRotateCCW{left:0;top:var(--game-physical-height);transform:rotate(-90deg)}
+html.portraitGame body{min-height:100%}
+html.tttViewport,html.tttViewport body{overflow:hidden}
+html.tttViewport body{display:flex;flex-direction:column;height:100%;min-height:0;width:100%}
+html.tttViewport body,html.tttViewport body *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+html.tttViewport :is(input,textarea,[contenteditable="true"]){-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
+html.tttViewport header{flex:none}
+html.tttViewport main{flex:1;min-height:0;width:min(100%,640px);margin:0 auto;padding:10px 12px 14px;gap:8px;justify-content:space-evenly}
+html.tttViewport main>*{flex:none}
+html.tttViewport .board-wrap{width:var(--ttt-board-size,180px);height:var(--ttt-board-size,180px);min-width:0;padding:7px}
+html.tttViewport .cell{font-size:clamp(20px,calc(var(--ttt-board-size,180px)/var(--n)*.55),64px)}
+html.tttViewport.gameCompact main{gap:6px;padding:8px 10px 10px}
+html.tttViewport.gameCompact .sub{display:none}
+html.tttViewport.gameCompact .sanaAvatar{width:32px;height:32px;font-size:22px}
+html.tttViewport.gameCompact .sanaBubble{padding:7px 10px;font-size:12px;min-height:0;line-height:1.3}
+html.tttViewport.gameCompact .sanaState{font-size:13px}
+html.portraitGame:is(.lockRotateCW,.lockRotateCCW) dialog{position:fixed;inset:auto;margin:0;left:calc(var(--game-physical-width)/2);top:calc(var(--game-physical-height)/2);width:calc(var(--game-logical-width) - 24px);max-width:480px;max-height:min(calc(var(--game-logical-height) - 28px),620px);transform-origin:0 0}
+html.portraitGame.lockRotateCW dialog{transform:rotate(90deg) translate(-50%,-50%)}
+html.portraitGame.lockRotateCCW dialog{transform:rotate(-90deg) translate(-50%,-50%)}
