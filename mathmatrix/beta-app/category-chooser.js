@@ -255,8 +255,7 @@
       try {
         var saved = JSON.parse(sessionStorage.getItem(returnKey) || 'null');
         if (!saved) return;
-        if (consume || Date.now() - saved.time > 1800000) sessionStorage.removeItem(returnKey);
-        if (Date.now() - saved.time > 1800000) return;
+        if (consume) sessionStorage.removeItem(returnKey);
         var entry = entries.find(function (item) { return item.name === saved.name; });
         if (!entry) return;
         lastCategory = entry.button;
