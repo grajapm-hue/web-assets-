@@ -1,6 +1,6 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V217 fitted Gate Logic and shared portrait games.
+// MathMatrix Pro++ Beta Service Worker — Beta V218 portrait desktop frame for Tic-Tac-Toe.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v226-game-fit';
+const CACHE_VERSION = 'mathmatrix-beta-v227-desktop-frame';
 
 const ASSETS = [
   './index.html',

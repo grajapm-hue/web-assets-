@@ -56,6 +56,11 @@ html.tttViewport.gameCompact .sub{display:none}
 html.tttViewport.gameCompact .sanaAvatar{width:32px;height:32px;font-size:22px}
 html.tttViewport.gameCompact .sanaBubble{padding:7px 10px;font-size:12px;min-height:0;line-height:1.3}
 html.tttViewport.gameCompact .sanaState{font-size:13px}
+/* Match the other desktop puzzles: a portrait panel with black side margins. */
+@media (min-width:540px) and (hover:hover) and (pointer:fine){
+  html.tttViewport:not(.lockRotateCW):not(.lockRotateCCW){background:#000}
+  html.tttViewport:not(.lockRotateCW):not(.lockRotateCCW) body{width:min(100%,480px);max-width:480px;margin:0 auto}
+}
 html.portraitGame:is(.lockRotateCW,.lockRotateCCW) dialog{position:fixed;inset:auto;margin:0;left:calc(var(--game-physical-width)/2);top:calc(var(--game-physical-height)/2);width:calc(var(--game-logical-width) - 24px);max-width:480px;max-height:min(calc(var(--game-logical-height) - 28px),620px);transform-origin:0 0}
 html.portraitGame.lockRotateCW dialog{transform:rotate(90deg) translate(-50%,-50%)}
 html.portraitGame.lockRotateCCW dialog{transform:rotate(-90deg) translate(-50%,-50%)}
