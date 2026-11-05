@@ -5,7 +5,9 @@
     var bar = document.querySelector('.difficultyBar');
     if (!bar) return null;
     var groups = Array.from(bar.querySelectorAll('.modeGroup'));
-    var current = null, lastCategory = null;
+    var current = null, lastCategory = null, directReturn = false;
+    var entries = [];
+    var returnKey = 'mathmatrix-book-return:' + location.pathname.replace(/[^/]*$/, '');
     var palette = [
       ['#D9EECF', '#6A9757'], ['#FFE6A0', '#B69033'],
       ['#CDE9F1', '#639DB0'], ['#D9EBD7', '#6C9868'],
@@ -20,6 +22,48 @@
       'SaNa Treasure Hunt · Interactive': 'SaNa Treasure Hunt',
       'Pallanguzhi': 'Pallanguzhi'
     };
+    var bookNotes = {
+      'Add Magic': 'Make every row, column and diagonal add up equally.',
+      'SaNaMaze': 'Choose a maze or an illustrated treasure adventure.',
+      'Binary Magic': 'Choose a range, then let the cards guess your number.',
+      'Slide Magic': 'Move one tile at a time to put everything in order.',
+      'Sudoku': 'Choose a board and difficulty, then fill the missing numbers.',
+      'Pallanguzhi': 'Explore the traditional seed-sowing game.',
+      'Thayam': 'Choose a board, roll the dice and race to the centre.'
+    };
+    function choiceNote(choice) {
+      var size = choice.dataset.size;
+      if (/^\d+x\d+$/.test(size || '')) {
+        var side = Number(size.split('x')[0]);
+        return 'Fill 1–' + side * side + '.';
+      }
+      var notes = {
+        tunnels: 'Trace the tunnel that reaches the finish.',
+        'cave-treasure': 'Find shields and treasure, then escape.',
+        'sana-treasure-hunt': 'Follow an illustrated treasure adventure.',
+        binary: 'Think of a number; the cards will guess it.',
+        binary2: 'Explore the same trick with a wider range.'
+      };
+      if (notes[size]) return notes[size];
+      if (choice.dataset.slideLevel) return {
+        fifteen: 'Slide the numbered tiles into order.',
+        az: 'Arrange the alphabet from A to Z.',
+        azn: 'Put letters and numbers back in order.'
+      }[choice.dataset.slideLevel];
+      if (choice.dataset.sudLevel) return {
+        mini: 'Use 1–3; no repeats.',
+        mid4: 'Use 1–4; no repeats.',
+        medium: 'Boxes and diagonals.',
+        hard: 'Fewer starting clues.',
+        master: 'The fewest clues.'
+      }[choice.dataset.sudLevel];
+      if (choice.dataset.palLevel) return 'Sow seeds and collect cups of four.';
+      if (choice.dataset.pal4Level) return 'Explore the four-player sample board.';
+      if (choice.dataset.thayamLevel) return choice.dataset.thayamLevel === '5x5'
+        ? 'Roll, enter the board and race to the centre.'
+        : 'Capture an opponent before turning inward.';
+      return choice.querySelector('.lvMeta')?.textContent.trim() || 'Choose this puzzle to start playing.';
+    }
     function element(tag, className, text) {
       var node = document.createElement(tag);
       node.className = className;
@@ -41,30 +85,57 @@
       var node = document.getElementById(id);
       if (node) footer.appendChild(node);
     });
-    var version = element('span', 'categoryVersion', 'Beta V.215');
+    var version = element('span', 'categoryVersion', 'Beta V.216');
     footer.appendChild(version);
     groups.forEach(function (group, index) {
       var name = group.querySelector('.modeHead b').textContent.trim();
       var icon = group.querySelector('.mIco');
-      var count = group.querySelectorAll('.toggleBtn').length;
+      var choices = Array.from(group.querySelectorAll('.toggleBtn'));
+      var count = choices.length;
       var button = element('button', 'categoryCard');
       button.type = 'button';
       button.dataset.category = name;
-      button.setAttribute('aria-label', name + ', ' + count + (count === 1 ? ' puzzle' : ' puzzles'));
-      button.setAttribute('aria-controls', panel.id);
-      button.setAttribute('aria-expanded', 'false');
+      button.setAttribute('aria-label', name + (count === 1 ? ', play puzzle' : ', ' + count + ' puzzles'));
+      if (count > 1) {
+        button.setAttribute('aria-controls', panel.id);
+        button.setAttribute('aria-expanded', 'false');
+      }
       button.style.setProperty('--category-fill', palette[index % palette.length][0]);
       button.style.setProperty('--category-edge', palette[index % palette.length][1]);
       var picture = element('span', 'categoryPicture', icon ? icon.textContent.trim() : '🎲');
       picture.setAttribute('aria-hidden', 'true');
       var text = element('span', 'categoryCardCopy');
       text.append(element('span', 'categoryName', labels[name] || name));
-      text.append(element('span', 'categoryCount', name.indexOf('Interactive') !== -1 ? 'Interactive story' : count + (count === 1 ? ' puzzle' : ' puzzles')));
+      text.append(element('span', 'categoryCount', count === 1 ? 'Play puzzle' : count + ' puzzles'));
       button.append(picture, text);
+      var entry = { group: group, button: button, name: name, choices: choices, lastChoice: null };
+      entries.push(entry);
+      choices.forEach(function (choice) {
+        choice.classList.add('bookChoice');
+        if (choice.dataset.sudLevel) {
+          var sudokuNames = { mini: ['3×3', 'Easy'], mid4: ['4×4', 'Intermediate'],
+            medium: ['9×9', 'Medium'], hard: ['9×9', 'Hard'], master: ['9×9', 'Master'] };
+          var sudokuName = sudokuNames[choice.dataset.sudLevel];
+          choice.querySelector('.lvName').textContent = sudokuName[0];
+          choice.querySelector('.lvDiff').textContent = sudokuName[1];
+        }
+        choice.querySelector('.lvText').appendChild(element('span', 'bookNote', choiceNote(choice)));
+        choice.addEventListener('click', function () {
+          entry.lastChoice = choice;
+          if (['criss-cross', 'tic-tac-toe', 'tunnels', 'cave-treasure', 'sana-treasure-hunt'].indexOf(choice.dataset.size) !== -1) {
+            try {
+              sessionStorage.setItem(returnKey, JSON.stringify({ name: name, direct: count === 1,
+                choice: choices.indexOf(choice), time: Date.now() }));
+            } catch (e) {}
+          }
+        }, true);
+      });
       button.addEventListener('click', function () {
-        current = { group: group, button: button, name: name };
         lastCategory = button;
-        render(true);
+        directReturn = count === 1;
+        current = count === 1 ? null : entry;
+        render(count > 1);
+        if (count === 1) choices[0].click();
       });
       grid.appendChild(button);
       panel.appendChild(group);
@@ -75,6 +146,8 @@
 
     function fit() {
       if (options.screen() !== 'scHome') return;
+      bar.classList.toggle('categoryShort', bar.clientHeight < 350);
+      if (current) { fitChoices(); return; }
       var columns = grid.clientWidth >= 820 ? 4 : grid.clientWidth >= 500 ? 3 : 2;
       grid.style.setProperty('--category-columns', columns);
       grid.style.setProperty('--category-rows', Math.ceil(groups.length / columns));
@@ -98,6 +171,52 @@
         }
       });
     }
+    function fitChoices() {
+      var list = current.group.querySelector('.toggleSwitch');
+      var count = current.choices.length;
+      panel.classList.remove('bookScroll');
+      var width = panel.clientWidth, height = panel.clientHeight, columns = 1, score = Infinity;
+      for (var candidate = 1; candidate <= count; candidate++) {
+        var rows = Math.ceil(count / candidate);
+        var cardWidth = (width - (candidate - 1) * 10) / candidate;
+        var cardHeight = (height - (rows - 1) * 10) / rows;
+        if (cardWidth < 138 || cardHeight < 72) continue;
+        var value = Math.abs(Math.log((cardWidth / cardHeight) / 1.7)) + (candidate * rows - count) * 0.25;
+        if (value < score) { score = value; columns = candidate; }
+      }
+      var rowCount = Math.ceil(count / columns);
+      list.style.setProperty('--book-columns', columns);
+      list.style.setProperty('--book-rows', rowCount);
+      list.classList.toggle('bookOddPair', columns === 2 && count % 2 === 1);
+      var minimum = 0;
+      current.choices.forEach(function (choice) {
+        var box = choice.getBoundingClientRect();
+        choice.classList.toggle('bookStack', box.height > box.width * 1.15);
+        choice.classList.toggle('bookDense', box.height < 125);
+        var titleSize = Math.max(15, Math.min(25, box.height * 0.14));
+        var iconSize = Math.max(28, Math.min(box.width < 220 ? 44 : 68, box.height * 0.32));
+        var scale = 1;
+        function size() {
+          choice.style.setProperty('--book-title', Math.max(14, titleSize * scale) + 'px');
+          choice.style.setProperty('--book-note', Math.max(11, Math.min(box.width < 220 ? 14 : 16, titleSize * 0.65) * scale) + 'px');
+          choice.style.setProperty('--book-diff', Math.max(11, Math.min(box.width < 220 ? 12 : 14, titleSize * 0.62) * scale) + 'px');
+          choice.style.setProperty('--book-icon', Math.max(26, iconSize * scale) + 'px');
+        }
+        size();
+        var text = choice.querySelector('.lvText');
+        var picture = choice.querySelector('.lvGrid,.lvGlyph');
+        var style = getComputedStyle(choice);
+        var padding = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
+        var border = parseFloat(style.borderTopWidth) + parseFloat(style.borderBottomWidth);
+        function needed() { return text.offsetHeight + (choice.classList.contains('bookStack') ? picture.offsetHeight + 12 : 0); }
+        while (needed() > choice.clientHeight - padding && scale > 0.69) { scale -= 0.05; size(); }
+        minimum = Math.max(minimum, needed() + padding + border);
+      });
+      if (minimum > (height - (rowCount - 1) * 10) / rowCount + 1) {
+        list.style.setProperty('--book-min-row', Math.ceil(minimum) + 'px');
+        panel.classList.add('bookScroll');
+      }
+    }
     function render(focus) {
       var onHome = options.screen() === 'scHome';
       document.body.classList.toggle('categoryHome', onHome);
@@ -106,10 +225,10 @@
       grid.hidden = !!current;
       panel.hidden = !current;
       title.textContent = current ? (labels[current.name] || current.name) : 'Choose a puzzle';
-      hint.textContent = current ? 'Choose a puzzle below.' : 'All ' + groups.length + ' categories — pick one to explore.';
+      hint.textContent = current ? bookNotes[current.name] || 'Choose a puzzle below.' : 'All ' + groups.length + ' puzzle books — choose one to play.';
       groups.forEach(function (group) { group.hidden = !current || current.group !== group; });
       Array.from(grid.children).forEach(function (button) {
-        button.setAttribute('aria-expanded', String(!!current && current.button === button));
+        if (button.hasAttribute('aria-expanded')) button.setAttribute('aria-expanded', String(!!current && current.button === button));
       });
       var nav = document.getElementById('navBack');
       if (nav) {
@@ -127,9 +246,26 @@
     }
     function showCategories(focus) {
       current = null;
+      directReturn = false;
       render(false);
       if (focus && lastCategory) lastCategory.focus({ preventScroll: true });
-      options.announce('Choose a category, then pick the puzzle you want to play.');
+      options.announce('Choose a puzzle book. Single puzzles open straight away.');
+    }
+    function restoreReturn(consume) {
+      try {
+        var saved = JSON.parse(sessionStorage.getItem(returnKey) || 'null');
+        if (!saved) return;
+        if (consume || Date.now() - saved.time > 1800000) sessionStorage.removeItem(returnKey);
+        if (Date.now() - saved.time > 1800000) return;
+        var entry = entries.find(function (item) { return item.name === saved.name; });
+        if (!entry) return;
+        lastCategory = entry.button;
+        current = saved.direct ? null : entry;
+        entry.lastChoice = entry.choices[saved.choice] || entry.choices[0];
+        directReturn = false;
+        render(false);
+        requestAnimationFrame(function () { (saved.direct ? entry.button : entry.lastChoice).focus({ preventScroll: true }); });
+      } catch (e) {}
     }
     document.getElementById('tab-scHome').addEventListener('click', function () { showCategories(false); });
     bar.addEventListener('keydown', function (event) {
@@ -139,12 +275,23 @@
     });
     if (window.ResizeObserver) new ResizeObserver(fit).observe(bar);
     window.addEventListener('resize', fit);
+    window.addEventListener('pageshow', function () { setTimeout(function () { restoreReturn(true); }, 0); });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
     render(false);
+    restoreReturn(false);
     return {
       fit: fit,
       isOpen: function () { return !!current; },
       showCategories: showCategories,
-      screenChanged: function () { render(false); }
+      screenChanged: function () {
+        var returned = options.screen() === 'scHome' && !document.body.classList.contains('categoryHome');
+        render(false);
+        if (returned) {
+          var target = current ? current.lastChoice : directReturn ? lastCategory : null;
+          if (target) target.focus({ preventScroll: true });
+          directReturn = false;
+        }
+      }
     };
   };
 })();

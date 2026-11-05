@@ -1,4 +1,4 @@
-/* V215: a fitted category page, followed by the original puzzle choices. */
+/* V216: direct single puzzles and fitted, described choices in every book. */
 .categoryChooser.difficultyBar {
   display:flex; flex-direction:column; justify-content:flex-start; gap:7px;
   overflow:hidden; --lvScale:1;
@@ -100,3 +100,53 @@
 .categoryHeading { justify-content:center; text-align:center; padding:3px 12px !important; }
 .categoryHeadingCopy { width:100%; }
 .categoryTitle { padding:1px 4px; overflow-wrap:anywhere; }
+
+/* Each book shares its available space equally between its puzzle choices. */
+.categoryOptions { overflow:hidden; padding:2px 1px 5px; box-sizing:border-box; }
+.categoryOptions > .modeGroup > :not(.toggleSwitch) { display:none !important; }
+.categoryOptions .toggleSwitch {
+  flex:1 1 0; min-height:0; width:100%; margin:0 !important; gap:10px;
+  grid-template-columns:repeat(var(--book-columns,1),minmax(0,1fr));
+  grid-template-rows:repeat(var(--book-rows,2),minmax(0,1fr));
+  align-content:stretch;
+}
+.categoryOptions .bookChoice.lvCard {
+  display:flex !important; align-items:center; justify-content:center;
+  grid-column:auto !important; min-width:0; min-height:0; height:100% !important;
+  padding:10px 12px !important; gap:12px !important; box-sizing:border-box;
+  border:2px solid var(--c2) !important; border-bottom-width:5px !important;
+  border-radius:17px !important; background:#FFF8EC !important; color:#33220F !important;
+  box-shadow:none !important; overflow:hidden;
+}
+.categoryOptions .bookChoice.lvCard::before { display:none !important; }
+.categoryOptions .bookChoice.lvCard:focus-visible { outline:3px solid #164D66; outline-offset:-5px; }
+.categoryOptions .bookChoice .lvText { flex:1; min-width:0; max-width:560px; }
+.categoryOptions .bookChoice.lvCard .lvName {
+  color:#33220F !important; font-size:var(--book-title,20px) !important;
+  line-height:1.2 !important; overflow-wrap:anywhere;
+}
+.categoryOptions .bookChoice.lvCard .lvDiff {
+  display:block; color:#73502E !important; margin-top:5px;
+  font-size:var(--book-diff,13px) !important; line-height:1.3 !important;
+}
+.categoryOptions .bookNote {
+  display:block; margin-top:7px; color:#5E523F; font-size:var(--book-note,14px);
+  font-weight:600; line-height:1.35; overflow-wrap:anywhere;
+}
+.categoryOptions .bookChoice .lvGrid,.categoryOptions .bookChoice .lvGlyph {
+  flex:none; width:var(--book-icon,44px) !important; height:var(--book-icon,44px) !important;
+  font-size:calc(var(--book-icon,44px) * .82) !important;
+}
+.categoryOptions .bookChoice.bookStack { flex-direction:column; }
+.categoryOptions .bookChoice.bookStack .lvText { flex:none; width:100%; text-align:center; }
+.categoryOptions .bookChoice.bookDense { padding:5px 8px !important; gap:8px !important; }
+.categoryOptions .bookChoice.bookDense .lvDiff { margin-top:2px; }
+.categoryOptions .bookChoice.bookDense .bookNote { margin-top:3px; }
+.categoryOptions .toggleSwitch.bookOddPair { grid-template-columns:repeat(4,minmax(0,1fr)); }
+.categoryOptions .toggleSwitch.bookOddPair .bookChoice { grid-column:span 2 !important; }
+.categoryOptions .toggleSwitch.bookOddPair .bookChoice:last-child { grid-column:2 / span 2 !important; }
+.categoryOptions.bookScroll { overflow:auto; }
+.categoryOptions.bookScroll .toggleSwitch {
+  flex:none; grid-template-rows:repeat(var(--book-rows),minmax(var(--book-min-row),1fr));
+  min-height:calc(var(--book-rows) * var(--book-min-row) + (var(--book-rows) - 1) * 10px);
+}

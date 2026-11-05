@@ -1,6 +1,6 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V212 category chooser.
+// MathMatrix Pro++ Beta Service Worker — Beta V216 direct puzzle books and fitted choices.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v224-sound-centered';
+const CACHE_VERSION = 'mathmatrix-beta-v225-book-layout';
 
 const ASSETS = [
   './index.html',
