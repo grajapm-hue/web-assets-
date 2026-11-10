@@ -1,6 +1,6 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V218 install-version metadata refresh.
+// MathMatrix Pro++ Beta Service Worker — Beta V219 free orientation (portrait + landscape).
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v218-restored-20261110';
+const CACHE_VERSION = 'mathmatrix-beta-v228-free-orientation';
 
 const ASSETS = [
   './index.html',

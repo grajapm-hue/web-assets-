@@ -64,3 +64,17 @@ html.tttViewport.gameCompact .sanaState{font-size:13px}
 html.portraitGame:is(.lockRotateCW,.lockRotateCCW) dialog{position:fixed;inset:auto;margin:0;left:calc(var(--game-physical-width)/2);top:calc(var(--game-physical-height)/2);width:calc(var(--game-logical-width) - 24px);max-width:480px;max-height:min(calc(var(--game-logical-height) - 28px),620px);transform-origin:0 0}
 html.portraitGame.lockRotateCW dialog{transform:rotate(90deg) translate(-50%,-50%)}
 html.portraitGame.lockRotateCCW dialog{transform:rotate(-90deg) translate(-50%,-50%)}
+
+/* v219 · free orientation: Tic-Tac-Toe sideways = controls on the left, board on the right */
+html.lsLayout.tttViewport{background:var(--bg,#d8b98c)}
+html.lsLayout.tttViewport body{width:100% !important;max-width:none !important;margin:0 !important}
+html.lsLayout.tttViewport main{width:100% !important;max-width:none !important;margin:0 !important;display:grid;
+  grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto auto auto auto;column-gap:18px;row-gap:6px;
+  align-content:center;align-items:center;justify-items:center;padding:6px max(14px,env(safe-area-inset-right)) 8px max(14px,env(safe-area-inset-left))}
+html.lsLayout.tttViewport main>.sanaRow{grid-column:1;grid-row:1}
+html.lsLayout.tttViewport main>.sizebar{grid-column:1;grid-row:2}
+html.lsLayout.tttViewport main>.scorebar{grid-column:1;grid-row:3}
+html.lsLayout.tttViewport main>.actions{grid-column:1;grid-row:4}
+html.lsLayout.tttViewport main>.hint{grid-column:1;grid-row:5}
+html.lsLayout.tttViewport main>.board-wrap{grid-column:2;grid-row:1 / -1}
+html.lsLayout.tttViewport header{padding-top:max(4px,env(safe-area-inset-top));padding-bottom:4px}

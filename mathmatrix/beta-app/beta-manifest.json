@@ -1,12 +1,12 @@
 {
   "id": "./beta-app/beta.html",
-  "name": "MathMatrix Pro++ Beta V218 Unified",
-  "short_name": "Beta V218",
-  "description": "MathMatrix Pro++ Beta V218 Unified preview — new puzzles and features being tested before they ship to the real app.",
+  "name": "MathMatrix Pro++ Beta V219 Unified",
+  "short_name": "Beta V219",
+  "description": "MathMatrix Pro++ Beta V219 Unified preview — new puzzles and features being tested before they ship to the real app.",
   "start_url": "./beta.html",
   "scope": "./",
   "display": "standalone",
-  "orientation": "portrait",
+  "orientation": "any",
   "background_color": "#1B1442",
   "theme_color": "#8b5cf6",
   "icons": [

@@ -10,21 +10,19 @@
     requestAnimationFrame(() => { queued = false; fitGate(); fitTic(); });
   }
   function portrait() {
-    if (!root.classList.contains('portraitGame')) return;
     const viewport = window.visualViewport;
     const width = viewport ? viewport.width : innerWidth;
     const height = viewport ? viewport.height : innerHeight;
     const touch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
-    const rotated = touch && width > height;
-    const angle = ((screen.orientation ? screen.orientation.angle : window.orientation || 0) + 360) % 360;
-    const logicalWidth = rotated ? height : width;
-    const logicalHeight = rotated ? width : height;
+    /* v219: free orientation - the page is never rotated; the real width/height are used. */
+    const logicalWidth = width;
+    const logicalHeight = height;
     root.style.setProperty('--game-physical-width', width + 'px');
     root.style.setProperty('--game-physical-height', height + 'px');
     root.style.setProperty('--game-logical-width', logicalWidth + 'px');
     root.style.setProperty('--game-logical-height', logicalHeight + 'px');
-    root.classList.toggle('lockRotateCCW', rotated && angle === 90);
-    root.classList.toggle('lockRotateCW', rotated && angle !== 90);
+    root.classList.remove('lockRotateCCW', 'lockRotateCW');
+    root.classList.toggle('lsLayout', touch && width > height);
     root.classList.toggle('gameCompact', logicalHeight < 700);
     window.dispatchEvent(new Event('mathmatrixviewportchange'));
     schedule();
@@ -35,6 +33,14 @@
     const board = document.querySelector('.board-wrap');
     if (!main || !board) return;
     const style = getComputedStyle(main);
+    if (root.classList.contains('lsLayout')) {
+      /* v219 landscape: the board sits beside the controls, so only its own box limits it */
+      const padY = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
+      const padX = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+      const side = Math.min(main.clientHeight - padY, (main.clientWidth - padX) * .52, 560);
+      root.style.setProperty('--ttt-board-size', Math.floor(Math.max(120, side)) + 'px');
+      return;
+    }
     const children = Array.from(main.children);
     const occupied = children.filter(el => el !== board).reduce((sum, el) => {
       const css = getComputedStyle(el);

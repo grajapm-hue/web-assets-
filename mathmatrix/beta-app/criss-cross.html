@@ -10,13 +10,8 @@
   var touch=('ontouchstart' in window)||(navigator.maxTouchPoints>0);
   if(!touch)return;
   root.classList.add('touchViewport');
-  var landscape=window.innerWidth>window.innerHeight;
-  if(!landscape)return;
-  var angle=(screen.orientation&&typeof screen.orientation.angle==='number')
-    ? screen.orientation.angle
-    : (typeof window.orientation==='number'?window.orientation:90);
-  angle=((angle%360)+360)%360;
-  root.classList.add(angle===90?'lockRotateCCW':'lockRotateCW');
+  /* v219: free orientation - the page is no longer rotated back to portrait. */
+  if(window.innerWidth>window.innerHeight) root.classList.add('lsLayout');
 })();
 </script>
 <style>
@@ -246,12 +241,34 @@ html.lockRotateCW body, html.lockRotateCCW body{
   .ccmDock.hiddenDock{transform:translate(-50%,110%);}
   .ccmShowKeyBtn{right:max(14px,calc((100vw - 480px)/2 + 14px));}
 }
+
+/* v219 · free orientation: sideways = board on the left, message + levels + timer + keypad on the right */
+html.lsLayout body{width:100% !important;max-width:none !important;margin:0 !important;height:100dvh;min-height:0;overflow:hidden;padding-bottom:0 !important;
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(290px,42%);grid-template-rows:auto auto auto auto minmax(0,1fr);column-gap:12px;background:var(--bg) !important}
+html.lsLayout .ccmBar{grid-column:1 / -1;grid-row:1;max-width:none !important;margin:0 !important;min-height:calc(46px + var(--safeTop,0px))}
+html.lsLayout .sanaRow{grid-column:2;grid-row:2;max-width:none !important;margin:6px calc(10px + var(--safeRight,0px)) 4px 0 !important}
+html.lsLayout .ccmLevels{grid-column:2;grid-row:3;margin:2px calc(10px + var(--safeRight,0px)) 4px 0 !important;gap:5px}
+html.lsLayout .ccTimerRow{grid-column:2;grid-row:4;margin:0 calc(10px + var(--safeRight,0px)) 4px 0 !important}
+html.lsLayout .ccmWrap{grid-column:1;grid-row:2 / -1;max-width:none !important;margin:0 !important;padding:0 8px calc(6px + var(--safeLeft,0px)) calc(8px + var(--safeLeft,0px)) !important;justify-content:center;min-height:0}
+html.lsLayout .ccmGrid{--u:clamp(28px,calc((100dvh - 144px) / 6.5),68px);
+  grid-template-columns:var(--u) calc(var(--u)*.46) var(--u) calc(var(--u)*.46) var(--u) calc(var(--u)*.95) !important;
+  grid-auto-rows:var(--u) !important;gap:calc(var(--u)*.09) !important;margin:2px auto 8px !important}
+html.lsLayout .ccmDock{position:static !important;grid-column:2;grid-row:5;align-self:start;transform:none !important;width:auto !important;left:auto;right:auto;
+  margin:0 calc(10px + var(--safeRight,0px)) 0 0;border:3px solid rgba(0,0,0,.12);border-radius:14px;box-shadow:none;padding:5px 5px 6px}
+html.lsLayout .ccmDock.hiddenDock{display:none}
+html.lsLayout .ccmDockHead,html.lsLayout .ccmKeysRow{max-width:none}
+html.lsLayout .ccmKeysRow .key{height:clamp(28px,7.4vh,50px) !important;font-size:clamp(15px,3.8vh,22px) !important}
+html.lsLayout .ccmKeysRow.third .key{height:clamp(26px,6.6vh,44px) !important;font-size:13px !important}
+html.lsLayout .ccmBackdrop,html.lsLayout .ccmShowKeyBtn{display:none !important}
+html.lsLayout .ccmLevels{flex-wrap:nowrap !important}
+html.lsLayout .ccmLevelBtn{font-size:clamp(11px,3.3vh,14px) !important;padding:5px 8px !important;white-space:nowrap}
+html.lsLayout .sanaBubble{font-size:clamp(11.5px,3.4vh,14px) !important;padding:6px 10px !important;line-height:1.25 !important}
+html.lsLayout .sanaAvatar{width:34px !important;height:34px !important;font-size:20px !important}
+html.lsLayout .ccmDockHead .ccmToggle{padding:3px 6px !important;font-size:12px !important}
+html.lsLayout .ccmKeysRow{gap:4px !important}
+html.lsLayout .ccmKeysRow.second,html.lsLayout .ccmKeysRow.third{margin-top:4px !important}
 </style></head><body>
-<div id="portraitLock" role="alert">
-  <div class="rotIcon">📱</div>
-  <b>Turn your phone back to portrait</b>
-  <span>The board and the keypad need to be on screen together — rotate back to keep playing.</span>
-</div>
+
 <div class="ccmBar"><button class="ccmBack" id="ccmBack" type="button" aria-label="Back to puzzles">←</button><div class="ccmBarTitle" aria-label="Criss-Cross">Criss-Cross</div><div class="ccmTopActions"><button class="ccmTopBtn logic" id="logicBtn"><i>💡</i><span>LOGIC</span></button><button class="ccmTopBtn watchTop" id="watchTopBtn"><i>👁️</i><span>WATCH</span></button><button class="ccmTopBtn soundTop" id="ccmSoundBtn"><i>🔊</i><span>SOUND</span></button></div></div>
 <div class="sanaRow"><div><div class="sanaAvatar">🐒</div><div class="sanaName">SaNa</div></div><div class="sanaBubble playing" id="sanaBubble"><span class="levelTextEasy">Easy 1-9</span><span class="sanaOps"><span class="op-plus">+</span> <span class="op-minus">-</span></span> — Use 1-9. Tap a cell — take your time! 0/9</div></div>
 <div class="ccmLevels" id="ccmLevels">
@@ -849,15 +866,8 @@ function checkPortraitLock(){
   if (isRotatable()) root.classList.add('touchViewport');
   else root.classList.remove('touchViewport');
   root.classList.remove('lockRotateCW', 'lockRotateCCW');
-  if (!isRotatable()) return;
-  var landscape = window.innerWidth > window.innerHeight;
-  if (!landscape) return;
-  var angle = (screen.orientation && typeof screen.orientation.angle === 'number')
-    ? screen.orientation.angle
-    : (typeof window.orientation === 'number' ? window.orientation : 90);
-  angle = ((angle % 360) + 360) % 360;
-  if (angle === 90) root.classList.add('lockRotateCCW');
-  else root.classList.add('lockRotateCW');
+  // v219: free orientation - just flag a sideways screen so CSS can re-lay the page out.
+  root.classList.toggle('lsLayout', isRotatable() && window.innerWidth > window.innerHeight);
 }
 window.addEventListener('resize', checkPortraitLock);
 window.addEventListener('orientationchange', function(){ setTimeout(checkPortraitLock, 250); });
