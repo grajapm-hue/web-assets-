@@ -1,6 +1,6 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V220 original colors and device orientation policy.
+// MathMatrix Pro++ Beta Service Worker — Beta V221 zoom gesture policy; device rotation unchanged.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v230-device-orientation-colors';
+const CACHE_VERSION = 'mathmatrix-beta-v231-zoom-policy';
 
 const ASSETS = [
   './index.html',
