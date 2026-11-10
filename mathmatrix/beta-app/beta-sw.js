@@ -1,6 +1,6 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V219 responsive presentation.
+// MathMatrix Pro++ Beta Service Worker — Beta V220 original colors and device orientation policy.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v229-responsive';
+const CACHE_VERSION = 'mathmatrix-beta-v230-device-orientation-colors';
 
 const ASSETS = [
   './index.html',

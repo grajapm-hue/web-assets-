@@ -301,7 +301,7 @@ async function settle(page) {
 }
 async function orientation() {
   const manifest = JSON.parse(fs.readFileSync(path.join(root, 'mathmatrix/beta-app/beta-manifest.json'), 'utf8'));
-  check('installed app permits both orientations', manifest.orientation === 'any', manifest.orientation);
+  check('installed app defers orientation to device settings', !Object.hasOwn(manifest,'orientation'), manifest.orientation);
   for (const [name,route] of routes) await test(name + ' orientation', async () => {
     const ctx = await context(); const page = await ctx.newPage(); const errors=[];
     page.on('pageerror', error => errors.push(error.message));
@@ -511,12 +511,60 @@ async function main() {
   if (section === 'offline' || section === 'all') await release();
   if (section === 'zoom') await zoom();
   if (section === 'edges') await edges();
+  if (section === 'colors' || (section === 'all' && baselineRoot)) await colors();
+  if (section === 'diagnostic') await diagnostic();
   if (section === 'errors'){
     const ctx=await context(),page=await ctx.newPage();await choose(page,'Add Magic');
     await page.setViewportSize({width:568,height:320});await settle(page);
     check('number layout no observer-loop errors',(await page.evaluate(()=>window.__mmRuntimeErrors)).length===0,await page.evaluate(()=>window.__mmRuntimeErrors));await ctx.close();
   }
-  if (!['orientation','shell','games','offline','zoom','edges','errors','all'].includes(section)) throw new Error('Unknown validation section: ' + section);
+  if (!['orientation','shell','games','offline','zoom','edges','colors','diagnostic','errors','all'].includes(section)) throw new Error('Unknown validation section: ' + section);
+}
+async function diagnostic(){
+  await test('isolated browser rotation diagnostic',async()=>{
+    assert(fs.existsSync(path.join(root,'mathmatrix-beta-rotation-check.html')),'Missing independent diagnostic page');
+    const ctx=await context(),page=await ctx.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+    await page.goto(origin+'/mathmatrix-beta-rotation-check.html');
+    assert.equal(await page.locator('#viewportShape').textContent(),'Portrait');
+    await page.setViewportSize({width:844,height:390});await settle(page);
+    assert.equal(await page.locator('#viewportShape').textContent(),'Landscape');
+    assert.equal(await page.locator('#displayMode').textContent(),'Browser');
+    const info=JSON.parse(await page.locator('#details').textContent());
+    assert.equal(info.viewport.width,844);assert(info.viewportShapeSwitchObserved);assert.equal(await page.locator('link[rel="manifest"]').count(),0);assert.deepEqual(errors,[]);
+    await page.screenshot({path:path.join(reportDir,'rotation-diagnostic.png')});
+    check('isolated browser rotation diagnostic',true);await ctx.close();
+  });
+}
+async function colors(){
+  assert(baselineRoot,'Original V218 baseline required');
+  const manifest=JSON.parse(fs.readFileSync(path.join(root,'mathmatrix/beta-app/beta-manifest.json'),'utf8'));
+  check('installation has no orientation override',!Object.hasOwn(manifest,'orientation'),manifest.orientation);
+  const ctx=await context(),page=await ctx.newPage();
+  const read=selectors=>page.locator(selectors).evaluateAll(es=>es.map(e=>{const s=getComputedStyle(e);return{selector:e.id||e.className,color:s.color,backgroundColor:s.backgroundColor,backgroundImage:s.backgroundImage};}));
+  async function capture(label){
+    const paints={};await open(page,'beta.html');await page.locator('.splash').waitFor({state:'visible'});
+    paints.welcome=await read('.splash,.splashName,.splashTag,.splashCaution,.splashPlay');
+    await page.locator('.splashPlay').click();await page.locator('.splash').waitFor({state:'hidden'});await page.locator('#tab-scHome').click();
+    paints.library=await read('.appShell,.appBar,.appBarTitle,.sanaBub,.tabBar,.categoryCard');
+    await page.screenshot({path:path.join(reportDir,label+'-library.png')});
+    await page.locator('.categoryCard[data-category="Add Magic"]').click();
+    paints.choices=await read('.categoryOptions .bookChoice:visible,.categoryOptions .bookChoice:visible .lvName');
+    await page.locator('.bookChoice[data-size="3x3"]').click();await settle(page);
+    paints.play=await read('.appShell,.appBar,.kp,#targetPill,#board input');
+    await page.screenshot({path:path.join(reportDir,label+'-play.png')});
+    for(const [name,route]of routes.filter(([n])=>!['app','index'].includes(n))){
+      await open(page,route);paints[name]=await read('body,.bar,.ccmBar,body>header,#board .cell,.key,.pad,button.tone');
+      paints[name+' browser theme']=[{color:await page.locator('meta[name="theme-color"]').count()?await page.locator('meta[name="theme-color"]').getAttribute('content'):'',backgroundColor:'',backgroundImage:''}];
+    }
+    return paints;
+  }
+  servingRoot=baselineRoot;const before=await capture('v218');servingRoot=root;const current=await capture('current');
+  for(const name of Object.keys(before)){
+    // Class names and dynamic labels can change; the original paint is the contract.
+    const paint=rows=>rows.map(({color,backgroundColor,backgroundImage})=>({color,backgroundColor,backgroundImage}));
+    check(name+' restores V218 colors',JSON.stringify(paint(before[name]))===JSON.stringify(paint(current[name])),{before:paint(before[name]),current:paint(current[name])});
+  }
+  await ctx.close();servingRoot=root;
 }
 async function release(){
   const dir=path.join(root,'mathmatrix/beta-app'),sw=fs.readFileSync(path.join(dir,'beta-sw.js'),'utf8');
@@ -524,11 +572,11 @@ async function release(){
   const assets=Array.from(sw.match(/const ASSETS = \[([\s\S]*?)\];/)[1].matchAll(/'([^']+)'/g),x=>x[1]);
   await test('Beta release metadata and precache',async()=>{
     const manifest=JSON.parse(fs.readFileSync(path.join(dir,'beta-manifest.json'),'utf8'));
-    assert.equal(manifest.name,'MathMatrix Beta');assert.equal(manifest.short_name,'MathMatrix Beta');assert.equal(manifest.orientation,'any');
-    assert(cacheVersion.includes('v229'));assert(assets.includes('./responsive-ui.css'));
+    assert.equal(manifest.name,'MathMatrix Beta');assert.equal(manifest.short_name,'MathMatrix Beta');assert(!Object.hasOwn(manifest,'orientation'));
+    assert(cacheVersion.includes('v230'));assert(assets.includes('./responsive-ui.css'));
     for(const asset of assets)assert(fs.existsSync(path.join(dir,asset)),asset);
     assert(fs.readFileSync(path.join(dir,'beta.html')).equals(fs.readFileSync(path.join(dir,'index.html'))));
-    assert(fs.readFileSync(path.join(dir,'beta.html'),'utf8').includes("BUILD_VER = 'Beta - V.219 Unified'"));
+    assert(fs.readFileSync(path.join(dir,'beta.html'),'utf8').includes("BUILD_VER = 'Beta - V.220 Unified'"));
     check('Beta release metadata and precache',true,{cacheVersion,assets:assets.length});
   });
   await test('active route script syntax and original maze engines',async()=>{
@@ -572,7 +620,7 @@ async function release(){
     for(const [name,route]of routes.filter(([name])=>name!=='index')){
       await open(page,route,name==='app');const marker=await page.locator('html').getAttribute('data-mm-page');
       assert.equal(marker,name==='app'?'app':name);
-      assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--mm-paper').trim()),'#f7fafd');
+      assert(await page.evaluate(()=>Array.from(document.styleSheets).some(sheet=>sheet.href?.endsWith('/responsive-ui.css'))),'Offline responsive stylesheet must load');
       check(name+' offline launch and presentation',true);
     }
     await open(page,'tic-tac-toe.html?size=5');assert.equal(await page.locator('#board .cell').count(),25);
