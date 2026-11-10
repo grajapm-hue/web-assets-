@@ -351,7 +351,8 @@
       </div>
     </header>
 
-    <div class="msg" id="message" role="status" aria-live="polite">🐒 Two tunnels leave Start. One reaches Finish. Drag to find it.</div>
+    <div class="mmGameSidebar">
+<div class="msg" id="message" role="status" aria-live="polite">🐒 Two tunnels leave Start. One reaches Finish. Drag to find it.</div>
 
     <div class="level-row" role="group" aria-label="Maze difficulty">
       <button class="level-btn active" data-level="easy" type="button" aria-pressed="true">Easy</button>
@@ -379,7 +380,8 @@
         <button class="top-btn" id="clearBtn" type="button" aria-label="Clear your path">✖ Clear</button>
       </div>
     </div>
-    <div class="maze-wrap">
+    </div>
+<div class="maze-wrap">
       <div class="maze-card">
         <svg id="mazeSvg" viewBox="0 0 100 133.333" role="img" aria-label="Interactive maze. Drag from the green Start marker to the red Finish marker."></svg>
       </div>
@@ -1129,14 +1131,15 @@
       var wrapTop = Math.max(0, logicalRect(mazeWrap).top);
       var safeBottom = parseFloat(getComputedStyle(document.body).paddingBottom) || 0;
       var appBottom = parseFloat(getComputedStyle(document.querySelector('.app')).paddingBottom) || 0;
-      var remaining = viewportHeight - wrapTop - 3 - 8 - logicalRect(mazeFooter).height - 10 - safeBottom - appBottom;
+      var wide = document.documentElement.classList.contains('mmLandscape') && innerWidth >= 540;
+      var remaining = wide ? mazeWrap.clientHeight : viewportHeight - wrapTop - 3 - 8 - logicalRect(mazeFooter).height - 10 - safeBottom - appBottom;
       var cardChrome = 22;
       var widthByHeight = Math.max(0, remaining - cardChrome) * cols / rows + cardChrome;
       var widthByScreen = Math.max(220, mazeWrap.clientWidth - 20);
       var cardWidth = Math.max(180, Math.min(500, widthByScreen, widthByHeight));
       mazeCard.style.width = cardWidth + 'px';
-      mazeFooter.style.width = Math.min(widthByScreen, Math.max(284, cardWidth)) + 'px';
-      if (startControls) startControls.style.width = cardWidth + 'px';
+      mazeFooter.style.removeProperty('width');
+      if (startControls) startControls.style.removeProperty('width');
       alignSaNaWithStart();
     }
     function updateSanaPosition() {

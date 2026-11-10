@@ -1,13 +1,15 @@
-/* Run against the actual static Beta with temporary Playwright tooling on the Mac. */
+/* Run against the actual static Beta using temporary Playwright tooling. */
 'use strict';
 const fs = require('node:fs');
 const path = require('node:path');
 const http = require('node:http');
 const assert = require('node:assert/strict');
+const vm = require('node:vm');
 const { chromium, webkit } = require(process.env.MM_PLAYWRIGHT_MODULE || 'playwright');
 const args = process.argv.slice(2);
 const option = (key, fallback) => args.includes(key) ? args[args.indexOf(key) + 1] : fallback;
 const root = path.resolve(option('--root', path.join(__dirname, '../..')));
+const baselineRoot = option('--baseline-root', '') && path.resolve(option('--baseline-root', ''));
 const section = option('--section', 'orientation');
 const engine = option('--browser', 'chromium');
 const reportDir = path.resolve(option('--report-dir', path.join(root, 'artifacts/beta-responsive')));
@@ -52,7 +54,187 @@ async function context(viewport = {width:390,height:844}, workers = 'block') {
   await ctx.addInitScript(() => {
     localStorage.setItem('mmSound','off'); localStorage.setItem('mmMusic','off');
   });
+  ctx.setDefaultTimeout(6000);
   return ctx;
+}
+const gameControls={
+  'criss-cross':['#ccmBack','#logicBtn','#watchTopBtn','#ccmSoundBtn','#ccmNewBtn','#ccmClearBtn','#ccmCalcOpenBtn'],
+  'tic-tac-toe':['.back','#logicBtn','#watchBtn','#soundBtn','#newRound','#clearBoard'],
+  tunnels:['#backBtn','#logicBtn','#watchBtn','#soundBtn','#newBtn','#clearBtn','button[data-dx]'],
+  'cave-maze':['#backToBeta','#logicButton','#watchButton','#soundButton','#newRun','#clearTrail','.pad'],
+  'story-maze':['#backToBeta','#logicButton','#watchButton','#soundButton','#newRun','#clearTrail','.pad'],
+  'multiply-magic':['#clearBtn','#showBtn','#watchBtn','#soundBtn','#logicBtn'],
+  'sound-lab':['button.tone','.foot a']
+};
+async function controlLayout(page,selectors){
+  return page.locator(selectors.join(',')).evaluateAll(nodes=>nodes.map(node=>{
+    let rect=node.getBoundingClientRect(), good=rect.width>0 && rect.height>0, reason='';
+    for(let parent=node.parentElement;parent && good;parent=parent.parentElement){
+      const css=getComputedStyle(parent), box=parent.getBoundingClientRect();
+      if(/auto|scroll/.test(css.overflowY) && parent.scrollHeight>parent.clientHeight+1){
+        if(parent.clientHeight<Math.min(35,rect.height)){good=false;reason='collapsed scroll area';}
+        rect={...rect,top:Math.max(box.top,0),bottom:Math.min(box.bottom,innerHeight)};
+      } else if(/hidden|clip/.test(css.overflowY) && (rect.top<box.top-2 || rect.bottom>box.bottom+2)){
+        good=false;reason='clipped by '+(parent.id||parent.className||parent.tagName);
+      }
+    }
+    return {id:node.id||node.getAttribute('aria-label')||node.textContent.trim().slice(0,18),good,reason};
+  }));
+}
+async function games(){
+  for(const [name,route] of routes.filter(([name])=>!['app','index'].includes(name))) await test(name+' responsive controls',async()=>{
+    const ctx=await context(); const page=await ctx.newPage(); const errors=[];
+    page.on('pageerror',e=>errors.push(e.message)); await open(page,route);
+    for(const [width,height] of sizes){
+      await page.setViewportSize({width,height}); await settle(page);
+      const controls=await controlLayout(page,gameControls[name]);
+      check(`${name} reachable controls ${width}x${height}`,controls.length>0 && controls.every(x=>x.good),controls.filter(x=>!x.good));
+      const geometry=await page.evaluate(()=>{
+        const svg=document.querySelector('#maze,#mazeSvg'), board=document.querySelector('.board-wrap');
+        const matrix=svg?.getScreenCTM(); const box=board?.getBoundingClientRect();
+        return {overflow:document.documentElement.scrollWidth>innerWidth+2,
+          ratio:matrix?Math.hypot(matrix.a,matrix.b)/Math.hypot(matrix.c,matrix.d):1,
+          square:document.documentElement.classList.contains('tttViewport')?Math.abs(box.width-box.height):0};
+      });
+      check(`${name} geometry ${width}x${height}`,!geometry.overflow && Math.abs(geometry.ratio-1)<.01 && geometry.square<2,geometry);
+      if((width===390&&height===844)||(width===844&&height===390)||(width===1280&&height===720))
+        await page.screenshot({path:path.join(reportDir,`${name}-${width}x${height}.png`)});
+    }
+    check(name+' no uncaught errors',!errors.length,errors); await ctx.close();
+  });
+  for(const size of [3,4,5]) await test('Tic-Tac-Toe '+size+' win and rotation',async()=>{
+    const ctx=await context();const page=await ctx.newPage();await open(page,'tic-tac-toe.html?size='+size);
+    for(let column=0;column<size;column++){
+      await page.locator('#board .cell').nth(column).click();
+      if(column<size-1)await page.locator('#board .cell').nth(size+column).click();
+    }
+    assert.equal(await page.locator('#scoreX').innerText(),'1');
+    assert.equal(await page.locator('#board .winner').count(),size);
+    const before=await page.locator('#board').innerText();await page.setViewportSize({width:844,height:390});await settle(page);
+    assert.equal(await page.locator('#board').innerText(),before);
+    assert.equal(await page.locator('#scoreX').innerText(),'1');
+    await page.locator('#newRound').click();assert.equal(await page.locator('#scoreX').innerText(),'1');
+    assert.equal(await page.locator('#board [data-mark="X"]').count(),0);
+    check('Tic-Tac-Toe '+size+' win and rotation',true);await ctx.close();
+  });
+  await test('Criss-Cross keypad entry survives rotation',async()=>{
+    const ctx=await context();const page=await ctx.newPage();await open(page,'criss-cross.html');
+    const input=page.locator('#ccmGrid input').first();await input.click();
+    // Guided mode rejects guesses that cannot complete the generated puzzle.
+    for(let number=1;number<=9 && !(await input.inputValue());number++)
+      await page.locator('#ccmDock').getByRole('button',{name:String(number),exact:true}).click();
+    const value=await input.inputValue();assert(value,'One of the legal digits must be accepted');
+    await page.setViewportSize({width:844,height:390});await settle(page);assert.equal(await input.inputValue(),value);
+    check('Criss-Cross keypad entry survives rotation',true);await ctx.close();
+  });
+  for(const route of ['cave-treasure-hunt.html','treasure-hunt-landscape-prototype/index.html']) await test(route+' pointer mapping and collision',async()=>{
+    const ctx=await context();const page=await ctx.newPage();await open(page,route);await page.locator('#newRun').click();
+    for(let frame=0;frame<10 && await page.locator('#storyReveal:visible').count();frame++){await page.locator('#storyContinue').click();await page.waitForTimeout(30);}
+    const position=()=>page.locator('#ball circle').evaluate(el=>({x:Number(el.getAttribute('cx')),y:Number(el.getAttribute('cy'))}));
+    async function drag(dx,dy){
+      const points=await page.evaluate(({dx,dy})=>{
+        const svg=document.getElementById('maze'),ball=document.querySelector('#ball circle');
+        const p=svg.createSVGPoint();p.x=Number(ball.getAttribute('cx'));p.y=Number(ball.getAttribute('cy'));
+        const start=p.matrixTransform(svg.getScreenCTM());p.x+=dx;p.y+=dy;const end=p.matrixTransform(svg.getScreenCTM());
+        return {start:{x:start.x,y:start.y},end:{x:end.x,y:end.y}};
+      },{dx,dy});
+      await page.mouse.move(points.start.x,points.start.y);await page.mouse.down();await page.mouse.move(points.end.x,points.end.y,{steps:12});await page.mouse.up();
+    }
+    const before=await position();await drag(0,24);const moved=await position();assert(moved.y>before.y,'Dragging down the entrance tunnel must move SaNa');
+    await drag(-100,0);const blocked=await position();assert(blocked.x>moved.x-90,'A wall must block the requested lateral drag');
+    await page.setViewportSize({width:844,height:390});await settle(page);assert.deepEqual(await position(),blocked);
+    await drag(0,24);assert((await position()).y>blocked.y,'Dragging after rotation must use the new screen coordinates');
+    check(route+' pointer mapping and collision',true);await ctx.close();
+  });
+  await test('Tunnels valid moves, walls, and pointer alignment',async()=>{
+    const ctx=await context();const page=await ctx.newPage();await open(page,'tunnels-of-meta.html');
+    const read=()=>page.evaluate(()=>{const store=JSON.parse(localStorage.getItem('mmTunnelsOfSaNaSave'));return store.levels[store.activeLevel];});
+    let state=await read();
+    const directions=[['top',0,-1,'ArrowUp'],['right',1,0,'ArrowRight'],['bottom',0,1,'ArrowDown'],['left',-1,0,'ArrowLeft']];
+    function next(game,blocked=false){const at=game.path.at(-1),cell=game.cells[at.y][at.x];return directions.find(([side,dx,dy])=>!!cell.walls[side]===blocked && (blocked || (at.x+dx>=0&&at.x+dx<game.cols&&at.y+dy>=0&&at.y+dy<game.rows)));}
+    const move=next(state);await page.keyboard.press(move[3]);let moved=await read();assert.equal(moved.path.length,state.path.length+1);
+    const wall=next(moved,true);if(wall){await page.keyboard.press(wall[3]);assert.deepEqual((await read()).path,moved.path);}
+    await page.setViewportSize({width:844,height:390});await settle(page);assert.deepEqual((await read()).path,moved.path);
+    const direction=next(moved),at=moved.path.at(-1),target={x:at.x+direction[1],y:at.y+direction[2]};
+    const points=await page.evaluate(({at,target,cols,rows})=>{
+      const svg=document.getElementById('mazeSvg'),box=svg.viewBox.baseVal;
+      const screen=cell=>{const p=svg.createSVGPoint();p.x=box.x+(cell.x+.5)*box.width/cols;p.y=box.y+(cell.y+.5)*box.height/rows;const q=p.matrixTransform(svg.getScreenCTM());return{x:q.x,y:q.y};};
+      return{start:screen(at),end:screen(target)};
+    },{at,target,cols:moved.cols,rows:moved.rows});
+    await page.mouse.move(points.start.x,points.start.y);await page.mouse.down();await page.mouse.move(points.end.x,points.end.y,{steps:10});await page.mouse.up();
+    assert.deepEqual((await read()).path.at(-1),target);check('Tunnels valid moves, walls, and pointer alignment',true);await ctx.close();
+  });
+  await inlineInteractions();
+  await dialogs();
+  await test('utility page input and sound controls',async()=>{
+    const ctx=await context();const page=await ctx.newPage();await open(page,'MultiplyMagic3.html');
+    const input=page.locator('#board input').first();await input.fill('2');
+    await page.setViewportSize({width:844,height:390});await settle(page);assert.equal(await input.inputValue(),'2');
+    await open(page,'sound-lab.html');await page.locator('button.tone').first().click();
+    await page.setViewportSize({width:844,height:390});await page.locator('button.tone').last().click();
+    check('utility page input and sound controls',true);await ctx.close();
+  });
+  await test('story reveal remains usable in short viewports',async()=>{
+    const ctx=await context();const page=await ctx.newPage();await open(page,'treasure-hunt-landscape-prototype/index.html');
+    await page.locator('#newRun').click();
+    await page.locator('#storyReveal:visible').waitFor();
+    for(const [width,height]of [[568,320],[844,390],[390,300]]){
+      await page.setViewportSize({width,height});await settle(page);
+      const b=await page.locator('#storyContinue').boundingBox();
+      check(`story Continue reachable ${width}x${height}`,b&&b.y>=0&&b.y+b.height<=height+1,b);
+      await page.screenshot({path:path.join(reportDir,`story-reveal-${width}x${height}.png`)});
+    }
+    await page.locator('#storyContinue').click();check('story Continue uses original handler',true);await ctx.close();
+  });
+}
+async function choose(page,name,index=0){
+  await open(page,'beta.html',true);await page.locator(`.categoryCard[data-category="${name}"]`).click();
+  const choices=page.locator('#categoryOptions .bookChoice:visible');if(await choices.count())await choices.nth(index).click();
+  await settle(page);
+}
+async function inlineInteractions(){
+  const cases=[
+    {name:'Multiply Magic',act:async p=>{await p.locator('#board input:not([readonly])').first().click();await p.locator('.kp[data-k="2"]').click();},read:p=>p.locator('#board input').evaluateAll(x=>x.map(n=>n.value))},
+    {name:'Birthday Magic',act:async p=>{await p.locator('#board input:not([readonly])').first().click();await p.locator('.kp[data-k="2"]').click();},read:p=>p.locator('#board input').evaluateAll(x=>x.map(n=>n.value))},
+    {name:'Gate Logic',act:async p=>{await p.locator('#gatePicker .rowBtn[data-gate="and"]').click();const levels=p.locator('#gatePicker .rowBtn:visible:not(.gateLevelBack)');if(await levels.count())await levels.first().click();await p.locator('#gateRoom .gateChoiceBtn').first().click();},read:p=>p.locator('#gateRoom').innerText()},
+    {name:'Binary Magic',act:async p=>{await p.locator('#mrGo').click();await p.locator('.mrNo').click();},read:p=>p.locator('#binaryPanel').innerText()},
+    {name:'Slide Magic',act:async p=>{await p.locator('.slideTile.canMove').first().click();if(await p.locator('.slideTarget').count())await p.locator('.slideTarget').first().click();},read:p=>p.locator('#slideBoard').innerHTML()},
+    {name:'Sudoku',act:async p=>{await p.locator('.sudCell:not(.given)').first().click();await p.locator('[data-sudkey="1"]').click();},read:p=>p.locator('.sudCell').evaluateAll(x=>x.map(n=>n.textContent))},
+    {name:'Pallanguzhi',act:p=>p.locator('#palChoose').click(),read:p=>p.locator('#palChoose').textContent()},
+    {name:'Pallanguzhi',index:1,act:p=>p.locator('#pal4Choose').click(),read:p=>p.locator('#pal4Choose').textContent()},
+    {name:'Thayam',act:p=>p.locator('#thayamChoose').click(),read:p=>p.locator('#thayamChoose').textContent()}
+  ];
+  for(const entry of cases)await test(entry.name+' interaction and rotation '+(entry.index||0),async()=>{
+    const ctx=await context();const page=await ctx.newPage();await choose(page,entry.name,entry.index||0);
+    const initial=await entry.read(page);await entry.act(page);const changed=await entry.read(page);
+    assert.notDeepEqual(changed,initial,'A real game interaction must change the state');
+    await page.setViewportSize({width:844,height:390});await settle(page);
+    const normalize=x=>typeof x==='string'?x.replace(/\s+/g,' ').trim():x;
+    assert.deepEqual(normalize(await entry.read(page)),normalize(changed),'Rotation must preserve the interaction');
+    await page.screenshot({path:path.join(reportDir,`play-${entry.name.replace(/\W/g,'-')}-${entry.index||0}-landscape.png`)});
+    check(entry.name+' interaction and rotation '+(entry.index||0),true);await ctx.close();
+  });
+}
+async function dialogs(){
+  const cases=[
+    {route:'beta.html',app:true,buttons:[['#barLearn','.sheet.on .shHead button'],['#barMore','.sheet.on .shHead button']]},
+    {route:'criss-cross.html',buttons:[['#logicBtn','#logicClose'],['#ccmSoundBtn','#ccmSoundClose']]},
+    {route:'tic-tac-toe.html',buttons:[['#logicBtn','#logicDialog .close'],['#soundBtn','#soundDialog .close']]},
+    {route:'tunnels-of-meta.html',buttons:[['#logicBtn','#logicClose'],['#soundBtn','#soundClose']]},
+    ...['cave-treasure-hunt.html','treasure-hunt-landscape-prototype/index.html'].map(route=>({route,buttons:[['#logicButton','#closeLogic'],['#soundButton','#soundClose']]}))
+  ];
+  for(const entry of cases)await test(entry.route+' dialogs',async()=>{
+    const ctx=await context();const page=await ctx.newPage();
+    if(entry.app)await choose(page,'Add Magic');else await open(page,entry.route);
+    for(const [width,height] of [[390,844],[844,390],[568,320],[390,300]])for(const [trigger,close]of entry.buttons){
+      await page.setViewportSize({width,height});await page.locator(trigger).click();await settle(page);
+      const box=await page.locator(close).boundingBox();
+      check(`${entry.route} ${trigger} close ${width}x${height}`,box&&box.x>=0&&box.y>=0&&box.x+box.width<=width+1&&box.y+box.height<=height+1,box);
+      check(`${entry.route} ${trigger} focus is not a text input`,await page.evaluate(()=>!document.activeElement.matches('input,textarea,[contenteditable="true"]')));
+      await page.locator(close).click();
+    }
+    await ctx.close();
+  });
 }
 async function open(page, route, play = false) {
   await page.goto(origin + prefix + route, {waitUntil:'load', timeout:20000});
@@ -228,6 +410,23 @@ async function shell() {
   };
   for(const label of labels){const a=luminance(label.color),b=luminance(label.bg),ratio=(Math.max(a,b)+.05)/(Math.min(a,b)+.05);check(label.text+' readable label',ratio>=4.5,{...label,ratio});}
   check('shell no uncaught errors',!errors.length,errors);
+  await test('enlarged category text remains scrollable',async()=>{
+    await open(page,'beta.html',true);await page.setViewportSize({width:320,height:568});
+    await page.addStyleTag({content:'.categoryName{font-size:200% !important}'});await settle(page);
+    for(const name of ['Add Magic','Thayam']){
+      const card=page.locator(`.categoryCard[data-category="${name}"]`);await card.scrollIntoViewIfNeeded();
+      const info=await card.evaluate(e=>{const b=e.getBoundingClientRect(),t=e.querySelector('.categoryName').getBoundingClientRect();return{clipped:t.top<b.top||t.bottom>b.bottom||t.right>b.right};});
+      check(name+' enlarged text is readable',!info.clipped,info);
+      await card.click();await page.locator('#navBack').click();
+    }
+  });
+  await test('viewport observers settle after repeated resize',async()=>{
+    await open(page,'beta.html',true);
+    await page.evaluate(()=>{window.__mmResizeEvents=0;window.addEventListener('mathmatrixviewportchange',()=>window.__mmResizeEvents++);});
+    for(const [width,height]of [[844,390],[390,844],[568,320],[390,844]]){await page.setViewportSize({width,height});await settle(page);}
+    const count=await page.evaluate(()=>window.__mmResizeEvents);await page.waitForTimeout(750);
+    assert.equal(await page.evaluate(()=>window.__mmResizeEvents),count);check('viewport observers settle after repeated resize',true);
+  });
   await ctx.close();
 }
 async function main() {
@@ -237,7 +436,87 @@ async function main() {
   browser = await launcher.launch(engine === 'chromium' ? {channel:'chrome',headless:true} : {headless:true});
   if (section === 'orientation' || section === 'all') await orientation();
   if (section === 'shell' || section === 'all') await shell();
-  if (!['orientation','shell','all'].includes(section)) throw new Error('Unknown validation section: ' + section);
+  if (section === 'games' || section === 'all') await games();
+  if (section === 'offline' || section === 'all') await release();
+  if (!['orientation','shell','games','offline','all'].includes(section)) throw new Error('Unknown validation section: ' + section);
+}
+async function release(){
+  const dir=path.join(root,'mathmatrix/beta-app'),sw=fs.readFileSync(path.join(dir,'beta-sw.js'),'utf8');
+  const cacheVersion=sw.match(/const CACHE_VERSION = '([^']+)'/)[1];
+  const assets=Array.from(sw.match(/const ASSETS = \[([\s\S]*?)\];/)[1].matchAll(/'([^']+)'/g),x=>x[1]);
+  await test('Beta release metadata and precache',async()=>{
+    const manifest=JSON.parse(fs.readFileSync(path.join(dir,'beta-manifest.json'),'utf8'));
+    assert.equal(manifest.name,'MathMatrix Beta');assert.equal(manifest.short_name,'MathMatrix Beta');assert.equal(manifest.orientation,'any');
+    assert(cacheVersion.includes('v229'));assert(assets.includes('./responsive-ui.css'));
+    for(const asset of assets)assert(fs.existsSync(path.join(dir,asset)),asset);
+    assert(fs.readFileSync(path.join(dir,'beta.html')).equals(fs.readFileSync(path.join(dir,'index.html'))));
+    assert(fs.readFileSync(path.join(dir,'beta.html'),'utf8').includes("BUILD_VER = 'Beta - V.219 Unified'"));
+    check('Beta release metadata and precache',true,{cacheVersion,assets:assets.length});
+  });
+  await test('active route script syntax and original maze engines',async()=>{
+    const ctx=await context(),page=await ctx.newPage();
+    const originals={};
+    for(const [name,route]of routes){
+      await open(page,route);
+      const scripts=await page.locator('script:not([src])').evaluateAll(es=>es.filter(e=>!e.type||/javascript|module/.test(e.type)).map(e=>e.textContent));
+      for(const [i,script]of scripts.entries())new vm.Script(script,{filename:route+' inline '+i});
+      const source=fs.readFileSync(path.join(dir,route.split('?')[0]),'utf8');
+      assert(!/lockRotateCW|lockRotateCCW|id="portraitLock"/.test(source),route+' obsolete lock');
+      if(['cave-maze','story-maze'].includes(name))originals[route]=scripts.reduce((a,b)=>a.length>b.length?a:b,'').replace(/\r\n/g,'\n');
+    }
+    for(const file of fs.readdirSync(dir).filter(x=>x.endsWith('.js')))new vm.Script(fs.readFileSync(path.join(dir,file),'utf8'),{filename:file});
+    if(baselineRoot){
+      servingRoot=baselineRoot;
+      for(const [route,engineSource]of Object.entries(originals)){
+        await open(page,route);const original=await page.locator('script:not([src])').evaluateAll(es=>es.map(e=>e.textContent).reduce((a,b)=>a.length>b.length?a:b,''));
+        assert.equal(engineSource,original.replace(/\r\n/g,'\n'),route+' original engine/map/story data');
+      }
+      servingRoot=root;
+    }
+    check('active route script syntax and original maze engines',true);await ctx.close();
+  });
+  servingRoot=root;
+  if(!baselineRoot){check('baseline required for upgrade and performance',false,'Pass --baseline-root');return;}
+  await test('existing installation upgrades and works offline',async()=>{
+    servingRoot=baselineRoot;
+    const ctx=await context({width:390,height:844},'allow'),page=await ctx.newPage();await choose(page,'Add Magic');
+    await page.locator('#board input').first().click();await page.locator('.kp[data-k="1"]').click();
+    const save=await page.evaluate(()=>localStorage.getItem('mm.save.magic.3x3'));assert(save,'Real input must save the board');
+    await page.evaluate(async()=>{localStorage.setItem('mm.preservation-check','kept');await caches.open('mathmatrix-v-preservation-check');await navigator.serviceWorker.ready;});
+    await page.waitForFunction(async()=>{const r=await navigator.serviceWorker.getRegistration();return r?.active&&navigator.serviceWorker.controller&&!r.waiting&&!r.installing;});
+    servingRoot=root;await page.evaluate(async()=>{const r=await navigator.serviceWorker.getRegistration();await r.update();});
+    await page.waitForFunction(async expected=>{const r=await navigator.serviceWorker.getRegistration();return r?.active&&navigator.serviceWorker.controller&&!r.waiting&&!r.installing&&(await caches.keys()).includes(expected);},cacheVersion,{timeout:30000});
+    await choose(page,'Add Magic');assert.equal(await page.locator('#board input').first().inputValue(),'1');
+    const data=await page.evaluate(async()=>({save:localStorage.getItem('mm.save.magic.3x3'),marker:localStorage.getItem('mm.preservation-check'),keys:await caches.keys()}));
+    assert.equal(data.save,save);assert.equal(data.marker,'kept');assert(data.keys.includes('mathmatrix-v-preservation-check'));
+    assert(!data.keys.some(key=>key.startsWith('mathmatrix-beta-')&&key!==cacheVersion));
+    await ctx.setOffline(true);await page.reload();await page.locator('.categoryCard').first().waitFor();
+    for(const [name,route]of routes.filter(([name])=>name!=='index')){
+      await open(page,route,name==='app');const marker=await page.locator('html').getAttribute('data-mm-page');
+      assert.equal(marker,name==='app'?'app':name);
+      assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--mm-paper').trim()),'#f7fafd');
+      check(name+' offline launch and presentation',true);
+    }
+    await open(page,'tic-tac-toe.html?size=5');assert.equal(await page.locator('#board .cell').count(),25);
+    check('existing installation upgrades and works offline',true,data);await ctx.close();
+  });
+  servingRoot=root;
+  await test('same-machine baseline performance comparison',async()=>{
+    const timings={baseline:[],updated:[]};
+    for(let trial=0;trial<3;trial++)for(const label of ['baseline','updated']){
+      servingRoot=label==='baseline'?baselineRoot:root;
+      const ctx=await context(),page=await ctx.newPage();const start=Date.now();await choose(page,'Add Magic');
+      const readyMs=Date.now()-start;await page.locator('#board input').first().click();
+      await page.evaluate(()=>{document.querySelector('.kp[data-k="1"]').addEventListener('click',()=>{const t=performance.now();requestAnimationFrame(()=>requestAnimationFrame(()=>window.__inputPaintMs=performance.now()-t));},{once:true,capture:true});});
+      await page.locator('.kp[data-k="1"]').click();await page.waitForFunction(()=>window.__inputPaintMs!==undefined);
+      timings[label].push({readyMs,inputPaintMs:await page.evaluate(()=>window.__inputPaintMs)});await ctx.close();
+    }
+    const median=(rows,key)=>rows.map(x=>x[key]).sort((a,b)=>a-b)[1];
+    metrics.push({performance:timings});
+    check('no repeatable startup regression',median(timings.updated,'readyMs')<median(timings.baseline,'readyMs')*1.8+250,timings);
+    check('no repeatable input paint regression',median(timings.updated,'inputPaintMs')<median(timings.baseline,'inputPaintMs')*1.8+80,timings);
+  });
+  servingRoot=root;
 }
 main().catch(error => {check('validation runner', false, error.stack);}).finally(async () => {
   if (browser) await browser.close();

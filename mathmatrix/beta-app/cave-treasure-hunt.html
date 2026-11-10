@@ -100,7 +100,8 @@ html.sanaCompact .app{gap:3px;padding-left:5px;padding-right:5px}html.sanaCompac
       <button class="top-btn sound-btn" id="soundButton" type="button" aria-label="Sound and music settings" aria-haspopup="dialog" aria-pressed="true"><span class="top-icon">🔊</span><span class="top-label">Sound</span></button>
     </div>
   </header>
-  <div class="banner" id="banner" role="status" aria-live="polite"><span aria-hidden="true">🐒</span><span class="banner-copy" id="bannerText">Choose a player color and press START. Collect every item, avoid the decoy bypasses, and escape with the treasure.</span></div>
+  <div class="mmGameSidebar">
+<div class="banner" id="banner" role="status" aria-live="polite"><span aria-hidden="true">🐒</span><span class="banner-copy" id="bannerText">Choose a player color and press START. Collect every item, avoid the decoy bypasses, and escape with the treasure.</span></div>
   <div class="run-toolbar" role="group" aria-label="Maze status and controls">
     <span class="run-location" id="location">Cave passage</span>
     <div class="actions" aria-label="Maze controls">
@@ -121,7 +122,8 @@ html.sanaCompact .app{gap:3px;padding-left:5px;padding-right:5px}html.sanaCompac
     </div></div>
   </section>
 
-  <div class="board-wrap"><div class="maze-labels" role="group" aria-label="Cave tunnel entrance and exit"><span>Entrance</span><span>CAVE TUNNEL</span><span>EXIT</span></div><svg id="maze" viewBox="0 0 593 802" preserveAspectRatio="none" role="group" aria-label="A fixed cave tunnel maze. Checkpoints are hidden during normal play. Use the direction buttons, drag SaNa, or use keyboard arrows to follow corridor centers."></svg></div>
+  </div>
+<div class="board-wrap"><div class="maze-labels" role="group" aria-label="Cave tunnel entrance and exit"><span>Entrance</span><span>CAVE TUNNEL</span><span>EXIT</span></div><svg id="maze" viewBox="0 0 593 802" preserveAspectRatio="xMidYMid meet" role="group" aria-label="A fixed cave tunnel maze. Checkpoints are hidden during normal play. Use the direction buttons, drag SaNa, or use keyboard arrows to follow corridor centers."></svg></div>
   <footer class="bottom">
     <div class="direction-row" role="group" aria-label="Directional controls">
       <button class="pad" data-dir="left" type="button" aria-label="Move left">◀</button>
