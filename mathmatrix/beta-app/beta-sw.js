@@ -1,6 +1,6 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V218 portrait desktop frame for Tic-Tac-Toe.
+// MathMatrix Pro++ Beta Service Worker — Beta V218 install-version metadata refresh.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v227-desktop-frame';
+const CACHE_VERSION = 'mathmatrix-beta-v228-v218-install-metadata';
 
 const ASSETS = [
   './index.html',
