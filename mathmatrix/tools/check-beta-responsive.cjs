@@ -58,6 +58,7 @@ async function open(page, route, play = false) {
   await page.goto(origin + prefix + route, {waitUntil:'load', timeout:20000});
   if (play) {
     if (await page.locator('.splashPlay').isVisible()) await page.locator('.splashPlay').click();
+    await page.locator('.splash').waitFor({state:'hidden',timeout:4000});
     if (await page.locator('#tab-scHome').isVisible()) await page.locator('#tab-scHome').click();
     await page.locator('.categoryCard').first().waitFor();
   }
@@ -180,6 +181,52 @@ async function shell() {
     const box=await page.locator('#'+id).boundingBox();
     check(id+' stays reachable',box && box.y>=0 && box.y+box.height<=390,box);
   }
+  const books=await page.evaluate(()=>Array.from(document.querySelectorAll('.categoryOptions .modeGroup')).map(group=>({
+    name:group.querySelector('.modeHead b').textContent.trim(),
+    choices:Array.from(group.querySelectorAll('.bookChoice')).map(button=>({...button.dataset}))
+  })));
+  const standalone={crisscross:'criss-cross.html',tunnels:'tunnels-of-meta.html',
+    'cave-treasure':'cave-treasure-hunt.html','sana-treasure-hunt':'treasure-hunt-landscape-prototype/index.html','tic-tac-toe':'tic-tac-toe.html'};
+  for(const book of books) for(let index=0;index<book.choices.length;index++) await test(`${book.name} choice ${index+1}`,async()=>{
+    await open(page,'beta.html',true); await page.locator(`.categoryCard[data-category="${book.name}"]`).click();
+    if(book.choices.length>1) await page.locator('#categoryOptions .bookChoice:visible').nth(index).click();
+    const choice=book.choices[index], target=standalone[choice.size];
+    if(target) {
+      await page.waitForURL(url=>url.pathname.endsWith('/'+target));
+      check(`${book.name} choice ${index+1} original route`,true);
+      return;
+    }
+    await page.locator('[data-screen="scPlay"].on').waitFor(); await settle(page);
+    let selector='#boardWrap';
+    if(choice.slideLevel) selector='#slidePanel';
+    else if(choice.sudLevel) selector='#sudokuPanel';
+    else if(choice.palLevel) selector='#palPanel';
+    else if(choice.pal4Level) selector='#pal4Panel';
+    else if(choice.thayamLevel) selector='#thayamPanel';
+    else if(book.name==='Gate Logic') selector='#gatePanel';
+    else if(/^binary/.test(choice.size||'')) selector='#binaryPanel';
+    for(const viewport of [{width:844,height:390},{width:390,height:844}]) {
+      await page.setViewportSize(viewport); await settle(page);
+      const info=await page.locator(selector).evaluate(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height,display:getComputedStyle(el).display}));
+      check(`${book.name} ${index+1} visible ${viewport.width}x${viewport.height}`,info.width>100 && info.height>60 && info.display!=='none',info);
+      if(/^\d+x\d+$/.test(choice.size||'')) {
+        const n=Number(choice.size.split('x')[0]);
+        check(`${choice.size} keeps all inputs`,await page.locator('#board input').count()===n*n);
+      }
+    }
+    if(index===0) await page.screenshot({path:path.join(reportDir,'game-'+book.name.replace(/\W+/g,'-')+'.png')});
+  });
+  await open(page,'beta.html',true);
+  await page.locator('.categoryCard[data-category="Add Magic"]').click();
+  await page.locator('.bookChoice[data-size="3x3"]').click();
+  const labels=await page.locator('.appBar .barBtn:visible').evaluateAll(buttons=>buttons.map(button=>({
+    text:button.textContent.trim(),color:getComputedStyle(button.querySelector('span')).color,bg:getComputedStyle(button).backgroundColor
+  })));
+  const luminance=color=>{
+    const rgb=color.match(/[\d.]+/g).slice(0,3).map(Number).map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4;});
+    return rgb[0]*.2126+rgb[1]*.7152+rgb[2]*.0722;
+  };
+  for(const label of labels){const a=luminance(label.color),b=luminance(label.bg),ratio=(Math.max(a,b)+.05)/(Math.min(a,b)+.05);check(label.text+' readable label',ratio>=4.5,{...label,ratio});}
   check('shell no uncaught errors',!errors.length,errors);
   await ctx.close();
 }

@@ -1,6 +1,6 @@
 # MathMatrix professional responsive redesign
 
-Status: user approved the Beta-first direction on 2026-11-09; Main promotion requires a later review. Product implementation has not started.
+Status: user approved the Beta-first direction on 2026-11-09; Main promotion requires a later review. Product implementation is in progress.
 
 ## Intent and confirmed requirements
 
@@ -81,7 +81,7 @@ Build on the current static HTML/JavaScript app. Do not introduce a framework, a
 
 ## Verification and release acceptance
 
-Run builds and checks on the user's Mac, following the workspace instructions. Capture the current baseline before changing presentation so behavior and performance comparisons use the same device/browser and puzzle.
+Run builds and checks on Windows. The user clarified that the Mac-only workspace instruction applies to DotMD, not MathMatrix. Capture the current baseline before changing presentation so behavior and performance comparisons use the same device/browser and puzzle.
 
 Test portrait and landscape at phone 320x568 and 568x320, 390x844 and 844x390, tablet 768x1024 and 1024x768, and desktop 1280x720 and 1920x1080. Also check enlarged text/200% zoom, visible keyboard focus, reduced motion, browser toolbar/keyboard resizing, and touch input on the mazes. Use Chromium and WebKit where available, and report any browser/device limits explicitly.
 

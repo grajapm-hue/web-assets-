@@ -155,12 +155,15 @@
       if (options.screen() !== 'scHome') return;
       bar.classList.toggle('categoryShort', bar.clientHeight < 350);
       if (current) { fitChoices(); return; }
-      var columns = grid.clientWidth >= 820 ? 4 : grid.clientWidth >= 500 ? 3 : 2;
+      var columns = grid.clientWidth >= 960 ? 4 : grid.clientWidth >= 660 ? 3 : 2;
+      if (grid.clientWidth >= 500 && grid.clientHeight < 340) columns = 4;
+      while (columns < 6 && grid.clientHeight / Math.ceil(groups.length / columns) < 50 &&
+        grid.clientWidth / (columns + 1) >= 110) columns++;
       grid.style.setProperty('--category-columns', columns);
       grid.style.setProperty('--category-rows', Math.ceil(groups.length / columns));
       var rowHeight = grid.clientHeight / Math.ceil(groups.length / columns);
-      grid.classList.toggle('categoryCompact', rowHeight < 69);
-      grid.style.setProperty('--category-font', Math.max(grid.clientWidth < 320 ? 11.5 : 13, Math.min(17, rowHeight * 0.205)) + 'px');
+      grid.classList.toggle('categoryCompact', rowHeight < 76);
+      grid.style.setProperty('--category-font', Math.max(13, Math.min(18, rowHeight * 0.22)) + 'px');
       grid.style.setProperty('--category-icon', Math.max(19, Math.min(35, rowHeight * 0.42)) + 'px');
       bar.classList.toggle('categoryShort', bar.clientHeight < 350);
       bar.style.setProperty('--lvScale', '1');
@@ -172,7 +175,7 @@
         var style = getComputedStyle(button);
         var available = button.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
         var font = parseFloat(getComputedStyle(button.querySelector('.categoryName')).fontSize);
-        while (text.offsetHeight > available + 0.5 && font > 10.5) {
+        while (text.offsetHeight > available + 0.5 && font > 13) {
           font -= 0.5;
           button.style.setProperty('--category-font', font + 'px');
         }

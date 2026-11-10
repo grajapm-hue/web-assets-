@@ -6,7 +6,7 @@
 
 **Architecture:** Keep the static app and its game engines. Remove page counter-rotation at its sources; share a small presentation stylesheet and real-viewport sizing through the existing layout module. Each puzzle continues to own its geometry, input mapping, and state.
 
-**Tech Stack:** Existing HTML, CSS, and JavaScript; Node 24 and browser validation on the user's Mac. Use Playwright as temporary test tooling outside production dependencies, with installed Chrome and WebKit where available.
+**Tech Stack:** Existing HTML, CSS, and JavaScript; Node 24 and browser validation on Windows. Use Playwright as temporary test tooling outside production dependencies, with installed Chrome and Playwright WebKit where available.
 
 **Spec:** `docs/superpowers/specs/2026-11-09-mathmatrix-responsive-design.md`
 
@@ -17,7 +17,7 @@
 - Keep both Beta entrypoints byte-identical. Preserve manifest identity, start URL, and scope.
 - Use the spec palette and system fonts; retain the monkey identity. No framework, UI library, remote font, analytics, or backend.
 - Normal phone/category sizes must show all category books together; at exceptional short windows or enlarged text, scroll rather than clip or make text unreadable.
-- Run builds and checks on the Mac, not GitHub Actions. Automatic Pages publication after merge is the hosting deployment; do not dispatch a test workflow.
+- Run builds and checks on Windows, not GitHub Actions. Automatic Pages publication after merge is the hosting deployment; do not dispatch a test workflow.
 - Publish Beta only after all tasks pass. Main promotion waits for user/group review.
 
 ## Review focus
@@ -39,7 +39,7 @@
 - Modify `beta-manifest.json` and `beta-sw.js`: any orientation, stable Beta name, next in-app release/cache, and precached shared presentation assets.
 - Create `mathmatrix/tools/check-beta-responsive.cjs`: one browser validation entrypoint with sections `orientation`, `shell`, `games`, `offline`, and `all`; keep evidence outside tracked application files.
 
-The browser checker accepts `--root <checkout> --section <name> --browser chromium|webkit --report-dir <path>` and, for upgrade/performance comparison, `--baseline-root <old-checkout>`. It serves the actual app under `/mathmatrix/beta-app/`; assertions use rendered DOM and real browser input. `MM_PLAYWRIGHT_MODULE` may point to the temporary Mac tooling installation. Do not add test-only hooks to game engines.
+The browser checker accepts `--root <checkout> --section <name> --browser chromium|webkit --report-dir <path>` and, for upgrade/performance comparison, `--baseline-root <old-checkout>`. It serves the actual app under `/mathmatrix/beta-app/`; assertions use rendered DOM and real browser input. `MM_PLAYWRIGHT_MODULE` may point to the temporary Windows tooling installation. Do not add test-only hooks to game engines.
 
 The shared viewport contract is CSS variables `--mm-viewport-width` and `--mm-viewport-height` in pixels, an `mmLandscape` class derived from actual visible width/height, and the existing `mathmatrixviewportchange` event. Emit the event only when dimensions change; schedule layout work once per animation frame. Puzzle-facing internal variables such as `--ttt-board-size` retain their existing meaning.
 
@@ -49,9 +49,9 @@ The shared viewport contract is CSS variables `--mm-viewport-width` and `--mm-vi
 
 **Interfaces:** consume existing game state and fitting functions without changing their rules. Produce `syncViewport(): void`, the viewport contract above, and `data-mm-page` markers `app`, `criss-cross`, `tic-tac-toe`, `tunnels`, `cave-maze`, `story-maze`, `multiply-magic`, and `sound-lab` for targeted presentation and route assertions.
 
-- [ ] Capture the unchanged baseline on the Mac: source commit, splash/category/puzzle screenshots, errors, viewport measurements, time to usable UI, and representative input responsiveness. Keep an immutable baseline checkout/archive for Task 4.
+- [ ] Capture the unchanged baseline on Windows: source commit, splash/category/puzzle screenshots, errors, viewport measurements, time to usable UI, and representative input responsiveness. Keep an immutable baseline checkout/archive for Task 4.
 - [ ] Add orientation checks at 390x844 -> 844x390 -> 390x844 with touch enabled. For every active route assert the root/body are upright, have no `lockRotateCW/CCW` classes, and do not swap the physical viewport dimensions. Assert the manifest permits any orientation.
-- [ ] Run `node mathmatrix/tools/check-beta-responsive.cjs --root <checkout> --section orientation --browser chromium --report-dir <evidence>` on the Mac. Observe failures caused by the existing manifest lock and page transforms before fixing them.
+- [ ] Run `node mathmatrix/tools/check-beta-responsive.cjs --root <checkout> --section orientation --browser chromium --report-dir <evidence>` on Windows. Observe failures caused by the existing manifest lock and page transforms before fixing them.
 - [ ] Remove initial and resize-time lock code from both entrypoints, Criss-Cross, and both treasure pages. Replace the shared `portrait()` path with `syncViewport()` and update all callers/listeners. Preserve resize-driven board fitting and remove the orientation-only Watch cancellation. Delete obsolete lock prompts, page transforms, and transformed-dialog positioning. Keep real puzzle rotations/mirroring.
 - [ ] Remove Tunnels pointer compensation for the artificial whole-page rotation; continue using the real board rectangle. Keep geometry and movement rules unchanged.
 - [ ] Run the orientation section again. Confirm rotation preserves an entered number, a Tic-Tac-Toe move/turn, and a started maze's trail/stage. Check Watch advances after rotating without starting a second playback timer.
@@ -69,7 +69,7 @@ The shared viewport contract is CSS variables `--mm-viewport-width` and `--mm-vi
 - [ ] Apply the spec palette/type scale and a compact welcome/header/navigation. Replace oversized decoration and decorative page gradients with the quieter shared presentation. Preserve artwork and playful board colors.
 - [ ] Replace the app's artificial 480-pixel desktop frame with a balanced wider workspace. Reflow categories by real available width/height. Keep boards at a useful maximum size, side by side with controls where suitable; allow vertical content scrolling when readability requires it.
 - [ ] Cover all inline modes: Add Magic including large boards, Multiply Magic, Birthday Magic, Gate Logic, Binary Magic, Slide Magic, Sudoku, Pallanguzhi, and Thayam. Keep full-size action controls; do not hide essential instructions to force everything into a short viewport.
-- [ ] Run shell checks, all book/choice launch checks, and inline state-preservation checks on the Mac. Capture portrait, landscape, tablet, and desktop evidence. Confirm no new errors or ResizeObserver loop/idle churn.
+- [ ] Run shell checks, all book/choice launch checks, and inline state-preservation checks on Windows. Capture portrait, landscape, tablet, and desktop evidence. Confirm no new errors or ResizeObserver loop/idle churn.
 - [ ] Copy the final canonical `beta.html` to `index.html`, verify byte equality, and commit.
 
 ## Task 3: Standalone game pages, controls, and dialogs
@@ -94,7 +94,7 @@ The shared viewport contract is CSS variables `--mm-viewport-width` and `--mm-vi
 - [ ] Add an existing-installation upgrade check using the real baseline served over HTTP, then switch that server to the updated app. Wait for the expected worker to control the page with no installing/waiting worker. Verify the new cache, preserved saved-data markers, offline reload, and offline launches of changed standalone pages.
 - [ ] Add checks for duplicate entrypoint bytes, all precache assets present, inline/external script syntax, no obsolete lock code on active routes, and no external runtime/font dependency. Fail the offline section until the manifest/cache/precache changes are complete.
 - [ ] Refresh `origin/main`; resolve any source advancement before selecting the next in-app version (V219 if V218 remains current). Use stable manifest name and short name `MathMatrix Beta`, preserve identity/start URL/scope, set orientation to `any`, and bump only the Beta cache. Precache `responsive-ui.css` and every other newly shipped runtime asset.
-- [ ] Run the complete checker on the Mac for Chromium and available WebKit. Compare time to usable UI, representative input/drag responsiveness, and idle work with the unchanged baseline on the same Mac/browser. Investigate repeatable regressions rather than claiming a speed improvement from appearance alone.
+- [ ] Run the complete checker on Windows for Chromium and available WebKit. Compare time to usable UI, representative input/drag responsiveness, and idle work with the unchanged baseline on the same Windows machine/browser. Investigate repeatable regressions rather than claiming a speed improvement from appearance alone.
 - [ ] Review all changed source against the spec, the active route inventory, and the original gameplay/map/story data. Obtain one fresh whole-branch review, address findings, and rerun only affected checks plus the release smoke check.
 - [ ] Commit the release/cache changes, push the Beta branch, create and merge a narrow PR, and verify remote `origin/main` plus the matching successful Pages deployment and live file contents. Do not dispatch a build/test workflow.
 - [ ] Give the user the live Beta link, version, portrait/landscape evidence, and any browser/device limits. Ask the group to check installed-app rotation and the new appearance on their actual devices. Do not promote Main until that review authorizes it.
