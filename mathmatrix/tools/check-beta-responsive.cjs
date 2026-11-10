@@ -247,7 +247,7 @@ async function inlineInteractions(){
     {name:'Multiply Magic',act:async p=>{await p.locator('#board input:not([readonly])').first().click();await p.locator('.kp[data-k="2"]').click();},read:p=>p.locator('#board input').evaluateAll(x=>x.map(n=>n.value))},
     {name:'Birthday Magic',act:async p=>{await p.locator('#board input:not([readonly])').first().click();await p.locator('.kp[data-k="2"]').click();},read:p=>p.locator('#board input').evaluateAll(x=>x.map(n=>n.value))},
     {name:'Gate Logic',act:async p=>{await p.locator('#gatePicker .rowBtn[data-gate="and"]').click();const levels=p.locator('#gatePicker .rowBtn:visible:not(.gateLevelBack)');if(await levels.count())await levels.first().click();await p.locator('#gateRoom .gateChoiceBtn').first().click();},read:p=>p.locator('#gateRoom').innerText()},
-    {name:'Binary Magic',act:async p=>{await p.locator('#mrGo').click();await p.locator('.mrNo').click();},read:p=>p.locator('#binaryPanel').innerText()},
+    {name:'Binary Magic',act:async p=>{await p.locator('#mrGo').click();await p.locator('.mrNo').click();await p.waitForFunction(()=>document.querySelector('#mrCard .mrHead b')?.textContent==='Card 2');},read:p=>p.locator('#binaryPanel').innerText()},
     {name:'Slide Magic',act:async p=>{await p.locator('.slideTile.canMove').first().click();if(await p.locator('.slideTarget').count())await p.locator('.slideTarget').first().click();},read:p=>p.locator('#slideBoard').innerHTML()},
     {name:'Sudoku',act:async p=>{await p.locator('.sudCell:not(.given)').first().click();await p.locator('[data-sudkey="1"]').click();},read:p=>p.locator('.sudCell').evaluateAll(x=>x.map(n=>n.textContent))},
     {name:'Pallanguzhi',act:p=>p.locator('#palChoose').click(),read:p=>p.locator('#palChoose').textContent()},
@@ -561,9 +561,9 @@ async function release(){
     await page.locator('#board input').first().click();await page.locator('.kp[data-k="1"]').click();
     const save=await page.evaluate(()=>localStorage.getItem('mm.save.magic.3x3'));assert(save,'Real input must save the board');
     await page.evaluate(async()=>{localStorage.setItem('mm.preservation-check','kept');await caches.open('mathmatrix-v-preservation-check');await navigator.serviceWorker.ready;});
-    await page.waitForFunction(async()=>{const r=await navigator.serviceWorker.getRegistration();return r?.active&&navigator.serviceWorker.controller&&!r.waiting&&!r.installing;});
+    await page.waitForFunction(async()=>{const r=await navigator.serviceWorker.getRegistration();return r?.active&&r.active===navigator.serviceWorker.controller&&!r.waiting&&!r.installing;});
     servingRoot=root;await page.evaluate(async()=>{const r=await navigator.serviceWorker.getRegistration();await r.update();});
-    await page.waitForFunction(async expected=>{const r=await navigator.serviceWorker.getRegistration();return r?.active&&navigator.serviceWorker.controller&&!r.waiting&&!r.installing&&(await caches.keys()).includes(expected);},cacheVersion,{timeout:30000});
+    await page.waitForFunction(async expected=>{const r=await navigator.serviceWorker.getRegistration();return r?.active&&r.active===navigator.serviceWorker.controller&&!r.waiting&&!r.installing&&(await caches.keys()).includes(expected);},cacheVersion,{timeout:30000});
     await choose(page,'Add Magic');assert.equal(await page.locator('#board input').first().inputValue(),'1');
     const data=await page.evaluate(async()=>({save:localStorage.getItem('mm.save.magic.3x3'),marker:localStorage.getItem('mm.preservation-check'),keys:await caches.keys()}));
     assert.equal(data.save,save);assert.equal(data.marker,'kept');assert(data.keys.includes('mathmatrix-v-preservation-check'));
