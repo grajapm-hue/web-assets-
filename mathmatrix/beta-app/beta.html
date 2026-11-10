@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en" translate="no" data-mm-page="app">
+<html lang="en" translate="no">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <!-- viewport-fit=cover: without it, env(safe-area-inset-*) always reports 0,
      which is why .tabBar's own safe-area padding below was a no-op — needed
      now that the "Play offline" sheet's last line was found rendering under
@@ -51,7 +51,7 @@ window.onerror = function(msg, src, line, col, err){
 <link rel="apple-touch-icon" href="icon-192.png">
 <!-- without this the browser asks for /favicon.ico, 404s, and the tab sits blank -->
 <link rel="icon" href="icon-192.png" type="image/png">
-<title>🐒🎲 MathMatrix Pro++ — Beta - V.223 Unified</title>
+<title>🐒🎲 MathMatrix Pro++ — Beta - V.218 Unified</title>
 
 <!-- Raja: the copy icon in Android's share sheet copies something that will
      not open in a fresh browser, while every other channel works.
@@ -81,7 +81,21 @@ window.onerror = function(msg, src, line, col, err){
 <meta name="twitter:title" content="🐒🎲 MathMatrix Pro++ — Math, Logic &amp; Maze Puzzles for Kids">
 <meta name="twitter:description" content="Magic Squares, Multiply Magic, Criss-Cross, SaNa Maze, Ramanujan MathMagic, Logic Gates, Number Guessing, Slide Magic, Sudoku, Pallanguzhi and Thayam. Free, offline, no ads.">
 <meta name="twitter:image" content="https://kidsmathsmatrixpuzzle.github.io/icon-512.png">
-
+<script>
+(function(){
+  var root=document.documentElement;
+  var touch=('ontouchstart' in window)||(navigator.maxTouchPoints>0);
+  if(!touch)return;
+  root.classList.add('touchViewport');
+  var landscape=window.innerWidth>window.innerHeight;
+  if(!landscape)return;
+  var angle=(screen.orientation&&typeof screen.orientation.angle==='number')
+    ? screen.orientation.angle
+    : (typeof window.orientation==='number'?window.orientation:90);
+  angle=((angle%360)+360)%360;
+  root.classList.add(angle===90?'lockRotateCCW':'lockRotateCW');
+})();
+</script>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html, body { height:100%; width:100%; touch-action:manipulation; }  /* manipulation = normal taps/scroll but no double-tap zoom */
@@ -1178,6 +1192,42 @@ window.onerror = function(msg, src, line, col, err){
     color:#fbbf24; margin:6px auto 10px; max-width:560px; padding:0 10px;
   }
   @media (orientation:portrait){ #rotateHint.show { display:block; } }
+
+  /* Phones AND tablets now (see isRotatable()): rotating during play
+     leaves no room for the board once the header and keypad claim their
+     share of a short landscape screen — measured at 2px free on a
+     390px-tall phone. The board would silently collapse to nothing and
+     taps would land on the keypad underneath it instead of the cell.
+     Laptops/desktops can't physically rotate, so they stay exempt —
+     that gate is in JS, this is just the blocking screen. */
+  #portraitLock {
+    display:none; position:fixed; inset:0; z-index:9999;
+    background:rgba(20,12,4,.94); color:#FFF6E7;
+    flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:24px; gap:14px;
+  }
+  #portraitLock.show { display:flex; }
+  #portraitLock .rotIcon { font-size:44px; animation:rotNudge 1.4s ease-in-out infinite; }
+  #portraitLock b { font-size:17px; }
+  #portraitLock span { font-size:13.5px; opacity:.85; max-width:280px; }
+  @keyframes rotNudge { 0%,100% { transform:rotate(0deg); } 50% { transform:rotate(-90deg); } }
+  @media (prefers-reduced-motion:reduce){ #portraitLock .rotIcon { animation:none; } }
+
+  /* True visual portrait lock for touch devices (phone/tablet): instead of
+     blocking play with a warning when rotated, the whole page is rotated
+     back so it keeps showing in portrait shape no matter which way the
+     device is physically turned — same idea as a native OS orientation
+     lock, done in CSS since that level of lock isn't available to a page
+     running in a plain browser tab (only to an installed, standalone app).
+     Two classes because a device can be turned either direction into
+     landscape, and each needs the opposite correction to end up upright —
+     JS sets whichever one actually matches, using the real rotation angle. */
+  html.lockRotateCW, html.lockRotateCCW{
+    width:100vh; height:100vw; overflow-x:hidden; position:absolute; left:0; top:0;
+  }
+  html.lockRotateCW{ transform:rotate(90deg); transform-origin:top left; top:0; left:100%; }
+  html.lockRotateCCW{ transform:rotate(-90deg); transform-origin:top left; top:100%; left:0; }
+
 </style>
 <style>
 /* ══════════════════════════════════════════════════════════════════════
@@ -1433,8 +1483,23 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
 .appShell > *{ position:relative; z-index:1; }
 @media(prefers-reduced-motion:reduce){ .appShell::after{ animation:none !important; } }
 
+/* ══ TABLET · LAPTOP · DESKTOP ═════════════════════════════════════════════
+   This is a portrait phone design. Left to stretch, a single puzzle row ran
+   945px across a 1920px desktop and SaNa's greeting hit 341 characters on one
+   line — four times a readable measure. So cap the app and centre it: above
+   this width everything inside is the phone layout that is already tested.
 
-
+   Keep the phone-style column centered on wide screens. On touch devices,
+   the outer canvas follows Criss-Cross's sandalwood color; laptop margins
+   remain black. Puzzle boards keep their own proportions.                  */
+@media (min-width: 540px){
+  /* Desktop margin; touch screens override this below. */
+  html body{ background:#000 !important; }
+  /* the long-hand pair first: margin-inline is Safari 14.1+, and without it the
+     app would sit hard left on an older iPad instead of centred */
+  .appShell{ max-width:480px; margin-left:auto; margin-right:auto; margin-inline:auto;
+    box-shadow:0 0 0 1px rgba(255,255,255,.07), 0 18px 60px rgba(0,0,0,.55); }
+}
 /* Match Criss-Cross on tablet and other wide touch screens without widening
    the phone-sized app column or stretching puzzle boards. */
 @media (min-width: 540px){
@@ -1449,6 +1514,20 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
     width:calc(100% - 32px);
     max-width:960px;
   }
+}
+/* While visually rotation-locked, window.innerWidth still reads the real,
+   pre-rotation (landscape) measurement, so the narrow-column rule above
+   would double up with the rotation itself and leave blank gaps — the
+   'semi rotation' look. Switch it off during the lock; the rotation alone
+   already gives the portrait-shaped frame, nothing more is needed. */
+html.lockRotateCW .appShell, html.lockRotateCCW .appShell{
+  max-width:none !important; margin-left:0 !important; margin-right:0 !important;
+}
+/* The html box is turned into portrait dimensions with 100vh × 100vw. The
+   app shell must use that same long dimension: 100svh still means the short,
+   unrotated landscape height and would leave a blank strip after rotation. */
+html.lockRotateCW .appShell, html.lockRotateCCW .appShell{
+  height:100vw !important; max-height:100vw !important;
 }
 
 /* 56px, not 46: Raja asked for the top-area tabs bigger, and dropping the
@@ -4136,9 +4215,13 @@ body{ background:#C9A87C !important; }
 <script src="category-chooser.js"></script>
 <link rel="stylesheet" href="game-layout.css">
 <script src="game-layout.js"></script>
-<link rel="stylesheet" href="responsive-ui.css">
 </head>
 <body>
+<div id="portraitLock" role="alert">
+  <div class="rotIcon">📱</div>
+  <b>Turn your phone back to portrait</b>
+  <span>The board and the keypad need to be on screen together — rotate back to keep playing.</span>
+</div>
 <div class="blob blob-a"></div><div class="blob blob-b"></div><div class="blob blob-c"></div>
 
 <!-- Difficulty Toggle -->
@@ -6498,9 +6581,38 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     fitBadges();   // the ring re-fits with the board, not only on a new entry
   }
 
-  // Orientation changes only refit the current puzzle; they never stop Watch.
-  function syncViewportLayout(){
-    window.MathMatrixViewport.sync();
+  /* Touch capability, not screen size, is what separates "can physically
+     be turned" (phone/tablet) from "can't" (laptop/desktop mouse/trackpad
+     use, whose naturally-wide window must stay exempt from any of this). */
+  function isRotatable(){
+    return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+  }
+  // No more warning-and-block on rotation: the page is visually rotated
+  // back to portrait instead, so there's nothing to "turn back" from — it
+  // simply never leaves portrait shape on screen. Needs the actual angle,
+  // not just landscape/portrait, since a device can be turned either way
+  // into landscape and each needs the opposite correction to end upright.
+  function applyRotationLock(){
+    var root = document.documentElement;
+    root.classList.remove('lockRotateCW', 'lockRotateCCW');
+    if (!isRotatable()) return;
+    var landscape = window.innerWidth > window.innerHeight;
+    if (!landscape) return;
+    var angle = (screen.orientation && typeof screen.orientation.angle === 'number')
+      ? screen.orientation.angle
+      : (typeof window.orientation === 'number' ? window.orientation : 90);
+    angle = ((angle % 360) + 360) % 360;
+    if (angle === 90) root.classList.add('lockRotateCCW');
+    else root.classList.add('lockRotateCW'); // covers 0 and 270-degree landscape orientations
+  }
+  // Kept as a no-op shell (still referenced at a few call sites below) so
+  // nothing needs to change there — the warning div it used to toggle
+  // just never shows any more, since applyRotationLock() replaces its job.
+  function checkPortraitLock(){
+    applyRotationLock();
+    if (watchIv && window.innerWidth > window.innerHeight && isRotatable()){
+      clearInterval(watchIv); watchIv = null;
+    }
   }
 
   // Auto-shrink each cell's font by its digit count so 1–4 digit numbers fit uniformly (no horizontal overflow)
@@ -13522,7 +13634,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // home. armBack() is idempotent; there is only ever one sentinel.
     try { armBack(); } catch (e) {}
     if (id === 'scPlay'){ try { fitBoard(); } catch(e){} }
-    try { syncViewportLayout(); } catch(e){}
+    try { checkPortraitLock(); } catch(e){}
     // Learn is nothing but the logic notes — open them on arrival
     if (id === 'scLearn'){
       var box = document.getElementById('logicBox');
@@ -13871,13 +13983,13 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   // Re-fit digit sizes on orientation / breakpoint change
   window.addEventListener('resize', fitBoard);
   window.addEventListener('orientationchange', function(){ setTimeout(fitBoard, 250); });
-  window.addEventListener('resize', syncViewportLayout);
-  window.addEventListener('orientationchange', function(){ setTimeout(syncViewportLayout, 250); });
+  window.addEventListener('resize', checkPortraitLock);
+  window.addEventListener('orientationchange', function(){ setTimeout(checkPortraitLock, 250); });
   if (screen.orientation && screen.orientation.addEventListener){
-    screen.orientation.addEventListener('change', function(){ setTimeout(syncViewportLayout, 100); });
+    screen.orientation.addEventListener('change', function(){ setTimeout(checkPortraitLock, 100); });
   }
   if (window.visualViewport){
-    window.visualViewport.addEventListener('resize', function(){ setTimeout(syncViewportLayout, 100); });
+    window.visualViewport.addEventListener('resize', function(){ setTimeout(checkPortraitLock, 100); });
   }
 
   /* ══════════════════════════════════════════════════════════════════
@@ -14035,9 +14147,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         'screen  : ' + window.innerWidth + '×' + window.innerHeight +
                   ' @' + (window.devicePixelRatio || 1) + 'x',
         'online  : ' + (navigator.onLine ? 'yes' : 'no'),
-        'standalone : ' + ((navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches) ? 'installed app' : 'browser'),
-        'orientation : ' + (screen.orientation ? screen.orientation.type + ' @' + screen.orientation.angle : 'browser-managed'),
-        'rotation request : ' + (window.MathMatrixViewport ? window.MathMatrixViewport.orientationRequest : 'unavailable'),
+        'standalone : ' + (window.matchMedia('(display-mode: standalone)').matches ? 'installed app' : 'browser'),
         'browser : ' + navigator.userAgent
       ].join('\n');
     }
@@ -14112,11 +14222,47 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
      be — the list may shrink as puzzles are added, but never below what Raja
      already has today. Past that it scrolls; illegible beats nothing to read. */
   var LV_MIN = 0.92, LV_MAX = 1.75;
+  function installRotatedListSwipe(bar){
+    if (bar.__rotatedListSwipeBound) return;
+    bar.__rotatedListSwipeBound = true;
+    var root = document.documentElement, drag = null;
+    function rotated(){
+      return root.classList.contains('lockRotateCW') || root.classList.contains('lockRotateCCW');
+    }
+    bar.addEventListener('touchstart', function(e){
+      if (!rotated() || !e.touches || e.touches.length !== 1){ drag = null; return; }
+      var t = e.touches[0];
+      drag = {
+        x: t.clientX,
+        y: t.clientY,
+        top: bar.scrollTop,
+        direction: root.classList.contains('lockRotateCW') ? 1 : -1,
+        axis: null
+      };
+    }, {passive:true});
+    bar.addEventListener('touchmove', function(e){
+      if (!drag || !rotated() || !e.touches || e.touches.length !== 1) return;
+      var t = e.touches[0], dx = t.clientX - drag.x, dy = t.clientY - drag.y;
+      if (!drag.axis){
+        if (Math.max(Math.abs(dx), Math.abs(dy)) < 8) return;
+        drag.axis = Math.abs(dx) > Math.abs(dy) * 1.12 ? 'horizontal' : 'other';
+      }
+      if (drag.axis !== 'horizontal') return;
+      if (e.cancelable) e.preventDefault();
+      var max = Math.max(0, bar.scrollHeight - bar.clientHeight);
+      bar.scrollTop = Math.max(0, Math.min(max, drag.top + dx * drag.direction));
+    }, {passive:false});
+    function clearDrag(){ drag = null; }
+    bar.addEventListener('touchend', clearDrag, {passive:true});
+    bar.addEventListener('touchcancel', clearDrag, {passive:true});
+  }
+  
   var categoryChooser;
   function fitHome(){
     if (categoryChooser) { categoryChooser.fit(); return; }
     var bar = document.querySelector('.difficultyBar');
     if (!bar || !bar.clientHeight) return;
+    installRotatedListSwipe(bar);
 
     // Measure the list top-to-bottom, not the gap underneath it. The list is
     // centred now, so the slack is split above and below — reading only the
@@ -14127,6 +14273,18 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       for (var i = 0; i < k.length; i++) if (k[i].offsetHeight){ first = k[i]; break; }
       for (var j = k.length - 1; j >= 0; j--) if (k[j].offsetHeight){ last = k[j]; break; }
       if (!first || !last) return 0;
+      var root=document.documentElement;
+      if (root.classList.contains('lockRotateCW') || root.classList.contains('lockRotateCCW')){
+        // A 90-degree root transform turns viewport rectangles sideways. Sum
+        // the list items in layout coordinates so tablet fitting sees portrait height.
+        var total=0, count=0, gap=parseFloat(window.getComputedStyle(bar).rowGap)||0;
+        for (var n=0; n<k.length; n++) if (k[n].offsetHeight){
+          var itemStyle=window.getComputedStyle(k[n]);
+          total += k[n].offsetHeight + (parseFloat(itemStyle.marginTop)||0) + (parseFloat(itemStyle.marginBottom)||0);
+          count++;
+        }
+        return total + Math.max(0,count-1)*gap;
+      }
       return last.getBoundingClientRect().bottom - first.getBoundingClientRect().top;
     }
 
@@ -14417,10 +14575,32 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     if (!box) return;
     var tracks = pz.rows + 2;
     var gap = tracks >= 10 ? 2 : tracks >= 8 ? 3 : 5;
-    // Keep every cell reachable. Short viewports scroll around this whole board.
-    var cell = Math.max(18, Math.min(72, Math.floor((box.clientWidth - gap * (tracks - 1)) / tracks)));
-    box.style.setProperty('--mm-board-edge', (tracks * cell + gap * (tracks - 1)) + 'px');
-    document.body.classList.remove('hideKeys');
+    var w = box.clientWidth, h = box.clientHeight;
+    if (!w || !h) return;
+    // THE FIX: the smaller of the width- and height-derived cell size
+    function derive(){
+      var cw = Math.floor((box.clientWidth - gap * (tracks - 1)) / tracks);
+      var ch = Math.floor((box.clientHeight - gap * (tracks - 1)) / tracks);
+      /* The 96px ceiling keeps the phone layout compact. A portrait tablet has
+         a wider shell now, so allow its cells to grow to 124px; cw and ch
+         still keep every board inside its real available space. */
+      var root = document.documentElement;
+      var tabletPortrait = root.classList.contains('touchViewport') &&
+        root.clientWidth >= 560 && root.clientHeight >= root.clientWidth;
+      return Math.min(cw, ch, tabletPortrait ? 124 : 96);
+    }
+    var cell = derive();
+    // A big board on a short phone cannot fit AND keep a keypad. Rather than let the
+    // page start scrolling, the keypad steps aside and can be recalled.
+    var keysOff = document.body.classList.contains('hideKeys');
+    if (cell < 16 && !keysOff && tracks >= 9){
+      document.body.classList.add('hideKeys');
+      cell = derive();
+    } else if (keysOff && tracks < 9){
+      document.body.classList.remove('hideKeys');
+      cell = derive();
+    }
+    cell = Math.max(12, cell);
     board.style.setProperty('--tracks', tracks);
     board.style.setProperty('--cell', cell + 'px');
     board.style.setProperty('--gap', gap + 'px');
@@ -14430,12 +14610,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   };
   if (window.ResizeObserver){
     var bw = document.getElementById('boardWrap');
-    var boardFitQueued = false;
-    if (bw) new ResizeObserver(function(){
-      if (boardFitQueued) return;
-      boardFitQueued = true;
-      requestAnimationFrame(function(){ boardFitQueued = false; try { fitBoard(); } catch(e){} });
-    }).observe(bw);
+    if (bw) new ResizeObserver(function(){ try { fitBoard(); } catch(e){} }).observe(bw);
   }
   // chip to bring the keypad back when it has stepped aside
   (function keysChip(){
@@ -15463,12 +15638,18 @@ if (navigator.storage && navigator.storage.persist) {
   }).catch(function () {});
 }
 
+// iOS Safari ignores user-scalable=no, so pinch-zoom still shifts the layout.
+// Block the zoom gestures directly so the grid stays put like on Android.
+['gesturestart','gesturechange','gestureend'].forEach(function(evt){
+  document.addEventListener(evt, function(e){ e.preventDefault(); }, { passive:false });
+});
+
 // Show the current cached build, and give a one-tap "clear cache & reload to newest"
 // button — the reliable escape hatch when a device is stuck on an old cached version.
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'Beta - V.223 Unified';
+  var BUILD_VER = 'Beta - V.218 Unified';
   /* Legacy update beacon: older installed versions scan for this literal.
    window.BETA_VER = 'v185'
    Runtime code below derives the same token from BUILD_VER. */

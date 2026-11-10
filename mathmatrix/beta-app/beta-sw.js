@@ -1,6 +1,6 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V223 installed orientation request; shared device-controlled layouts.
+// MathMatrix Pro++ Beta Service Worker — Beta V218 install-version metadata refresh.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v233-installed-orientation';
+const CACHE_VERSION = 'mathmatrix-beta-v218-restored-20261110';
 
 const ASSETS = [
   './index.html',
@@ -8,7 +8,6 @@ const ASSETS = [
   './category-chooser.css',
   './category-chooser.js',
   './game-layout.css',
-  './responsive-ui.css',
   './game-layout.js',
   './criss-cross.html',
   './tic-tac-toe.html',

@@ -2,114 +2,48 @@
 (() => {
   'use strict';
   const root = document.documentElement;
-  // An older installed container can retain its original portrait default even
-  // after the HTML updates. Ask supported containers to allow every orientation.
-  // Chromium maps "any" to Android FULL_USER, which follows the user's setting.
-  let rotationApplied = false, rotationPending = false, rotationUnsupported = false;
-  let rotationGestureRetried = false, rotationRequest = 'browser-managed';
-  const installedApp = () => navigator.standalone === true ||
-    ['standalone','fullscreen','minimal-ui'].some(mode => matchMedia('(display-mode: ' + mode + ')').matches);
-  function applyDeviceOrientation() {
-    if (!installedApp() || rotationApplied || rotationPending || rotationUnsupported) return;
-    if (!screen.orientation || typeof screen.orientation.lock !== 'function') {
-      rotationRequest = 'browser-api-unavailable';
-      return;
-    }
-    rotationPending = true;
-    rotationRequest = 'request-pending';
-    Promise.resolve().then(() => screen.orientation.lock('any')).then(() => {
-      rotationApplied = true;
-      rotationRequest = 'request-accepted';
-    }, error => {
-      rotationUnsupported = error && error.name === 'NotSupportedError';
-      rotationRequest = 'request-rejected: ' + (error && error.name || 'unknown');
-    }).then(() => { rotationPending = false; });
-  }
-  document.addEventListener('pointerup', event => {
-    if (!event.isTrusted || rotationGestureRetried || rotationApplied || rotationPending || !installedApp()) return;
-    rotationGestureRetried = true;
-    applyDeviceOrientation();
-  }, {passive:true});
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') { rotationApplied = false; applyDeviceOrientation(); }
-  });
-  window.addEventListener('pageshow', event => {
-    if (event.persisted) { rotationApplied = false; applyDeviceOrientation(); }
-  });
-  applyDeviceOrientation();
-  // Keep the play surface at its designed scale without restricting scrolling or rotation.
-  for (const type of ['gesturestart','gesturechange','gestureend']) {
-    document.addEventListener(type, event => event.preventDefault(), {passive:false});
-  }
-  document.addEventListener('touchmove', event => {
-    if (event.touches.length > 1) event.preventDefault();
-  }, {passive:false});
   let queued = false;
   const clamp = (low, value, high) => Math.max(low, Math.min(value, high));
   function schedule() {
     if (queued) return;
     queued = true;
-    requestAnimationFrame(() => { queued = false; fitGate(); fitTic(); fitCriss(); });
+    requestAnimationFrame(() => { queued = false; fitGate(); fitTic(); });
   }
-  let viewportKey = '';
-  function syncViewport() {
+  function portrait() {
+    if (!root.classList.contains('portraitGame')) return;
     const viewport = window.visualViewport;
-    // Magnification changes the visible area, not the page's layout size.
-    // Keyboard/toolbars still reduce this height when scale is one.
-    const scale = viewport ? viewport.scale || 1 : 1;
-    const width = viewport ? viewport.width * scale : innerWidth;
-    const height = viewport ? viewport.height * scale : innerHeight;
-    const key = width + 'x' + height;
-    if (key === viewportKey) return;
-    viewportKey = key;
-    root.style.setProperty('--mm-viewport-width', width + 'px');
-    root.style.setProperty('--mm-viewport-height', height + 'px');
+    const width = viewport ? viewport.width : innerWidth;
+    const height = viewport ? viewport.height : innerHeight;
+    const touch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+    const rotated = touch && width > height;
+    const angle = ((screen.orientation ? screen.orientation.angle : window.orientation || 0) + 360) % 360;
+    const logicalWidth = rotated ? height : width;
+    const logicalHeight = rotated ? width : height;
     root.style.setProperty('--game-physical-width', width + 'px');
     root.style.setProperty('--game-physical-height', height + 'px');
-    root.classList.toggle('mmLandscape', width > height);
-    root.classList.toggle('gameCompact', height < 700);
+    root.style.setProperty('--game-logical-width', logicalWidth + 'px');
+    root.style.setProperty('--game-logical-height', logicalHeight + 'px');
+    root.classList.toggle('lockRotateCCW', rotated && angle === 90);
+    root.classList.toggle('lockRotateCW', rotated && angle !== 90);
+    root.classList.toggle('gameCompact', logicalHeight < 700);
     window.dispatchEvent(new Event('mathmatrixviewportchange'));
     schedule();
   }
-  window.MathMatrixViewport = Object.freeze({sync:syncViewport, get orientationRequest(){return rotationRequest;}});
   function fitTic() {
     if (!root.classList.contains('tttViewport')) return;
     const main = document.querySelector('main');
     const board = document.querySelector('.board-wrap');
     if (!main || !board) return;
     const style = getComputedStyle(main);
-    const children = Array.from(main.children).filter(el => getComputedStyle(el).display !== 'none');
+    const children = Array.from(main.children);
     const occupied = children.filter(el => el !== board).reduce((sum, el) => {
       const css = getComputedStyle(el);
       return sum + el.offsetHeight + parseFloat(css.marginTop) + parseFloat(css.marginBottom);
     }, 0);
-    let available = main.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom)
+    const available = main.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom)
       - occupied - (children.length - 1) * parseFloat(style.rowGap);
-    let width = main.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
-    if (style.display === 'grid') {
-      width = parseFloat(style.gridTemplateColumns);
-      const hint = main.querySelector('.hint');
-      available = main.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom)
-        - (hint ? hint.offsetHeight : 0) - parseFloat(style.rowGap) * 2;
-    }
-    root.style.setProperty('--ttt-board-size', Math.floor(Math.max(160, Math.min(width, available, 480))) + 'px');
-  }
-  function fitCriss() {
-    if (root.dataset.mmPage !== 'criss-cross') return;
-    const wrap = document.querySelector('.ccmWrap'), toolbar = document.querySelector('.ccmBtns');
-    if (!wrap || !toolbar) return;
-    const width = wrap.clientWidth - 12;
-    const height = Math.max(193, wrap.clientHeight - toolbar.offsetHeight - 12);
-    let number = 72, operator, answer;
-    while (number >= 32) {
-      operator = Math.max(18, Math.round(number * .42));
-      answer = Math.max(36, Math.round(number * .85));
-      if (number * 3 + operator * 2 + answer + 25 <= Math.min(width,height)) break;
-      number--;
-    }
-    root.style.setProperty('--ccm-number', Math.max(32,number) + 'px');
-    root.style.setProperty('--ccm-op', operator + 'px');
-    root.style.setProperty('--ccm-answer', answer + 'px');
+    const width = main.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+    root.style.setProperty('--ttt-board-size', Math.floor(Math.max(120, Math.min(width, available, 480))) + 'px');
   }
   function gridColumns(count, width, height) {
     let best = 1, score = Infinity;
@@ -193,21 +127,20 @@
     });
   }
   function install() {
-    const target = document.getElementById('gatePanel') || (root.classList.contains('tttViewport') && document.querySelector('main'))
-      || (root.dataset.mmPage === 'criss-cross' && document.querySelector('.ccmWrap'));
+    const target = document.getElementById('gatePanel') || (root.classList.contains('tttViewport') && document.querySelector('main'));
     if (target) {
       new ResizeObserver(schedule).observe(target);
       new MutationObserver(schedule).observe(target, {childList:true, subtree:true});
     }
     if (document.fonts) document.fonts.ready.then(schedule);
-    syncViewport(); schedule();
+    portrait(); schedule();
   }
-  window.addEventListener('resize', syncViewport);
+  window.addEventListener('resize', portrait);
   window.addEventListener('resize', schedule);
-  window.addEventListener('orientationchange', syncViewport);
-  if (screen.orientation) screen.orientation.addEventListener('change', syncViewport);
-  if (window.visualViewport) window.visualViewport.addEventListener('resize', syncViewport);
-  syncViewport();
+  window.addEventListener('orientationchange', portrait);
+  if (screen.orientation) screen.orientation.addEventListener('change', portrait);
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', portrait);
+  portrait();
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install);
   else install();
 })();
