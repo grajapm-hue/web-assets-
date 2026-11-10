@@ -1,6 +1,6 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V221 zoom gesture policy; device rotation unchanged.
+// MathMatrix Pro++ Beta Service Worker — Beta V222 landscape keypad alignment; portrait layout unchanged.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v231-zoom-policy';
+const CACHE_VERSION = 'mathmatrix-beta-v232-landscape-keypad';
 
 const ASSETS = [
   './index.html',
