@@ -36,12 +36,9 @@ body.gateMode #gatePanel{display:flex !important;flex-direction:column;width:100
 #gatePanel.gateCompact #gateFeedback{min-height:18px;font-size:11px}
 #gatePanel.gateCompact .gateDiagram{padding-top:6px;padding-bottom:6px}
 
-/* Standalone touch games follow the same portrait presentation as the main app. */
-html.portraitGame{width:var(--game-physical-width,100%);height:var(--game-physical-height,100dvh);overflow-x:hidden}
-html.portraitGame:is(.lockRotateCW,.lockRotateCCW){position:fixed;width:var(--game-logical-width);height:var(--game-logical-height);transform-origin:top left}
-html.portraitGame.lockRotateCW{left:var(--game-physical-width);top:0;transform:rotate(90deg)}
-html.portraitGame.lockRotateCCW{left:0;top:var(--game-physical-height);transform:rotate(-90deg)}
-html.portraitGame body{min-height:100%}
+
+html.responsiveGame{width:var(--game-physical-width,100%);height:var(--game-physical-height,100dvh);overflow-x:hidden}
+html.responsiveGame body{min-height:100%}
 html.tttViewport,html.tttViewport body{overflow:hidden}
 html.tttViewport body{display:flex;flex-direction:column;height:100%;min-height:0;width:100%}
 html.tttViewport body,html.tttViewport body *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
@@ -56,11 +53,3 @@ html.tttViewport.gameCompact .sub{display:none}
 html.tttViewport.gameCompact .sanaAvatar{width:32px;height:32px;font-size:22px}
 html.tttViewport.gameCompact .sanaBubble{padding:7px 10px;font-size:12px;min-height:0;line-height:1.3}
 html.tttViewport.gameCompact .sanaState{font-size:13px}
-/* Match the other desktop puzzles: a portrait panel with black side margins. */
-@media (min-width:540px) and (hover:hover) and (pointer:fine){
-  html.tttViewport:not(.lockRotateCW):not(.lockRotateCCW){background:#000}
-  html.tttViewport:not(.lockRotateCW):not(.lockRotateCCW) body{width:min(100%,480px);max-width:480px;margin:0 auto}
-}
-html.portraitGame:is(.lockRotateCW,.lockRotateCCW) dialog{position:fixed;inset:auto;margin:0;left:calc(var(--game-physical-width)/2);top:calc(var(--game-physical-height)/2);width:calc(var(--game-logical-width) - 24px);max-width:480px;max-height:min(calc(var(--game-logical-height) - 28px),620px);transform-origin:0 0}
-html.portraitGame.lockRotateCW dialog{transform:rotate(90deg) translate(-50%,-50%)}
-html.portraitGame.lockRotateCCW dialog{transform:rotate(-90deg) translate(-50%,-50%)}

@@ -6,7 +6,7 @@
   "start_url": "./beta.html",
   "scope": "./",
   "display": "standalone",
-  "orientation": "portrait",
+  "orientation": "any",
   "background_color": "#1B1442",
   "theme_color": "#8b5cf6",
   "icons": [

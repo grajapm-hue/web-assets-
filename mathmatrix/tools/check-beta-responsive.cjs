@@ -81,9 +81,10 @@ async function orientation() {
         transform:getComputedStyle(document.documentElement).transform,
         bodyTransform:getComputedStyle(document.body).transform,
         width:document.documentElement.getBoundingClientRect().width,
-        viewport:visualViewport.width, overflow:document.documentElement.scrollWidth > innerWidth + 2}));
+        viewport:visualViewport.width, overflow:document.documentElement.scrollWidth > innerWidth + 2,
+        blockerVisible:!!document.querySelector('#portraitLock') && getComputedStyle(document.querySelector('#portraitLock')).display !== 'none'}));
       check(`${name} upright ${width}x${height}`, info.transform === 'none' && info.bodyTransform === 'none'
-        && !/lockRotate/.test(info.classes) && Math.abs(info.width-info.viewport)<2, info);
+        && !/lockRotate/.test(info.classes) && !info.blockerVisible && Math.abs(info.width-info.viewport)<2, info);
       if (width > height) await page.screenshot({path:path.join(reportDir, `orientation-${name}-${width}x${height}.png`)});
     }
     check(name + ' no uncaught errors', !errors.length, errors);
@@ -118,6 +119,38 @@ async function orientation() {
     }
     check('Tic-Tac-Toe move and turn preserved through rotation',true); await ctx.close();
   });
+  await test('Add Magic Watch continues after rotating',async()=>{
+    const ctx=await context(); const page=await ctx.newPage();
+    await open(page,'beta.html',true);
+    await page.locator('.categoryCard[data-category="Add Magic"]').click();
+    await page.locator('.bookChoice[data-size="3x3"]').click();
+    await page.locator('#barWatch').click();
+    const filled=()=>page.locator('#board input').evaluateAll(nodes=>nodes.filter(node=>node.value).length);
+    const before=await filled(); await page.setViewportSize({width:844,height:390});
+    await page.waitForFunction(count=>Array.from(document.querySelectorAll('#board input')).filter(node=>node.value).length>count,before,{timeout:3500});
+    check('Add Magic Watch continues after rotating',true); await ctx.close();
+  });
+  for(const route of ['cave-treasure-hunt.html','treasure-hunt-landscape-prototype/index.html']) {
+    await test(route+' preserves maze state and Watch on rotation',async()=>{
+      const ctx=await context(); const page=await ctx.newPage(); await open(page,route);
+      await page.locator('#newRun').click(); await settle(page);
+      const read=()=>page.evaluate(()=>({maze:document.getElementById('maze').innerHTML,
+        progress:document.getElementById('progress').textContent}));
+      const before=await read(); await page.setViewportSize({width:844,height:390}); await settle(page);
+      assert.deepEqual(await read(),before,'The started maze and stage must survive rotation');
+      await page.locator('#watchButton').click();
+      assert.equal(await page.locator('#watchButton').getAttribute('aria-pressed'),'true');
+      await page.setViewportSize({width:390,height:844}); await settle(page);
+      assert.equal(await page.locator('#watchButton').getAttribute('aria-pressed'),'true','Rotation must not stop maze Watch');
+      // Story frames intentionally pause playback; advance them using their real control.
+      for(let frame=0;frame<10 && await page.locator('#storyReveal:visible').count();frame++) {
+        await page.locator('#storyContinue').click(); await page.waitForTimeout(30);
+      }
+      const watching=await page.locator('#maze').innerHTML();
+      await page.waitForFunction(html=>document.getElementById('maze').innerHTML!==html,watching,{timeout:8000});
+      check(route+' preserves maze state and Watch on rotation',true); await ctx.close();
+    });
+  }
 }
 async function shell() {
   const ctx=await context(); const page=await ctx.newPage(); const errors=[];

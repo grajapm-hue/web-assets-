@@ -1,24 +1,10 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8">
+<html lang="en" data-mm-page="criss-cross"><head><meta charset="UTF-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <link rel="manifest" href="./beta-manifest.json">
 <title>MathMatrix Pro++ — Criss-Cross</title>
-<script>
-(function(){
-  var root=document.documentElement;
-  var touch=('ontouchstart' in window)||(navigator.maxTouchPoints>0);
-  if(!touch)return;
-  root.classList.add('touchViewport');
-  var landscape=window.innerWidth>window.innerHeight;
-  if(!landscape)return;
-  var angle=(screen.orientation&&typeof screen.orientation.angle==='number')
-    ? screen.orientation.angle
-    : (typeof window.orientation==='number'?window.orientation:90);
-  angle=((angle%360)+360)%360;
-  root.classList.add(angle===90?'lockRotateCCW':'lockRotateCW');
-})();
-</script>
+
 <style>
 :root{--safeTop:env(safe-area-inset-top,0px);--safeLeft:env(safe-area-inset-left,0px);--safeRight:env(safe-area-inset-right,0px);--bg:#d8b98c;--accent:#8a5a2b;--accent2:#c97b2e;--good:#2f9e5c;--bad:#c0392b;--ink:#3a2415;--blue:#2d6ca8;--kbd-height:0px;}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
@@ -170,36 +156,9 @@ body{margin:0;font-family:-apple-system,Segoe UI,Roboto,sans-serif;background:va
 .ccmSoundChoices{display:flex;gap:10px;margin:12px 0;}
 .ccmSoundChoice{flex:1;}
 .ccmSoundNote{font-size:12px;line-height:1.5;margin-top:8px;}
-#portraitLock{display:none;position:fixed;inset:0;z-index:9999;background:rgba(20,12,4,.94);color:#FFF6E7;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;gap:14px;}
-#portraitLock.show{display:flex;}
-#portraitLock .rotIcon{font-size:44px;animation:rotNudge 1.4s ease-in-out infinite;}
-#portraitLock b{font-size:17px;}
-#portraitLock span{font-size:13.5px;opacity:.85;max-width:280px;}
 @keyframes rotNudge{0%,100%{transform:rotate(0deg);}50%{transform:rotate(-90deg);}}
-@media(prefers-reduced-motion:reduce){#portraitLock .rotIcon{animation:none;}}
-html.lockRotateCW,html.lockRotateCCW{width:100vh;height:100vw;overflow-x:hidden;position:absolute;left:0;top:0;}
-html.lockRotateCW{transform:rotate(90deg);transform-origin:top left;top:0;left:100%;}
-html.lockRotateCCW{transform:rotate(-90deg);transform-origin:top left;top:100%;left:0;}
-@media (min-width:540px){
-  body{background:#000 !important;}
-  .ccmBar,.sanaRow{max-width:480px;margin-left:auto;margin-right:auto;margin-inline:auto;}
-}html.touchViewport body{background:var(--bg) !important;}
 
-/* While visually rotation-locked, the device's actual window is already
-   landscape-shaped — this media query still reads the real (pre-rotation)
-   width, so the narrow-column rule above would double up with the
-   rotation itself and leave blank gaps. Switch it off during the lock;
-   the rotation alone already achieves the portrait-shaped look. */
-html.lockRotateCW .ccmBar, html.lockRotateCW .sanaRow, html.lockRotateCW .ccmWrap,
-html.lockRotateCCW .ccmBar, html.lockRotateCCW .sanaRow, html.lockRotateCCW .ccmWrap{
-  max-width:none !important; margin-left:0 !important; margin-right:0 !important;
-}
-/* The wide-screen rule above makes desktop side margins black. During the
-   touch rotation lock the app itself is the full screen, so restore its wood
-   background and let the page cover the portrait-height viewport. */
-html.lockRotateCW body, html.lockRotateCCW body{
-  background:var(--bg) !important; min-height:100vw;
-}
+html.touchViewport body{background:var(--bg) !important;}
 /* On portrait tablets, expand the page and its grid as HTML/CSS elements.
    Keep the existing sandalwood palette and square input cells; the screen
    width and height both set a sensible board size, rather than zooming a
@@ -246,12 +205,8 @@ html.lockRotateCW body, html.lockRotateCCW body{
   .ccmDock.hiddenDock{transform:translate(-50%,110%);}
   .ccmShowKeyBtn{right:max(14px,calc((100vw - 480px)/2 + 14px));}
 }
-</style></head><body>
-<div id="portraitLock" role="alert">
-  <div class="rotIcon">📱</div>
-  <b>Turn your phone back to portrait</b>
-  <span>The board and the keypad need to be on screen together — rotate back to keep playing.</span>
-</div>
+</style><script src="game-layout.js"></script>
+</head><body>
 <div class="ccmBar"><button class="ccmBack" id="ccmBack" type="button" aria-label="Back to puzzles">←</button><div class="ccmBarTitle" aria-label="Criss-Cross">Criss-Cross</div><div class="ccmTopActions"><button class="ccmTopBtn logic" id="logicBtn"><i>💡</i><span>LOGIC</span></button><button class="ccmTopBtn watchTop" id="watchTopBtn"><i>👁️</i><span>WATCH</span></button><button class="ccmTopBtn soundTop" id="ccmSoundBtn"><i>🔊</i><span>SOUND</span></button></div></div>
 <div class="sanaRow"><div><div class="sanaAvatar">🐒</div><div class="sanaName">SaNa</div></div><div class="sanaBubble playing" id="sanaBubble"><span class="levelTextEasy">Easy 1-9</span><span class="sanaOps"><span class="op-plus">+</span> <span class="op-minus">-</span></span> — Use 1-9. Tap a cell — take your time! 0/9</div></div>
 <div class="ccmLevels" id="ccmLevels">
@@ -838,36 +793,7 @@ window.addEventListener('pageshow',function(){ if(!ccTimerSolved && inputs.some(
 document.getElementById('ccmSoundBtn').addEventListener('click',function(){
   ccSyncSoundState(); refreshCCSound(); ccUnlockOnUserGesture();
 },true);
-// Keeps the page visually in portrait shape on touch devices no matter
-// which way they're physically turned, instead of warning and blocking —
-// same fix as the main app, ported over since this page runs on its own.
-function isRotatable(){
-  return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-}
-function checkPortraitLock(){
-  var root = document.documentElement;
-  if (isRotatable()) root.classList.add('touchViewport');
-  else root.classList.remove('touchViewport');
-  root.classList.remove('lockRotateCW', 'lockRotateCCW');
-  if (!isRotatable()) return;
-  var landscape = window.innerWidth > window.innerHeight;
-  if (!landscape) return;
-  var angle = (screen.orientation && typeof screen.orientation.angle === 'number')
-    ? screen.orientation.angle
-    : (typeof window.orientation === 'number' ? window.orientation : 90);
-  angle = ((angle % 360) + 360) % 360;
-  if (angle === 90) root.classList.add('lockRotateCCW');
-  else root.classList.add('lockRotateCW');
-}
-window.addEventListener('resize', checkPortraitLock);
-window.addEventListener('orientationchange', function(){ setTimeout(checkPortraitLock, 250); });
-if (screen.orientation && screen.orientation.addEventListener){
-  screen.orientation.addEventListener('change', function(){ setTimeout(checkPortraitLock, 100); });
-}
-if (window.visualViewport){
-  window.visualViewport.addEventListener('resize', function(){ setTimeout(checkPortraitLock, 100); });
-}
-setTimeout(checkPortraitLock, 250);
+// The shared layout module follows the real viewport without rotating the page.
 
 // Criss-Cross can be opened directly, so expose the same offline app worker
 // even when the user has not visited index.html in this browser session.

@@ -9,26 +9,24 @@
     queued = true;
     requestAnimationFrame(() => { queued = false; fitGate(); fitTic(); });
   }
-  function portrait() {
-    if (!root.classList.contains('portraitGame')) return;
+  let viewportKey = '';
+  function syncViewport() {
     const viewport = window.visualViewport;
     const width = viewport ? viewport.width : innerWidth;
     const height = viewport ? viewport.height : innerHeight;
-    const touch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
-    const rotated = touch && width > height;
-    const angle = ((screen.orientation ? screen.orientation.angle : window.orientation || 0) + 360) % 360;
-    const logicalWidth = rotated ? height : width;
-    const logicalHeight = rotated ? width : height;
+    const key = width + 'x' + height;
+    if (key === viewportKey) return;
+    viewportKey = key;
+    root.style.setProperty('--mm-viewport-width', width + 'px');
+    root.style.setProperty('--mm-viewport-height', height + 'px');
     root.style.setProperty('--game-physical-width', width + 'px');
     root.style.setProperty('--game-physical-height', height + 'px');
-    root.style.setProperty('--game-logical-width', logicalWidth + 'px');
-    root.style.setProperty('--game-logical-height', logicalHeight + 'px');
-    root.classList.toggle('lockRotateCCW', rotated && angle === 90);
-    root.classList.toggle('lockRotateCW', rotated && angle !== 90);
-    root.classList.toggle('gameCompact', logicalHeight < 700);
+    root.classList.toggle('mmLandscape', width > height);
+    root.classList.toggle('gameCompact', height < 700);
     window.dispatchEvent(new Event('mathmatrixviewportchange'));
     schedule();
   }
+  window.MathMatrixViewport = Object.freeze({sync:syncViewport});
   function fitTic() {
     if (!root.classList.contains('tttViewport')) return;
     const main = document.querySelector('main');
@@ -133,14 +131,14 @@
       new MutationObserver(schedule).observe(target, {childList:true, subtree:true});
     }
     if (document.fonts) document.fonts.ready.then(schedule);
-    portrait(); schedule();
+    syncViewport(); schedule();
   }
-  window.addEventListener('resize', portrait);
+  window.addEventListener('resize', syncViewport);
   window.addEventListener('resize', schedule);
-  window.addEventListener('orientationchange', portrait);
-  if (screen.orientation) screen.orientation.addEventListener('change', portrait);
-  if (window.visualViewport) window.visualViewport.addEventListener('resize', portrait);
-  portrait();
+  window.addEventListener('orientationchange', syncViewport);
+  if (screen.orientation) screen.orientation.addEventListener('change', syncViewport);
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', syncViewport);
+  syncViewport();
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install);
   else install();
 })();

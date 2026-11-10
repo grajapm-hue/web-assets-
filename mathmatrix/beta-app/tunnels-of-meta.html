@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" class="portraitGame">
+<html lang="en" class="responsiveGame" data-mm-page="tunnels">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -1109,14 +1109,7 @@
       demoFrame = requestAnimationFrame(animate);
     }
     function logicalRect(element) {
-      var rect = element.getBoundingClientRect();
-      var root = document.documentElement;
-      var viewport = window.visualViewport;
-      var width = viewport ? viewport.width : window.innerWidth;
-      var height = viewport ? viewport.height : window.innerHeight;
-      if (root.classList.contains('lockRotateCW')) return {left:rect.top, top:width-rect.right, width:rect.height, height:rect.width};
-      if (root.classList.contains('lockRotateCCW')) return {left:height-rect.bottom, top:rect.left, width:rect.height, height:rect.width};
-      return rect;
+      return element.getBoundingClientRect();
     }
     function alignSaNaWithStart() {
       var startPerson = document.getElementById('startPerson');
@@ -1131,8 +1124,7 @@
     function fitMazeToViewport() {
       if (!cols || !rows || !mazeCard || !mazeWrap || !finishTag) return;
       var viewport = window.visualViewport;
-      var rotated = document.documentElement.matches('.lockRotateCW,.lockRotateCCW');
-      var viewportHeight = rotated ? (viewport ? viewport.width : window.innerWidth) : (viewport ? viewport.height : window.innerHeight);
+      var viewportHeight = viewport ? viewport.height : window.innerHeight;
       var wrapTop = Math.max(0, logicalRect(mazeWrap).top);
       var safeBottom = parseFloat(getComputedStyle(document.body).paddingBottom) || 0;
       var appBottom = parseFloat(getComputedStyle(document.querySelector('.app')).paddingBottom) || 0;
