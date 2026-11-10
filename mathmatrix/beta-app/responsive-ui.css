@@ -320,3 +320,6 @@ html[data-mm-page="sound-lab"] button.tone { min-height: 76px;    border-radius:
   html[data-mm-page="criss-cross"] .ccmDock { grid-column: 2; grid-row: 3; }
   html[data-mm-page="sound-lab"] .grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
 }
+
+/* Allow normal scrolling, while reserving drag handling for existing puzzle rules. */
+html[data-mm-page] { touch-action: pan-x pan-y; }

@@ -2,6 +2,13 @@
 (() => {
   'use strict';
   const root = document.documentElement;
+  // Keep the play surface at its designed scale without restricting scrolling or rotation.
+  for (const type of ['gesturestart','gesturechange','gestureend']) {
+    document.addEventListener(type, event => event.preventDefault(), {passive:false});
+  }
+  document.addEventListener('touchmove', event => {
+    if (event.touches.length > 1) event.preventDefault();
+  }, {passive:false});
   let queued = false;
   const clamp = (low, value, high) => Math.max(low, Math.min(value, high));
   function schedule() {

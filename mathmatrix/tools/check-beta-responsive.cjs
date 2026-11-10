@@ -488,15 +488,7 @@ async function zoom(){
   for(const [name,route]of routes.filter(([n])=>n!=='index'))await test(name+' browser zoom',async()=>{
     await open(page,route,name==='app');
     const policy=await page.evaluate(()=>{const event=new Event('gesturestart',{cancelable:true});document.dispatchEvent(event);return{meta:document.querySelector('meta[name="viewport"]').content,cancelled:event.defaultPrevented};});
-    check(name+' permits browser zoom',!/user-scalable\s*=\s*no|maximum-scale\s*=\s*1(?:\D|$)/.test(policy.meta)&&!policy.cancelled,policy);
-    if(engine==='chromium'){
-      const session=await ctx.newCDPSession(page);
-      const height=await page.evaluate(()=>parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--mm-viewport-height')));
-      await session.send('Emulation.setPageScaleFactor',{pageScaleFactor:2});await settle(page);
-      const after=await page.evaluate(()=>({scale:visualViewport.scale,height:parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--mm-viewport-height'))}));
-      check(name+' zoom preserves layout size',after.scale>1.9&&Math.abs(after.height-height)<3,{height,after});
-      await session.send('Emulation.setPageScaleFactor',{pageScaleFactor:1});await session.detach();
-    }
+    check(name+' prevents page zoom',/user-scalable\s*=\s*no/.test(policy.meta)&&policy.cancelled,policy);
   });
   await ctx.close();
 }
@@ -573,10 +565,10 @@ async function release(){
   await test('Beta release metadata and precache',async()=>{
     const manifest=JSON.parse(fs.readFileSync(path.join(dir,'beta-manifest.json'),'utf8'));
     assert.equal(manifest.name,'MathMatrix Beta');assert.equal(manifest.short_name,'MathMatrix Beta');assert(!Object.hasOwn(manifest,'orientation'));
-    assert(cacheVersion.includes('v230'));assert(assets.includes('./responsive-ui.css'));
+    assert(cacheVersion.includes('v231'));assert(assets.includes('./responsive-ui.css'));
     for(const asset of assets)assert(fs.existsSync(path.join(dir,asset)),asset);
     assert(fs.readFileSync(path.join(dir,'beta.html')).equals(fs.readFileSync(path.join(dir,'index.html'))));
-    assert(fs.readFileSync(path.join(dir,'beta.html'),'utf8').includes("BUILD_VER = 'Beta - V.220 Unified'"));
+    assert(fs.readFileSync(path.join(dir,'beta.html'),'utf8').includes("BUILD_VER = 'Beta - V.221 Unified'"));
     check('Beta release metadata and precache',true,{cacheVersion,assets:assets.length});
   });
   await test('active route script syntax and original maze engines',async()=>{
