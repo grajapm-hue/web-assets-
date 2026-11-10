@@ -317,6 +317,9 @@ async function orientation() {
     await test(route+' preserves maze state and Watch on rotation',async()=>{
       const ctx=await context(); const page=await ctx.newPage(); await open(page,route);
       await page.locator('#newRun').click(); await settle(page);
+      for(let frame=0;frame<10 && await page.locator('#storyReveal:visible').count();frame++) {
+        await page.locator('#storyContinue').click();await page.waitForTimeout(30);
+      }
       const read=()=>page.evaluate(()=>({maze:document.getElementById('maze').innerHTML,
         progress:document.getElementById('progress').textContent}));
       const before=await read(); await page.setViewportSize({width:844,height:390}); await settle(page);
