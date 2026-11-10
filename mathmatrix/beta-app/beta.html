@@ -2,7 +2,7 @@
 <html lang="en" translate="no" data-mm-page="app">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <!-- viewport-fit=cover: without it, env(safe-area-inset-*) always reports 0,
      which is why .tabBar's own safe-area padding below was a no-op — needed
      now that the "Play offline" sheet's last line was found rendering under
@@ -14415,32 +14415,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     if (!box) return;
     var tracks = pz.rows + 2;
     var gap = tracks >= 10 ? 2 : tracks >= 8 ? 3 : 5;
-    var w = box.clientWidth, h = box.clientHeight;
-    if (!w || !h) return;
-    // THE FIX: the smaller of the width- and height-derived cell size
-    function derive(){
-      var cw = Math.floor((box.clientWidth - gap * (tracks - 1)) / tracks);
-      var ch = Math.floor((box.clientHeight - gap * (tracks - 1)) / tracks);
-      /* The 96px ceiling keeps the phone layout compact. A portrait tablet has
-         a wider shell now, so allow its cells to grow to 124px; cw and ch
-         still keep every board inside its real available space. */
-      var root = document.documentElement;
-      var tabletPortrait = root.classList.contains('touchViewport') &&
-        root.clientWidth >= 560 && root.clientHeight >= root.clientWidth;
-      return Math.min(cw, ch, tabletPortrait ? 124 : 96);
-    }
-    var cell = derive();
-    // A big board on a short phone cannot fit AND keep a keypad. Rather than let the
-    // page start scrolling, the keypad steps aside and can be recalled.
-    var keysOff = document.body.classList.contains('hideKeys');
-    if (cell < 16 && !keysOff && tracks >= 9){
-      document.body.classList.add('hideKeys');
-      cell = derive();
-    } else if (keysOff && tracks < 9){
-      document.body.classList.remove('hideKeys');
-      cell = derive();
-    }
-    cell = Math.max(12, cell);
+    // Keep every cell reachable. Short viewports scroll around this whole board.
+    var cell = Math.max(18, Math.min(72, Math.floor((box.clientWidth - gap * (tracks - 1)) / tracks)));
+    box.style.setProperty('--mm-board-edge', (tracks * cell + gap * (tracks - 1)) + 'px');
+    document.body.classList.remove('hideKeys');
     board.style.setProperty('--tracks', tracks);
     board.style.setProperty('--cell', cell + 'px');
     board.style.setProperty('--gap', gap + 'px');
@@ -14450,7 +14428,12 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   };
   if (window.ResizeObserver){
     var bw = document.getElementById('boardWrap');
-    if (bw) new ResizeObserver(function(){ try { fitBoard(); } catch(e){} }).observe(bw);
+    var boardFitQueued = false;
+    if (bw) new ResizeObserver(function(){
+      if (boardFitQueued) return;
+      boardFitQueued = true;
+      requestAnimationFrame(function(){ boardFitQueued = false; try { fitBoard(); } catch(e){} });
+    }).observe(bw);
   }
   // chip to bring the keypad back when it has stepped aside
   (function keysChip(){
@@ -15477,12 +15460,6 @@ if (navigator.storage && navigator.storage.persist) {
     if (!already) navigator.storage.persist();
   }).catch(function () {});
 }
-
-// iOS Safari ignores user-scalable=no, so pinch-zoom still shifts the layout.
-// Block the zoom gestures directly so the grid stays put like on Android.
-['gesturestart','gesturechange','gestureend'].forEach(function(evt){
-  document.addEventListener(evt, function(e){ e.preventDefault(); }, { passive:false });
-});
 
 // Show the current cached build, and give a one-tap "clear cache & reload to newest"
 // button — the reliable escape hatch when a device is stuck on an old cached version.

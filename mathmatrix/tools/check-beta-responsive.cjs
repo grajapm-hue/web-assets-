@@ -53,6 +53,12 @@ async function context(viewport = {width:390,height:844}, workers = 'block') {
     reducedMotion:'reduce', serviceWorkers:workers, deviceScaleFactor:1});
   await ctx.addInitScript(() => {
     localStorage.setItem('mmSound','off'); localStorage.setItem('mmMusic','off');
+    window.__mmObserverCalls={ResizeObserver:0,MutationObserver:0};
+    for(const name of Object.keys(window.__mmObserverCalls)){
+      const Native=window[name];window[name]=class extends Native{constructor(callback){super((...args)=>{window.__mmObserverCalls[name]++;callback(...args);});}};
+    }
+    window.__mmPointerTypes=[];document.addEventListener('pointerdown',e=>window.__mmPointerTypes.push(e.pointerType),true);
+    window.__mmRuntimeErrors=[];window.addEventListener('error',e=>window.__mmRuntimeErrors.push(e.message),true);
   });
   ctx.setDefaultTimeout(6000);
   return ctx;
@@ -66,6 +72,17 @@ const gameControls={
   'multiply-magic':['#clearBtn','#showBtn','#watchBtn','#soundBtn','#logicBtn'],
   'sound-lab':['button.tone','.foot a']
 };
+async function dragPointer(page,start,end,steps=12){
+  if(engine==='chromium'){
+    const session=await page.context().newCDPSession(page);
+    await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[start]});
+    for(let i=1;i<=steps;i++)await session.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:start.x+(end.x-start.x)*i/steps,y:start.y+(end.y-start.y)*i/steps}]});
+    await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await session.detach();
+    assert((await page.evaluate(()=>window.__mmPointerTypes)).includes('touch'),'Browser must dispatch genuine touch pointers');
+  }else{
+    await page.mouse.move(start.x,start.y);await page.mouse.down();await page.mouse.move(end.x,end.y,{steps});await page.mouse.up();
+  }
+}
 async function controlLayout(page,selectors){
   return page.locator(selectors.join(',')).evaluateAll(nodes=>nodes.map(node=>{
     let rect=node.getBoundingClientRect(), good=rect.width>0 && rect.height>0, reason='';
@@ -138,7 +155,7 @@ async function games(){
         const start=p.matrixTransform(svg.getScreenCTM());p.x+=dx;p.y+=dy;const end=p.matrixTransform(svg.getScreenCTM());
         return {start:{x:start.x,y:start.y},end:{x:end.x,y:end.y}};
       },{dx,dy});
-      await page.mouse.move(points.start.x,points.start.y);await page.mouse.down();await page.mouse.move(points.end.x,points.end.y,{steps:12});await page.mouse.up();
+      await dragPointer(page,points.start,points.end);
     }
     const before=await position();await drag(0,24);const moved=await position();assert(moved.y>before.y,'Dragging down the entrance tunnel must move SaNa');
     await drag(-100,0);const blocked=await position();assert(blocked.x>moved.x-90,'A wall must block the requested lateral drag');
@@ -161,7 +178,7 @@ async function games(){
       const screen=cell=>{const p=svg.createSVGPoint();p.x=box.x+(cell.x+.5)*box.width/cols;p.y=box.y+(cell.y+.5)*box.height/rows;const q=p.matrixTransform(svg.getScreenCTM());return{x:q.x,y:q.y};};
       return{start:screen(at),end:screen(target)};
     },{at,target,cols:moved.cols,rows:moved.rows});
-    await page.mouse.move(points.start.x,points.start.y);await page.mouse.down();await page.mouse.move(points.end.x,points.end.y,{steps:10});await page.mouse.up();
+    await dragPointer(page,points.start,points.end,10);
     assert.deepEqual((await read()).path.at(-1),target);check('Tunnels valid moves, walls, and pointer alignment',true);await ctx.close();
   });
   await inlineInteractions();
@@ -186,6 +203,39 @@ async function games(){
     }
     await page.locator('#storyContinue').click();check('story Continue uses original handler',true);await ctx.close();
   });
+  await edges();
+}
+async function edges(){
+  const ctx=await context(),page=await ctx.newPage();
+  for(const [width,height]of [[320,568],[568,320]])for(let index=0;index<6;index++)await test(`number board reachable ${index} ${width}x${height}`,async()=>{
+    await page.setViewportSize({width,height});await choose(page,'Add Magic',index);
+    const inputs=page.locator('#board input');
+    const clipped=await inputs.evaluateAll(es=>{const box=document.getElementById('boardWrap').getBoundingClientRect();return es.filter(e=>{const r=e.getBoundingClientRect();return r.top<box.top-1||r.bottom>box.bottom+1||r.left<box.left-1||r.right>box.right+1;}).length;});
+    check(`board ${index} reserves every cell ${width}x${height}`,clipped===0,{clipped});
+    for(const target of [inputs.first(),inputs.last()]){
+      await target.tap();
+      const info=await target.evaluate(e=>{const r=e.getBoundingClientRect(),box=document.getElementById('boardWrap').getBoundingClientRect();const hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return{inside:r.top>=box.top-1&&r.bottom<=box.bottom+1,hit:hit===e};});
+      check(`board ${index} input visible ${width}x${height}`,info.inside&&info.hit,info);
+    }
+  });
+  for(const [width,height]of [[568,320],[844,390],[390,300]])await test(`Gate choices usable ${width}x${height}`,async()=>{
+    await page.setViewportSize({width,height});await choose(page,'Gate Logic');
+    const read=selector=>page.locator(selector).evaluateAll(es=>es.map(e=>({text:e.textContent.trim(),height:e.getBoundingClientRect().height,overflow:e.scrollHeight>e.clientHeight+2})));
+    let rows=await read('#gatePicker .rowBtn');check('Gate picker target and content '+width+'x'+height,rows.every(r=>r.height>=44&&!r.overflow),rows);
+    await page.locator('#gatePicker [data-gate="and"]').tap();const levels=page.locator('#gatePicker .rowBtn:visible:not(.gateLevelBack)');if(await levels.count())await levels.first().tap();
+    rows=await read('#gateRoom .gateChoiceBtn');check('Gate answer target and content '+width+'x'+height,rows.length>0&&rows.every(r=>r.height>=44&&!r.overflow),rows);
+    await page.locator('#gateRoom .gateChoiceBtn').last().tap();
+    await page.screenshot({path:path.join(reportDir,`gate-readable-${width}x${height}.png`)});
+  });
+  for(const [name,route]of routes.filter(([n])=>['app','criss-cross','tic-tac-toe','tunnels'].includes(n)))await test(name+' observers become idle',async()=>{
+    await open(page,route,name==='app');if(name==='app')await choose(page,'Add Magic');
+    for(const [width,height]of [[844,390],[390,844]]){await page.setViewportSize({width,height});await settle(page);}
+    await page.waitForTimeout(350);const before=await page.evaluate(()=>({...window.__mmObserverCalls}));await page.waitForTimeout(1100);
+    const after=await page.evaluate(()=>({...window.__mmObserverCalls}));assert.deepEqual(after,before,'Layout observers must stop firing while idle');
+    assert.deepEqual(await page.evaluate(()=>window.__mmRuntimeErrors),[],'No hidden runtime or observer-loop errors');
+    check(name+' observers become idle',true,after);
+  });
+  await ctx.close();
 }
 async function choose(page,name,index=0){
   await open(page,'beta.html',true);await page.locator(`.categoryCard[data-category="${name}"]`).click();
@@ -431,6 +481,24 @@ async function shell() {
     assert.equal(await page.evaluate(()=>window.__mmResizeEvents),count);check('viewport observers settle after repeated resize',true);
   });
   await ctx.close();
+  await zoom();
+}
+async function zoom(){
+  const ctx=await context(),page=await ctx.newPage();
+  for(const [name,route]of routes.filter(([n])=>n!=='index'))await test(name+' browser zoom',async()=>{
+    await open(page,route,name==='app');
+    const policy=await page.evaluate(()=>{const event=new Event('gesturestart',{cancelable:true});document.dispatchEvent(event);return{meta:document.querySelector('meta[name="viewport"]').content,cancelled:event.defaultPrevented};});
+    check(name+' permits browser zoom',!/user-scalable\s*=\s*no|maximum-scale\s*=\s*1(?:\D|$)/.test(policy.meta)&&!policy.cancelled,policy);
+    if(engine==='chromium'){
+      const session=await ctx.newCDPSession(page);
+      const height=await page.evaluate(()=>parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--mm-viewport-height')));
+      await session.send('Emulation.setPageScaleFactor',{pageScaleFactor:2});await settle(page);
+      const after=await page.evaluate(()=>({scale:visualViewport.scale,height:parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--mm-viewport-height'))}));
+      check(name+' zoom preserves layout size',after.scale>1.9&&Math.abs(after.height-height)<3,{height,after});
+      await session.send('Emulation.setPageScaleFactor',{pageScaleFactor:1});await session.detach();
+    }
+  });
+  await ctx.close();
 }
 async function main() {
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
@@ -441,7 +509,14 @@ async function main() {
   if (section === 'shell' || section === 'all') await shell();
   if (section === 'games' || section === 'all') await games();
   if (section === 'offline' || section === 'all') await release();
-  if (!['orientation','shell','games','offline','all'].includes(section)) throw new Error('Unknown validation section: ' + section);
+  if (section === 'zoom') await zoom();
+  if (section === 'edges') await edges();
+  if (section === 'errors'){
+    const ctx=await context(),page=await ctx.newPage();await choose(page,'Add Magic');
+    await page.setViewportSize({width:568,height:320});await settle(page);
+    check('number layout no observer-loop errors',(await page.evaluate(()=>window.__mmRuntimeErrors)).length===0,await page.evaluate(()=>window.__mmRuntimeErrors));await ctx.close();
+  }
+  if (!['orientation','shell','games','offline','zoom','edges','errors','all'].includes(section)) throw new Error('Unknown validation section: ' + section);
 }
 async function release(){
   const dir=path.join(root,'mathmatrix/beta-app'),sw=fs.readFileSync(path.join(dir,'beta-sw.js'),'utf8');

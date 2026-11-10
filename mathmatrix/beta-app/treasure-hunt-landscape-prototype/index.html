@@ -14,8 +14,8 @@
  const root=document.documentElement;
  function syncVisibleViewport(){
   const visual=window.visualViewport;
-  const width=visual&&visual.width>0?visual.width:window.innerWidth;
-  const height=visual&&visual.height>0?visual.height:window.innerHeight;
+  const width=visual&&visual.width>0?visual.width*(visual.scale||1):window.innerWidth;
+  const height=visual&&visual.height>0?visual.height*(visual.scale||1):window.innerHeight;
   root.style.setProperty('--sana-visible-width',width+'px');
   root.style.setProperty('--sana-visible-height',height+'px');
   return {width,height};

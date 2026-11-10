@@ -12,8 +12,11 @@
   let viewportKey = '';
   function syncViewport() {
     const viewport = window.visualViewport;
-    const width = viewport ? viewport.width : innerWidth;
-    const height = viewport ? viewport.height : innerHeight;
+    // Magnification changes the visible area, not the page's layout size.
+    // Keyboard/toolbars still reduce this height when scale is one.
+    const scale = viewport ? viewport.scale || 1 : 1;
+    const width = viewport ? viewport.width * scale : innerWidth;
+    const height = viewport ? viewport.height * scale : innerHeight;
     const key = width + 'x' + height;
     if (key === viewportKey) return;
     viewportKey = key;
