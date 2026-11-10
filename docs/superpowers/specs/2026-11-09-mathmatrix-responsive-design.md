@@ -1,6 +1,6 @@
 # MathMatrix professional responsive redesign
 
-Status: proposed design for user review; product implementation has not started.
+Status: user approved the Beta-first direction on 2026-11-09; Main promotion requires a later review. Product implementation has not started.
 
 ## Intent and confirmed requirements
 
@@ -8,9 +8,9 @@ Group members like the existing play methods and performance. They want a more p
 
 The user previously asked to keep every puzzle category together on a compact front page. The current source has 12 category books, including a SaNaMaze book with the three existing maze/adventure choices. Preserve all current choices and direct launch paths; do not restore an older category count from historical packages.
 
-## Recommended delivery, pending approval
+## Approved delivery
 
-Implement and publish the redesign to Beta first so the group can try it. Promote the accepted result to Main after review. The user has been asked whether they prefer Beta first or direct Main, and whether they want a visual preview first. These choices are pending; this document describes the recommended Beta-first design for approval, not an assertion that approval has already been given.
+Implement and publish the redesign to Beta first so the group can try it. Promote the accepted result to Main only after review. The user selected “Beta first, then Main after review.” The proposed responsive design is the direction approved for the Beta implementation; Main is outside this delivery.
 
 Current reviewed baselines:
 
