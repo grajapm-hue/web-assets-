@@ -7,43 +7,67 @@
   function schedule() {
     if (queued) return;
     queued = true;
-    requestAnimationFrame(() => { queued = false; fitGate(); fitTic(); });
+    requestAnimationFrame(() => { queued = false; fitGate(); fitTic(); fitCriss(); });
   }
-  function portrait() {
-    if (!root.classList.contains('portraitGame')) return;
+  let viewportKey = '';
+  function syncViewport() {
     const viewport = window.visualViewport;
-    const width = viewport ? viewport.width : innerWidth;
-    const height = viewport ? viewport.height : innerHeight;
-    const touch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
-    const rotated = touch && width > height;
-    const angle = ((screen.orientation ? screen.orientation.angle : window.orientation || 0) + 360) % 360;
-    const logicalWidth = rotated ? height : width;
-    const logicalHeight = rotated ? width : height;
+    // Magnification changes the visible area, not the page's layout size.
+    // Keyboard/toolbars still reduce this height when scale is one.
+    const scale = viewport ? viewport.scale || 1 : 1;
+    const width = viewport ? viewport.width * scale : innerWidth;
+    const height = viewport ? viewport.height * scale : innerHeight;
+    const key = width + 'x' + height;
+    if (key === viewportKey) return;
+    viewportKey = key;
+    root.style.setProperty('--mm-viewport-width', width + 'px');
+    root.style.setProperty('--mm-viewport-height', height + 'px');
     root.style.setProperty('--game-physical-width', width + 'px');
     root.style.setProperty('--game-physical-height', height + 'px');
-    root.style.setProperty('--game-logical-width', logicalWidth + 'px');
-    root.style.setProperty('--game-logical-height', logicalHeight + 'px');
-    root.classList.toggle('lockRotateCCW', rotated && angle === 90);
-    root.classList.toggle('lockRotateCW', rotated && angle !== 90);
-    root.classList.toggle('gameCompact', logicalHeight < 700);
+    root.classList.toggle('mmLandscape', width > height);
+    root.classList.toggle('gameCompact', height < 700);
     window.dispatchEvent(new Event('mathmatrixviewportchange'));
     schedule();
   }
+  window.MathMatrixViewport = Object.freeze({sync:syncViewport});
   function fitTic() {
     if (!root.classList.contains('tttViewport')) return;
     const main = document.querySelector('main');
     const board = document.querySelector('.board-wrap');
     if (!main || !board) return;
     const style = getComputedStyle(main);
-    const children = Array.from(main.children);
+    const children = Array.from(main.children).filter(el => getComputedStyle(el).display !== 'none');
     const occupied = children.filter(el => el !== board).reduce((sum, el) => {
       const css = getComputedStyle(el);
       return sum + el.offsetHeight + parseFloat(css.marginTop) + parseFloat(css.marginBottom);
     }, 0);
-    const available = main.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom)
+    let available = main.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom)
       - occupied - (children.length - 1) * parseFloat(style.rowGap);
-    const width = main.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
-    root.style.setProperty('--ttt-board-size', Math.floor(Math.max(120, Math.min(width, available, 480))) + 'px');
+    let width = main.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+    if (style.display === 'grid') {
+      width = parseFloat(style.gridTemplateColumns);
+      const hint = main.querySelector('.hint');
+      available = main.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom)
+        - (hint ? hint.offsetHeight : 0) - parseFloat(style.rowGap) * 2;
+    }
+    root.style.setProperty('--ttt-board-size', Math.floor(Math.max(160, Math.min(width, available, 480))) + 'px');
+  }
+  function fitCriss() {
+    if (root.dataset.mmPage !== 'criss-cross') return;
+    const wrap = document.querySelector('.ccmWrap'), toolbar = document.querySelector('.ccmBtns');
+    if (!wrap || !toolbar) return;
+    const width = wrap.clientWidth - 12;
+    const height = Math.max(193, wrap.clientHeight - toolbar.offsetHeight - 12);
+    let number = 72, operator, answer;
+    while (number >= 32) {
+      operator = Math.max(18, Math.round(number * .42));
+      answer = Math.max(36, Math.round(number * .85));
+      if (number * 3 + operator * 2 + answer + 25 <= Math.min(width,height)) break;
+      number--;
+    }
+    root.style.setProperty('--ccm-number', Math.max(32,number) + 'px');
+    root.style.setProperty('--ccm-op', operator + 'px');
+    root.style.setProperty('--ccm-answer', answer + 'px');
   }
   function gridColumns(count, width, height) {
     let best = 1, score = Infinity;
@@ -127,20 +151,21 @@
     });
   }
   function install() {
-    const target = document.getElementById('gatePanel') || (root.classList.contains('tttViewport') && document.querySelector('main'));
+    const target = document.getElementById('gatePanel') || (root.classList.contains('tttViewport') && document.querySelector('main'))
+      || (root.dataset.mmPage === 'criss-cross' && document.querySelector('.ccmWrap'));
     if (target) {
       new ResizeObserver(schedule).observe(target);
       new MutationObserver(schedule).observe(target, {childList:true, subtree:true});
     }
     if (document.fonts) document.fonts.ready.then(schedule);
-    portrait(); schedule();
+    syncViewport(); schedule();
   }
-  window.addEventListener('resize', portrait);
+  window.addEventListener('resize', syncViewport);
   window.addEventListener('resize', schedule);
-  window.addEventListener('orientationchange', portrait);
-  if (screen.orientation) screen.orientation.addEventListener('change', portrait);
-  if (window.visualViewport) window.visualViewport.addEventListener('resize', portrait);
-  portrait();
+  window.addEventListener('orientationchange', syncViewport);
+  if (screen.orientation) screen.orientation.addEventListener('change', syncViewport);
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', syncViewport);
+  syncViewport();
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install);
   else install();
 })();

@@ -1,6 +1,6 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V218 install-version metadata refresh.
+// MathMatrix Pro++ Beta Service Worker — Beta V219 responsive presentation.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v228-v218-install-metadata';
+const CACHE_VERSION = 'mathmatrix-beta-v229-responsive';
 
 const ASSETS = [
   './index.html',
@@ -8,6 +8,7 @@ const ASSETS = [
   './category-chooser.css',
   './category-chooser.js',
   './game-layout.css',
+  './responsive-ui.css',
   './game-layout.js',
   './criss-cross.html',
   './tic-tac-toe.html',

@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en" class="portraitGame">
+<html lang="en" class="responsiveGame" data-mm-page="tunnels">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#8b5cf6">
+  <meta name="theme-color" content="#f7fafd">
   <meta name="description" content="Tunnels Of SaNa Maze — trace two winding tunnels and find the one that reaches Finish.">
   <link rel="manifest" href="beta-manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
@@ -331,6 +331,7 @@
   </style>
 <link rel="stylesheet" href="game-layout.css">
 <script src="game-layout.js"></script>
+<link rel="stylesheet" href="responsive-ui.css">
 </head>
 <body>
   <main class="app">
@@ -350,7 +351,8 @@
       </div>
     </header>
 
-    <div class="msg" id="message" role="status" aria-live="polite">🐒 Two tunnels leave Start. One reaches Finish. Drag to find it.</div>
+    <div class="mmGameSidebar">
+<div class="msg" id="message" role="status" aria-live="polite">🐒 Two tunnels leave Start. One reaches Finish. Drag to find it.</div>
 
     <div class="level-row" role="group" aria-label="Maze difficulty">
       <button class="level-btn active" data-level="easy" type="button" aria-pressed="true">Easy</button>
@@ -378,7 +380,8 @@
         <button class="top-btn" id="clearBtn" type="button" aria-label="Clear your path">✖ Clear</button>
       </div>
     </div>
-    <div class="maze-wrap">
+    </div>
+<div class="maze-wrap">
       <div class="maze-card">
         <svg id="mazeSvg" viewBox="0 0 100 133.333" role="img" aria-label="Interactive maze. Drag from the green Start marker to the red Finish marker."></svg>
       </div>
@@ -1109,14 +1112,7 @@
       demoFrame = requestAnimationFrame(animate);
     }
     function logicalRect(element) {
-      var rect = element.getBoundingClientRect();
-      var root = document.documentElement;
-      var viewport = window.visualViewport;
-      var width = viewport ? viewport.width : window.innerWidth;
-      var height = viewport ? viewport.height : window.innerHeight;
-      if (root.classList.contains('lockRotateCW')) return {left:rect.top, top:width-rect.right, width:rect.height, height:rect.width};
-      if (root.classList.contains('lockRotateCCW')) return {left:height-rect.bottom, top:rect.left, width:rect.height, height:rect.width};
-      return rect;
+      return element.getBoundingClientRect();
     }
     function alignSaNaWithStart() {
       var startPerson = document.getElementById('startPerson');
@@ -1131,19 +1127,19 @@
     function fitMazeToViewport() {
       if (!cols || !rows || !mazeCard || !mazeWrap || !finishTag) return;
       var viewport = window.visualViewport;
-      var rotated = document.documentElement.matches('.lockRotateCW,.lockRotateCCW');
-      var viewportHeight = rotated ? (viewport ? viewport.width : window.innerWidth) : (viewport ? viewport.height : window.innerHeight);
+      var viewportHeight = viewport ? viewport.height : window.innerHeight;
       var wrapTop = Math.max(0, logicalRect(mazeWrap).top);
       var safeBottom = parseFloat(getComputedStyle(document.body).paddingBottom) || 0;
       var appBottom = parseFloat(getComputedStyle(document.querySelector('.app')).paddingBottom) || 0;
-      var remaining = viewportHeight - wrapTop - 3 - 8 - logicalRect(mazeFooter).height - 10 - safeBottom - appBottom;
+      var wide = document.documentElement.classList.contains('mmLandscape') && innerWidth >= 540;
+      var remaining = wide ? mazeWrap.clientHeight : viewportHeight - wrapTop - 3 - 8 - logicalRect(mazeFooter).height - 10 - safeBottom - appBottom;
       var cardChrome = 22;
       var widthByHeight = Math.max(0, remaining - cardChrome) * cols / rows + cardChrome;
       var widthByScreen = Math.max(220, mazeWrap.clientWidth - 20);
       var cardWidth = Math.max(180, Math.min(500, widthByScreen, widthByHeight));
       mazeCard.style.width = cardWidth + 'px';
-      mazeFooter.style.width = Math.min(widthByScreen, Math.max(284, cardWidth)) + 'px';
-      if (startControls) startControls.style.width = cardWidth + 'px';
+      mazeFooter.style.removeProperty('width');
+      if (startControls) startControls.style.removeProperty('width');
       alignSaNaWithStart();
     }
     function updateSanaPosition() {

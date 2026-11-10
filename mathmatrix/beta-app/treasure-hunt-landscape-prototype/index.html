@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-mm-page="story-maze">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <base href="./">
-<meta name="theme-color" content="#8b5cf6">
+<meta name="theme-color" content="#f7fafd">
 <link rel="preload" as="image" href="assets/interactive-treasure-hunt-maze-original/0-kids-admiring-treasure.webp" fetchpriority="high">
 <title>SaNa Treasure Hunt Interactive · MathMatrix Beta</title>
 
@@ -14,34 +14,27 @@
  const root=document.documentElement;
  function syncVisibleViewport(){
   const visual=window.visualViewport;
-  const width=visual&&visual.width>0?visual.width:window.innerWidth;
-  const height=visual&&visual.height>0?visual.height:window.innerHeight;
+  const width=visual&&visual.width>0?visual.width*(visual.scale||1):window.innerWidth;
+  const height=visual&&visual.height>0?visual.height*(visual.scale||1):window.innerHeight;
   root.style.setProperty('--sana-visible-width',width+'px');
   root.style.setProperty('--sana-visible-height',height+'px');
   return {width,height};
  }
- function applyPortraitLock(){
+ let previousViewport='';
+ function updateVisibleViewport(){
   const visible=syncVisibleViewport();
-  const before=root.classList.contains('lockRotateCW')?'cw':root.classList.contains('lockRotateCCW')?'ccw':'';
-  const touch=('ontouchstart' in window)||navigator.maxTouchPoints>0;
-  const landscape=visible.width>visible.height;
-  let direction='';
-  if(touch&&landscape){
-   let angle=typeof screen.orientation?.angle==='number'?screen.orientation.angle:typeof window.orientation==='number'?window.orientation:90;
-   angle=((angle%360)+360)%360;direction=angle===90?'ccw':'cw';
+  const key=visible.width+'x'+visible.height;
+  root.classList.toggle('sanaCompact',visible.height<=700);
+  if(previousViewport!==key){
+   previousViewport=key;
+   window.dispatchEvent(new Event('sanaorientationchange'));
   }
-  root.classList.toggle('lockRotateCW',direction==='cw');
-  root.classList.toggle('lockRotateCCW',direction==='ccw');
-  // Layout breakpoints follow the visible portrait height, including browser
-  // chrome and insets that can make it shorter than the layout viewport.
-  root.classList.toggle('sanaCompact',(direction?visible.width:visible.height)<=700);
-  if(before!==direction)window.dispatchEvent(new Event('sanaorientationchange'));
  }
- applyPortraitLock();
- window.addEventListener('resize',applyPortraitLock);
- window.addEventListener('orientationchange',applyPortraitLock);
- screen.orientation?.addEventListener?.('change',applyPortraitLock);
- window.visualViewport?.addEventListener('resize',applyPortraitLock);
+ updateVisibleViewport();
+ window.addEventListener('resize',updateVisibleViewport);
+ window.addEventListener('orientationchange',updateVisibleViewport);
+ screen.orientation?.addEventListener?.('change',updateVisibleViewport);
+ window.visualViewport?.addEventListener('resize',updateVisibleViewport);
 })();
 </script>
 <style>
@@ -94,29 +87,11 @@ button{font:inherit;touch-action:manipulation}
 dialog:not([open]){display:none}dialog[open]{display:flex;flex-direction:column;width:min(calc(100% - 28px),520px);height:min(78dvh,620px);max-height:min(78dvh,620px);overflow:hidden;padding:0;border:1px solid #c4a277;border-radius:20px;background:#fff8ec;color:#33220f;box-shadow:0 16px 50px #0007}dialog::backdrop{background:#170e08a8}.dialog-head{flex:none;display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:#f2dfbd;font-weight:950}.dialog-close{border:0;border-radius:9px;background:#80572f;color:white;padding:5px 10px;font-weight:900}.dialog-body{flex:1;min-height:0;padding:12px 18px 18px;overflow:auto;line-height:1.45}.dialog-body ol,.dialog-body ul{padding-left:23px}.dialog-body li{margin:5px 0}.dialog-body h3{margin:14px 0 6px;color:#6c3b1c;font-size:15px}.logic-watch-note{padding:9px 11px;border-radius:12px;background:#f4e7d1;font-weight:800}
 .sound-dialog[open]{position:fixed;inset:auto 0 env(safe-area-inset-bottom,0px);width:min(calc(100% - 28px),520px);height:auto;max-height:min(78dvh,620px);margin:0 auto;border:1px solid #c4a277;border-bottom:0;border-radius:20px 20px 0 0;background:#fff8ec;color:#33220f;box-shadow:0 -8px 28px #33220f52}.sound-dialog::backdrop{background:#170e08a8}.sound-body{padding-bottom:max(20px,env(safe-area-inset-bottom,0px))}.sound-options{display:flex;gap:10px;margin:14px 0}.sound-choice{flex:1;min-height:48px;border:2px solid #f59e0b;border-radius:11px;padding:9px 7px;color:#fbbf24;background:#3b248c;font-weight:900}.sound-choice:nth-child(2){border-color:#22c55e;color:#4ade80;background:#176b4a}.sound-choice.is-off,.sound-choice:disabled{border-color:#888;color:#777;background:#eee}.sound-note{color:#5b4630;font-size:12px!important;line-height:1.45}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 html.sanaCompact .app{gap:3px;padding-left:5px;padding-right:5px}html.sanaCompact .bar{height:45px;min-height:45px}html.sanaCompact .back-btn{width:37px;height:37px;flex-basis:37px}html.sanaCompact .top-btn{width:36px;height:36px;flex-basis:36px}html.sanaCompact .top-icon{font-size:15px}html.sanaCompact .top-label{font-size:7px}html.sanaCompact .banner{min-height:43px;padding:4px 8px;font-size:12px}html.sanaCompact .run-toolbar{height:36px;min-height:36px}html.sanaCompact .player-row{min-height:42px}html.sanaCompact .player-face{width:32px;height:32px;font-size:21px}html.sanaCompact .swatch{width:25px;height:25px;flex-basis:25px}html.sanaCompact .actions{height:34px;min-height:34px}html.sanaCompact .action-btn{height:30px}html.sanaCompact .maze-labels{height:16px;min-height:16px;flex-basis:16px}html.sanaCompact .bottom{height:50px;min-height:50px}html.sanaCompact .direction-row{grid-template-rows:40px}html.sanaCompact .pad{font-size:19px}
-
-/* Match the live main puzzle's touch-only visual portrait lock. */
-html.lockRotateCW,html.lockRotateCCW{position:fixed;width:100vh;width:100dvh;height:100vw;height:100dvw;overflow:hidden;transform-origin:top left}
-html.lockRotateCW{left:100vw;left:100dvw;top:0;transform:rotate(90deg)}
-html.lockRotateCCW{left:0;top:100vh;top:100dvh;transform:rotate(-90deg)}
-html.lockRotateCW .app,html.lockRotateCCW .app{height:100vw;height:100dvw;max-height:100vw;max-height:100dvw;height:var(--sana-visible-width,100vw);max-height:var(--sana-visible-width,100vw)}
-html.lockRotateCW .title,html.lockRotateCCW .title{font-size:clamp(14px,3.8dvh,20px)}
-html.lockRotateCW .maze-labels,html.lockRotateCCW .maze-labels{font-size:clamp(12px,3.4dvh,18px)}
-html.lockRotateCW:not(.sanaCompact) .banner,html.lockRotateCCW:not(.sanaCompact) .banner{font-size:clamp(13px,3.7dvh,16px)}
-html.lockRotateCW .app{padding-top:env(safe-area-inset-right);padding-bottom:env(safe-area-inset-left)}
-html.lockRotateCCW .app{padding-top:env(safe-area-inset-left);padding-bottom:env(safe-area-inset-right)}
-/* Native modal dialogs live in the top layer, outside the root transform. */
-html.lockRotateCW dialog[open],html.lockRotateCCW dialog[open]{position:fixed;inset:auto;left:50vw;left:50dvw;top:50vh;top:50dvh;margin:0;width:min(calc(100dvh - 28px),520px);height:min(78dvw,620px);max-height:min(78dvw,620px);transform-origin:top left}
-html.lockRotateCW dialog[open]{transform:rotate(90deg) translate(-50%,-50%)}
-html.lockRotateCCW dialog[open]{transform:rotate(-90deg) translate(-50%,-50%)}
-html.lockRotateCW #soundDialog[open],html.lockRotateCCW #soundDialog[open]{height:auto}
-html.lockRotateCW #soundDialog[open]{left:0;transform:rotate(90deg) translate(-50%,-100%)}
-html.lockRotateCCW #soundDialog[open]{left:100vw;left:100dvw;transform:rotate(-90deg) translate(-50%,-100%)}
-html.lockRotateCW .sound-body{padding-bottom:max(20px,env(safe-area-inset-left))}
-html.lockRotateCCW .sound-body{padding-bottom:max(20px,env(safe-area-inset-right))}
 @media(prefers-reduced-motion:reduce){.banner.pop,.player-face{animation:none}}
 .stage-reveal[hidden]{display:none!important}.stage-reveal{--stage-accent:#d4a017;position:absolute;z-index:5;inset:20px 0 0;display:grid;place-items:center;padding:clamp(7px,2vw,16px);background:rgba(36,23,13,.72);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}.stage-reveal__card{box-sizing:border-box;display:flex;flex-direction:column;align-items:center;gap:clamp(6px,1.5vh,12px);width:min(100%,560px);height:min(100%,820px);max-height:100%;padding:clamp(9px,2.4vw,18px);overflow:hidden;border:4px solid var(--stage-accent);border-radius:22px;background:#fff8ec;color:#33220f;box-shadow:0 7px 0 #21170f88,0 18px 38px #0008;text-align:center;animation:storyRevealIn .2s ease-out both}.stage-reveal__heading{flex:none;width:100%}.stage-reveal__step{display:block;margin:0 0 3px;color:var(--stage-accent);font-size:clamp(11px,2.7vw,14px);font-weight:950;letter-spacing:.04em}.stage-reveal__title{margin:0;font-size:clamp(19px,4vw,28px);line-height:1.08;font-weight:950}.stage-reveal__image-frame{box-sizing:border-box;display:grid;place-items:center;flex:1 1 auto;min-width:0;min-height:0;width:100%;overflow:hidden;border:2px solid #d7c29e;border-radius:15px;background:#f1e4cd}.stage-reveal__image{box-sizing:border-box;display:block;min-width:0;min-height:0;width:auto;height:auto;max-width:100%;max-height:100%;object-fit:contain!important;object-position:center}.stage-reveal__image-frame--pair{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:minmax(0,1fr);gap:clamp(4px,1vw,10px);padding:clamp(4px,1vw,10px)}.stage-reveal__image-frame--pair .stage-reveal__image{min-width:0;width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain!important}.stage-reveal__image-frame--pair .stage-reveal__fallback{grid-column:1/-1}.stage-reveal__image[hidden],.stage-reveal__fallback[hidden]{display:none!important}.stage-reveal__fallback{display:grid;place-items:center;height:100%;padding:18px;color:#654b2e;font-weight:800}.stage-reveal__fallback--loading{display:flex;flex-direction:column;gap:12px}.stage-reveal__fallback--loading::before{content:"";width:32px;height:32px;border:4px solid #d7c29e;border-top-color:#80572f;border-radius:50%;animation:storyImageSpin .75s linear infinite}@keyframes storyImageSpin{to{transform:rotate(360deg)}}.stage-reveal__caption{flex:none;max-width:42em;margin:0;font-size:clamp(12px,2.9vw,16px);font-weight:750;line-height:1.28}.stage-reveal__countdown{flex:none;min-height:18px;margin:-2px 0 0;color:#654b2e;font-size:clamp(11px,2.7vw,14px);font-weight:850}.stage-reveal__continue{flex:none;width:min(100%,340px);min-height:48px;border:0;border-radius:13px;background:#80572f;color:#fff8ea;box-shadow:0 4px 0 #53361e;font:inherit;font-size:clamp(15px,3.5vw,19px);font-weight:950;cursor:pointer;touch-action:manipulation}.stage-reveal__continue:active{transform:translateY(2px);box-shadow:0 2px 0 #53361e;background:#69421f}.stage-reveal__continue:focus-visible{outline:3px solid #3b248c;outline-offset:3px}@keyframes storyRevealIn{from{opacity:.35;transform:scale(.96)}to{opacity:1;transform:scale(1)}}html.sanaCompact .stage-reveal{inset:16px 0 0;padding:6px}html.sanaCompact .stage-reveal__card{gap:6px;padding:8px;border-width:3px;border-radius:17px}html.sanaCompact .stage-reveal__step{font-size:10px}html.sanaCompact .stage-reveal__title{font-size:18px}html.sanaCompact .stage-reveal__caption{font-size:12px;line-height:1.2}html.sanaCompact .stage-reveal__countdown{font-size:10px}html.sanaCompact .stage-reveal__continue{min-height:40px;font-size:15px}@media(max-height:560px){.stage-reveal__card{gap:5px;padding:7px}.stage-reveal__step{font-size:10px}.stage-reveal__title{font-size:17px}.stage-reveal__caption{font-size:11px}.stage-reveal__continue{min-height:38px}}@media(prefers-reduced-motion:reduce){.stage-reveal__card{animation:none}}
 </style>
+<script src="../game-layout.js"></script>
+<link rel="stylesheet" href="../responsive-ui.css">
 </head>
 <body>
 <main class="app" aria-label="SaNa Treasure Hunt Interactive, fixed cave maze">
@@ -129,7 +104,8 @@ html.lockRotateCCW .sound-body{padding-bottom:max(20px,env(safe-area-inset-right
       <button class="top-btn sound-btn" id="soundButton" type="button" aria-label="Sound and music settings" aria-haspopup="dialog" aria-pressed="true"><span class="top-icon">🔊</span><span class="top-label">Sound</span></button>
     </div>
   </header>
-  <div class="banner" id="banner" role="status" aria-live="polite"><span aria-hidden="true">🐒</span><span class="banner-copy" id="bannerText">Choose a player color and press START. Collect every item, avoid the decoy bypasses, and escape with the treasure.</span></div>
+  <div class="mmGameSidebar">
+<div class="banner" id="banner" role="status" aria-live="polite"><span aria-hidden="true">🐒</span><span class="banner-copy" id="bannerText">Choose a player color and press START. Collect every item, avoid the decoy bypasses, and escape with the treasure.</span></div>
   <div class="run-toolbar" role="group" aria-label="Maze status and controls">
     <span class="run-location" id="location">Cave passage</span>
     <div class="actions" aria-label="Maze controls">
@@ -150,7 +126,8 @@ html.lockRotateCCW .sound-body{padding-bottom:max(20px,env(safe-area-inset-right
     </div></div>
   </section>
 
-  <div class="board-wrap"><div class="maze-labels" role="group" aria-label="Cave tunnel entrance and exit"><span>Entrance</span><span>CAVE TUNNEL</span><span>EXIT</span></div><svg id="maze" viewBox="0 0 593 802" preserveAspectRatio="none" role="group" aria-label="A fixed cave tunnel maze. Checkpoints are hidden during normal play. Use the direction buttons, drag SaNa, or use keyboard arrows to follow corridor centers."></svg><div class="stage-reveal" id="storyReveal" role="dialog" aria-modal="true" aria-labelledby="storyTitle" aria-describedby="storyCaption" hidden><div class="stage-reveal__card"><div class="stage-reveal__heading"><span class="stage-reveal__step" id="storyStep">Checkpoint 1 of 9</span><h2 class="stage-reveal__title" id="storyTitle">Stage found</h2></div><div class="stage-reveal__image-frame" id="storyImageFrame"><img class="stage-reveal__image" id="storyImage" alt=""><img class="stage-reveal__image" id="storyImageSecondary" alt="" hidden><div class="stage-reveal__fallback" id="storyImageFallback" hidden>Image not found. Put the images beside this HTML or in assets/interactive-treasure-hunt-maze-original/, then reload.</div></div><p class="stage-reveal__caption" id="storyCaption"></p><span class="stage-reveal__countdown" id="storyCountdown">Continuing in 5 seconds</span><button class="stage-reveal__continue" id="storyContinue" type="button">Continue</button></div></div></div>
+  </div>
+<div class="board-wrap"><div class="maze-labels" role="group" aria-label="Cave tunnel entrance and exit"><span>Entrance</span><span>CAVE TUNNEL</span><span>EXIT</span></div><svg id="maze" viewBox="0 0 593 802" preserveAspectRatio="xMidYMid meet" role="group" aria-label="A fixed cave tunnel maze. Checkpoints are hidden during normal play. Use the direction buttons, drag SaNa, or use keyboard arrows to follow corridor centers."></svg><div class="stage-reveal" id="storyReveal" role="dialog" aria-modal="true" aria-labelledby="storyTitle" aria-describedby="storyCaption" hidden><div class="stage-reveal__card"><div class="stage-reveal__heading"><span class="stage-reveal__step" id="storyStep">Checkpoint 1 of 9</span><h2 class="stage-reveal__title" id="storyTitle">Stage found</h2></div><div class="stage-reveal__image-frame" id="storyImageFrame"><img class="stage-reveal__image" id="storyImage" alt=""><img class="stage-reveal__image" id="storyImageSecondary" alt="" hidden><div class="stage-reveal__fallback" id="storyImageFallback" hidden>Image not found. Put the images beside this HTML or in assets/interactive-treasure-hunt-maze-original/, then reload.</div></div><p class="stage-reveal__caption" id="storyCaption"></p><span class="stage-reveal__countdown" id="storyCountdown">Continuing in 5 seconds</span><button class="stage-reveal__continue" id="storyContinue" type="button">Continue</button></div></div></div>
   <footer class="bottom">
     <div class="direction-row" role="group" aria-label="Directional controls">
       <button class="pad" data-dir="left" type="button" aria-label="Move left">◀</button>
