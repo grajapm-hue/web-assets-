@@ -299,6 +299,50 @@ async function settle(page) {
   await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
   await page.waitForTimeout(160);
 }
+async function keypad() {
+  const read = page => page.evaluate(() => Object.fromEntries(
+    ['#boardWrap','#board','#keypad','#playRow'].map(selector => {
+      const box = document.querySelector(selector).getBoundingClientRect();
+      return [selector, {x:box.x,y:box.y,width:box.width,height:box.height}];
+    })));
+  for (const route of ['beta.html','index.html']) {
+    const ctx=await context(), page=await ctx.newPage();
+    try {
+      for (const category of ['Add Magic','Multiply Magic','Birthday Magic']) {
+        await open(page,route,true);
+        await page.locator(`.categoryCard[data-category="${category}"]`).click();
+        const choices=page.locator('#categoryOptions .bookChoice:visible');
+        if (await choices.count()) await choices.first().click();
+        await settle(page);
+        for (const [width,height] of [[568,320],[800,322],[844,390],[1024,768],[1280,720]]) {
+          await page.setViewportSize({width,height}); await settle(page);
+          const boxes=await read(page), board=boxes['#board'], keys=boxes['#keypad'], controls=boxes['#playRow'];
+          const offset=Math.abs(keys.y+keys.height/2-board.y-board.height/2);
+          check(`${route} ${category} keypad centered ${width}x${height}`,offset<=2&&keys.x>=board.x+board.width,{offset,boxes});
+          check(`${route} ${category} controls do not overlap keypad ${width}x${height}`,controls.y>=keys.y+keys.height,{boxes});
+        }
+      }
+    } finally { await ctx.close(); }
+  }
+  if (baselineRoot) for (const [width,height] of [[390,844],[768,1024],[1024,1366]]) {
+    let before;
+    for (const [label,source] of [['before',baselineRoot],['after',root]]) {
+      servingRoot=source;
+      const ctx=await context({width,height}),page=await ctx.newPage();
+      try {
+        await choose(page,'Add Magic');
+        const boxes=await read(page);
+        const screenshot=await page.screenshot({path:path.join(reportDir,`portrait-${label}-${width}x${height}.png`),animations:'disabled',caret:'hide',mask:[page.locator('#timerBox')]});
+        if (label==='before') before={boxes,screenshot};
+        else {
+          check(`portrait geometry unchanged ${width}x${height}`,JSON.stringify(boxes)===JSON.stringify(before.boxes),{before:before.boxes,after:boxes});
+          check(`portrait appearance unchanged ${width}x${height}`,screenshot.equals(before.screenshot));
+        }
+      } finally { await ctx.close(); }
+    }
+  }
+  servingRoot=root;
+}
 async function orientation() {
   const manifest = JSON.parse(fs.readFileSync(path.join(root, 'mathmatrix/beta-app/beta-manifest.json'), 'utf8'));
   check('installed app defers orientation to device settings', !Object.hasOwn(manifest,'orientation'), manifest.orientation);
@@ -497,6 +541,7 @@ async function main() {
   origin = 'http://127.0.0.1:' + server.address().port;
   const launcher = engine === 'webkit' ? webkit : chromium;
   browser = await launcher.launch(engine === 'chromium' ? {channel:'chrome',headless:true} : {headless:true});
+  if (section === 'keypad' || section === 'all') await keypad();
   if (section === 'orientation' || section === 'all') await orientation();
   if (section === 'shell' || section === 'all') await shell();
   if (section === 'games' || section === 'all') await games();
@@ -510,7 +555,7 @@ async function main() {
     await page.setViewportSize({width:568,height:320});await settle(page);
     check('number layout no observer-loop errors',(await page.evaluate(()=>window.__mmRuntimeErrors)).length===0,await page.evaluate(()=>window.__mmRuntimeErrors));await ctx.close();
   }
-  if (!['orientation','shell','games','offline','zoom','edges','colors','diagnostic','errors','all'].includes(section)) throw new Error('Unknown validation section: ' + section);
+  if (!['keypad','orientation','shell','games','offline','zoom','edges','colors','diagnostic','errors','all'].includes(section)) throw new Error('Unknown validation section: ' + section);
 }
 async function diagnostic(){
   await test('isolated browser rotation diagnostic',async()=>{
@@ -565,10 +610,10 @@ async function release(){
   await test('Beta release metadata and precache',async()=>{
     const manifest=JSON.parse(fs.readFileSync(path.join(dir,'beta-manifest.json'),'utf8'));
     assert.equal(manifest.name,'MathMatrix Beta');assert.equal(manifest.short_name,'MathMatrix Beta');assert(!Object.hasOwn(manifest,'orientation'));
-    assert(cacheVersion.includes('v231'));assert(assets.includes('./responsive-ui.css'));
+    assert(cacheVersion.includes('v232'));assert(assets.includes('./responsive-ui.css'));
     for(const asset of assets)assert(fs.existsSync(path.join(dir,asset)),asset);
     assert(fs.readFileSync(path.join(dir,'beta.html')).equals(fs.readFileSync(path.join(dir,'index.html'))));
-    assert(fs.readFileSync(path.join(dir,'beta.html'),'utf8').includes("BUILD_VER = 'Beta - V.221 Unified'"));
+    assert(fs.readFileSync(path.join(dir,'beta.html'),'utf8').includes("BUILD_VER = 'Beta - V.222 Unified'"));
     check('Beta release metadata and precache',true,{cacheVersion,assets:assets.length});
   });
   await test('active route script syntax and original maze engines',async()=>{

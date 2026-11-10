@@ -161,6 +161,13 @@ html[data-mm-page="app"] .splashBrowserTip { margin: 0;    }
   html[data-mm-page="app"] .splashInstallBtn { grid-area: install; }
   html[data-mm-page="app"] .splashAbout { grid-area: about; }
 }
+@media (min-width:540px) and (orientation:landscape) {
+  /* Center the number pad beside the board, below its target/status row. */
+  html[data-mm-page="app"] .on[data-screen="scPlay"] > #keypad {
+    grid-row: 2 / 4; align-self: center;
+  }
+  html[data-mm-page="app"] .on[data-screen="scPlay"] > #playRow { grid-row: 4; }
+}
 @media (max-height:650px) {
   html[data-mm-page="app"] body.categoryHome .sana { display: none !important; }
   html[data-mm-page="app"] .splashInner { padding: 8px; gap: 7px; }
