@@ -1,6 +1,6 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V222 landscape keypad alignment; portrait layout unchanged.
+// MathMatrix Pro++ Beta Service Worker — Beta V223 installed orientation request; shared device-controlled layouts.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v232-landscape-keypad';
+const CACHE_VERSION = 'mathmatrix-beta-v233-installed-orientation';
 
 const ASSETS = [
   './index.html',

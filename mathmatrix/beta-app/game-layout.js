@@ -2,6 +2,41 @@
 (() => {
   'use strict';
   const root = document.documentElement;
+  // An older installed container can retain its original portrait default even
+  // after the HTML updates. Ask supported containers to allow every orientation.
+  // Chromium maps "any" to Android FULL_USER, which follows the user's setting.
+  let rotationApplied = false, rotationPending = false, rotationUnsupported = false;
+  let rotationGestureRetried = false, rotationRequest = 'browser-managed';
+  const installedApp = () => navigator.standalone === true ||
+    ['standalone','fullscreen','minimal-ui'].some(mode => matchMedia('(display-mode: ' + mode + ')').matches);
+  function applyDeviceOrientation() {
+    if (!installedApp() || rotationApplied || rotationPending || rotationUnsupported) return;
+    if (!screen.orientation || typeof screen.orientation.lock !== 'function') {
+      rotationRequest = 'browser-api-unavailable';
+      return;
+    }
+    rotationPending = true;
+    rotationRequest = 'request-pending';
+    Promise.resolve().then(() => screen.orientation.lock('any')).then(() => {
+      rotationApplied = true;
+      rotationRequest = 'request-accepted';
+    }, error => {
+      rotationUnsupported = error && error.name === 'NotSupportedError';
+      rotationRequest = 'request-rejected: ' + (error && error.name || 'unknown');
+    }).then(() => { rotationPending = false; });
+  }
+  document.addEventListener('pointerup', event => {
+    if (!event.isTrusted || rotationGestureRetried || rotationApplied || rotationPending || !installedApp()) return;
+    rotationGestureRetried = true;
+    applyDeviceOrientation();
+  }, {passive:true});
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') { rotationApplied = false; applyDeviceOrientation(); }
+  });
+  window.addEventListener('pageshow', event => {
+    if (event.persisted) { rotationApplied = false; applyDeviceOrientation(); }
+  });
+  applyDeviceOrientation();
   // Keep the play surface at its designed scale without restricting scrolling or rotation.
   for (const type of ['gesturestart','gesturechange','gestureend']) {
     document.addEventListener(type, event => event.preventDefault(), {passive:false});
@@ -36,7 +71,7 @@
     window.dispatchEvent(new Event('mathmatrixviewportchange'));
     schedule();
   }
-  window.MathMatrixViewport = Object.freeze({sync:syncViewport});
+  window.MathMatrixViewport = Object.freeze({sync:syncViewport, get orientationRequest(){return rotationRequest;}});
   function fitTic() {
     if (!root.classList.contains('tttViewport')) return;
     const main = document.querySelector('main');
