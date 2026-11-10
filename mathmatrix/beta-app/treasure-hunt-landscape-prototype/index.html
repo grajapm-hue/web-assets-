@@ -25,17 +25,14 @@
   const before=root.classList.contains('lockRotateCW')?'cw':root.classList.contains('lockRotateCCW')?'ccw':'';
   const touch=('ontouchstart' in window)||navigator.maxTouchPoints>0;
   const landscape=visible.width>visible.height;
-  let direction='';
-  if(touch&&landscape){
-   let angle=typeof screen.orientation?.angle==='number'?screen.orientation.angle:typeof window.orientation==='number'?window.orientation:90;
-   angle=((angle%360)+360)%360;direction=angle===90?'ccw':'cw';
-  }
-  root.classList.toggle('lockRotateCW',direction==='cw');
-  root.classList.toggle('lockRotateCCW',direction==='ccw');
+  /* v219: free orientation - no page rotation; just flag a sideways screen. */
+  const direction='';
+  root.classList.remove('lockRotateCW','lockRotateCCW');
+  root.classList.toggle('lsLayout',touch&&landscape);
   // Layout breakpoints follow the visible portrait height, including browser
   // chrome and insets that can make it shorter than the layout viewport.
-  root.classList.toggle('sanaCompact',(direction?visible.width:visible.height)<=700);
-  if(before!==direction)window.dispatchEvent(new Event('sanaorientationchange'));
+  root.classList.toggle('sanaCompact',visible.height<=700);
+  if(before!==direction||root.__lsPrev!==landscape){root.__lsPrev=landscape;window.dispatchEvent(new Event('sanaorientationchange'));}
  }
  applyPortraitLock();
  window.addEventListener('resize',applyPortraitLock);
@@ -116,6 +113,22 @@ html.lockRotateCW .sound-body{padding-bottom:max(20px,env(safe-area-inset-left))
 html.lockRotateCCW .sound-body{padding-bottom:max(20px,env(safe-area-inset-right))}
 @media(prefers-reduced-motion:reduce){.banner.pop,.player-face{animation:none}}
 .stage-reveal[hidden]{display:none!important}.stage-reveal{--stage-accent:#d4a017;position:absolute;z-index:5;inset:20px 0 0;display:grid;place-items:center;padding:clamp(7px,2vw,16px);background:rgba(36,23,13,.72);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}.stage-reveal__card{box-sizing:border-box;display:flex;flex-direction:column;align-items:center;gap:clamp(6px,1.5vh,12px);width:min(100%,560px);height:min(100%,820px);max-height:100%;padding:clamp(9px,2.4vw,18px);overflow:hidden;border:4px solid var(--stage-accent);border-radius:22px;background:#fff8ec;color:#33220f;box-shadow:0 7px 0 #21170f88,0 18px 38px #0008;text-align:center;animation:storyRevealIn .2s ease-out both}.stage-reveal__heading{flex:none;width:100%}.stage-reveal__step{display:block;margin:0 0 3px;color:var(--stage-accent);font-size:clamp(11px,2.7vw,14px);font-weight:950;letter-spacing:.04em}.stage-reveal__title{margin:0;font-size:clamp(19px,4vw,28px);line-height:1.08;font-weight:950}.stage-reveal__image-frame{box-sizing:border-box;display:grid;place-items:center;flex:1 1 auto;min-width:0;min-height:0;width:100%;overflow:hidden;border:2px solid #d7c29e;border-radius:15px;background:#f1e4cd}.stage-reveal__image{box-sizing:border-box;display:block;min-width:0;min-height:0;width:auto;height:auto;max-width:100%;max-height:100%;object-fit:contain!important;object-position:center}.stage-reveal__image-frame--pair{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:minmax(0,1fr);gap:clamp(4px,1vw,10px);padding:clamp(4px,1vw,10px)}.stage-reveal__image-frame--pair .stage-reveal__image{min-width:0;width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain!important}.stage-reveal__image-frame--pair .stage-reveal__fallback{grid-column:1/-1}.stage-reveal__image[hidden],.stage-reveal__fallback[hidden]{display:none!important}.stage-reveal__fallback{display:grid;place-items:center;height:100%;padding:18px;color:#654b2e;font-weight:800}.stage-reveal__fallback--loading{display:flex;flex-direction:column;gap:12px}.stage-reveal__fallback--loading::before{content:"";width:32px;height:32px;border:4px solid #d7c29e;border-top-color:#80572f;border-radius:50%;animation:storyImageSpin .75s linear infinite}@keyframes storyImageSpin{to{transform:rotate(360deg)}}.stage-reveal__caption{flex:none;max-width:42em;margin:0;font-size:clamp(12px,2.9vw,16px);font-weight:750;line-height:1.28}.stage-reveal__countdown{flex:none;min-height:18px;margin:-2px 0 0;color:#654b2e;font-size:clamp(11px,2.7vw,14px);font-weight:850}.stage-reveal__continue{flex:none;width:min(100%,340px);min-height:48px;border:0;border-radius:13px;background:#80572f;color:#fff8ea;box-shadow:0 4px 0 #53361e;font:inherit;font-size:clamp(15px,3.5vw,19px);font-weight:950;cursor:pointer;touch-action:manipulation}.stage-reveal__continue:active{transform:translateY(2px);box-shadow:0 2px 0 #53361e;background:#69421f}.stage-reveal__continue:focus-visible{outline:3px solid #3b248c;outline-offset:3px}@keyframes storyRevealIn{from{opacity:.35;transform:scale(.96)}to{opacity:1;transform:scale(1)}}html.sanaCompact .stage-reveal{inset:16px 0 0;padding:6px}html.sanaCompact .stage-reveal__card{gap:6px;padding:8px;border-width:3px;border-radius:17px}html.sanaCompact .stage-reveal__step{font-size:10px}html.sanaCompact .stage-reveal__title{font-size:18px}html.sanaCompact .stage-reveal__caption{font-size:12px;line-height:1.2}html.sanaCompact .stage-reveal__countdown{font-size:10px}html.sanaCompact .stage-reveal__continue{min-height:40px;font-size:15px}@media(max-height:560px){.stage-reveal__card{gap:5px;padding:7px}.stage-reveal__step{font-size:10px}.stage-reveal__title{font-size:17px}.stage-reveal__caption{font-size:11px}.stage-reveal__continue{min-height:38px}}@media(prefers-reduced-motion:reduce){.stage-reveal__card{animation:none}}
+
+/* v219 · free orientation: sideways = text, controls and D-pad on the left; the maze keeps its true 593:802 shape on the right */
+html.lsLayout{--lsAvail:calc(var(--sana-visible-height,100dvh) - 45px - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 8px)}
+html.lsLayout .app{width:100% !important;max-width:none !important;margin:0 !important;display:grid;
+  grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto auto auto minmax(0,1fr);column-gap:10px;align-content:start;
+  padding-left:max(8px,env(safe-area-inset-left));padding-right:max(8px,env(safe-area-inset-right))}
+html.lsLayout .app > .bar{grid-column:1 / -1;grid-row:1}
+html.lsLayout .app > #banner{grid-column:1;grid-row:2}
+html.lsLayout .app > .run-toolbar{grid-column:1;grid-row:3}
+html.lsLayout .app > .player-row{grid-column:1;grid-row:4}
+html.lsLayout .app > .bottom{grid-column:1;grid-row:5;align-self:center;height:auto;min-height:0}
+html.lsLayout .app > .direction-row{grid-row:5}
+html.lsLayout .app > .board-wrap{grid-column:2;grid-row:2 / 6;flex:none;height:var(--lsAvail);
+  width:calc((var(--lsAvail) - 10px - 18px) * .7394 + 10px)}
+html.lsLayout .direction-row{grid-template-rows:clamp(38px,11vh,54px)}
+html.lsLayout .maze-labels{font-size:clamp(9px,calc(var(--lsAvail) * .034),18px) !important}
 </style>
 </head>
 <body>
