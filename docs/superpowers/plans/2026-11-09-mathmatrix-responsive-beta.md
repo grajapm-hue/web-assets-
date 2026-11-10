@@ -102,3 +102,7 @@ The shared viewport contract is CSS variables `--mm-viewport-width` and `--mm-vi
 ## Plan self-review
 
 All design sections map to the four tasks: orientation policy/state, shared visual/layout behavior, every active standalone route/dialog, and offline/performance/release. The five review-focus conditions each have an owning task and explicit check. No new puzzle engine, framework, backend, or Main change is required.
+
+## Release validation
+
+The completed Beta V219 source passed 444/444 Chromium and 436/436 WebKit checks on Windows, including real Chromium touch drags, short-screen cells and controls, zoom, settled observer callbacks, saved-progress upgrade and offline launches. An independent whole-branch review was completed and material findings fixed. GitHub publication and matching live-file verification are recorded in the release evidence; Main requires later group review.
