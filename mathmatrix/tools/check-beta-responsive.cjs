@@ -299,6 +299,49 @@ async function settle(page) {
   await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
   await page.waitForTimeout(160);
 }
+async function installedOrientation() {
+  // Exercise the browser API boundary; this does not emulate physical-device rotation.
+  for (const scenario of ['browser','installed','gesture-required','rejected','unsupported-ios']) await test('installed orientation '+scenario,async()=>{
+    const ctx=await context(),page=await ctx.newPage(),errors=[];
+    try {
+      page.on('pageerror',e=>errors.push(e.message));
+      await ctx.addInitScript(scenario=>{
+        window.__orientationRequests=[];window.__orientationAccepted=false;window.__trustedTap=false;
+        document.addEventListener('pointerup',e=>{if(e.isTrusted)window.__trustedTap=true;},true);
+        const nativeMatch=window.matchMedia.bind(window);
+        window.matchMedia=query=>{
+          const result=nativeMatch(query);
+          if(query==='(display-mode: standalone)')Object.defineProperty(result,'matches',{value:scenario!=='browser'&&scenario!=='unsupported-ios'});
+          return result;
+        };
+        Object.defineProperty(navigator,'standalone',{value:scenario==='unsupported-ios',configurable:true});
+        Object.defineProperty(screen.orientation,'lock',{configurable:true,value:scenario==='unsupported-ios'?undefined:function(value){
+          window.__orientationRequests.push(value);
+          if(scenario==='rejected')return Promise.reject(new DOMException('Unavailable','NotSupportedError'));
+          if(scenario==='gesture-required'&&!window.__trustedTap)return Promise.reject(new DOMException('Tap required','SecurityError'));
+          window.__orientationAccepted=true;return Promise.resolve();
+        }});
+      },scenario);
+      await choose(page,'Add Magic');
+      await page.locator('#board input:not([readonly]):not([disabled])').first().click();
+      await page.locator('.kp[data-k="2"]').click();
+      const before=await page.locator('#board input').first().inputValue();
+      for(const viewport of [{width:844,height:390},{width:390,height:844}]){
+        await page.setViewportSize(viewport);await settle(page);
+        assert.equal(await page.locator('#board input').first().inputValue(),before);
+      }
+      const boundary=await page.evaluate(()=>({requests:window.__orientationRequests,accepted:window.__orientationAccepted}));
+      if(['browser','unsupported-ios'].includes(scenario))assert.deepEqual(boundary.requests,[]);
+      else {
+        assert(boundary.requests.length>0&&boundary.requests.every(value=>value==='any'),'Installed app must request all allowed orientations from its native container');
+        assert.equal(boundary.accepted,scenario!=='rejected');
+        assert(boundary.requests.length<=2,'Orientation requests must not repeat on every tap or resize');
+      }
+      assert.equal(before,'2');assert.deepEqual(errors,[]);
+      check('installed orientation '+scenario,true,boundary);
+    } finally {await ctx.close();}
+  });
+}
 async function keypad() {
   const read = page => page.evaluate(() => Object.fromEntries(
     ['#boardWrap','#board','#keypad','#playRow'].map(selector => {
@@ -345,7 +388,7 @@ async function keypad() {
 }
 async function orientation() {
   const manifest = JSON.parse(fs.readFileSync(path.join(root, 'mathmatrix/beta-app/beta-manifest.json'), 'utf8'));
-  check('installed app defers orientation to device settings', !Object.hasOwn(manifest,'orientation'), manifest.orientation);
+  check('installed app defers orientation to device settings', [undefined,'any'].includes(manifest.orientation), manifest.orientation);
   for (const [name,route] of routes) await test(name + ' orientation', async () => {
     const ctx = await context(); const page = await ctx.newPage(); const errors=[];
     page.on('pageerror', error => errors.push(error.message));
@@ -541,6 +584,7 @@ async function main() {
   origin = 'http://127.0.0.1:' + server.address().port;
   const launcher = engine === 'webkit' ? webkit : chromium;
   browser = await launcher.launch(engine === 'chromium' ? {channel:'chrome',headless:true} : {headless:true});
+  if (section === 'installed-orientation' || section === 'all') await installedOrientation();
   if (section === 'keypad' || section === 'all') await keypad();
   if (section === 'orientation' || section === 'all') await orientation();
   if (section === 'shell' || section === 'all') await shell();
@@ -555,7 +599,7 @@ async function main() {
     await page.setViewportSize({width:568,height:320});await settle(page);
     check('number layout no observer-loop errors',(await page.evaluate(()=>window.__mmRuntimeErrors)).length===0,await page.evaluate(()=>window.__mmRuntimeErrors));await ctx.close();
   }
-  if (!['keypad','orientation','shell','games','offline','zoom','edges','colors','diagnostic','errors','all'].includes(section)) throw new Error('Unknown validation section: ' + section);
+  if (!['installed-orientation','keypad','orientation','shell','games','offline','zoom','edges','colors','diagnostic','errors','all'].includes(section)) throw new Error('Unknown validation section: ' + section);
 }
 async function diagnostic(){
   await test('isolated browser rotation diagnostic',async()=>{
@@ -575,7 +619,7 @@ async function diagnostic(){
 async function colors(){
   assert(baselineRoot,'Original V218 baseline required');
   const manifest=JSON.parse(fs.readFileSync(path.join(root,'mathmatrix/beta-app/beta-manifest.json'),'utf8'));
-  check('installation has no orientation override',!Object.hasOwn(manifest,'orientation'),manifest.orientation);
+  check('installation does not fix portrait or landscape',[undefined,'any'].includes(manifest.orientation),manifest.orientation);
   const ctx=await context(),page=await ctx.newPage();
   const read=selectors=>page.locator(selectors).evaluateAll(es=>es.map(e=>{const s=getComputedStyle(e);return{selector:e.id||e.className,color:s.color,backgroundColor:s.backgroundColor,backgroundImage:s.backgroundImage};}));
   async function capture(label){
@@ -609,11 +653,11 @@ async function release(){
   const assets=Array.from(sw.match(/const ASSETS = \[([\s\S]*?)\];/)[1].matchAll(/'([^']+)'/g),x=>x[1]);
   await test('Beta release metadata and precache',async()=>{
     const manifest=JSON.parse(fs.readFileSync(path.join(dir,'beta-manifest.json'),'utf8'));
-    assert.equal(manifest.name,'MathMatrix Beta');assert.equal(manifest.short_name,'MathMatrix Beta');assert(!Object.hasOwn(manifest,'orientation'));
-    assert(cacheVersion.includes('v232'));assert(assets.includes('./responsive-ui.css'));
+    assert.equal(manifest.name,'MathMatrix Beta');assert.equal(manifest.short_name,'MathMatrix Beta');assert([undefined,'any'].includes(manifest.orientation));
+    assert(cacheVersion.includes('v233'));assert(assets.includes('./responsive-ui.css'));
     for(const asset of assets)assert(fs.existsSync(path.join(dir,asset)),asset);
     assert(fs.readFileSync(path.join(dir,'beta.html')).equals(fs.readFileSync(path.join(dir,'index.html'))));
-    assert(fs.readFileSync(path.join(dir,'beta.html'),'utf8').includes("BUILD_VER = 'Beta - V.222 Unified'"));
+    assert(fs.readFileSync(path.join(dir,'beta.html'),'utf8').includes("BUILD_VER = 'Beta - V.223 Unified'"));
     check('Beta release metadata and precache',true,{cacheVersion,assets:assets.length});
   });
   await test('active route script syntax and original maze engines',async()=>{
