@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<!-- Prevent the retired independent-puzzle list from painting before the book chooser initializes. -->
+<script>document.documentElement.classList.add('mmBooting');</script>
 <!-- viewport-fit=cover: without it, env(safe-area-inset-*) always reports 0,
      which is why .tabBar's own safe-area padding below was a no-op — needed
      now that the "Play offline" sheet's last line was found rendering under
@@ -123,6 +125,12 @@ window.onerror = function(msg, src, line, col, err){
 })();
 </script>
 <style>
+/* First-paint guard: retained legacy puzzle markup must never be visible while
+   category-chooser.js builds the current book-selection interface. */
+html.mmBooting body::before {
+  content:""; position:fixed; inset:0; z-index:190; pointer-events:none;
+  background:linear-gradient(135deg,#dc43a4 0%,#9150c7 48%,#36bde5 100%);
+}
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html, body { height:100%; width:100%; touch-action:manipulation; }  /* manipulation = normal taps/scroll but no double-tap zoom */
   
@@ -15803,6 +15811,12 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     screen: openScreen,
     announce: function(message){ sana(message, null); }
   });
+  // Reveal only after the book chooser has replaced the legacy home view.
+  // The splash (z-index 200) stays above the boot guard (z-index 190).
+  // On manual update, keep the guard until the saved screen has been restored.
+  var pendingResume = false;
+  try { pendingResume = !!sessionStorage.getItem('mm.resume'); } catch(e) {}
+  if (!pendingResume) requestAnimationFrame(function(){ document.documentElement.classList.remove('mmBooting'); });
 })();
 
 // Beta registers its own worker at this subfolder scope for offline play.
@@ -16053,6 +16067,8 @@ if (navigator.storage && navigator.storage.persist) {
            || document.getElementById('tab-scHome');
     if (tab) tab.click();
   })();
+  // Update-resume path: reveal the fully restored screen, never the old list.
+  requestAnimationFrame(function(){ document.documentElement.classList.remove('mmBooting'); });
 })();
 </script>
 </body>
