@@ -4357,6 +4357,39 @@ html.lsShort .tabBar{ min-height:32px !important; padding-top:1px !important; }
 html.lsShort .tabBtn{ font-size:10.5px !important; }
 html.lsShort .screen.on{ padding-top:3px !important; }
 </style>
+
+<!-- iPhone-only portrait navigation sizing. Android rules are not overridden. -->
+<script>
+(function(){
+  var ios = /iPhone|iPad|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (ios) document.documentElement.classList.add('mmIOS');
+})();
+</script>
+<style id="ios-only-portrait-tabs">
+@media (orientation: portrait) {
+  html.mmIOS:not(.lsLayout) .tabBar {
+    min-height: 65px !important;
+    padding-top: 4px !important;
+    padding-bottom: calc(4px + env(safe-area-inset-bottom, 0px)) !important;
+    gap: 5px !important;
+  }
+  html.mmIOS:not(.lsLayout) .tabBtn {
+    min-width: 0 !important;
+    min-height: 55px !important;
+    flex: 1 1 0 !important;
+    font-size: 12px !important;
+    line-height: 1.15 !important;
+    gap: 3px !important;
+    padding: 3px 2px !important;
+    margin: 0 1px !important;
+  }
+  html.mmIOS:not(.lsLayout) .tabBtn .tabIco {
+    font-size: 21px !important;
+    line-height: 1.1 !important;
+  }
+}
+</style>
 </head>
 <body>
 <div class="blob blob-a"></div><div class="blob blob-b"></div><div class="blob blob-c"></div>
