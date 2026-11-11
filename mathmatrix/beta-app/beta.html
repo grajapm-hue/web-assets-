@@ -31,6 +31,8 @@
      confirmed and fixed. -->
 <script>
 window.onerror = function(msg, src, line, col, err){
+  // Browser layout-loop diagnostics are nonfatal; keep all other errors visible.
+  if (/ResizeObserver loop (completed with undelivered notifications|limit exceeded)/i.test(String(msg))) return true;
   try{
     var b = document.getElementById('__errBanner');
     if (!b){
@@ -103,7 +105,7 @@ window.onerror = function(msg, src, line, col, err){
       root.style.setProperty('--lsH', Math.max(120, s.clientHeight - 14)+'px');
     }
     if(s && !s.__lsRO && window.ResizeObserver){
-      s.__lsRO=new ResizeObserver(function(){ measureLs(); }); s.__lsRO.observe(s);
+      s.__lsRO=new ResizeObserver(function(){ requestAnimationFrame(measureLs); }); s.__lsRO.observe(s);
     }
   }
   function refreshLs(){
@@ -14777,7 +14779,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   };
   if (window.ResizeObserver){
     var bw = document.getElementById('boardWrap');
-    if (bw) new ResizeObserver(function(){ try { fitBoard(); } catch(e){} }).observe(bw);
+    if (bw) new ResizeObserver(function(){ requestAnimationFrame(function(){ try { fitBoard(); } catch(e){} }); }).observe(bw);
   }
   // chip to bring the keypad back when it has stepped aside
   (function keysChip(){
