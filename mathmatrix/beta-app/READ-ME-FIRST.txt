@@ -1,7 +1,12 @@
-BETA v219 (rev 2) - UPLOAD-ONLY files for the beta GitHub repo. Not a playable app on its own.
+BETA v219 (final rev 4) - UPLOAD-ONLY files for the beta GitHub repo. Not a playable app on its own.
 Upload these 11 files into mathmatrix/beta-app/ (replace existing):
   beta.html, index.html, beta-manifest.json, beta-sw.js, game-layout.js, game-layout.css,
   category-chooser.js, criss-cross.html, tunnels-of-meta.html, cave-treasure-hunt.html, tic-tac-toe.html
 Upload this 1 file into mathmatrix/beta-app/treasure-hunt-landscape-prototype/ :
   index.html
 (Do not upload this READ-ME file.)
+
+HOW TO CONFIRM THE RIGHT VERSION IS LIVE (open these in a browser after deploying):
+  .../beta-app/beta-sw.js          line 3 must read:  mathmatrix-beta-v230-fresh-code
+  .../beta-app/category-chooser.js search for:        Beta V.219
+  .../beta-app/beta-manifest.json  must say:          "orientation": "any"

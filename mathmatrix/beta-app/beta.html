@@ -95,6 +95,7 @@ window.onerror = function(msg, src, line, col, err){
     var land=window.innerWidth>window.innerHeight;
     root.classList.toggle('lsLayout', land && (touch || window.innerHeight<=640));
     root.classList.toggle('lsTall', land && window.innerHeight>640);
+    root.classList.toggle('lsShort', land && window.innerHeight<=400);
   }
   function measureLs(){
     var s=document.querySelector('.screens');
@@ -4335,6 +4336,16 @@ html.lsLayout #thayamPanel .thFoot{ margin-top:6px; }
 html.lsLayout #thayamPanel .pal4Select{ margin-top:4px; }
 html.lsTall #thayamPanel .thayamTable{ width:calc(var(--lsH,500px) + 84px); }
 html.lsLayout #thayamPanel .thTop{ padding:0 2px; }
+
+/* v219: short screens - give the board the height (keypad stays visible) */
+body.compactChrome .sana{ display:none !important; }
+html.lsShort .appShell:has(.screen.on[data-screen="scPlay"]) .sana{ display:none !important; }
+html.lsShort .appBar{ min-height:calc(34px + var(--safeTop)) !important; }
+html.lsShort .appBar .navBack{ width:32px; height:32px; }
+html.lsShort .barBtn{ height:32px !important; }
+html.lsShort .tabBar{ min-height:32px !important; padding-top:1px !important; }
+html.lsShort .tabBtn{ font-size:10.5px !important; }
+html.lsShort .screen.on{ padding-top:3px !important; }
 </style>
 </head>
 <body>
@@ -14733,13 +14744,28 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     var cell = derive();
     // A big board on a short phone cannot fit AND keep a keypad. Rather than let the
     // page start scrolling, the keypad steps aside and can be recalled.
-    var keysOff = document.body.classList.contains('hideKeys');
-    if (cell < 16 && !keysOff && tracks >= 9){
-      document.body.classList.add('hideKeys');
-      cell = derive();
-    } else if (keysOff && tracks < 9){
-      document.body.classList.remove('hideKeys');
-      cell = derive();
+    // v219: win space back in steps instead of dropping the keypad straight away.
+    //  1) hide SaNa's speech strip (the keypad and board matter more on a short screen)
+    //  2) portrait only: tuck the keypad away behind the "show number keys" chip.
+    //  Sideways the keypad has its own column, so hiding it would not give the board any height.
+    //  If the child taps the chip, that choice is kept (no instant re-hide).
+    var B = document.body, keysOff = B.classList.contains('hideKeys');
+    var lsNow = document.documentElement.classList.contains('lsLayout');
+    if (tracks < 9){
+      if (keysOff || B.classList.contains('compactChrome') || B.dataset.keysUser){
+        B.classList.remove('hideKeys', 'compactChrome'); delete B.dataset.keysAuto; delete B.dataset.keysUser;
+        cell = derive();
+      }
+    } else if (cell < 16 && !keysOff && !B.dataset.keysUser){
+      if (!B.classList.contains('compactChrome')){ B.classList.add('compactChrome'); cell = derive(); }
+      if (cell < 16 && !lsNow){
+        if (document.readyState !== 'complete'){
+          // still loading (fonts/images can change sizes): never hide the keys on a mid-load measurement
+          window.addEventListener('load', function(){ setTimeout(function(){ try { fitBoard(); } catch(e){} }, 350); }, { once:true });
+        } else { B.classList.add('hideKeys'); B.dataset.keysAuto = '1'; cell = derive(); }
+      }
+    } else if (lsNow && keysOff){
+      B.classList.remove('hideKeys'); delete B.dataset.keysAuto; cell = derive();
     }
     cell = Math.max(12, cell);
     board.style.setProperty('--tracks', tracks);
@@ -14763,10 +14789,25 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     kp.parentElement.insertBefore(c, kp);
     c.addEventListener('click', function(){
       document.body.classList.remove('hideKeys');
-      c.style.display = 'none';
+      document.body.dataset.keysUser = '1';   // the child asked for the keys: do not hide them again
+      delete document.body.dataset.keysAuto;
       try { fitBoard(); } catch(e){}
       sfx('tick');
     });
+    // after a rotation / resize, forget any automatic hiding and measure again from scratch
+    var rzT;
+    function resetAuto(){
+      clearTimeout(rzT);
+      rzT = setTimeout(function(){
+        var B = document.body;
+        if (B.dataset.keysAuto === '1' || B.classList.contains('compactChrome')){
+          B.classList.remove('hideKeys', 'compactChrome'); delete B.dataset.keysAuto;
+          try { fitBoard(); } catch(e){}
+        }
+      }, 220);
+    }
+    window.addEventListener('resize', resetAuto);
+    window.addEventListener('orientationchange', resetAuto);
   })();
 
   /* ---- 7. Learn becomes rows that open sheets ---- */
@@ -15765,6 +15806,14 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 // Beta registers its own worker at this subfolder scope for offline play.
 // The Beta cache namespace is separate from the public app on this origin.
 if ('serviceWorker' in navigator) {
+  // v219: when a NEW version of the app takes over from an older installed one, reload once so the
+  // page and all its scripts/styles come from the same release (prevents a half-old, half-new mix).
+  var hadController = !!navigator.serviceWorker.controller, swReloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', function () {
+    if (!hadController || swReloaded) return;
+    swReloaded = true;
+    try { location.reload(); } catch (e) {}
+  });
   window.addEventListener('load', function () {
     navigator.serviceWorker.register('beta-sw.js').catch(function(){});
   });

@@ -1,6 +1,6 @@
 // MathMatrix Pro++ Beta Service Worker — Beta V219 free orientation (portrait + landscape).
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v228-free-orientation';
+const CACHE_VERSION = 'mathmatrix-beta-v230-fresh-code';
 
 const ASSETS = [
   './index.html',
@@ -92,6 +92,28 @@ self.addEventListener('fetch', (event) => {
         } catch (e) {
           clearTimeout(timer);
           return cached || Response.error();
+        }
+      })()
+    );
+    return;
+  }
+
+  // v219: scripts, styles and the manifest are CODE. Serve them network-first (like pages) so a
+  // phone never runs new HTML with old cached scripts. Pictures and sound stay cache-first below.
+  if (/\.(js|css|json)(\?|$)/.test(req.url)) {
+    event.respondWith(
+      (async () => {
+        const cache = await caches.open(CACHE_VERSION);
+        const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        const timer = setTimeout(() => { try { if (controller) controller.abort(); } catch (e) {} }, 2500);
+        try {
+          const response = await fetch(req, controller ? { signal: controller.signal } : undefined);
+          clearTimeout(timer);
+          if (response && response.ok) cache.put(req, response.clone()).catch(() => {});
+          return response;
+        } catch (e) {
+          clearTimeout(timer);
+          return (await cache.match(req)) || Response.error();
         }
       })()
     );
