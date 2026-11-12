@@ -297,3 +297,41 @@
   .categoryHome .categoryFooter #diffTip::after { font-size:11px; }
   .categoryHome .categoryFooter .diffShare { padding-left:5px !important; padding-right:5px !important; }
 }
+
+/* V219 Beta: book contents captions. Card geometry, footer, gameplay unchanged. */
+body.categoryHome:not(.categoryOpen) .categoryCardCopy .categoryCount {display:none !important;}
+body.categoryHome:not(.categoryOpen) .categoryCardCopy::after {content:""; display:block; color:#4D5844; font-size:clamp(9px,2.7vw,12px); line-height:1.16; font-weight:600; overflow-wrap:anywhere; max-width:100%;}
+body.categoryHome:not(.categoryOpen) .categoryCard[data-category="Add Magic"] .categoryCardCopy::after {content:"3×3 to 10×10 · equal sums";}
+body.categoryHome:not(.categoryOpen) .categoryCard[data-category="Multiply Magic"] .categoryCardCopy::after {content:"3×3 · equal products";}
+body.categoryHome:not(.categoryOpen) .categoryCard[data-category="Criss-Cross"] .categoryCardCopy::after {content:"Crossing number puzzles";}
+body.categoryHome:not(.categoryOpen) .categoryCard[data-category="SaNaMaze"] .categoryCardCopy::after {content:"Mazes and treasure paths";}
+body.categoryHome:not(.categoryOpen) .categoryCard[data-category="Birthday Magic"] .categoryCardCopy::after {content:"Birthday number tricks";}
+body.categoryHome:not(.categoryOpen) .categoryCard[data-category="Gate Logic"] .categoryCardCopy::after {content:"Logic gates and patterns";}
+body.categoryHome:not(.categoryOpen) .categoryCard[data-category="Binary Magic"] .categoryCardCopy::after {content:"Guess numbers with cards";}
+body.categoryHome:not(.categoryOpen) .categoryCard[data-category="Slide Magic"] .categoryCardCopy::after {content:"Slide tiles into order";}
+body.categoryHome:not(.categoryOpen) .categoryCard[data-category="Sudoku"] .categoryCardCopy::after {content:"Fill numbers without repeats";}
+body.categoryHome:not(.categoryOpen) .categoryCard[data-category="Tic-Tac-Toe"] .categoryCardCopy::after {content:"Make three in a row";}
+body.categoryHome:not(.categoryOpen) .categoryCard[data-category="Pallanguzhi"] .categoryCardCopy::after {content:"Traditional seed-sowing game";}
+body.categoryHome:not(.categoryOpen) .categoryCard[data-category="Thayam"] .categoryCardCopy::after {content:"Dice and board race";}
+/* Landscape: enlarge emoji and title *inside* the existing 6 × 2 cards.
+   Captions are intentionally compact, and flex items may shrink to avoid overflow. */
+@media (orientation:landscape) and (min-width:600px) {
+ body.categoryHome:not(.categoryOpen) .categorySquareCompact .categoryLandscapeSquares .categoryCard {
+   gap:3px !important; padding:3px 4px !important;
+ }
+ body.categoryHome:not(.categoryOpen) .categorySquareCompact .categoryLandscapeSquares .categoryPicture {
+   font-size:clamp(18px,4.2vh,30px) !important;
+   width:1em !important; height:1em !important; min-height:0 !important;
+ }
+ body.categoryHome:not(.categoryOpen) .categorySquareCompact .categoryLandscapeSquares .categoryCardCopy {
+   flex:0 1 auto; min-height:0; overflow:hidden; gap:2px !important;
+ }
+ body.categoryHome:not(.categoryOpen) .categorySquareCompact .categoryLandscapeSquares .categoryName {
+   font-size:clamp(11px,3vh,17px) !important; line-height:1.05 !important;
+ }
+ body.categoryHome:not(.categoryOpen) .categorySquareCompact .categoryLandscapeSquares .categoryCardCopy::after {
+   display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2;
+   overflow:hidden; font-size:clamp(8px,1.8vh,11px) !important;
+   line-height:1.12; text-align:center;
+ }
+}
