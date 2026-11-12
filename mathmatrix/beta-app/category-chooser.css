@@ -259,3 +259,41 @@
     line-height:1.12 !important;
   }
 }
+
+/* V219 footer edge and legibility adjustment — beta and main share this CSS.
+   Scoped to the chooser footer; does not alter cards, game screens or tab bar. */
+.categoryHome .categoryFooter {
+  box-sizing:border-box;
+  width:100%;
+  padding-left:max(12px, env(safe-area-inset-left, 0px)) !important;
+  padding-right:max(12px, env(safe-area-inset-right, 0px)) !important;
+}
+.categoryHome .categoryFooter #diffTip,
+.categoryHome:not(.categoryOpen) .categorySquareCompact .categoryFooter #diffTip {
+  display:inline-flex !important;
+  align-items:center;
+  justify-content:flex-start;
+  gap:3px;
+  width:auto !important;
+  min-width:0;
+  height:auto;
+  white-space:nowrap;
+}
+.categoryHome .categoryFooter #diffTip::after {
+  content:'Offline';
+  display:inline;
+  font:700 12px/1.15 "Trebuchet MS",sans-serif;
+  color:#664C2C;
+}
+.categoryHome .categoryFooter .categoryVersion {
+  font:700 14px/1.15 "Trebuchet MS",sans-serif;
+  color:#664C2C;
+  white-space:nowrap;
+  flex-shrink:0;
+}
+/* Allow all four footer items to remain visible on narrow portrait phones. */
+@media (max-width:400px) {
+  .categoryHome .categoryFooter { gap:3px; }
+  .categoryHome .categoryFooter #diffTip::after { font-size:11px; }
+  .categoryHome .categoryFooter .diffShare { padding-left:5px !important; padding-right:5px !important; }
+}
