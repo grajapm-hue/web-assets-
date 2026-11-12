@@ -151,35 +151,111 @@
   min-height:calc(var(--book-rows) * var(--book-min-row) + (var(--book-rows) - 1) * 10px);
 }
 
-/* Landscape-only square puzzle-book tiles. Portrait, book options, game rooms,
-   navigation, safe areas and orientation logic remain unchanged. */
-.categoryHome:not(.categoryOpen) .categoryGrid.categoryLandscapeSquares {
-  align-self:center;
-  flex:1 1 0;
-  grid-template-columns:repeat(4,minmax(0,1fr));
-  grid-template-rows:repeat(3,minmax(0,1fr));
-  gap:6px;
-}
-.categoryHome:not(.categoryOpen) .categoryLandscapeSquares .categoryCard {
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  text-align:center;
+/* V6: compact 6 x 2 square books ONLY on landscape top-level chooser. */
+.categoryHome:not(.categoryOpen) .categoryChooser.categorySquareCompact {
   gap:3px;
-  padding:3px 4px;
-  border-radius:12px;
 }
-.categoryHome:not(.categoryOpen) .categoryLandscapeSquares .categoryCardCopy {
-  align-items:center;
-  text-align:center;
+.categoryHome:not(.categoryOpen) .categorySquareCompact .categoryHeading {
+  padding:0 2px !important; min-height:18px; margin:0;
 }
-.categoryHome:not(.categoryOpen) .categoryLandscapeSquares .categoryName {
-  font-size:clamp(10px,1.5vw,15px);
-  line-height:1.08;
-  overflow-wrap:anywhere;
+.categoryHome:not(.categoryOpen) .categorySquareCompact .categoryTitle {
+  font-size:15px !important; line-height:1.1;
 }
-.categoryHome:not(.categoryOpen) .categoryLandscapeSquares .categoryPicture {
-  font-size:clamp(21px,3.5vh,30px);
-  width:1.15em;
-  height:1.15em;
+.categoryHome:not(.categoryOpen) .categorySquareCompact .categoryHint { display:none !important; }
+.categoryHome:not(.categoryOpen) .categorySquareCompact .categoryFooter {
+  padding:0 1px !important; min-height:24px !important; height:24px;
+}
+.categoryHome:not(.categoryOpen) .categorySquareCompact .categoryFooter .diffShare {
+  min-height:23px !important; padding:2px 7px !important;
+}
+.categoryHome:not(.categoryOpen) .categorySquareCompact .categoryFooter #diffTip {
+  width:24px; height:24px;
+}
+.categoryHome:not(.categoryOpen) .categorySquareCompact .categoryGrid.categoryLandscapeSquares {
+  flex:0 0 auto; align-self:center; min-height:0; max-width:100%;
+  grid-template-columns:repeat(6,var(--square-side));
+  grid-template-rows:repeat(2,var(--square-side));
+  gap:6px; overflow:hidden;
+}
+.categoryHome:not(.categoryOpen) .categorySquareCompact .categoryLandscapeSquares .categoryCard {
+  width:var(--square-side); height:var(--square-side); min-width:0; min-height:0;
+  flex-direction:column; justify-content:center; align-items:center;
+  text-align:center; gap:2px; padding:2px; border-radius:10px;
+}
+.categoryHome:not(.categoryOpen) .categorySquareCompact .categoryLandscapeSquares .categoryPicture {
+  width:clamp(14px,3.1vh,23px); height:clamp(14px,3.1vh,23px);
+  font-size:clamp(14px,3.1vh,23px); line-height:1;
+}
+.categoryHome:not(.categoryOpen) .categorySquareCompact .categoryLandscapeSquares .categoryCardCopy {
+  align-items:center; justify-content:center; width:100%; gap:0;
+}
+.categoryHome:not(.categoryOpen) .categorySquareCompact .categoryLandscapeSquares .categoryName {
+  font-size:clamp(8px,2.4vh,12px); line-height:1.06;
+  overflow-wrap:normal; word-break:normal; hyphens:none;
+}
+.categoryHome:not(.categoryOpen) .categorySquareCompact .categoryLandscapeSquares .categoryCount {display:none;}
+
+/* V6: Add Magic six puzzle choices fit 3 x 2 in landscape only.
+   The full descriptions remain available via button labels and the puzzle screens
+   are not modified. */
+@media (orientation:landscape) and (min-width:600px) {
+  .categoryOptions.addMagicLandscapeFit { overflow:hidden !important; }
+  .categoryOptions.addMagicLandscapeFit .toggleSwitch {
+    display:grid !important; grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+    grid-template-rows:repeat(2,minmax(0,1fr)) !important;
+    gap:8px !important; min-height:0 !important; height:100% !important;
+  }
+  .categoryOptions.addMagicLandscapeFit .bookChoice.lvCard {
+    min-height:0 !important; height:100% !important;
+    padding:5px 8px !important; gap:7px !important;
+    flex-direction:row !important;
+  }
+  .categoryOptions.addMagicLandscapeFit .bookChoice .lvText {
+    min-width:0 !important; flex:1 !important; text-align:left !important;
+  }
+  .categoryOptions.addMagicLandscapeFit .bookChoice .lvName {
+    font-size:clamp(13px,2.6vh,20px) !important;
+  }
+  .categoryOptions.addMagicLandscapeFit .bookChoice .lvDiff,
+  .categoryOptions.addMagicLandscapeFit .bookChoice .bookNote {
+    margin-top:2px !important; font-size:clamp(10px,2vh,13px) !important;
+    line-height:1.13 !important;
+  }
+  .categoryOptions.addMagicLandscapeFit .bookChoice .lvGrid,
+  .categoryOptions.addMagicLandscapeFit .bookChoice .lvGlyph {
+    width:clamp(24px,5vh,42px) !important;
+    height:clamp(24px,5vh,42px) !important;
+    font-size:clamp(21px,4.5vh,37px) !important;
+  }
+}
+
+/* V7: Add Magic options only. Force the six-choice 3x2 grid to fill the
+   existing book panel. No puzzle-book grid, navigation or portrait changes. */
+@media (orientation: landscape) and (min-width:600px) {
+  body.categoryHome.categoryOpen .categoryOptions.addMagicLandscapeFit {
+    display:flex !important; flex-direction:column !important;
+    min-height:0 !important; overflow:hidden !important;
+  }
+  body.categoryHome.categoryOpen .categoryOptions.addMagicLandscapeFit > .modeGroup {
+    flex:1 1 0 !important; min-height:0 !important; overflow:hidden !important;
+  }
+  body.categoryHome.categoryOpen .categoryOptions.addMagicLandscapeFit .toggleSwitch {
+    flex:1 1 0 !important; min-height:0 !important; height:100% !important;
+    display:grid !important; grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+    grid-template-rows:repeat(2,minmax(0,1fr)) !important;
+    gap:8px !important; align-content:stretch !important;
+  }
+  body.categoryHome.categoryOpen .categoryOptions.addMagicLandscapeFit .bookChoice.lvCard {
+    min-height:0 !important; height:100% !important; overflow:hidden !important;
+    padding:4px 8px !important; gap:7px !important;
+    flex-direction:row !important;
+  }
+  body.categoryHome.categoryOpen .categoryOptions.addMagicLandscapeFit .bookChoice .lvName {
+    font-size:clamp(13px,2.6vh,20px) !important;
+  }
+  body.categoryHome.categoryOpen .categoryOptions.addMagicLandscapeFit .bookChoice .lvDiff,
+  body.categoryHome.categoryOpen .categoryOptions.addMagicLandscapeFit .bookChoice .bookNote {
+    margin-top:2px !important; font-size:clamp(10px,2vh,13px) !important;
+    line-height:1.12 !important;
+  }
 }

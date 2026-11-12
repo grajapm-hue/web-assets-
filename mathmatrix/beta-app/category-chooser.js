@@ -155,21 +155,53 @@
       if (options.screen() !== 'scHome') return;
       bar.classList.toggle('categoryShort', bar.clientHeight < 350);
       if (current) { fitChoices(); return; }
-      // Only the landscape book chooser uses square cards. Keep portrait and
-      // all puzzle/game screens on their existing responsive layout.
+      // Compact landscape book-cover trial: fit the actual available space.
+      // No gameplay, portrait, navigation or device-orientation changes.
       grid.classList.remove('categoryLandscapeSquares');
+      bar.classList.remove('categorySquareCompact');
       grid.style.removeProperty('width');
-      var columns = grid.clientWidth >= 820 ? 4 : grid.clientWidth >= 500 ? 3 : 2;
-      var landscape = window.matchMedia('(orientation: landscape) and (min-width: 600px)').matches;
-      var squareSide = landscape ? Math.floor(Math.min(
-        (grid.clientHeight - 12) / 3,
-        (bar.clientWidth - 36) / 4
-      )) : 0;
-      if (groups.length === 12 && squareSide >= 68) {
-        columns = 4;
-        grid.style.width = (squareSide * 4 + 18) + 'px';
-        grid.classList.add('categoryLandscapeSquares');
+      grid.style.removeProperty('height');
+      grid.style.removeProperty('--square-side');
+      Array.from(grid.children).forEach(function (button) {
+        var name = button.querySelector('.categoryName');
+        if (name && name.dataset.fullBookName) name.textContent = name.dataset.fullBookName;
+      });
+      var landscapeBooks = groups.length === 12 &&
+        window.innerWidth > window.innerHeight && window.innerWidth >= 600;
+      if (landscapeBooks) {
+        bar.classList.add('categorySquareCompact');
+        // Measure after compacting the header/footer. The grid itself remains
+        // inside the normal content panel above the app's bottom navigation.
+        var layoutStyle = getComputedStyle(bar);
+        var gap = parseFloat(layoutStyle.rowGap || layoutStyle.gap) || 0;
+        var freeHeight = bar.clientHeight - heading.offsetHeight - footer.offsetHeight -
+          (parseFloat(layoutStyle.paddingTop) || 0) -
+          (parseFloat(layoutStyle.paddingBottom) || 0) - gap * 2;
+        var side = Math.floor(Math.min((freeHeight - 6) / 2,
+          (bar.clientWidth - 30) / 6));
+        if (side >= 42) {
+          grid.style.setProperty('--square-side', side + 'px');
+          grid.style.width = (side * 6 + 30) + 'px';
+          grid.style.height = (side * 2 + 6) + 'px';
+          grid.classList.add('categoryLandscapeSquares');
+          var shortNames = {
+            'Add Magic':'Add', 'Multiply Magic':'Multiply', 'Criss-Cross':'Criss-Cross',
+            'SaNaMaze':'SaNaMaze', 'Birthday Magic':'Birthday', 'Gate Logic':'Gate Logic',
+            'Binary Magic':'Binary', 'Slide Magic':'Slide', 'Sudoku':'Sudoku',
+            'Tic-Tac-Toe':'Tic-Tac-Toe', 'Pallanguzhi':'Pallanguzhi', 'Thayam':'Thayam'
+          };
+          Array.from(grid.children).forEach(function (button) {
+            var name = button.querySelector('.categoryName');
+            if (!name) return;
+            if (!name.dataset.fullBookName) name.dataset.fullBookName = name.textContent;
+            name.textContent = shortNames[name.dataset.fullBookName] || name.dataset.fullBookName;
+          });
+        } else {
+          // A genuinely tiny viewport keeps the known-good responsive cards.
+          bar.classList.remove('categorySquareCompact');
+        }
       }
+      var columns = grid.classList.contains('categoryLandscapeSquares') ? 6 : grid.clientWidth >= 820 ? 4 : grid.clientWidth >= 500 ? 3 : 2;
       grid.style.setProperty('--category-columns', columns);
       grid.style.setProperty('--category-rows', Math.ceil(groups.length / columns));
       var rowHeight = grid.clientHeight / Math.ceil(groups.length / columns);
@@ -197,6 +229,13 @@
       var count = current.choices.length;
       panel.classList.remove('bookScroll');
       var width = panel.clientWidth, height = panel.clientHeight, columns = 1, score = Infinity;
+      // Add Magic: use the same landscape 3 x 2 fit as other compact book menus.
+      // Keep portrait and every other book's existing selection logic unchanged.
+      // Use the actual screen orientation, not the panel's transient measured
+      // height/width: those can be zero while a book is first opening.
+      var fitAddMagic = /^Add Magic$/i.test(current.name.trim()) &&
+        window.matchMedia('(orientation: landscape)').matches &&
+        window.innerWidth >= 600;
       for (var candidate = 1; candidate <= count; candidate++) {
         var rows = Math.ceil(count / candidate);
         var cardWidth = (width - (candidate - 1) * 10) / candidate;
@@ -205,10 +244,12 @@
         var value = Math.abs(Math.log((cardWidth / cardHeight) / 1.7)) + (candidate * rows - count) * 0.25;
         if (value < score) { score = value; columns = candidate; }
       }
+      if (fitAddMagic) columns = 3;
       var rowCount = Math.ceil(count / columns);
       list.style.setProperty('--book-columns', columns);
       list.style.setProperty('--book-rows', rowCount);
       list.classList.toggle('bookOddPair', columns === 2 && count % 2 === 1);
+      panel.classList.toggle('addMagicLandscapeFit', fitAddMagic);
       var minimum = 0;
       current.choices.forEach(function (choice) {
         var box = choice.getBoundingClientRect();
@@ -233,7 +274,7 @@
         while (needed() > choice.clientHeight - padding && scale > 0.69) { scale -= 0.05; size(); }
         minimum = Math.max(minimum, needed() + padding + border);
       });
-      if (minimum > (height - (rowCount - 1) * 10) / rowCount + 1) {
+      if (!fitAddMagic && minimum > (height - (rowCount - 1) * 10) / rowCount + 1) {
         list.style.setProperty('--book-min-row', Math.ceil(minimum) + 'px');
         panel.classList.add('bookScroll');
       }
@@ -245,6 +286,12 @@
       bar.classList.toggle('categoryInside', !!current);
       grid.hidden = !!current;
       panel.hidden = !current;
+      // Mark the Add Magic book before layout measurements. CSS alone can then
+      // establish its 3x2 grid even on the first render of a landscape screen.
+      panel.classList.toggle('addMagicLandscapeFit', !!current &&
+        /^Add Magic$/i.test(current.name.trim()) &&
+        window.matchMedia('(orientation: landscape)').matches &&
+        window.innerWidth >= 600);
       title.textContent = current ? (labels[current.name] || current.name) : 'Choose a puzzle';
       hint.textContent = current ? bookNotes[current.name] || 'Choose a puzzle below.' : 'All ' + groups.length + ' puzzle books — choose one to play.';
       groups.forEach(function (group) { group.hidden = !current || current.group !== group; });
