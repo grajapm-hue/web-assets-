@@ -150,3 +150,36 @@
   flex:none; grid-template-rows:repeat(var(--book-rows),minmax(var(--book-min-row),1fr));
   min-height:calc(var(--book-rows) * var(--book-min-row) + (var(--book-rows) - 1) * 10px);
 }
+
+/* Landscape-only square puzzle-book tiles. Portrait, book options, game rooms,
+   navigation, safe areas and orientation logic remain unchanged. */
+.categoryHome:not(.categoryOpen) .categoryGrid.categoryLandscapeSquares {
+  align-self:center;
+  flex:1 1 0;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  grid-template-rows:repeat(3,minmax(0,1fr));
+  gap:6px;
+}
+.categoryHome:not(.categoryOpen) .categoryLandscapeSquares .categoryCard {
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  gap:3px;
+  padding:3px 4px;
+  border-radius:12px;
+}
+.categoryHome:not(.categoryOpen) .categoryLandscapeSquares .categoryCardCopy {
+  align-items:center;
+  text-align:center;
+}
+.categoryHome:not(.categoryOpen) .categoryLandscapeSquares .categoryName {
+  font-size:clamp(10px,1.5vw,15px);
+  line-height:1.08;
+  overflow-wrap:anywhere;
+}
+.categoryHome:not(.categoryOpen) .categoryLandscapeSquares .categoryPicture {
+  font-size:clamp(21px,3.5vh,30px);
+  width:1.15em;
+  height:1.15em;
+}

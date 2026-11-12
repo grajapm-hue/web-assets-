@@ -155,7 +155,21 @@
       if (options.screen() !== 'scHome') return;
       bar.classList.toggle('categoryShort', bar.clientHeight < 350);
       if (current) { fitChoices(); return; }
+      // Only the landscape book chooser uses square cards. Keep portrait and
+      // all puzzle/game screens on their existing responsive layout.
+      grid.classList.remove('categoryLandscapeSquares');
+      grid.style.removeProperty('width');
       var columns = grid.clientWidth >= 820 ? 4 : grid.clientWidth >= 500 ? 3 : 2;
+      var landscape = window.matchMedia('(orientation: landscape) and (min-width: 600px)').matches;
+      var squareSide = landscape ? Math.floor(Math.min(
+        (grid.clientHeight - 12) / 3,
+        (bar.clientWidth - 36) / 4
+      )) : 0;
+      if (groups.length === 12 && squareSide >= 68) {
+        columns = 4;
+        grid.style.width = (squareSide * 4 + 18) + 'px';
+        grid.classList.add('categoryLandscapeSquares');
+      }
       grid.style.setProperty('--category-columns', columns);
       grid.style.setProperty('--category-rows', Math.ceil(groups.length / columns));
       var rowHeight = grid.clientHeight / Math.ceil(groups.length / columns);
