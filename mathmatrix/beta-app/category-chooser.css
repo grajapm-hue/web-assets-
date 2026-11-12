@@ -297,3 +297,50 @@
   .categoryHome .categoryFooter #diffTip::after { font-size:11px; }
   .categoryHome .categoryFooter .diffShare { padding-left:5px !important; padding-right:5px !important; }
 }
+
+/* V219: consistent Play Offline footer in portrait and landscape */
+.categoryHome .categoryFooter,
+.categoryHome:not(.categoryOpen) .categorySquareCompact .categoryFooter {
+  box-sizing:border-box !important;
+  width:100% !important;
+  max-width:100% !important;
+  padding-left:max(14px, env(safe-area-inset-left, 0px)) !important;
+  padding-right:max(14px, env(safe-area-inset-right, 0px)) !important;
+  column-gap:4px !important;
+}
+.categoryHome .categoryFooter #diffTip,
+.categoryHome:not(.categoryOpen) .categorySquareCompact .categoryFooter #diffTip {
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:flex-start !important;
+  width:auto !important;
+  min-width:0 !important;
+  height:auto !important;
+  flex:0 0 auto !important;
+  overflow:visible !important;
+  white-space:nowrap !important;
+}
+.categoryHome .categoryFooter #diffTip::before { content:none !important; display:none !important; }
+.categoryHome .categoryFooter #diffTip::after {
+  content:'Play Offline' !important;
+  display:inline !important;
+  font:700 12px/1.15 "Trebuchet MS",sans-serif !important;
+  color:#664C2C !important;
+  white-space:nowrap !important;
+}
+.categoryHome .categoryFooter .categoryVersion {
+  font:800 14px/1.15 "Trebuchet MS",sans-serif !important;
+  color:#664C2C !important;
+  flex:0 0 auto !important;
+  white-space:nowrap !important;
+}
+@media (max-width:400px) {
+  .categoryHome .categoryFooter,
+  .categoryHome:not(.categoryOpen) .categorySquareCompact .categoryFooter {
+    padding-left:max(9px, env(safe-area-inset-left, 0px)) !important;
+    padding-right:max(9px, env(safe-area-inset-right, 0px)) !important;
+    column-gap:3px !important;
+  }
+  .categoryHome .categoryFooter #diffTip::after { font-size:11px !important; }
+  .categoryHome .categoryFooter .categoryVersion { font-size:12px !important; }
+}
