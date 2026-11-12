@@ -344,3 +344,19 @@
   .categoryHome .categoryFooter #diffTip::after { font-size:11px !important; }
   .categoryHome .categoryFooter .categoryVersion { font-size:12px !important; }
 }
+
+/* V219 landscape book title and icon readability */
+@media (orientation:landscape) and (min-width:600px) {
+  .categoryHome:not(.categoryOpen) .categorySquareCompact .categoryLandscapeSquares .categoryPicture {
+    width:clamp(20px,4.3vh,32px) !important;
+    height:clamp(20px,4.3vh,32px) !important;
+    font-size:clamp(20px,4.3vh,32px) !important;
+    line-height:1 !important;
+  }
+  .categoryHome:not(.categoryOpen) .categorySquareCompact .categoryLandscapeSquares .categoryName {
+    font-size:clamp(12px,2.9vh,17px) !important;
+    font-weight:800 !important;
+    line-height:1.08 !important;
+    text-align:center;
+  }
+}
