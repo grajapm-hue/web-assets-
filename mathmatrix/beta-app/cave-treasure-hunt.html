@@ -27,6 +27,7 @@
   const direction='';
   root.classList.remove('lockRotateCW','lockRotateCCW');
   root.classList.toggle('lsLayout',(touch||visible.width>=900)&&landscape);
+  root.classList.toggle('desktopViewport',!touch&&visible.width>=900&&landscape);
   // Layout breakpoints follow the visible portrait height, including browser
   // chrome and insets that can make it shorter than the layout viewport.
   root.classList.toggle('sanaCompact',visible.height<=700);
@@ -126,6 +127,7 @@ html.lsLayout .app > .board-wrap{grid-column:2;grid-row:2 / 6;flex:none;height:v
 html.lsLayout .direction-row{grid-template-rows:clamp(38px,11vh,54px)}
 html.lsLayout .maze-labels{font-size:clamp(9px,calc(var(--lsAvail) * .034),18px) !important}
 </style>
+<link rel="stylesheet" href="ui-tuning.css">
 </head>
 <body>
 <main class="app" aria-label="SaNa Treasure Hunt fixed cave maze">

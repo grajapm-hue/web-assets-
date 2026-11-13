@@ -90,7 +90,8 @@
       var node = document.getElementById(id);
       if (node) footer.appendChild(node);
     });
-    var version = element('span', 'categoryVersion', 'Beta V.219');
+    var buildLabel = document.title.match(/V\.\d+/);
+    var version = element('span', 'categoryVersion', 'Beta ' + (buildLabel ? buildLabel[0] : ''));
     footer.appendChild(version);
     groups.forEach(function (group, index) {
       var name = group.querySelector('.modeHead b').textContent.trim();
@@ -246,7 +247,10 @@
         if (value < score) { score = value; columns = candidate; }
       }
       if (fitAddMagic) columns = 3;
+      var desktopChoices = document.documentElement.classList.contains('desktopViewport');
+      if (desktopChoices) columns = Math.min(count, Math.max(1, Math.min(3, Math.floor(width / 290))));
       var rowCount = Math.ceil(count / columns);
+      list.style.setProperty('--book-row-height', Math.min(200, Math.floor((height - (rowCount - 1) * 12) / rowCount)) + 'px');
       list.style.setProperty('--book-columns', columns);
       list.style.setProperty('--book-rows', rowCount);
       list.classList.toggle('bookOddPair', columns === 2 && count % 2 === 1);
@@ -310,6 +314,7 @@
         if (headerTitle) headerTitle.textContent = current ? (labels[current.name] || current.name) : 'MathMatrix Pro++';
       }
       if (focus && onHome) title.focus({ preventScroll: true });
+      if (focus && onHome && current) options.announce(hint.textContent);
       bar.scrollTop = 0;
       fit();
     }
