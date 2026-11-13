@@ -73,7 +73,7 @@ window.onerror = function(msg, src, line, col, err){
 <link rel="apple-touch-icon" href="icon-192.png">
 <!-- without this the browser asks for /favicon.ico, 404s, and the tab sits blank -->
 <link rel="icon" href="icon-192.png" type="image/png">
-<title>🐒🎲 MathMatrix Pro++ — Beta - V.226 Smooth Handoff</title>
+<title>🐒🎲 MathMatrix Pro++ — Beta - V.227 Visible Screen Fit</title>
 
 <!-- Raja: the copy icon in Android's share sheet copies something that will
      not open in a fresh browser, while every other channel works.
@@ -1439,27 +1439,12 @@ body{ background:var(--gr) !important; padding:0 !important; margin:0 !important
       font-size:13px; overscroll-behavior:none; }
 .blob{ display:none !important; }               /* the glow replaces them */
 
-/* Raja has the app on his home screen TWICE — one a real install, one a Chrome
-   shortcut — and the shortcut opened with no tab bar at all: no Puzzles, Play,
-   Get App or Feedback. Same HTML on both, verified against the live file, so
-   the difference is the height each launcher hands the page.
-
-   100vh is the LARGE viewport: the height the page would have if the browser's
-   own toolbars were hidden. It is not the height that is actually on screen
-   while they are showing. max-height:100dvh was meant to cap it, but dvh tracks
-   the CURRENT state and is a moving target during launch, so the shell could
-   settle taller than the visible area — and this shell is a flex column with
-   overflow:hidden, which means the surplus comes off the BOTTOM, where the tab
-   bar lives. The list scaling up in the same screenshot is the same cause
-   showing its hand: fitHome() had more height to divide, because the shell
-   genuinely thought it was taller.
-
-   100svh is the SMALL viewport — the height with browser UI showing, the
-   smallest the page can ever be handed. Sizing to it means the bar cannot be
-   under anything, in any launcher. In a real install svh, lvh and dvh are all
-   the same number, so nothing changes for the installed icon. The earlier
-   declarations stay as fallbacks for browsers without the newer units. */
+/* Keep the tabs inside the visible screen in both installed and browser launches.
+   svh is a safe startup fallback, but can remain shorter after browser controls
+   disappear. game-layout.js measures the current visible height, bounded by the
+   layout height so a stale larger report cannot hide the bottom navigation. */
 .appShell{ height:100dvh; height:100vh; max-height:100dvh; height:100svh; max-height:100svh;
+  height:var(--app-visible-height,100svh); max-height:var(--app-visible-height,100svh);
   width:100%;
   display:flex !important; flex-direction:column; overflow:hidden !important; position:relative; }
 /* ══ BACKGROUND DECORATION ══════════════════════════════════════════════
@@ -15904,7 +15889,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'Beta - V.226 Smooth Handoff';
+  var BUILD_VER = 'Beta - V.227 Visible Screen Fit';
   /* Legacy update beacon: older installed versions scan for this literal.
    window.BETA_VER = 'v185'
    Runtime code below derives the same token from BUILD_VER. */

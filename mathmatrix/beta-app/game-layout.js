@@ -21,6 +21,12 @@
     root.style.setProperty('--game-physical-height', height + 'px');
     root.style.setProperty('--game-logical-width', logicalWidth + 'px');
     root.style.setProperty('--game-logical-height', logicalHeight + 'px');
+    // svh can retain the browser-toolbar reserve after that space becomes visible.
+    // Bound both viewport reports to avoid putting the tabs behind browser UI.
+    const visibleHeight = Math.min(height, innerHeight || height);
+    if (Number.isFinite(visibleHeight) && visibleHeight > 0) {
+      root.style.setProperty('--app-visible-height', visibleHeight + 'px');
+    }
     root.classList.remove('lockRotateCCW', 'lockRotateCW');
     const desktop = !touch && width >= 900 && width > height;
     root.classList.toggle('desktopViewport', desktop);
@@ -146,6 +152,8 @@
   window.addEventListener('resize', portrait);
   window.addEventListener('resize', schedule);
   window.addEventListener('orientationchange', portrait);
+  window.addEventListener('pageshow', portrait);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) portrait(); });
   if (screen.orientation) screen.orientation.addEventListener('change', portrait);
   if (window.visualViewport) window.visualViewport.addEventListener('resize', portrait);
   portrait();

@@ -1,6 +1,6 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V226 warm loading handoff.
+// MathMatrix Pro++ Beta Service Worker — Beta V227 visible screen fit.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v239-warm-handoff';
+const CACHE_VERSION = 'mathmatrix-beta-v240-visible-height';
 
 const ASSETS = [
   './index.html',
