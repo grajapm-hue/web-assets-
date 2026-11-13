@@ -1,13 +1,41 @@
 /* Category navigation only: original puzzle nodes retain their game handlers. */
 (function () {
   'use strict';
+  var returnKey = 'mathmatrix-book-return:' + location.pathname.replace(/[^/]*$/, '');
+  var requestedPuzzleReturn = false;
+  // Back links also work when a standalone puzzle was opened directly or when
+  // session storage is unavailable. Consume the URL marker before boot history
+  // is installed so sharing/reloading the chooser remains a normal new launch.
+  try {
+    var returnUrl = new URL(location.href);
+    if (returnUrl.searchParams.get('mm-return') === 'puzzles') {
+      requestedPuzzleReturn = true;
+      returnUrl.searchParams.delete('mm-return');
+      history.replaceState(history.state, '', returnUrl.href);
+    }
+  } catch (e) {}
+  function readBookReturn(consume) {
+    try {
+      var raw = sessionStorage.getItem(returnKey);
+      if (consume) sessionStorage.removeItem(returnKey);
+      var saved = JSON.parse(raw || 'null');
+      if (!saved || typeof saved.name !== 'string' || typeof saved.direct !== 'boolean' ||
+          !Number.isInteger(saved.choice) || saved.choice < 0 || !Number.isFinite(saved.time)) return null;
+      var knownBook = Array.from(document.querySelectorAll('.modeGroup .modeHead b')).some(function (name) {
+        return name.textContent.trim() === saved.name;
+      });
+      return knownBook ? saved : null;
+    } catch (e) { return null; }
+  }
+  window.isMathMatrixPuzzleReturn = function () {
+    return requestedPuzzleReturn || !!readBookReturn(false);
+  };
   window.createMathMatrixCategoryChooser = function (options) {
     var bar = document.querySelector('.difficultyBar');
     if (!bar) return null;
     var groups = Array.from(bar.querySelectorAll('.modeGroup'));
     var current = null, lastCategory = null, directReturn = false;
     var entries = [];
-    var returnKey = 'mathmatrix-book-return:' + location.pathname.replace(/[^/]*$/, '');
     var pendingReturn = null;
     function cancelReturn() {
       pendingReturn = null;
@@ -129,7 +157,7 @@
         choice.addEventListener('click', function () {
           cancelReturn();
           entry.lastChoice = choice;
-          if (['criss-cross', 'tic-tac-toe', 'tunnels', 'cave-treasure', 'sana-treasure-hunt'].indexOf(choice.dataset.size) !== -1) {
+          if (['crisscross', 'tic-tac-toe', 'tunnels', 'cave-treasure', 'sana-treasure-hunt'].indexOf(choice.dataset.size) !== -1) {
             try {
               sessionStorage.setItem(returnKey, JSON.stringify({ name: name, direct: count === 1,
                 choice: choices.indexOf(choice), time: Date.now() }));
@@ -330,11 +358,7 @@
       options.announce('Choose a puzzle book. Single puzzles open straight away.');
     }
     function takeReturn() {
-      try {
-        var saved = JSON.parse(sessionStorage.getItem(returnKey) || 'null');
-        sessionStorage.removeItem(returnKey);
-        return saved;
-      } catch (e) { return null; }
+      return readBookReturn(true);
     }
     function restoreReturn(saved) {
       if (!saved) return;

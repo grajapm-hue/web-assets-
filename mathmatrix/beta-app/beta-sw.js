@@ -1,6 +1,6 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V224 navigation.
+// MathMatrix Pro++ Beta Service Worker — Beta V225 puzzle returns.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v237-navigation';
+const CACHE_VERSION = 'mathmatrix-beta-v238-puzzle-return';
 
 const ASSETS = [
   './index.html',
