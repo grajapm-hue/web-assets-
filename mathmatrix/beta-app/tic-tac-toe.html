@@ -47,6 +47,7 @@
   </style>
 <link rel="stylesheet" href="game-layout.css">
 <script src="game-layout.js"></script>
+<link rel="stylesheet" href="ui-tuning.css">
 </head>
 <body>
   <header>
@@ -125,6 +126,7 @@
 
     async function syncAudio() {
       get('soundIcon').textContent = soundOn ? '🔊' : '🔇';
+      get('soundBtn').classList.toggle('off', !soundOn);
       get('soundMaster').textContent = 'Sound: ' + (soundOn ? 'ON' : 'OFF');
       get('musicToggle').textContent = 'Music: ' + (musicOn ? 'ON' : 'OFF');
       get('soundMaster').setAttribute('aria-pressed', String(soundOn));

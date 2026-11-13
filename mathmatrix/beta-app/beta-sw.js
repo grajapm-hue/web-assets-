@@ -1,6 +1,6 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V219 free orientation (portrait + landscape).
+// MathMatrix Pro++ Beta Service Worker — Beta V220 UI tuning.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v232-laptop-layout';
+const CACHE_VERSION = 'mathmatrix-beta-v233-ui-tuning';
 
 const ASSETS = [
   './index.html',
@@ -8,6 +8,7 @@ const ASSETS = [
   './category-chooser.css',
   './category-chooser.js',
   './game-layout.css',
+  './ui-tuning.css',
   './game-layout.js',
   './criss-cross.html',
   './tic-tac-toe.html',

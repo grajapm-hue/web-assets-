@@ -55,7 +55,7 @@ window.onerror = function(msg, src, line, col, err){
 <link rel="apple-touch-icon" href="icon-192.png">
 <!-- without this the browser asks for /favicon.ico, 404s, and the tab sits blank -->
 <link rel="icon" href="icon-192.png" type="image/png">
-<title>🐒🎲 MathMatrix Pro++ — Beta - V.219 Unified</title>
+<title>🐒🎲 MathMatrix Pro++ — Beta - V.220 UI Tuning</title>
 
 <!-- Raja: the copy icon in Android's share sheet copies something that will
      not open in a fresh browser, while every other channel works.
@@ -4355,6 +4355,7 @@ html.lsShort .tabBar{ min-height:32px !important; padding-top:1px !important; }
 html.lsShort .tabBtn{ font-size:10.5px !important; }
 html.lsShort .screen.on{ padding-top:3px !important; }
 </style>
+<link rel="stylesheet" href="ui-tuning.css">
 </head>
 <body>
 <div class="blob blob-a"></div><div class="blob blob-b"></div><div class="blob blob-c"></div>
@@ -5056,9 +5057,9 @@ html.lsShort .screen.on{ padding-top:3px !important; }
         <span class="lvGlyph" aria-hidden="true">🔢</span>
         <span class="lvText"><b class="lvName">Guess My Number · Junior</b><span class="lvDiff">1 to 99</span><span class="lvMeta">8 cards · tens and units, four bits each</span><span class="lvNow">PLAYING</span></span>
       </button>
-      <button class="toggleBtn lvCard" data-size="binary2" data-name="🔢 Guess My Number · Advance" style="color:#a3e635; border-color:#4d7c0f; --c1:#d9f99d; --c2:#a3e635;">
+      <button class="toggleBtn lvCard" data-size="binary2" data-name="🔢 Guess My Number · Advanced" style="color:#a3e635; border-color:#4d7c0f; --c1:#d9f99d; --c2:#a3e635;">
         <span class="lvGlyph" aria-hidden="true">🔢</span>
-        <span class="lvText"><b class="lvName">Guess My Number · Advance</b><span class="lvDiff">1 to 255</span><span class="lvMeta">the same 8 cards · real binary, nothing wasted</span><span class="lvNow">PLAYING</span></span>
+        <span class="lvText"><b class="lvName">Guess My Number · Advanced</b><span class="lvDiff">1 to 255</span><span class="lvMeta">the same 8 cards · real binary, nothing wasted</span><span class="lvNow">PLAYING</span></span>
       </button>
     </div>
   </div>
@@ -5247,10 +5248,10 @@ html.lsShort .screen.on{ padding-top:3px !important; }
         <button type="button" class="fbChip" data-tag="Idea">💡 I have an idea</button>
       </div>
 
-      <div class="fbLabel" id="fbAskLabel">What happened, or what would you change?</div>
+      <label class="fbLabel" id="fbAskLabel" for="fbText">What happened, or what would you change?</label>
       <textarea id="fbText" rows="5" placeholder="e.g. On 10×10 the numbers were too small to read on my phone."></textarea>
 
-      <div class="fbLabel">Who is playing? <span class="fbOpt">optional</span></div>
+      <label class="fbLabel" for="fbWho">Who is playing? <span class="fbOpt">optional</span></label>
       <input id="fbWho" type="text" placeholder="Name and age — e.g. Meera, 11">
 
       <button type="button" class="fbSend" id="fbSend">✉️ Send feedback</button>
@@ -5766,7 +5767,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
        barButtons(), than the first call to this function. */
     var m = document.getElementById('barMore');
     if (m) {
-      m.innerHTML = '<i>' + (soundOn ? '🔊' : '🔇') + '</i><span>Sound</span>';
+      m.innerHTML = '<i aria-hidden="true">' + (soundOn ? '🔊' : '🔇') + '</i><span>Sound</span>';
+      m.classList.toggle('off', !soundOn);
       m.setAttribute('aria-label', soundOn
         ? 'Sound is on — open sound and music settings'
         : 'Sound is off — open sound and music settings');
@@ -8564,7 +8566,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
         if (lsP && lsP.clientHeight > 60){
           var lsPw = lsP.clientWidth;
           byW = Math.floor((Math.min(lsPw - 270, 700) - gap * (SLIDE_COLS - 1)) / SLIDE_COLS);
-          room = lsP.clientHeight - 6;
+          room = lsP.clientHeight - (document.documentElement.classList.contains('desktopViewport') ? 18 : 6);
           byH = Math.floor((room - gap * (SLIDE_ROWS - 1)) / SLIDE_ROWS);
         }
       }
@@ -9269,6 +9271,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     function sudRender(){
       var el = document.getElementById('sudBoard'); if (!el) return;
       var L = sudLv, n = L.n;
+      el.dataset.size = String(n);
 
       /* THE PAD AND LEGEND ARE BUILT FIRST, before the board is measured and
          sized. They used to be built at the end, which meant the first render
@@ -9337,8 +9340,10 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       if (document.documentElement.classList.contains('lsLayout')){
         var lsS = document.getElementById('sudokuPanel');
         if (lsS && lsS.clientHeight > 60){
-          byW = Math.floor((Math.min(lsS.clientWidth - 340, 640) - 8) / n);
-          room = lsS.clientHeight - 14;
+          var desktopSudoku = document.documentElement.classList.contains('desktopViewport');
+          var boardColumn = desktopSudoku ? parseFloat(getComputedStyle(lsS).gridTemplateColumns) : Math.min(lsS.clientWidth - 340, 640);
+          byW = Math.floor((boardColumn - 8) / n);
+          room = lsS.clientHeight - (desktopSudoku ? 34 : 14);
           byH = Math.floor(room / n);
         }
       }
@@ -9346,7 +9351,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       // fit rather than to a nonsense negative square
       var cell = room > 0 ? Math.min(byW, byH) : byW;
       if (sudCellCap) cell = Math.min(cell, sudCellCap);
-      cell = Math.max(22, Math.min(cell, 74));       // 22px is what 10x10 already ships
+      var maxCell = document.documentElement.classList.contains('desktopViewport') && n <= 4 ? 128 : 74;
+      cell = Math.max(22, Math.min(cell, maxCell));       // 22px is what 10x10 already ships
       el.style.gridTemplateColumns = 'repeat(' + n + ', ' + cell + 'px)';
       var peers = sudPick >= 0 ? sudPeers(sudPick) : {};
       var done = sudDoneCells();
@@ -12972,7 +12978,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       if (currentSize === 'binary2'){
         document.getElementById('logicBox').innerHTML =
           binRef(true) +
-          '<h3 style="margin-top:18px;">📐 Guess My Number · Advance — how the trick works</h3>' +
+          '<h3 style="margin-top:18px;">📐 Guess My Number · Advanced — how the trick works</h3>' +
           '<p>Junior splits your number into two digits. Advance does not split it at all — ' +
           'it builds the <b>whole number</b> out of eight values: ' +
           '<b>128, 64, 32, 16, 8, 4, 2</b> and <b>1</b>.</p>' +
@@ -15853,7 +15859,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'Beta - V.219 Unified';
+  var BUILD_VER = 'Beta - V.220 UI Tuning';
   /* Legacy update beacon: older installed versions scan for this literal.
    window.BETA_VER = 'v185'
    Runtime code below derives the same token from BUILD_VER. */

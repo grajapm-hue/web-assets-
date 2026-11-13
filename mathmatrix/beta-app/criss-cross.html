@@ -10,7 +10,13 @@
   var touch=('ontouchstart' in window)||(navigator.maxTouchPoints>0);
   if(touch) root.classList.add('touchViewport');
   /* Wide laptop windows share the existing landscape layout. */
-  if((touch || window.innerWidth>=900) && window.innerWidth>window.innerHeight) root.classList.add('lsLayout');
+  function fitDesktop(){
+    var landscape=window.innerWidth>window.innerHeight;
+    root.classList.toggle('lsLayout',(touch||window.innerWidth>=900)&&landscape);
+    root.classList.toggle('desktopViewport',!touch&&window.innerWidth>=900&&landscape);
+  }
+  fitDesktop();
+  window.addEventListener('resize',fitDesktop);
 })();
 </script>
 <style>
@@ -266,7 +272,8 @@ html.lsLayout .sanaAvatar{width:34px !important;height:34px !important;font-size
 html.lsLayout .ccmDockHead .ccmToggle{padding:3px 6px !important;font-size:12px !important}
 html.lsLayout .ccmKeysRow{gap:4px !important}
 html.lsLayout .ccmKeysRow.second,html.lsLayout .ccmKeysRow.third{margin-top:4px !important}
-</style></head><body>
+</style><link rel="stylesheet" href="ui-tuning.css">
+</head><body>
 
 <div class="ccmBar"><button class="ccmBack" id="ccmBack" type="button" aria-label="Back to puzzles">←</button><div class="ccmBarTitle" aria-label="Criss-Cross">Criss-Cross</div><div class="ccmTopActions"><button class="ccmTopBtn logic" id="logicBtn"><i>💡</i><span>LOGIC</span></button><button class="ccmTopBtn watchTop" id="watchTopBtn"><i>👁️</i><span>WATCH</span></button><button class="ccmTopBtn soundTop" id="ccmSoundBtn"><i>🔊</i><span>SOUND</span></button></div></div>
 <div class="sanaRow"><div><div class="sanaAvatar">🐒</div><div class="sanaName">SaNa</div></div><div class="sanaBubble playing" id="sanaBubble"><span class="levelTextEasy">Easy 1-9</span><span class="sanaOps"><span class="op-plus">+</span> <span class="op-minus">-</span></span> — Use 1-9. Tap a cell — take your time! 0/9</div></div>
