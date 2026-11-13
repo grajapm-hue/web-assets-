@@ -751,7 +751,7 @@ document.getElementById('backToBeta').addEventListener('click', function () {
   if (document.referrer && new URL(document.referrer).origin === location.origin && history.length > 1) {
     history.back();
   } else {
-    location.href = './beta.html';
+    location.href = './beta.html?mm-return=puzzles';
   }
 });
 if ('serviceWorker' in navigator) {
