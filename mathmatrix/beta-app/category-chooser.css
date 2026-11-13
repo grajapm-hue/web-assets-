@@ -174,11 +174,11 @@
 .categoryHome:not(.categoryOpen) .categorySquareCompact .categoryGrid.categoryLandscapeSquares {
   flex:0 0 auto; align-self:center; min-height:0; max-width:100%;
   grid-template-columns:repeat(6,var(--square-side));
-  grid-template-rows:repeat(2,var(--square-side));
+  grid-template-rows:repeat(2,var(--landscape-card-height,var(--square-side)));
   gap:6px; overflow:hidden;
 }
 .categoryHome:not(.categoryOpen) .categorySquareCompact .categoryLandscapeSquares .categoryCard {
-  width:var(--square-side); height:var(--square-side); min-width:0; min-height:0;
+  width:var(--square-side); height:var(--landscape-card-height,var(--square-side)); min-width:0; min-height:0;
   flex-direction:column; justify-content:center; align-items:center;
   text-align:center; gap:2px; padding:2px; border-radius:10px;
 }
@@ -344,4 +344,26 @@ body.categoryHome:not(.categoryOpen) .categoryCard[data-category="Thayam"] .cate
    overflow:hidden; font-size:clamp(8px,1.8vh,11px) !important;
    line-height:1.12; text-align:center;
  }
+}
+
+/* Taller landscape tablets keep a balanced book cover and comfortable utilities. */
+body.categoryHome:not(.categoryOpen) .categoryTabletFill .categoryLandscapeSquares .categoryPicture {
+  font-size:clamp(36px,calc(var(--square-side) * .25),48px) !important;
+  width:1em !important; height:1em !important;
+}
+body.categoryHome:not(.categoryOpen) .categoryTabletFill .categoryLandscapeSquares .categoryName {
+  font-size:clamp(18px,calc(var(--square-side) * .12),23px) !important;
+}
+body.categoryHome:not(.categoryOpen) .categoryTabletFill .categoryLandscapeSquares .categoryCardCopy::after {
+  font-size:clamp(11px,calc(var(--square-side) * .075),14px) !important;
+  line-height:1.25; min-height:2.5em;
+}
+body.categoryHome:not(.categoryOpen) .categoryTabletFill .categoryFooter {
+  height:48px !important; min-height:48px !important; padding-top:2px !important; padding-bottom:2px !important;
+}
+body.categoryHome:not(.categoryOpen) .categoryTabletFill .categoryFooter .diffShare {
+  min-height:44px !important; padding:8px 12px !important; font-size:14px !important;
+}
+body.categoryHome:not(.categoryOpen) .categoryTabletFill .categoryFooter #diffTip {
+  min-height:44px !important;
 }
