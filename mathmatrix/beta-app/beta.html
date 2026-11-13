@@ -55,7 +55,7 @@ window.onerror = function(msg, src, line, col, err){
 <link rel="apple-touch-icon" href="icon-192.png">
 <!-- without this the browser asks for /favicon.ico, 404s, and the tab sits blank -->
 <link rel="icon" href="icon-192.png" type="image/png">
-<title>🐒🎲 MathMatrix Pro++ — Beta - V.222 UI Tuning</title>
+<title>🐒🎲 MathMatrix Pro++ — Beta - V.223 Update Stability</title>
 
 <!-- Raja: the copy icon in Android's share sheet copies something that will
      not open in a fresh browser, while every other channel works.
@@ -15824,6 +15824,30 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   if (!pendingResume) requestAnimationFrame(function(){ document.documentElement.classList.remove('mmBooting'); });
 })();
 
+// Preserve the current screen for every app-initiated update, including a
+// delayed version check or worker activation after the child has pressed Play.
+// Leave the welcome screen in place if play has not started yet. The existing
+// one-shot resume code below restores the screen and selected puzzle on boot.
+function rememberUpdateLocation(){
+  if (document.querySelector('.splash:not(.out)')) return;
+  try {
+    var open = document.querySelector('[data-screen].on');
+    var lvl  = document.querySelector('.toggleBtn.active');
+    var lvlAttr = '', lvlVal = '';
+    if (lvl){
+      var LEVEL_ATTRS = ['data-size', 'data-slide-level', 'data-sud-level', 'data-pal-level', 'data-pal4-level'];
+      for (var lai = 0; lai < LEVEL_ATTRS.length; lai++){
+        if (lvl.hasAttribute(LEVEL_ATTRS[lai])){ lvlAttr = LEVEL_ATTRS[lai]; lvlVal = lvl.getAttribute(LEVEL_ATTRS[lai]); break; }
+      }
+      if (!lvlAttr && lvl.id){ lvlAttr = 'id'; lvlVal = lvl.id; }
+    }
+    sessionStorage.setItem('mm.resume', JSON.stringify({
+      s: open ? open.getAttribute('data-screen') : 'scHome',
+      za: lvlAttr, z: lvlVal
+    }));
+  } catch (e) {}
+}
+
 // Beta registers its own worker at this subfolder scope for offline play.
 // The Beta cache namespace is separate from the public app on this origin.
 if ('serviceWorker' in navigator) {
@@ -15833,6 +15857,7 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('controllerchange', function () {
     if (!hadController || swReloaded) return;
     swReloaded = true;
+    rememberUpdateLocation();
     try { location.reload(); } catch (e) {}
   });
   window.addEventListener('load', function () {
@@ -15860,7 +15885,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'Beta - V.222 UI Tuning';
+  var BUILD_VER = 'Beta - V.223 Update Stability';
   /* Legacy update beacon: older installed versions scan for this literal.
    window.BETA_VER = 'v185'
    Runtime code below derives the same token from BUILD_VER. */
@@ -15935,6 +15960,7 @@ if (navigator.storage && navigator.storage.persist) {
           if (!freshBuildNumber) return;
           var fresh = 'v' + freshBuildNumber[1];
           if (fresh === window.BETA_VER) return;
+          rememberUpdateLocation();
           location.replace(location.pathname + '?v=' + encodeURIComponent(fresh));
         })
         .catch(function(){
@@ -15975,43 +16001,7 @@ if (navigator.storage && navigator.storage.persist) {
         return;
       }
       upBtn.textContent = '⏳ Updating…'; upBtn.disabled = true;
-      /* Raja asked to land back where you were standing, rather than at the
-         welcome screen on 3×3. So note the screen and the puzzle before the
-         reload; the block at the end of this file spends it on the way back in.
-         The screen and the puzzle only — NOT a half-filled board. A new build
-         can change a grid, and pouring stale cells into a different puzzle is
-         worse than starting it clean.
-
-         Raja: puzzles beyond the original 3x3-style family (Sudoku, Slide,
-         Pallanguzhi) left the app on the WRONG puzzle after Update -- this only
-         ever looked for data-size, which only the original magic-square family
-         carries. Every other family keys its own tile a different way
-         (data-sud-level, data-slide-level, data-pal-level, data-pal4-level),
-         so an update from any of them saved z:'' and silently defaulted back to
-         3x3 -- with everything downstream that keys off currentSize now
-         disagreeing with what actually got shown. That mismatch, not the cache
-         itself, is what let two puzzles' panels end up on screen together after
-         enough further taps. Now every family's own attribute is recognised.
-         Gate Logic's own tile carries no data-*-level at all -- it opens a
-         picker, not a single puzzle -- so it falls back to its id, landing back
-         on the gate list rather than the specific room (still correct, just not
-         as deep). */
-      try {
-        var open = document.querySelector('[data-screen].on');
-        var lvl  = document.querySelector('.toggleBtn.active');
-        var lvlAttr = '', lvlVal = '';
-        if (lvl){
-          var LEVEL_ATTRS = ['data-size', 'data-slide-level', 'data-sud-level', 'data-pal-level', 'data-pal4-level'];
-          for (var lai = 0; lai < LEVEL_ATTRS.length; lai++){
-            if (lvl.hasAttribute(LEVEL_ATTRS[lai])){ lvlAttr = LEVEL_ATTRS[lai]; lvlVal = lvl.getAttribute(LEVEL_ATTRS[lai]); break; }
-          }
-          if (!lvlAttr && lvl.id){ lvlAttr = 'id'; lvlVal = lvl.id; }
-        }
-        sessionStorage.setItem('mm.resume', JSON.stringify({
-          s: open ? open.getAttribute('data-screen') : 'scHome',
-          za: lvlAttr, z: lvlVal
-        }));
-      } catch (e) {}
+      rememberUpdateLocation();
       /* Refresh this Beta worker without deleting the offline copy or saved
          puzzle state. A one-time URL query also bypasses a stale HTTP-cache
          response when this button is used from an installed home-screen app. */

@@ -100,8 +100,8 @@ test('both Beta entrypoints show the same current release', async () => {
       await page.goto(base+file);
       await page.locator('#splashPlay').click({force:true});
       await page.locator('#splashPlay').waitFor({state:'detached'});
-      assert.match(await page.title(),/V\.222 UI Tuning/);
-      assert.equal(await page.locator('.categoryVersion').innerText(),'Beta V.222');
+      assert.match(await page.title(),/V\.223 Update Stability/);
+      assert.equal(await page.locator('.categoryVersion').innerText(),'Beta V.223');
       assert.equal(await page.locator('.categoryCard:visible').count(),12);
     }
   } finally {await context.close();}
