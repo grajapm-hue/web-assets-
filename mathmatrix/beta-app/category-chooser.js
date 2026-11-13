@@ -159,10 +159,11 @@
       // Compact landscape book-cover trial: fit the actual available space.
       // No gameplay, portrait, navigation or device-orientation changes.
       grid.classList.remove('categoryLandscapeSquares');
-      bar.classList.remove('categorySquareCompact');
+      bar.classList.remove('categorySquareCompact', 'categoryTabletFill');
       grid.style.removeProperty('width');
       grid.style.removeProperty('height');
       grid.style.removeProperty('--square-side');
+      grid.style.removeProperty('--landscape-card-height');
       Array.from(grid.children).forEach(function (button) {
         var name = button.querySelector('.categoryName');
         if (name && name.dataset.fullBookName) name.textContent = name.dataset.fullBookName;
@@ -172,6 +173,7 @@
         window.innerWidth > window.innerHeight && window.innerWidth >= 600;
       if (landscapeBooks) {
         bar.classList.add('categorySquareCompact');
+        bar.classList.toggle('categoryTabletFill', window.innerHeight >= 550);
         // Measure after compacting the header/footer. The grid itself remains
         // inside the normal content panel above the app's bottom navigation.
         var layoutStyle = getComputedStyle(bar);
@@ -179,12 +181,15 @@
         var freeHeight = bar.clientHeight - heading.offsetHeight - footer.offsetHeight -
           (parseFloat(layoutStyle.paddingTop) || 0) -
           (parseFloat(layoutStyle.paddingBottom) || 0) - gap * 2;
-        var side = Math.floor(Math.min((freeHeight - 6) / 2,
+        // Width-limited covers still use the full available row height on tablets.
+        var landscapeRowHeight = Math.floor((freeHeight - 6 - 8) / 2);
+        var side = Math.floor(Math.min(landscapeRowHeight,
           (bar.clientWidth - 30) / 6));
         if (side >= 42) {
           grid.style.setProperty('--square-side', side + 'px');
+          grid.style.setProperty('--landscape-card-height', landscapeRowHeight + 'px');
           grid.style.width = (side * 6 + 30) + 'px';
-          grid.style.height = (side * 2 + 6) + 'px';
+          grid.style.height = (landscapeRowHeight * 2 + 6) + 'px';
           grid.classList.add('categoryLandscapeSquares');
           var shortNames = {
             'Add Magic':'Add', 'Multiply Magic':'Multiply', 'Criss-Cross':'Criss-Cross',
@@ -200,7 +205,7 @@
           });
         } else {
           // A genuinely tiny viewport keeps the known-good responsive cards.
-          bar.classList.remove('categorySquareCompact');
+          bar.classList.remove('categorySquareCompact', 'categoryTabletFill');
         }
       }
       var columns = grid.classList.contains('categoryLandscapeSquares') ? 6 : grid.clientWidth >= 820 ? 4 : grid.clientWidth >= 500 ? 3 : 2;

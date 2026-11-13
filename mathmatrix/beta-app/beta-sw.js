@@ -1,6 +1,6 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V221 UI tuning.
+// MathMatrix Pro++ Beta Service Worker — Beta V222 tablet chooser fit.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v234-ui-tuning';
+const CACHE_VERSION = 'mathmatrix-beta-v235-tablet-fit';
 
 const ASSETS = [
   './index.html',
