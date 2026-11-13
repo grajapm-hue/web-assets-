@@ -67,7 +67,7 @@ for(const [name,width,height,touch] of sizes){
    assert.ok(new URL(copied).pathname.startsWith(new URL(base).pathname),'Copy Link must keep the Beta app path');
    assert.equal(await page.locator('#shareQrCode').getAttribute('aria-label'),'QR code for '+copied,'QR and Copy Link must share the same target');
    await page.locator('#diffTip').click();assert.equal(await page.locator('#sheetHost').isVisible(),true);await page.locator('#shClose').click();
-   await page.locator('#rowAbout').click();assert.match(await page.locator('#sheetHost .categoryVersion').innerText(),/Beta V\.225/);await page.locator('#shClose').click();
+   await page.locator('#rowAbout').click();assert.match(await page.locator('#sheetHost .categoryVersion').innerText(),/Beta V\.226/);await page.locator('#shClose').click();
    await page.locator('#navBack').click();assert.equal(await page.locator('.categoryCard:visible').count(),12);
    assert.deepEqual(errors,[]);
   }finally{await context.close();}

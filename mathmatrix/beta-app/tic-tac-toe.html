@@ -109,6 +109,20 @@
   <script>
   (() => {
     'use strict';
+    // Reuse the existing chooser when this game was opened from the app.
+    // Direct/shared game links retain the explicit cold-return fallback.
+    const back = document.querySelector('a.back');
+    back.addEventListener('click', event => {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      try {
+        const from = new URL(document.referrer);
+        const fromChooser = from.origin === location.origin && ['./','beta.html','index.html'].some(file => from.pathname === new URL(file, location.href).pathname);
+        if (fromChooser && history.length > 1) {
+          event.preventDefault();
+          try { history.back(); } catch { location.href = back.href; }
+        }
+      } catch { /* No referring app: follow the ordinary Back link. */ }
+    });
     const get = id => document.getElementById(id);
     const allowed = [3,4,5];
     const requested = Number(new URLSearchParams(location.search).get('size'));

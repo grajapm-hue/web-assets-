@@ -4,7 +4,25 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <!-- Prevent the retired independent-puzzle list from painting before the book chooser initializes. -->
-<script>document.documentElement.classList.add('mmBooting');</script>
+<style id="mmBootPaint">
+/* Paint the app palette before any external code can delay page setup. */
+html { background:#C9A87C !important; }
+html.mmBooting body { background:#C9A87C !important; }
+html.mmBooting body::before {
+  content:"MathMatrix Pro++"; position:fixed; inset:0; z-index:190; pointer-events:none;
+  display:grid; place-items:center; padding:24px; text-align:center;
+  background:linear-gradient(176deg,#E4CFAC 0%,#CDAE83 38%,#DCC49E 66%,#C9A87C 100%);
+  color:#075333; font:800 clamp(20px,4vw,28px)/1.3 "Trebuchet MS",sans-serif;
+}
+</style>
+<script>
+document.documentElement.classList.add('mmBooting');
+document.documentElement.setAttribute('aria-busy','true');
+window.__mmRevealApp = function(){
+  document.documentElement.classList.remove('mmBooting');
+  document.documentElement.removeAttribute('aria-busy');
+};
+</script>
 <!-- viewport-fit=cover: without it, env(safe-area-inset-*) always reports 0,
      which is why .tabBar's own safe-area padding below was a no-op — needed
      now that the "Play offline" sheet's last line was found rendering under
@@ -17,7 +35,7 @@
 <meta name="google" content="notranslate">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0d0d0d">
+<meta name="theme-color" content="#C9A87C">
 <!-- TEMP DIAGNOSTIC (beta-202): Raja's 4-player store tap still does nothing on
      his real device even after the touch-action fix, and the tap-details capture
      added in beta-201 never showed up in SaNa's bubble either — meaning the click
@@ -55,7 +73,7 @@ window.onerror = function(msg, src, line, col, err){
 <link rel="apple-touch-icon" href="icon-192.png">
 <!-- without this the browser asks for /favicon.ico, 404s, and the tab sits blank -->
 <link rel="icon" href="icon-192.png" type="image/png">
-<title>🐒🎲 MathMatrix Pro++ — Beta - V.225 Puzzle Return</title>
+<title>🐒🎲 MathMatrix Pro++ — Beta - V.226 Smooth Handoff</title>
 
 <!-- Raja: the copy icon in Android's share sheet copies something that will
      not open in a fresh browser, while every other channel works.
@@ -123,12 +141,6 @@ window.onerror = function(msg, src, line, col, err){
 })();
 </script>
 <style>
-/* First-paint guard: retained legacy puzzle markup must never be visible while
-   category-chooser.js builds the current book-selection interface. */
-html.mmBooting body::before {
-  content:""; position:fixed; inset:0; z-index:190; pointer-events:none;
-  background:linear-gradient(135deg,#dc43a4 0%,#9150c7 48%,#36bde5 100%);
-}
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html, body { height:100%; width:100%; touch-action:manipulation; }  /* manipulation = normal taps/scroll but no double-tap zoom */
   
@@ -15828,7 +15840,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   // On manual update, keep the guard until the saved screen has been restored.
   var pendingResume = false;
   try { pendingResume = !!sessionStorage.getItem('mm.resume'); } catch(e) {}
-  if (!pendingResume) requestAnimationFrame(function(){ document.documentElement.classList.remove('mmBooting'); });
+  if (!pendingResume) requestAnimationFrame(window.__mmRevealApp);
 })();
 
 // Preserve the current screen for every app-initiated update, including a
@@ -15892,7 +15904,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'Beta - V.225 Puzzle Return';
+  var BUILD_VER = 'Beta - V.226 Smooth Handoff';
   /* Legacy update beacon: older installed versions scan for this literal.
    window.BETA_VER = 'v185'
    Runtime code below derives the same token from BUILD_VER. */
@@ -16070,7 +16082,7 @@ if (navigator.storage && navigator.storage.persist) {
     if (tab) tab.click();
   })();
   // Update-resume path: reveal the fully restored screen, never the old list.
-  requestAnimationFrame(function(){ document.documentElement.classList.remove('mmBooting'); });
+  requestAnimationFrame(window.__mmRevealApp);
 })();
 </script>
 </body>
