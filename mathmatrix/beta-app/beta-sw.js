@@ -1,6 +1,6 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V222 tablet chooser fit.
+// MathMatrix Pro++ Beta Service Worker — Beta V223 update resume.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v235-tablet-fit';
+const CACHE_VERSION = 'mathmatrix-beta-v236-update-resume';
 
 const ASSETS = [
   './index.html',
