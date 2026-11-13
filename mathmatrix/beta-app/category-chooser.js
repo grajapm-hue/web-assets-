@@ -170,7 +170,7 @@
       });
       var desktopBooks = document.documentElement.classList.contains('desktopViewport');
       var landscapeBooks = !desktopBooks && groups.length === 12 &&
-        window.innerWidth > window.innerHeight && window.innerWidth >= 600;
+        window.innerWidth > window.innerHeight && window.innerWidth >= 480;
       if (landscapeBooks) {
         bar.classList.add('categorySquareCompact');
         bar.classList.toggle('categoryTabletFill', window.innerHeight >= 550);
@@ -180,11 +180,10 @@
         var gap = parseFloat(layoutStyle.rowGap || layoutStyle.gap) || 0;
         var freeHeight = bar.clientHeight - heading.offsetHeight - footer.offsetHeight -
           (parseFloat(layoutStyle.paddingTop) || 0) -
-          (parseFloat(layoutStyle.paddingBottom) || 0) - gap * 2;
+          (parseFloat(layoutStyle.paddingBottom) || 0) - gap;
         // Width-limited covers still use the full available row height on tablets.
         var landscapeRowHeight = Math.floor((freeHeight - 6 - 8) / 2);
-        var side = Math.floor(Math.min(landscapeRowHeight,
-          (bar.clientWidth - 30) / 6));
+        var side = Math.floor((bar.clientWidth - 30) / 6);
         if (side >= 42) {
           grid.style.setProperty('--square-side', side + 'px');
           grid.style.setProperty('--landscape-card-height', landscapeRowHeight + 'px');
@@ -242,7 +241,7 @@
       // height/width: those can be zero while a book is first opening.
       var fitAddMagic = /^Add Magic$/i.test(current.name.trim()) &&
         window.matchMedia('(orientation: landscape)').matches &&
-        window.innerWidth >= 600;
+        window.innerWidth >= 480;
       for (var candidate = 1; candidate <= count; candidate++) {
         var rows = Math.ceil(count / candidate);
         var cardWidth = (width - (candidate - 1) * 10) / candidate;

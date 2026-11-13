@@ -55,7 +55,7 @@ window.onerror = function(msg, src, line, col, err){
 <link rel="apple-touch-icon" href="icon-192.png">
 <!-- without this the browser asks for /favicon.ico, 404s, and the tab sits blank -->
 <link rel="icon" href="icon-192.png" type="image/png">
-<title>🐒🎲 MathMatrix Pro++ — Beta - V.223 Update Stability</title>
+<title>🐒🎲 MathMatrix Pro++ — Beta - V.224 Navigation</title>
 
 <!-- Raja: the copy icon in Android's share sheet copies something that will
      not open in a fresh browser, while every other channel works.
@@ -4356,6 +4356,8 @@ html.lsShort .tabBtn{ font-size:10.5px !important; }
 html.lsShort .screen.on{ padding-top:3px !important; }
 </style>
 <link rel="stylesheet" href="ui-tuning.css">
+<link rel="stylesheet" href="navigation-shell.css">
+<script src="navigation-shell.js"></script>
 </head>
 <body>
 <div class="blob blob-a"></div><div class="blob blob-b"></div><div class="blob blob-c"></div>
@@ -4368,7 +4370,7 @@ html.lsShort .screen.on{ padding-top:3px !important; }
   <button class="navBack" id="navBack" type="button" aria-label="Back to puzzles">←</button>
   <div class="appBarTitle" id="appBarTitle">MathMatrix Pro++</div>
   <!-- placeholder only: the real count is set from the number of cards on Home -->
-  <span class="appBarChip" id="appBarChip">10 puzzles</span>
+  <button class="appBarChip" id="appBarChip" type="button">Update</button>
 </header>
 
 <div class="screens">
@@ -4779,6 +4781,7 @@ html.lsShort .screen.on{ padding-top:3px !important; }
 
 <!-- ══ GET APP ══ -->
 <section class="screen" data-screen="scApp">
+<div id="legacyAppUtilities" hidden>
 <!-- Share: the installed app has no address bar, so this is the way to pass the link on -->
 <div style="display:flex; gap:10px; width:100%; max-width:560px; margin:0 auto 10px; padding:0 10px; box-sizing:border-box;">
   <button id="shareBtn" style="flex:1; background:#04231a; border:2px solid #22c55e; border-radius:12px; height:48px; font-size:15px; font-weight:800; color:#4ade80; cursor:pointer;">📤 Share</button>
@@ -4790,6 +4793,7 @@ html.lsShort .screen.on{ padding-top:3px !important; }
   <button id="updateBtn" style="flex:1; background:#000; border:2px solid #f59e0b; border-radius:12px; height:48px; line-height:44px; padding:0 10px; font-size:15px; font-weight:700; color:#fbbf24; cursor:pointer;">🔄 Online Update</button>
 </div>
 
+</div>
 <!-- Raja: the native share sheet's own "copy" grabs the whole title +
      description + link as one paragraph on Android (see #shareBtn's own
      comment) — not something this page can fix, since that concat happens
@@ -4804,7 +4808,7 @@ html.lsShort .screen.on{ padding-top:3px !important; }
   <div class="shareQrCode" id="shareQrCode" role="img" aria-label="QR code for this app's share link"></div>
   <div class="shareQrCopy">
     <h3>Scan to open MathMatrix</h3>
-    <p id="shareQrNote">Use another device’s camera. This opens the same link as Share and Copy Link.</p>
+    <p id="shareQrNote">Use another device’s camera to open the app. Then choose Install or Add to Home Screen.</p>
   </div>
 </div><div id="offlineBox">
   <h3>📲 Play Offline — Add to Home Screen</h3>
@@ -4873,7 +4877,7 @@ html.lsShort .screen.on{ padding-top:3px !important; }
          the label alone, so Home gets shorter rather than taller. -->
     <span class="diffMascotEmoji" aria-hidden="true">🐒🎲</span>
     <span class="diffSide">
-      <span class="diffTip" id="diffTip" role="button" tabindex="0" aria-label="How to play with no internet">📴 Plays with no internet</span>
+      <button class="diffTip" id="diffTip" type="button" aria-label="How to play with no internet">📴 Plays with no internet</button>
       <button class="diffShare" id="diffInstall" type="button">📥 Install App</button>
       <button class="diffShare" id="diffShare" type="button">📤 Share</button>
     </span>
@@ -13732,7 +13736,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     // the difficulty row (.diffMascot), freeing the bar for bigger buttons
     scHome:  'MathMatrix Pro++',
     scLearn: '💡 Math Logic',
-    scApp:   '📲 Share & Install',
+    scApp:   'QR Code',
     scFeed:  '💬 Feedback'
   };
   var SCREEN_CHIP = { scHome:'9 puzzles', scLearn:'how it works', scApp:'offline ready',
@@ -13765,6 +13769,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
   }
 
   function goScreen(id){
+    document.body.classList.toggle('utilityScreen', id !== 'scPlay' && id !== 'scLearn');
     document.querySelectorAll('[data-screen]').forEach(function(sec){
       sec.classList.toggle('on', sec.getAttribute('data-screen') === id);
     });
@@ -14038,8 +14043,8 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
       try {
         new QRCode(qrHost, {
           text: LINK,
-          width: 116,
-          height: 116,
+          width: 512,
+          height: 512,
           colorDark: '#1f1b15',
           colorLight: '#ffffff',
           correctLevel: QRCode.CorrectLevel.M
@@ -14274,7 +14279,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
        The section stays in the DOM only because #logicBox lives there and is
        parked into the sheet system from it. */
     if (id === 'scFeed')  sana('Found something odd? <b>Tell us</b> — that\'s what a beta is for.', 'think');
-    if (id === 'scApp')   sana('Install it once and it works with <b>no internet</b>.', null);
+    if (id === 'scApp')   sana('Share MathMatrix with another device.', null);
   };
   ['scHome','scPlay','scLearn','scApp','scFeed'].forEach(function(s){
     var tb = document.getElementById('tab-' + s);
@@ -14551,7 +14556,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
        never disagree about whether there is a connection */
     function idle(){
       var on = navigator.onLine;
-      chip.textContent = on ? '🔄 Update' : '📴 Offline';
+      chip.textContent = on ? 'Update' : 'Offline';
       var tip = document.getElementById('diffTip');
       if (tip){
         tip.textContent = on ? '📴 Plays with no internet'
@@ -14565,11 +14570,11 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
 
     chip.addEventListener('click', function(){
       if (!navigator.onLine){
-        chip.textContent = '📴 No internet';
+        chip.textContent = 'Offline';
         setTimeout(idle, 2200);
         return;
       }
-      chip.textContent = '⏳ Updating…';
+      chip.textContent = 'Updating';
       var real = document.getElementById('updateBtn');
       if (real) real.click();                 // the guarded path, reused
       else { try { location.reload(); } catch(e){} }
@@ -15816,6 +15821,7 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     screen: openScreen,
     announce: function(message){ sana(message, null); }
   });
+  window.initMathMatrixNavigation({ fit: function(){ categoryChooser.fit(); } });
   // Reveal only after the book chooser has replaced the legacy home view.
   // The splash (z-index 200) stays above the boot guard (z-index 190).
   // On manual update, keep the guard until the saved screen has been restored.
@@ -15885,7 +15891,7 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'Beta - V.223 Update Stability';
+  var BUILD_VER = 'Beta - V.224 Navigation';
   /* Legacy update beacon: older installed versions scan for this literal.
    window.BETA_VER = 'v185'
    Runtime code below derives the same token from BUILD_VER. */
