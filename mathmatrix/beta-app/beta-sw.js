@@ -1,6 +1,6 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V225 puzzle returns.
+// MathMatrix Pro++ Beta Service Worker — Beta V226 warm loading handoff.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v238-puzzle-return';
+const CACHE_VERSION = 'mathmatrix-beta-v239-warm-handoff';
 
 const ASSETS = [
   './index.html',
