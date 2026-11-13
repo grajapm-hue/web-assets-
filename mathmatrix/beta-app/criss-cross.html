@@ -8,10 +8,9 @@
 (function(){
   var root=document.documentElement;
   var touch=('ontouchstart' in window)||(navigator.maxTouchPoints>0);
-  if(!touch)return;
-  root.classList.add('touchViewport');
-  /* v219: free orientation - the page is no longer rotated back to portrait. */
-  if(window.innerWidth>window.innerHeight) root.classList.add('lsLayout');
+  if(touch) root.classList.add('touchViewport');
+  /* Wide laptop windows share the existing landscape layout. */
+  if((touch || window.innerWidth>=900) && window.innerWidth>window.innerHeight) root.classList.add('lsLayout');
 })();
 </script>
 <style>
@@ -867,7 +866,7 @@ function checkPortraitLock(){
   else root.classList.remove('touchViewport');
   root.classList.remove('lockRotateCW', 'lockRotateCCW');
   // v219: free orientation - just flag a sideways screen so CSS can re-lay the page out.
-  root.classList.toggle('lsLayout', isRotatable() && window.innerWidth > window.innerHeight);
+  root.classList.toggle('lsLayout', (isRotatable() || window.innerWidth >= 900) && window.innerWidth > window.innerHeight);
 }
 window.addEventListener('resize', checkPortraitLock);
 window.addEventListener('orientationchange', function(){ setTimeout(checkPortraitLock, 250); });

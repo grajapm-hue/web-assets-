@@ -22,7 +22,9 @@
     root.style.setProperty('--game-logical-width', logicalWidth + 'px');
     root.style.setProperty('--game-logical-height', logicalHeight + 'px');
     root.classList.remove('lockRotateCCW', 'lockRotateCW');
-    root.classList.toggle('lsLayout', touch && width > height);
+    const desktop = !touch && width >= 900 && width > height;
+    root.classList.toggle('desktopViewport', desktop);
+    root.classList.toggle('lsLayout', (touch || desktop) && width > height);
     root.classList.toggle('gameCompact', logicalHeight < 700);
     window.dispatchEvent(new Event('mathmatrixviewportchange'));
     schedule();

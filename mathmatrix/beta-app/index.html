@@ -92,12 +92,10 @@ window.onerror = function(msg, src, line, col, err){
   var root=document.documentElement;
   var touch=('ontouchstart' in window)||(navigator.maxTouchPoints>0);
   if(touch)root.classList.add('touchViewport');
-  /* lsLayout = "lay the app out for a sideways screen": any touch device held
-     in landscape, or any landscape window too short for the stacked layout.
-     Desktop/laptop windows that are tall enough keep their phone-column look. */
+  /* Sideways laptop windows use the same responsive layout as touch screens. */
   function setLs(){
     var land=window.innerWidth>window.innerHeight;
-    root.classList.toggle('lsLayout', land && (touch || window.innerHeight<=640));
+    root.classList.toggle('lsLayout', land && (touch || window.innerWidth>=900 || window.innerHeight<=640));
     root.classList.toggle('lsTall', land && window.innerHeight>640);
     root.classList.toggle('lsShort', land && window.innerHeight<=400);
   }

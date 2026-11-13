@@ -299,6 +299,16 @@
 }
 
 /* V219 Beta: book contents captions. Card geometry, footer, gameplay unchanged. */
+/* Laptop home keeps the phone's card artwork and full names in a roomy 4 x 3 grid. */
+html.desktopViewport .categoryHome .categoryGrid{gap:12px}
+html.desktopViewport .categoryHome .categoryCard{padding:12px;gap:12px;border-radius:16px}
+html.desktopViewport .categoryHome .appBarTitle{font-size:22px !important}
+html.desktopViewport .categoryHome .categoryTitle{font-size:24px}
+html.desktopViewport .categoryHome .categoryHint{font-size:13px}
+html.desktopViewport .categoryHome .categoryFooter{min-height:40px}
+html.desktopViewport .categoryHome .categoryFooter .diffShare{min-height:32px;font-size:12px !important}
+html.desktopViewport body.categoryHome:not(.categoryOpen) .categoryCardCopy::after{font-size:14px !important;line-height:1.25}
+
 body.categoryHome:not(.categoryOpen) .categoryCardCopy .categoryCount {display:none !important;}
 body.categoryHome:not(.categoryOpen) .categoryCardCopy::after {content:""; display:block; color:#4D5844; font-size:clamp(9px,2.7vw,12px); line-height:1.16; font-weight:600; overflow-wrap:anywhere; max-width:100%;}
 body.categoryHome:not(.categoryOpen) .categoryCard[data-category="Add Magic"] .categoryCardCopy::after {content:"3×3 to 10×10 · equal sums";}

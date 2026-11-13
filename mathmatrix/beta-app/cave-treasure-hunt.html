@@ -26,7 +26,7 @@
   /* v219: free orientation - no page rotation; just flag a sideways screen. */
   const direction='';
   root.classList.remove('lockRotateCW','lockRotateCCW');
-  root.classList.toggle('lsLayout',touch&&landscape);
+  root.classList.toggle('lsLayout',(touch||visible.width>=900)&&landscape);
   // Layout breakpoints follow the visible portrait height, including browser
   // chrome and insets that can make it shorter than the layout viewport.
   root.classList.toggle('sanaCompact',visible.height<=700);
