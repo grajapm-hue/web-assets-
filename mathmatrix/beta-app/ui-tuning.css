@@ -1,4 +1,4 @@
-/* Beta V220: a shared desktop scale. Phone geometry stays with the game styles. */
+/* Shared desktop scale. Phone geometry stays with the game styles. */
 html.desktopViewport {
   --ui-font: system-ui, -apple-system, "Segoe UI", sans-serif;
   --ui-ink: #33220f;
@@ -97,6 +97,33 @@ html.desktopViewport :is(.palFoot,.pal4Foot,.thFoot) { justify-content:center; g
 html.desktopViewport .palName { max-width:340px; justify-self:center; font-size:16px; }
 html.desktopViewport .palCup { font-size:18px; }
 
+html.desktopViewport body.pal4Mode #pal4Panel {
+  grid-template-rows:minmax(0,1fr) repeat(5,auto) minmax(0,1fr); row-gap:10px;
+}
+html.desktopViewport #pal4Panel #pal4Frame { grid-row:1/-1; width:min(calc(var(--lsH,600px) - 24px),600px); }
+html.desktopViewport #pal4Panel #pal4Say { grid-row:2; }
+html.desktopViewport #pal4Panel #pal4Select { grid-row:3; }
+html.desktopViewport #pal4Panel #pal4Choose { grid-row:4; }
+html.desktopViewport #pal4Panel #pal4RoundChip { grid-row:5; }
+html.desktopViewport #pal4Panel .pal4Foot { grid-row:6; }
+html.desktopViewport body.thayamMode #thayamPanel {
+  grid-template-rows:minmax(0,1fr) repeat(6,auto) minmax(0,1fr); row-gap:10px;
+}
+html.desktopViewport #thayamPanel .thayamTable { grid-row:1/-1; }
+html.desktopViewport #thayamPanel .thTop { grid-row:2; }
+html.desktopViewport #thayamPanel #thaySay { grid-row:3; }
+html.desktopViewport #thayamPanel #thayamSeeds { grid-row:4; }
+html.desktopViewport #thayamPanel #thayamSelect { grid-row:5; }
+html.desktopViewport #thayamPanel #thayamChoose { grid-row:6; }
+html.desktopViewport #thayamPanel .thFoot { grid-row:7; }
+html.desktopViewport :is(#pal4Panel,#thayamPanel)>.pal4Select {
+  width:min(100%,520px); justify-self:center; min-height:48px; font-size:14px;
+}
+html.desktopViewport .pal4SelectLabel { font-size:14px !important; }
+html.desktopViewport .pal4CardName::placeholder { color:#50351c; opacity:1; }
+html.desktopViewport #thayamPanel .thSeat .nm { font-size:14px !important; }
+html.desktopViewport #thayamPanel .thSeat .thTally span { font-size:13px !important; }
+
 html.desktopViewport body.sudokuMode #sudokuPanel {
   width:100%; max-width:1280px !important; margin:0 auto !important;
   grid-template-columns:minmax(0,1fr) minmax(360px,40%);
@@ -121,6 +148,9 @@ html.desktopViewport #slidePanel #slideSpareLabel { grid-row:3; font-size:14px; 
 html.desktopViewport #slidePanel .slideFoot { grid-row:4; gap:12px; justify-content:center; }
 html.desktopViewport .mrYN button { min-height:48px !important; font-size:16px !important; }
 html.desktopViewport #binaryPanel :is(.mrIntro p,.mrExplain) { font-size:16px; line-height:1.5; }
+html.desktopViewport #binaryPanel .mrCard>h3 { font-size:20px; }
+html.desktopViewport #binaryPanel .mrCard>p,
+html.desktopViewport #binaryPanel .mrThink>span:last-child { font-size:16px !important; line-height:1.5; }
 
 /* Utility pages and help share the warm game palette and a readable line length. */
 html.desktopViewport body:has([data-screen="scApp"].on) :is(#barLearn,#barWatch),

@@ -1,6 +1,6 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V220 UI tuning.
+// MathMatrix Pro++ Beta Service Worker — Beta V221 UI tuning.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v233-ui-tuning';
+const CACHE_VERSION = 'mathmatrix-beta-v234-ui-tuning';
 
 const ASSETS = [
   './index.html',
