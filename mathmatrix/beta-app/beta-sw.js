@@ -1,12 +1,14 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V223 update resume.
+// MathMatrix Pro++ Beta Service Worker — Beta V224 navigation.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v236-update-resume';
+const CACHE_VERSION = 'mathmatrix-beta-v237-navigation';
 
 const ASSETS = [
   './index.html',
   './beta.html',
   './category-chooser.css',
   './category-chooser.js',
+  './navigation-shell.css',
+  './navigation-shell.js',
   './game-layout.css',
   './ui-tuning.css',
   './game-layout.js',

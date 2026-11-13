@@ -30,20 +30,18 @@ for(const [width,height] of [[1024,600],[1024,768],[1280,800],[1366,768],[1180,8
       await page.locator('#splashPlay').waitFor({state:'detached'});
       await page.waitForTimeout(180);
       const metrics=await page.evaluate(()=>{
-        const footer=document.querySelector('.categoryFooter').getBoundingClientRect();
         const nav=document.querySelector('.tabBar').getBoundingClientRect();
         const cards=[...document.querySelectorAll('.categoryCard')].map(e=>{const r=e.getBoundingClientRect();return {top:r.top,bottom:r.bottom,width:r.width,height:r.height,hit:e.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2))};});
-        const targets=[...document.querySelectorAll('.categoryFooter #diffTip,.categoryFooter .diffShare')].map(e=>e.getBoundingClientRect().height);
-        return {footerGap:nav.top-footer.bottom,bookGap:nav.top-Math.max(...cards.map(c=>c.bottom)),footerHeight:footer.height,targets,cards,overflow:document.documentElement.scrollWidth>innerWidth};
+        const targets=[...document.querySelectorAll('#appUtilities #diffTip,#appUtilities .diffShare')].map(e=>e.getBoundingClientRect().height);
+        return {bookGap:nav.top-Math.max(...cards.map(c=>c.bottom)),targets,cards,overflow:document.documentElement.scrollWidth>innerWidth};
       });
       if(artifacts){await page.screenshot({path:path.join(artifacts,`tablet-${width}x${height}.png`),animations:'disabled'});fs.writeFileSync(path.join(artifacts,`tablet-${width}x${height}.json`),JSON.stringify(metrics,null,2));}
       assert.equal(metrics.cards.length,12);
       assert.ok(metrics.cards.every(c=>c.hit&&c.top>=0&&c.bottom<=height),JSON.stringify(metrics));
       assert.equal(metrics.overflow,false);
-      assert.ok(metrics.footerGap<=12,`unused space below footer: ${metrics.footerGap}px`);
-      assert.ok(metrics.footerGap>=6,`footer is too close to navigation: ${metrics.footerGap}px`);
+      assert.ok(metrics.bookGap<=12,`unused space below books: ${metrics.bookGap}px`);
+      assert.ok(metrics.bookGap>=6,`books are too close to navigation: ${metrics.bookGap}px`);
       assert.ok(metrics.targets.every(h=>h>=40),`tablet utility targets are too small: ${metrics.targets.join(', ')}`);
-      assert.ok(metrics.bookGap<=metrics.footerHeight+22,`books end ${metrics.bookGap}px above navigation; footer needs only ${metrics.footerHeight}px`);
       await page.getByRole('button',{name:'Add Magic, 6 puzzles',exact:true}).click();
       assert.equal(await page.locator('.bookChoice:visible').count(),6);
     }finally{await context.close();}
