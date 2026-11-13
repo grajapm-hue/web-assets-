@@ -166,7 +166,8 @@
         var name = button.querySelector('.categoryName');
         if (name && name.dataset.fullBookName) name.textContent = name.dataset.fullBookName;
       });
-      var landscapeBooks = groups.length === 12 &&
+      var desktopBooks = document.documentElement.classList.contains('desktopViewport');
+      var landscapeBooks = !desktopBooks && groups.length === 12 &&
         window.innerWidth > window.innerHeight && window.innerWidth >= 600;
       if (landscapeBooks) {
         bar.classList.add('categorySquareCompact');
@@ -206,8 +207,8 @@
       grid.style.setProperty('--category-rows', Math.ceil(groups.length / columns));
       var rowHeight = grid.clientHeight / Math.ceil(groups.length / columns);
       grid.classList.toggle('categoryCompact', rowHeight < 69);
-      grid.style.setProperty('--category-font', Math.max(grid.clientWidth < 320 ? 11.5 : 13, Math.min(17, rowHeight * 0.205)) + 'px');
-      grid.style.setProperty('--category-icon', Math.max(19, Math.min(35, rowHeight * 0.42)) + 'px');
+      grid.style.setProperty('--category-font', Math.max(grid.clientWidth < 320 ? 11.5 : 13, Math.min(desktopBooks ? 23 : 17, rowHeight * 0.205)) + 'px');
+      grid.style.setProperty('--category-icon', Math.max(19, Math.min(desktopBooks ? 48 : 35, rowHeight * 0.42)) + 'px');
       bar.classList.toggle('categoryShort', bar.clientHeight < 350);
       bar.style.setProperty('--lvScale', '1');
       // Long titles must fit too; measuring them protects narrow phones and

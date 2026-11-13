@@ -1,6 +1,6 @@
 // MathMatrix Pro++ Beta Service Worker — Beta V219 free orientation (portrait + landscape).
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v231-ios-landscape-fix';
+const CACHE_VERSION = 'mathmatrix-beta-v232-laptop-layout';
 
 const ASSETS = [
   './index.html',

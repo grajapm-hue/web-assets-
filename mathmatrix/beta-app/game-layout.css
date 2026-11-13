@@ -78,3 +78,13 @@ html.lsLayout.tttViewport main>.actions{grid-column:1;grid-row:4}
 html.lsLayout.tttViewport main>.hint{grid-column:1;grid-row:5}
 html.lsLayout.tttViewport main>.board-wrap{grid-column:2;grid-row:1 / -1}
 html.lsLayout.tttViewport header{padding-top:max(4px,env(safe-area-inset-top));padding-bottom:4px}
+
+/* Laptop windows use the same canvas and landscape controls as touch devices. */
+html.desktopViewport body{width:100% !important;max-width:none !important;margin:0 !important;background:#d8b98c !important}
+html.desktopViewport .appShell{width:100% !important;max-width:none !important;margin:0 !important;box-shadow:none}
+html.desktopViewport .appBar{min-height:56px !important}
+html.desktopViewport .tabBar{min-height:56px !important}
+html.desktopViewport .tabBtn{min-height:44px;font-size:15px !important}
+html.desktopViewport #boardWrap{border-bottom:0}
+html.desktopViewport #keypad>div:last-child button{min-height:36px;font-size:13px !important}
+html.desktopViewport #startControls :is(#newBtn,#clearBtn){width:auto;min-width:64px;padding:5px 10px}
