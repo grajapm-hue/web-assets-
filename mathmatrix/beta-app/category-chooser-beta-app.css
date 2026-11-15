@@ -1,0 +1,378 @@
+/* V216: direct single puzzles and fitted, described choices in every book. */
+.categoryChooser.difficultyBar {
+  display:flex; flex-direction:column; justify-content:flex-start; gap:7px;
+  overflow:hidden; --lvScale:1;
+}
+.categoryChooser [hidden] { display:none !important; }
+.categoryHeading { display:flex; align-items:center; gap:9px; flex:none; padding:1px 2px; }
+.categoryHeadingCopy { min-width:0; }
+.categoryTitle { margin:0; color:#33220F; font:800 20px/1.15 "Trebuchet MS",sans-serif; }
+.categoryTitle:focus { outline:none; }
+.categoryHint { margin:4px 0 0; color:#664C2C; font:600 11px/1.25 "Trebuchet MS",sans-serif; }
+.categoryGrid { display:grid; flex:1 1 0; min-height:0; min-width:0; gap:6px;
+  grid-template-columns:repeat(var(--category-columns,2),minmax(0,1fr));
+  grid-template-rows:repeat(var(--category-rows,7),minmax(0,1fr)); }
+.categoryCard { display:flex; align-items:center; justify-content:flex-start; gap:8px;
+  min-height:0; min-width:0; width:100%; margin:0; padding:5px 8px;
+  border:2px solid var(--category-edge); border-bottom-width:4px; border-radius:13px;
+  background:var(--category-fill); color:#283C30; cursor:pointer; text-align:left;
+  font-family:"Trebuchet MS",sans-serif; box-sizing:border-box; overflow:hidden;
+  box-shadow:none; }
+.categoryCard:active { border-bottom-width:2px; transform:translateY(1px); }
+.categoryCard:focus-visible,#navBack:focus-visible { outline:3px solid #164D66; outline-offset:1px; }
+.categoryPicture { display:grid; place-items:center; flex:0 0 auto; width:1.28em; height:1.28em;
+  font-size:var(--category-icon,25px); line-height:1; }
+.categoryCardCopy { display:flex; flex-direction:column; min-width:0; gap:3px; }
+.categoryName { display:block; font-size:var(--category-font,14px); font-weight:800; line-height:1.13;
+  overflow-wrap:normal; }
+.categoryCount { font-size:10px; line-height:1.1; color:#4D5844; }
+.categoryCompact .categoryCount { display:none; }
+.categoryCompact .categoryCard { gap:5px; padding:3px 6px; border-radius:10px; }
+.categoryCompact .categoryPicture { width:1.15em; }
+.categoryOptions { display:flex; flex:1 1 0; min-height:0; flex-direction:column; overflow:auto; }
+.categoryOptions > .modeGroup { display:flex; flex:1; min-height:0; margin:0 !important;
+  flex-direction:column; width:100%; }
+.categoryOptions .modeHead { display:none !important; }
+.categoryOptions .toggleSwitch { display:grid; grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:9px; margin:4px 0 !important; align-content:start; }
+.categoryOptions .toggleBtn.lvCard { min-width:0; min-height:66px; height:auto !important;
+  margin:0 !important; padding:10px 9px !important; gap:8px !important; }
+.categoryOptions .lvName { font-size:14px !important; line-height:1.2 !important; }
+.categoryOptions .lvDiff { font-size:11px !important; line-height:1.25 !important; }
+.categoryOptions .lvGrid,.categoryOptions .lvGlyph { flex:none; width:29px !important; height:29px !important; font-size:23px !important; }
+.categoryFooter { display:flex; align-items:center; justify-content:space-between; flex:none; gap:5px;
+  padding:2px 1px 4px; min-height:31px; }
+.categoryFooter #diffTip { display:grid; place-items:center; flex:none; width:30px; height:30px;
+  padding:0 !important; margin:0; border:0 !important; font-size:0 !important; background:transparent !important; }
+.categoryFooter #diffTip::before { content:'📴'; font-size:19px; }
+.categoryFooter .diffShare { position:relative; margin:0 !important; min-height:30px;
+  padding:4px 9px !important; font-size:10px !important; line-height:1.1; white-space:nowrap; }
+.categoryFooter .diffShare::after { display:none !important; }
+.categoryVersion { font:700 10px/1.1 "Trebuchet MS",sans-serif; color:#664C2C; white-space:nowrap; }
+.categoryHome .sanaBub { font-size:12px !important; -webkit-line-clamp:2; }
+.categoryHome .sanaGuide { flex:none; }
+.categoryHome:not(.categoryOpen) #navBack { display:none !important; }
+.categoryHome.categoryOpen #appBarChip { display:none !important; }
+.categoryHome .appBarTitle { white-space:normal !important; overflow:visible !important;
+  text-overflow:clip !important; font-size:13px !important; line-height:1.1 !important; }
+@media(min-width:540px) {
+  body.categoryHome .appShell { width:100%; max-width:960px; }
+}
+@media(min-width:600px) and (max-height:500px) {
+  .categoryHome .sana { display:none !important; }
+  .categoryHome .appBar { min-height:46px !important; padding-top:0 !important; padding-bottom:0 !important; }
+  .categoryHome .barBtn { height:38px !important; }
+  .categoryHome .tabBar { min-height:44px !important; height:44px !important; }
+  .categoryHome .categoryHeading { padding:0; }
+  .categoryHome .categoryTitle { font-size:17px; }
+  .categoryHome .categoryHint { font-size:10px; margin-top:2px; }
+}
+.categoryShort .categoryHeading { padding:0; }
+.categoryShort .categoryTitle { font-size:17px; }
+.categoryShort .categoryHint { margin-top:2px; font-size:10px; }
+.categoryShort.categoryChooser { gap:5px; }
+@media(max-width:359px) {
+  .categoryHome .appBarTitle { font-size:12px !important; }
+  .categoryHome .barBtn.barWord { min-width:37px !important; padding:0 5px !important; }
+  .categoryHome .barBtn.barWord span { font-size:8px !important; }
+  .categoryHome #appBarChip { font-size:10px !important; padding:5px 7px !important; }
+  .categoryOptions .toggleSwitch { gap:6px; }
+  .categoryOptions .lvName { font-size:12px !important; }
+  .categoryOptions .lvGlyph,.categoryOptions .lvGrid { width:24px !important; height:24px !important; }
+}
+@media(prefers-reduced-motion:reduce) { .categoryCard { transition:none; } }
+
+/* Browsing has no selected puzzle: only Sound belongs in its toolbar. */
+.categoryHome #barLearn,.categoryHome #barWatch { display:none !important; }
+.categoryHome .appBar {
+  display:grid !important;
+  grid-template-columns:minmax(72px,1fr) minmax(0,4fr) minmax(72px,1fr);
+  column-gap:8px;
+}
+.categoryHome #navBack,.categoryHome #appBarChip { grid-column:1; grid-row:1; justify-self:start; }
+.categoryHome #appBarChip { max-width:100%; box-sizing:border-box; padding:5px 6px !important; }
+.categoryHome #barMore { grid-column:3; grid-row:1; justify-self:end; min-height:44px; height:46px !important; }
+.categoryHome .appBarTitle {
+  grid-column:2; grid-row:1; width:100%; box-sizing:border-box;
+  padding:2px 4px; text-align:center; overflow-wrap:anywhere;
+  font-size:clamp(13px,3.6vw,18px) !important; line-height:1.4 !important;
+}
+.categoryHeading { justify-content:center; text-align:center; padding:3px 12px !important; }
+.categoryHeadingCopy { width:100%; }
+.categoryTitle { padding:1px 4px; overflow-wrap:anywhere; }
+
+/* Each book shares its available space equally between its puzzle choices. */
+.categoryOptions { overflow:hidden; padding:2px 1px 5px; box-sizing:border-box; }
+.categoryOptions > .modeGroup > :not(.toggleSwitch) { display:none !important; }
+.categoryOptions .toggleSwitch {
+  flex:1 1 0; min-height:0; width:100%; margin:0 !important; gap:10px;
+  grid-template-columns:repeat(var(--book-columns,1),minmax(0,1fr));
+  grid-template-rows:repeat(var(--book-rows,2),minmax(0,1fr));
+  align-content:stretch;
+}
+.categoryOptions .bookChoice.lvCard {
+  display:flex !important; align-items:center; justify-content:center;
+  grid-column:auto !important; min-width:0; min-height:0; height:100% !important;
+  padding:10px 12px !important; gap:12px !important; box-sizing:border-box;
+  border:2px solid var(--c2) !important; border-bottom-width:5px !important;
+  border-radius:17px !important; background:#FFF8EC !important; color:#33220F !important;
+  box-shadow:none !important; overflow:hidden;
+}
+.categoryOptions .bookChoice.lvCard::before { display:none !important; }
+.categoryOptions .bookChoice.lvCard:focus-visible { outline:3px solid #164D66; outline-offset:-5px; }
+.categoryOptions .bookChoice .lvText { flex:1; min-width:0; max-width:560px; }
+.categoryOptions .bookChoice.lvCard .lvName {
+  color:#33220F !important; font-size:var(--book-title,20px) !important;
+  line-height:1.2 !important; overflow-wrap:anywhere;
+}
+.categoryOptions .bookChoice.lvCard .lvDiff {
+  display:block; color:#73502E !important; margin-top:5px;
+  font-size:var(--book-diff,13px) !important; line-height:1.3 !important;
+}
+.categoryOptions .bookNote {
+  display:block; margin-top:7px; color:#5E523F; font-size:var(--book-note,14px);
+  font-weight:600; line-height:1.35; overflow-wrap:anywhere;
+}
+.categoryOptions .bookChoice .lvGrid,.categoryOptions .bookChoice .lvGlyph {
+  flex:none; width:var(--book-icon,44px) !important; height:var(--book-icon,44px) !important;
+  font-size:calc(var(--book-icon,44px) * .82) !important;
+}
+.categoryOptions .bookChoice.bookStack { flex-direction:column; }
+.categoryOptions .bookChoice.bookStack .lvText { flex:none; width:100%; text-align:center; }
+.categoryOptions .bookChoice.bookDense { padding:5px 8px !important; gap:8px !important; }
+.categoryOptions .bookChoice.bookDense .lvDiff { margin-top:2px; }
+.categoryOptions .bookChoice.bookDense .bookNote { margin-top:3px; }
+.categoryOptions .toggleSwitch.bookOddPair { grid-template-columns:repeat(4,minmax(0,1fr)); }
+.categoryOptions .toggleSwitch.bookOddPair .bookChoice { grid-column:span 2 !important; }
+.categoryOptions .toggleSwitch.bookOddPair .bookChoice:last-child { grid-column:2 / span 2 !important; }
+.categoryOptions.bookScroll { overflow:auto; }
+.categoryOptions.bookScroll .toggleSwitch {
+  flex:none; grid-template-rows:repeat(var(--book-rows),minmax(var(--book-min-row),1fr));
+  min-height:calc(var(--book-rows) * var(--book-min-row) + (var(--book-rows) - 1) * 10px);
+}
+
+/* V6: compact 6 x 2 square books ONLY on landscape top-level chooser. */
+.categoryHome:not(.categoryOpen) .categoryChooser.categorySquareCompact {
+  gap:3px;
+}
+.categoryHome:not(.categoryOpen) .categorySquareCompact .categoryHeading {
+  padding:0 2px !important; min-height:18px; margin:0;
+}
+.categoryHome:not(.categoryOpen) .categorySquareCompact .categoryTitle {
+  font-size:15px !important; line-height:1.1;
+}
+.categoryHome:not(.categoryOpen) .categorySquareCompact .categoryHint { display:none !important; }
+.categoryHome:not(.categoryOpen) .categorySquareCompact .categoryFooter {
+  padding:0 1px !important; min-height:24px !important; height:24px;
+}
+.categoryHome:not(.categoryOpen) .categorySquareCompact .categoryFooter .diffShare {
+  min-height:23px !important; padding:2px 7px !important;
+}
+.categoryHome:not(.categoryOpen) .categorySquareCompact .categoryFooter #diffTip {
+  width:24px; height:24px;
+}
+.categoryHome:not(.categoryOpen) .categorySquareCompact .categoryGrid.categoryLandscapeSquares {
+  flex:0 0 auto; align-self:center; min-height:0; max-width:100%;
+  grid-template-columns:repeat(6,var(--square-side));
+  grid-template-rows:repeat(2,var(--landscape-card-height,var(--square-side)));
+  gap:6px; overflow:hidden;
+}
+.categoryHome:not(.categoryOpen) .categorySquareCompact .categoryLandscapeSquares .categoryCard {
+  width:var(--square-side); height:var(--landscape-card-height,var(--square-side)); min-width:0; min-height:0;
+  flex-direction:column; justify-content:center; align-items:center;
+  text-align:center; gap:2px; padding:2px; border-radius:10px;
+}
+.categoryHome:not(.categoryOpen) .categorySquareCompact .categoryLandscapeSquares .categoryPicture {
+  width:clamp(14px,3.1vh,23px); height:clamp(14px,3.1vh,23px);
+  font-size:clamp(14px,3.1vh,23px); line-height:1;
+}
+.categoryHome:not(.categoryOpen) .categorySquareCompact .categoryLandscapeSquares .categoryCardCopy {
+  align-items:center; justify-content:center; width:100%; gap:0;
+}
+.categoryHome:not(.categoryOpen) .categorySquareCompact .categoryLandscapeSquares .categoryName {
+  font-size:clamp(8px,2.4vh,12px); line-height:1.06;
+  overflow-wrap:normal; word-break:normal; hyphens:none;
+}
+.categoryHome:not(.categoryOpen) .categorySquareCompact .categoryLandscapeSquares .categoryCount {display:none;}
+
+/* V6: Add Magic six puzzle choices fit 3 x 2 in landscape only.
+   The full descriptions remain available via button labels and the puzzle screens
+   are not modified. */
+@media (orientation:landscape) and (min-width:600px) {
+  .categoryOptions.addMagicLandscapeFit { overflow:hidden !important; }
+  .categoryOptions.addMagicLandscapeFit .toggleSwitch {
+    display:grid !important; grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+    grid-template-rows:repeat(2,minmax(0,1fr)) !important;
+    gap:8px !important; min-height:0 !important; height:100% !important;
+  }
+  .categoryOptions.addMagicLandscapeFit .bookChoice.lvCard {
+    min-height:0 !important; height:100% !important;
+    padding:5px 8px !important; gap:7px !important;
+    flex-direction:row !important;
+  }
+  .categoryOptions.addMagicLandscapeFit .bookChoice .lvText {
+    min-width:0 !important; flex:1 !important; text-align:left !important;
+  }
+  .categoryOptions.addMagicLandscapeFit .bookChoice .lvName {
+    font-size:clamp(13px,2.6vh,20px) !important;
+  }
+  .categoryOptions.addMagicLandscapeFit .bookChoice .lvDiff,
+  .categoryOptions.addMagicLandscapeFit .bookChoice .bookNote {
+    margin-top:2px !important; font-size:clamp(10px,2vh,13px) !important;
+    line-height:1.13 !important;
+  }
+  .categoryOptions.addMagicLandscapeFit .bookChoice .lvGrid,
+  .categoryOptions.addMagicLandscapeFit .bookChoice .lvGlyph {
+    width:clamp(24px,5vh,42px) !important;
+    height:clamp(24px,5vh,42px) !important;
+    font-size:clamp(21px,4.5vh,37px) !important;
+  }
+}
+
+/* V7: Add Magic options only. Force the six-choice 3x2 grid to fill the
+   existing book panel. No puzzle-book grid, navigation or portrait changes. */
+@media (orientation: landscape) and (min-width:600px) {
+  body.categoryHome.categoryOpen .categoryOptions.addMagicLandscapeFit {
+    display:flex !important; flex-direction:column !important;
+    min-height:0 !important; overflow:hidden !important;
+  }
+  body.categoryHome.categoryOpen .categoryOptions.addMagicLandscapeFit > .modeGroup {
+    flex:1 1 0 !important; min-height:0 !important; overflow:hidden !important;
+  }
+  body.categoryHome.categoryOpen .categoryOptions.addMagicLandscapeFit .toggleSwitch {
+    flex:1 1 0 !important; min-height:0 !important; height:100% !important;
+    display:grid !important; grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+    grid-template-rows:repeat(2,minmax(0,1fr)) !important;
+    gap:8px !important; align-content:stretch !important;
+  }
+  body.categoryHome.categoryOpen .categoryOptions.addMagicLandscapeFit .bookChoice.lvCard {
+    min-height:0 !important; height:100% !important; overflow:hidden !important;
+    padding:4px 8px !important; gap:7px !important;
+    flex-direction:row !important;
+  }
+  body.categoryHome.categoryOpen .categoryOptions.addMagicLandscapeFit .bookChoice .lvName {
+    font-size:clamp(13px,2.6vh,20px) !important;
+  }
+  body.categoryHome.categoryOpen .categoryOptions.addMagicLandscapeFit .bookChoice .lvDiff,
+  body.categoryHome.categoryOpen .categoryOptions.addMagicLandscapeFit .bookChoice .bookNote {
+    margin-top:2px !important; font-size:clamp(10px,2vh,13px) !important;
+    line-height:1.12 !important;
+  }
+}
+
+/* V219 footer edge and legibility adjustment — beta and main share this CSS.
+   Scoped to the chooser footer; does not alter cards, game screens or tab bar. */
+.categoryHome .categoryFooter {
+  box-sizing:border-box;
+  width:100%;
+  padding-left:max(12px, env(safe-area-inset-left, 0px)) !important;
+  padding-right:max(12px, env(safe-area-inset-right, 0px)) !important;
+}
+.categoryHome .categoryFooter #diffTip,
+.categoryHome:not(.categoryOpen) .categorySquareCompact .categoryFooter #diffTip {
+  display:inline-flex !important;
+  align-items:center;
+  justify-content:flex-start;
+  gap:3px;
+  width:auto !important;
+  min-width:0;
+  height:auto;
+  white-space:nowrap;
+}
+.categoryHome .categoryFooter #diffTip::after {
+  content:'Offline';
+  display:inline;
+  font:700 12px/1.15 "Trebuchet MS",sans-serif;
+  color:#664C2C;
+}
+.categoryHome .categoryFooter .categoryVersion {
+  font:700 14px/1.15 "Trebuchet MS",sans-serif;
+  color:#664C2C;
+  white-space:nowrap;
+  flex-shrink:0;
+}
+/* Allow all four footer items to remain visible on narrow portrait phones. */
+@media (max-width:400px) {
+  .categoryHome .categoryFooter { gap:3px; }
+  .categoryHome .categoryFooter #diffTip::after { font-size:11px; }
+  .categoryHome .categoryFooter .diffShare { padding-left:5px !important; padding-right:5px !important; }
+}
+
+/* V219 Beta: book contents captions. Card geometry, footer, gameplay unchanged. */
+/* Laptop home keeps the phone's card artwork and full names in a roomy 4 x 3 grid. */
+html.desktopViewport .categoryHome .categoryGrid{gap:12px}
+html.desktopViewport .categoryHome .categoryCard{padding:12px;gap:12px;border-radius:16px}
+html.desktopViewport .categoryHome .appBarTitle{font-size:22px !important}
+html.desktopViewport .categoryHome .categoryTitle{font-size:24px}
+html.desktopViewport .categoryHome .categoryHint{font-size:13px}
+html.desktopViewport .categoryHome .categoryFooter{min-height:40px}
+html.desktopViewport .categoryHome .categoryFooter .diffShare{min-height:32px;font-size:12px !important}
+html.desktopViewport body.categoryHome:not(.categoryOpen) .categoryCardCopy::after{font-size:14px !important;line-height:1.25}
+
+body.categoryHome:not(.categoryOpen) .categoryCardCopy .categoryCount {display:none !important;}
+body.categoryHome:not(.categoryOpen) .categoryCardCopy::after {content:""; display:block; color:#4D5844; font-size:clamp(9px,2.7vw,12px); line-height:1.16; font-weight:600; overflow-wrap:anywhere; max-width:100%;}
+body.categoryHome:not(.categoryOpen) .categoryCard[data-category="Add Magic"] .categoryCardCopy::after {content:"3×3 to 10×10 · equal sums";}
+body.categoryHome:not(.categoryOpen) .categoryCard[data-category="Multiply Magic"] .categoryCardCopy::after {content:"3×3 · equal products";}
+body.categoryHome:not(.categoryOpen) .categoryCard[data-category="Criss-Cross"] .categoryCardCopy::after {content:"Crossing number puzzles";}
+body.categoryHome:not(.categoryOpen) .categoryCard[data-category="SaNaMaze"] .categoryCardCopy::after {content:"Mazes and treasure paths";}
+body.categoryHome:not(.categoryOpen) .categoryCard[data-category="Birthday Magic"] .categoryCardCopy::after {content:"Birthday number tricks";}
+body.categoryHome:not(.categoryOpen) .categoryCard[data-category="Gate Logic"] .categoryCardCopy::after {content:"Logic gates and patterns";}
+body.categoryHome:not(.categoryOpen) .categoryCard[data-category="Binary Magic"] .categoryCardCopy::after {content:"Guess numbers with cards";}
+body.categoryHome:not(.categoryOpen) .categoryCard[data-category="Slide Magic"] .categoryCardCopy::after {content:"Slide tiles into order";}
+body.categoryHome:not(.categoryOpen) .categoryCard[data-category="Sudoku"] .categoryCardCopy::after {content:"Fill numbers without repeats";}
+body.categoryHome:not(.categoryOpen) .categoryCard[data-category="Tic-Tac-Toe"] .categoryCardCopy::after {content:"Make three in a row";}
+body.categoryHome:not(.categoryOpen) .categoryCard[data-category="Pallanguzhi"] .categoryCardCopy::after {content:"Traditional seed-sowing game";}
+body.categoryHome:not(.categoryOpen) .categoryCard[data-category="Thayam"] .categoryCardCopy::after {content:"Dice and board race";}
+/* Landscape: enlarge emoji and title *inside* the existing 6 × 2 cards.
+   Captions are intentionally compact, and flex items may shrink to avoid overflow. */
+@media (orientation:landscape) and (min-width:600px) {
+ body.categoryHome:not(.categoryOpen) .categorySquareCompact .categoryLandscapeSquares .categoryCard {
+   gap:3px !important; padding:3px 4px !important;
+ }
+ body.categoryHome:not(.categoryOpen) .categorySquareCompact .categoryLandscapeSquares .categoryPicture {
+   font-size:clamp(18px,4.2vh,30px) !important;
+   width:1em !important; height:1em !important; min-height:0 !important;
+ }
+ body.categoryHome:not(.categoryOpen) .categorySquareCompact .categoryLandscapeSquares .categoryCardCopy {
+   flex:0 1 auto; min-height:0; overflow:hidden; gap:2px !important;
+ }
+ body.categoryHome:not(.categoryOpen) .categorySquareCompact .categoryLandscapeSquares .categoryName {
+   font-size:clamp(11px,3vh,17px) !important; line-height:1.05 !important;
+ }
+ body.categoryHome:not(.categoryOpen) .categorySquareCompact .categoryLandscapeSquares .categoryCardCopy::after {
+   display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2;
+   overflow:hidden; font-size:clamp(8px,1.8vh,11px) !important;
+   line-height:1.12; text-align:center;
+ }
+}
+
+/* Taller landscape tablets keep a balanced book cover and comfortable utilities. */
+body.categoryHome:not(.categoryOpen) .categoryTabletFill .categoryLandscapeSquares .categoryPicture {
+  font-size:clamp(36px,calc(var(--square-side) * .25),48px) !important;
+  width:1em !important; height:1em !important;
+}
+body.categoryHome:not(.categoryOpen) .categoryTabletFill .categoryLandscapeSquares .categoryName {
+  font-size:clamp(18px,calc(var(--square-side) * .12),23px) !important;
+}
+body.categoryHome:not(.categoryOpen) .categoryTabletFill .categoryLandscapeSquares .categoryCardCopy::after {
+  font-size:clamp(11px,calc(var(--square-side) * .075),14px) !important;
+  line-height:1.25; min-height:2.5em;
+}
+body.categoryHome:not(.categoryOpen) .categoryTabletFill .categoryFooter {
+  height:48px !important; min-height:48px !important; padding-top:2px !important; padding-bottom:2px !important;
+}
+body.categoryHome:not(.categoryOpen) .categoryTabletFill .categoryFooter .diffShare {
+  min-height:44px !important; padding:8px 12px !important; font-size:14px !important;
+}
+body.categoryHome:not(.categoryOpen) .categoryTabletFill .categoryFooter #diffTip {
+  min-height:44px !important;
+}
+
+/* On the top-level picker, keep the heading accessible without spending card space.
+   Category titles remain visible after a category is opened. */
+.categoryHome:not(.categoryOpen) .categoryHeadingCopy { position:relative; }
+.categoryHome:not(.categoryOpen) .categoryTitle {
+  position:absolute !important;
+  width:1px; height:1px; padding:0; margin:-1px;
+  overflow:hidden; clip-path:inset(50%); white-space:nowrap; border:0;
+}
