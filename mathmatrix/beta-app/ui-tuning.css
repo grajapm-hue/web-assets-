@@ -260,8 +260,8 @@ html.desktopViewport #ccmBtns { grid-column:2; grid-row:7; justify-self:center; 
 :is(#barLearn i,#logicBtn i,#logicBtn .top-icon,#logicButton .top-icon) { --ui-icon:var(--ui-logic); }
 :is(#barWatch i,#watchTopBtn i,#watchBtn i,#watchBtn .top-icon,#watchButton .top-icon) { --ui-icon:var(--ui-watch); }
 :is(#watchTopBtn.watching i,#watchBtn[aria-pressed="true"] i,#watchBtn[aria-pressed="true"] .top-icon,#watchButton[aria-pressed="true"] .top-icon) { --ui-icon:var(--ui-stop); }
-:is(#barMore i,#ccmSoundBtn i,#soundBtn #soundIcon,#soundBtn .top-icon,#soundButton .top-icon) { --ui-icon:var(--ui-sound); }
-:is(#barMore.off i,#ccmSoundBtn.off i,#soundBtn.off #soundIcon,#soundBtn.off .top-icon,#soundButton.off .top-icon) { --ui-icon:var(--ui-muted); }
+:is(#ccmSoundBtn i,#soundBtn #soundIcon,#soundBtn .top-icon,#soundButton .top-icon) { --ui-icon:var(--ui-sound); }
+:is(#ccmSoundBtn.off i,#soundBtn.off #soundIcon,#soundBtn.off .top-icon,#soundButton.off .top-icon) { --ui-icon:var(--ui-muted); }
 #tab-scHome .tabIco { --ui-icon:var(--ui-home); }
 #tab-scPlay .tabIco { --ui-icon:var(--ui-play); }
 #tab-scApp .tabIco { --ui-icon:var(--ui-install); }
@@ -272,3 +272,30 @@ html.desktopViewport #ccmBtns { grid-column:2; grid-row:7; justify-self:center; 
   -webkit-mask:var(--ui-icon) center/contain no-repeat; mask:var(--ui-icon) center/contain no-repeat;
 }
 html.desktopViewport :is(#barLearn i,#barWatch i,#barMore i,.ccmTopBtn i,.top-actions .top-icon,.top-actions .top i,.tabBar .tabIco) { width:24px !important; height:24px !important; }
+
+/* Beta audio indicators share the actual master/music state on every screen. */
+:root {
+  --ui-music: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M9%2018V4h9v5H9%22%2F%3E%3Ccircle%20cx%3D%226%22%20cy%3D%2218%22%20r%3D%223%22%2F%3E%3C%2Fsvg%3E");
+  --ui-music-muted: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M9%2018V4h9v5H9m6%205%207%207m0-7-7%207%22%2F%3E%3Ccircle%20cx%3D%226%22%20cy%3D%2218%22%20r%3D%223%22%2F%3E%3C%2Fsvg%3E");
+}
+.audioIcon {
+  display:inline-block; flex:none; width:20px; height:20px; vertical-align:middle;
+  font-style:normal; background:currentColor;
+  -webkit-mask:var(--ui-icon) center/contain no-repeat; mask:var(--ui-icon) center/contain no-repeat;
+}
+.audioSpeaker { --ui-icon:var(--ui-sound); }
+.audioSpeaker.off { --ui-icon:var(--ui-muted); }
+.audioMusic { --ui-icon:var(--ui-music); }
+.audioMusic.off { --ui-icon:var(--ui-music-muted); }
+#barMore { background:#fff6e7 !important; border:1.5px solid #c4a77a; padding:0 3px; }
+#barMore>span { color:#173e35 !important; }
+#barMore .audioIcons { display:flex; align-items:center; justify-content:center; gap:2px; }
+#barMore .audioIcon { width:18px !important; height:18px !important; color:#15803d; }
+#barMore .audioIcon.off { color:#b91c1c; }
+#barMore .audioSpeaker { --ui-icon:var(--ui-sound); }
+#barMore .audioSpeaker.off { --ui-icon:var(--ui-muted); }
+#barMore .audioMusic { --ui-icon:var(--ui-music); }
+#barMore .audioMusic.off { --ui-icon:var(--ui-music-muted); }
+#soundBtn, #musicBtn { display:inline-flex; align-items:center; justify-content:center; gap:5px; }
+#sheetHost :is(#soundBtn,#musicBtn) { background:#fff6e7 !important; }
+#musicBtn:disabled { cursor:not-allowed; }

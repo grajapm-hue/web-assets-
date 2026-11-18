@@ -73,7 +73,7 @@ window.onerror = function(msg, src, line, col, err){
 <link rel="apple-touch-icon" href="icon-192.png">
 <!-- without this the browser asks for /favicon.ico, 404s, and the tab sits blank -->
 <link rel="icon" href="icon-192.png" type="image/png">
-<title>🐒🎲 MathMatrix Pro++ — Beta - V.227 Visible Screen Fit</title>
+<title>🐒🎲 MathMatrix Pro++ — Beta - V.229 Sound & Music Status</title>
 
 <!-- Raja: the copy icon in Android's share sheet copies something that will
      not open in a fresh browser, while every other channel works.
@@ -4194,7 +4194,7 @@ body{ background:#C9A87C !important; }
 .shareQrCopy p{margin:0;font-size:13px;line-height:1.45;font-weight:700;color:#715437;overflow-wrap:anywhere}
 @media(max-width:380px){.shareQrCard{gap:10px;padding:9px}.shareQrCode{flex-basis:118px;width:118px;height:118px;padding:8px}.shareQrCode canvas,.shareQrCode img{width:100px!important;height:100px!important}.shareQrCopy h3{font-size:14px}.shareQrCopy p{font-size:11.5px}}
 </style>
-<link rel="stylesheet" href="category-chooser.css">
+<link rel="stylesheet" href="category-chooser.css?v=229">
 <script src="category-chooser.js"></script>
 <link rel="stylesheet" href="game-layout.css">
 <script src="game-layout.js"></script>
@@ -5735,45 +5735,43 @@ function closeCheat(){ document.getElementById('cheatModal').style.display='none
     bgm.source=null; bgm.gain=null; bgm.pan=null; bgm.lfo=null; bgm.playing=false;
     clearInterval(bgmFadeIv); bgmFadeIv=null;
   }
+  function audioIcon(kind, on){
+    return '<i class="audioIcon audio' + kind + (on ? '' : ' off') + '" aria-hidden="true"></i>';
+  }
+  function refreshAudioIndicators(){
+    const button = document.getElementById('barMore');
+    if (!button) return;
+    const audibleMusic = soundOn && musicOn;
+    button.innerHTML = '<div class="audioIcons" aria-hidden="true">' +
+      audioIcon('Speaker', soundOn) + audioIcon('Music', audibleMusic) + '</div><span>Sound</span>';
+    button.classList.toggle('off', !soundOn);
+    button.setAttribute('aria-label', 'Sound is ' + (soundOn ? 'on' : 'off') +
+      '; music is ' + (audibleMusic ? 'on' : 'off') + ' — open sound and music settings');
+  }
   function refreshMusicBtn(){
-    var b = document.getElementById('musicBtn');
-    if (!b) return;
-    if (!soundOn){
-      // Master sound is OFF, so music cannot play — say so instead of a
-      // misleading "ON". The stored 🎵 preference is untouched underneath.
-      b.textContent = '🎵 Music: OFF';
-      b.style.borderColor = '#444'; b.style.color = '#666';
-      b.disabled = true; b.style.opacity = '.6';
-      b.title = 'Turn Sound on first';
-      return;
+    const button = document.getElementById('musicBtn');
+    const audibleMusic = soundOn && musicOn;
+    if (button){
+      button.innerHTML = audioIcon('Music', audibleMusic) + ' Music: ' + (audibleMusic ? 'ON' : 'OFF');
+      button.style.borderColor = audibleMusic ? '#15803d' : '#b91c1c';
+      button.style.color = audibleMusic ? '#15803d' : '#b91c1c';
+      button.disabled = !soundOn;
+      button.style.opacity = '1';
+      button.title = soundOn ? '' : 'Turn Sound on first';
+      button.setAttribute('aria-pressed', String(audibleMusic));
     }
-    b.disabled = false; b.style.opacity = '1'; b.title = '';
-    b.textContent = musicOn ? '🎵 Music: ON' : '🎵 Music: OFF';
-    b.style.borderColor = musicOn ? '#22c55e' : '#666';
-    b.style.color = musicOn ? '#4ade80' : '#888';
+    refreshAudioIndicators();
   }
 
   function refreshSoundBtn(){
-    var b = document.getElementById('soundBtn');
-    if (b) {
-      b.textContent = soundOn ? '🔊 Sound: ON' : '🔇 Sound: OFF';
-      b.style.borderColor = soundOn ? '#f59e0b' : '#666';
-      b.style.color = soundOn ? '#fbbf24' : '#888';
+    const button = document.getElementById('soundBtn');
+    if (button){
+      button.innerHTML = audioIcon('Speaker', soundOn) + ' Sound: ' + (soundOn ? 'ON' : 'OFF');
+      button.style.borderColor = soundOn ? '#15803d' : '#b91c1c';
+      button.style.color = soundOn ? '#15803d' : '#b91c1c';
+      button.setAttribute('aria-pressed', String(soundOn));
     }
-    /* Raja: the bar button that opens these settings used to be a bare "⋯",
-       which says nothing about what is behind it -- and everything behind it
-       is sound. It is a speaker now, and the speaker shows the CURRENT state:
-       muted on the front page reads as muted, without opening anything. Same
-       null-guard shape as above because this button is built later, in
-       barButtons(), than the first call to this function. */
-    var m = document.getElementById('barMore');
-    if (m) {
-      m.innerHTML = '<i aria-hidden="true">' + (soundOn ? '🔊' : '🔇') + '</i><span>Sound</span>';
-      m.classList.toggle('off', !soundOn);
-      m.setAttribute('aria-label', soundOn
-        ? 'Sound is on — open sound and music settings'
-        : 'Sound is off — open sound and music settings');
-    }
+    refreshAudioIndicators();
   }
   // Mobile audio unlock: a real touch/click/key wakes the AudioContext. Typing a
   // number only fires an 'input' event, which may NOT count as user-activation on
@@ -15889,9 +15887,9 @@ if (navigator.storage && navigator.storage.persist) {
 (function(){
   // Build baked into this HTML — always reflects the exact version being run,
   // independent of cache timing. Keep in sync with the SW CACHE_VERSION on deploy.
-  var BUILD_VER = 'Beta - V.227 Visible Screen Fit';
+  var BUILD_VER = 'Beta - V.229 Sound & Music Status';
   /* Legacy update beacon: older installed versions scan for this literal.
-   window.BETA_VER = 'v185'
+   window.BETA_VER = 'v229'
    Runtime code below derives the same token from BUILD_VER. */
   /* DERIVED, not a second literal. This was its own hardcoded string and it sat
      at beta-147 through two releases, so the footer and the BETA flag told

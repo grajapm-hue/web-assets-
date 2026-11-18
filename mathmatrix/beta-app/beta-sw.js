@@ -1,11 +1,11 @@
-// MathMatrix Pro++ Beta Service Worker — Beta V227 visible screen fit.
+// MathMatrix Pro++ Beta Service Worker — Beta V229 sound and music status.
 // This worker and cache stay inside beta-app on the shared GitHub Pages origin.
-const CACHE_VERSION = 'mathmatrix-beta-v240-visible-height';
+const CACHE_VERSION = 'mathmatrix-beta-v241-audio-status';
 
 const ASSETS = [
   './index.html',
   './beta.html',
-  './category-chooser.css',
+  './category-chooser.css?v=229',
   './category-chooser.js',
   './navigation-shell.css',
   './navigation-shell.js',
